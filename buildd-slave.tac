@@ -1,20 +1,16 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# CAUTION: The only modules in the Launchpad tree that this is permitted to
-# depend on are canonical.buildd, since buildds are deployed by copying that
-# directory only. (See also bug=800295.)
-
 # Buildd Slave implementation
 # XXX: dsilvers: 2005/01/21: Currently everything logged in the slave gets
 # passed through to the twistd log too. this could get dangerous/big
 
 from twisted.application import service, strports
-from canonical.buildd import XMLRPCBuildDSlave
-from canonical.buildd.binarypackage import BinaryPackageBuildManager
-from canonical.buildd.sourcepackagerecipe import (
+from lpbuildd.slave import XMLRPCBuildDSlave
+from lpbuildd.binarypackage import BinaryPackageBuildManager
+from lpbuildd.sourcepackagerecipe import (
     SourcePackageRecipeBuildManager)
-from canonical.buildd.translationtemplates import (
+from lpbuildd.translationtemplates import (
     TranslationTemplatesBuildManager)
 
 from twisted.web import server, resource, static

@@ -12,12 +12,12 @@ export DH_OPTIONS
 # after that, build the source package found in the parent directory.
 
 target = debian/launchpad-buildd
-topdir = ../../..
+topdir = ..
 
-buildd = $(topdir)/lib/canonical/buildd
+buildd = $(topdir)/lpbuildd
 
 targetshare = $(target)/usr/share/launchpad-buildd
-pytarget = $(targetshare)/canonical/buildd
+pytarget = $(targetshare)/lpbuildd
 
 pyfiles = debian.py slave.py binarypackage.py utils.py __init__.py \
     sourcepackagerecipe.py translationtemplates.py
@@ -34,32 +34,28 @@ install:
 	dh_clean
 	dh_testroot
 	dh_installdirs usr/bin etc usr/share/launchpad-buildd/slavebin \
-	  usr/share/launchpad-buildd/canonical/buildd \
+	  usr/share/launchpad-buildd/lpbuildd \
 	  var/run/launchpad-buildd var/log/launchpad-buildd  \
 	  etc/launchpad-buildd \
-	  usr/share/launchpad-buildd/canonical/launchpad/daemons \
+	  $(pytarget) \
 	  usr/share/doc/launchpad-buildd
 	dh_installexamples
 
 	# Do installs here
-	touch $(pytarget)/../launchpad/__init__.py
-	touch $(pytarget)/../launchpad/daemons/__init__.py
 	install -m644 buildd-slave.tac $(targetshare)/buildd-slave.tac
-	cp -r pottery $(pytarget)
-	for pyfile in $(pyfiles); do \
-	  install -m644 ./$$pyfile $(pytarget)/$$pyfile; \
-	  done
+
+	cp -r lpbuildd $(pytarget)
 	for slavebin in $(slavebins); do \
 	  install -m755 ./$$slavebin $(targetshare)/slavebin/$$slavebin; \
 	done
 	install -m755 ./sbuild $(target)/usr/bin/sbuild
-	touch $(targetshare)/canonical/__init__.py
 	install -m644 template-buildd-slave.conf $(targetshare)/template-buildd-slave.conf
 	install -m755 buildd-config.py $(target)/usr/bin/buildd-genconfig
 	install -m644 sbuildrc $(targetshare)/sbuildrc
 	install -m644 sbuild.conf $(target)/etc/sbuild.conf
 	install -m755 debian/upgrade-config $(targetshare)/upgrade-config
-	install -m755 check-implicit-pointer-functions $(target)/usr/bin/check-implicit-pointer-functions
+	install -m755 lpbuildd/check_implicit_pointer_functions.py \
+	       	$(target)/usr/bin/check-implicit-pointer-functions
 	# Okay, that's installed all the slave-related files
 
 
