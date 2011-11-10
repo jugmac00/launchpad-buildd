@@ -43,7 +43,7 @@ install:
 	# Do installs here
 	install -m644 buildd-slave.tac $(targetshare)/buildd-slave.tac
 
-	cp -r lpbuildd $(pytarget)
+	cp -r lpbuildd $(targetshare)
 	for slavebin in $(slavebins); do \
 	  install -m755 ./$$slavebin $(targetshare)/slavebin/$$slavebin; \
 	done
