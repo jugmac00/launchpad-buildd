@@ -13,7 +13,7 @@ from ConfigParser import SafeConfigParser
 
 from txfixtures.tachandler import TacTestFixture
 
-from canonical.buildd.slave import BuildDSlave
+from lpbuildd.slave import BuildDSlave
 
 from lp.services.osutils import remove_tree
 

@@ -13,7 +13,7 @@ import logging
 from bzrlib.branch import Branch
 from bzrlib.export import export
 
-from canonical.buildd.pottery import intltool
+from lpbuildd.pottery import intltool
 
 
 class GenerateTranslationTemplates:

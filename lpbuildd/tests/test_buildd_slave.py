@@ -22,7 +22,7 @@ import urllib2
 import unittest
 import xmlrpclib
 
-from canonical.buildd.tests.harness import (
+from lpbuildd.tests.harness import (
     BuilddSlaveTestSetup, BuilddTestCase)
 
 

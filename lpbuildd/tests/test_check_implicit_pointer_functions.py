@@ -3,8 +3,8 @@
 
 from lp.testing import TestCase
 
-from canonical.buildd.check_implicit_pointer_functions import implicit_pattern
-from canonical.buildd.check_implicit_pointer_functions import pointer_pattern
+from lpbuildd.check_implicit_pointer_functions import implicit_pattern
+from lpbuildd.check_implicit_pointer_functions import pointer_pattern
 
 
 class TestPointerCheckRegexes(TestCase):

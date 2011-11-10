@@ -8,7 +8,7 @@ import os
 from lp.testing import TestCase
 from lp.testing.fakemethod import FakeMethod
 
-from canonical.buildd.translationtemplates import (
+from lpbuildd.translationtemplates import (
     TranslationTemplatesBuildManager, TranslationTemplatesBuildState)
 
 

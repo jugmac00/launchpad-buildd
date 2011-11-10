@@ -10,7 +10,7 @@ __metaclass__ = type
 
 import os
 
-from canonical.buildd.slave import (
+from lpbuildd.slave import (
     BuildManager,
     )
 

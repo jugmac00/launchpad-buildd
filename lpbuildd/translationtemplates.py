@@ -5,7 +5,7 @@ __metaclass__ = type
 
 import os
 
-from canonical.buildd.debian import DebianBuildManager, DebianBuildState
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 
 
 class TranslationTemplatesBuildState(DebianBuildState):

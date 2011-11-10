@@ -7,7 +7,7 @@
 import os
 import re
 
-from canonical.buildd.debian import (
+from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
     get_build_path,
