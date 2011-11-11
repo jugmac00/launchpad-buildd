@@ -37,7 +37,6 @@ install:
 		sbuildrc \
 		debian/upgrade-config \
 		usr/share/launchpad-buildd
-	install -m755 buildd-config.py $(target)/usr/bin/buildd-genconfig
 	install -m755 lpbuildd/check_implicit_pointer_functions.py \
 	       	$(target)/usr/bin/check-implicit-pointer-functions
 
