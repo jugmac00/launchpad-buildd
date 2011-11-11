@@ -1,1 +1,2 @@
 etc/default/launchpad-buildd
+etc/sbuild.conf

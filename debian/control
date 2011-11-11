@@ -20,6 +20,6 @@ Package: python-lpbuildd
 Section: misc
 Architecture: all
 Depends: python-twisted-core, python-twisted-web, ${misc:Depends}
-Conflicts: launchpad-buildd (<<88)
+Conflicts: launchpad-buildd (<< 88)
 Description: Python libraries for a Launchpad buildd slave
  This contains the Python libraries that control the Launchpad buildd slave.

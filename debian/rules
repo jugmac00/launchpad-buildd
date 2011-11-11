@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright 2009, 2010, 2010 Canonical Ltd.  
+# Copyright 2009, 2010, 2011 Canonical Ltd.  
 # 
 # This software is licensed under the GNU Affero General Public License version
 # 3 (see the file LICENSE).
@@ -15,16 +15,7 @@ export DH_OPTIONS
 
 target = debian/launchpad-buildd
 topdir = .
-python_target = debian/python-lpbuildd
 
-buildd = $(topdir)/lpbuildd
-
-targetshare = $(target)/usr/share/launchpad-buildd
-pytarget = $(targetshare)/lpbuildd
-python_lib_dir = $(python_target)/usr/lib/launchpad-buildd
-
-pyfiles = debian.py slave.py binarypackage.py utils.py __init__.py \
-    sourcepackagerecipe.py translationtemplates.py
 slavebins = unpack-chroot mount-chroot update-debian-chroot sbuild-package \
     scan-for-processes umount-chroot remove-build override-sources-list \
     buildrecipe generate-translation-templates
@@ -40,25 +31,17 @@ install:
 	dh_installdirs 
 	dh_installexamples
 
-	install -m644 buildd-slave.tac $(python_lib_dir)/buildd-slave.tac
-
-	cp -r lpbuildd $(python_lib_dir)
-
-	for slavebin in $(slavebins); do \
-	  install -m755 ./$$slavebin $(targetshare)/slavebin/$$slavebin; \
-	done
-	install -m755 ./sbuild $(target)/usr/bin/sbuild
-	install -m644 template-buildd-slave.conf $(targetshare)/template-buildd-slave.conf
+	export DH_OPTIONS=-plaunchpad-buildd
+	dh_install $(slavebins) usr/share/launchpad-buildd/slavebin
+	dh_install template-buildd-slave.conf \
+		sbuildrc \
+		debian/upgrade-config \
+		usr/share/launchpad-buildd
 	install -m755 buildd-config.py $(target)/usr/bin/buildd-genconfig
-	install -m644 sbuildrc $(targetshare)/sbuildrc
-	install -m644 sbuild.conf $(target)/etc/sbuild.conf
-	install -m755 debian/upgrade-config $(targetshare)/upgrade-config
 	install -m755 lpbuildd/check_implicit_pointer_functions.py \
 	       	$(target)/usr/bin/check-implicit-pointer-functions
-	# Okay, that's installed all the slave-related files
 
-
-binary-indep: install
+binary-indep: install 
 	dh_installdocs
 	dh_installchangelogs
 	dh_installinit

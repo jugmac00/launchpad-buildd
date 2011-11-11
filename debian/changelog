@@ -1,3 +1,9 @@
+launchpad-buildd (92) hardy; urgency=low
+
+  * Use debhelper for more of the package build.
+
+ -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 16:01:03 +1100
+
 launchpad-buildd (91) hardy; urgency=low
 
   * launchpad-buildd will not start unless you set

@@ -1,1 +1,3 @@
-default/launchpad-buildd etc/default
+default/launchpad-buildd 			etc/default
+sbuild						usr/bin
+sbuild.conf 					etc

@@ -11,6 +11,8 @@ deb: clean
 
 clean:
 	fakeroot debian/rules clean
+
+realclean:
 	rm -f ../launchpad-buildd*tar.gz
 	rm -f ../launchpad-buildd*dsc
 	rm -f ../launchpad-buildd*deb
