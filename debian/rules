@@ -55,9 +55,6 @@ install:
 	# Okay, that's installed all the slave-related files
 
 
-binary-arch:
-	@echo No arch-specific binaries to make
-
 binary-indep: install
 	dh_installdocs
 	dh_installchangelogs
@@ -85,3 +82,6 @@ package: prepare
 
 build:
 	@echo Mmm builders
+
+build-arch: build
+build-indep: build

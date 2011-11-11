@@ -1,3 +1,12 @@
+launchpad-buildd (90) oneiric; urgency=low
+
+  * debhelper is a Build-Depends because it is needed to run 'clean'. 
+  * python-lpbuildd conflicts with launchpad-buildd << 88.
+  * Add and adjust build-arch, binary-arch, build-indep to match policy.
+  * Complies with stardards version 3.9.2.
+
+ -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 14:30:36 +1100
+
 launchpad-buildd (89) oneiric; urgency=low
 
   * Add debian/copyright file.

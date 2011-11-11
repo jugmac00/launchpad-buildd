@@ -2,8 +2,8 @@ Source: launchpad-buildd
 Section: admin
 Priority: extra
 Maintainer: Adam Conrad <adconrad@ubuntu.com>
-Standards-Version: 3.5.9
-Build-Depends-Indep: debhelper (>= 5)
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 5)
 
 Package: launchpad-buildd
 Section: misc
@@ -20,6 +20,6 @@ Package: python-lpbuildd
 Section: misc
 Architecture: all
 Depends: python-twisted-core, python-twisted-web, ${misc:Depends}
-Conflicts: launchpad-buildd (<88)
+Conflicts: launchpad-buildd (<<88)
 Description: Python libraries for a Launchpad buildd slave
  This contains the Python libraries that control the Launchpad buildd slave.
