@@ -1,8 +1,10 @@
 launchpad-buildd (96) UNRELEASED; urgency=low
 
   * Move python-lpbuildd to section python.
+  * Don't create /var/run/launchpad-buildd during installation, it's
+    already created at init-time.
 
- -- Jelmer Vernooij <jelmer@debian.org>  Fri, 11 Nov 2011 14:32:19 +0100
+ -- Jelmer Vernooij <jelmer@debian.org>  Fri, 11 Nov 2011 14:36:33 +0100
 
 launchpad-buildd (95) hardy; urgency=low
 
