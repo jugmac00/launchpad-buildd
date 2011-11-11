@@ -72,6 +72,7 @@ class RecipeBuilder:
         self.work_dir_relative = os.environ['HOME'] + '/work'
         self.work_dir = os.path.join(self.chroot_path,
                                      self.work_dir_relative[1:])
+
         self.tree_path = os.path.join(self.work_dir, 'tree')
         self.username = pwd.getpwuid(os.getuid())[0]
 
@@ -131,7 +132,7 @@ class RecipeBuilder:
         (source,) = [name for name in os.listdir(self.tree_path)
                      if os.path.isdir(os.path.join(self.tree_path, name))]
         self.source_dir_relative = os.path.join(
-            self.tree_path, source)
+            self.work_dir_relative, 'tree', source)
         return retcode
 
     def getPackageName(self):
