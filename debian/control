@@ -17,7 +17,7 @@ Description: Launchpad buildd slave
  and independent filecaches etc.
 
 Package: python-lpbuildd
-Section: misc
+Section: python
 Architecture: all
 Depends: python-twisted-core, python-twisted-web, ${misc:Depends}
 Conflicts: launchpad-buildd (<< 88)

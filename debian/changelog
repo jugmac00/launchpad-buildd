@@ -1,3 +1,9 @@
+launchpad-buildd (96) UNRELEASED; urgency=low
+
+  * Move python-lpbuildd to section python.
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Fri, 11 Nov 2011 14:32:19 +0100
+
 launchpad-buildd (95) hardy; urgency=low
 
   * Add explicit dependency on pristine-tar, recommended by newer
