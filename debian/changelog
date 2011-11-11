@@ -1,6 +1,13 @@
+launchpad-buildd (89) oneiric; urgency=low
+
+  * Add debian/copyright file.
+
+ -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 13:12:22 +1100
+
 launchpad-buildd (88) oneiric; urgency=low
 
-  * Separate python-lpbuildd from the main launchpad-buildd package.
+  * Separate python-lpbuildd from the main launchpad-buildd package, so that
+    it can be used alone for integration tests.
 
  -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 12:43:20 +1100
 
