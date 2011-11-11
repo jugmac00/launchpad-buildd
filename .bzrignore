@@ -1,2 +1,7 @@
-debian/*
 *.pyc
+debian/files
+debian/launchpad-buildd
+debian/python-lpbuildd
+debian/*.debhelper.log
+debian/*.debhelper
+debian/*.substvars

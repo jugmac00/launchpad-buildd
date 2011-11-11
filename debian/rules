@@ -13,11 +13,13 @@ export DH_OPTIONS
 
 target = debian/launchpad-buildd
 topdir = .
+python_target = debian/python-lpbuildd
 
 buildd = $(topdir)/lpbuildd
 
 targetshare = $(target)/usr/share/launchpad-buildd
 pytarget = $(targetshare)/lpbuildd
+python_lib_dir = $(python_target)/usr/lib/launchpad-buildd
 
 pyfiles = debian.py slave.py binarypackage.py utils.py __init__.py \
     sourcepackagerecipe.py translationtemplates.py
@@ -28,22 +30,17 @@ slavebins = unpack-chroot mount-chroot update-debian-chroot sbuild-package \
 BUILDDUID=65500
 BUILDDGID=65500
 
-install: DH_OPTIONS=-plaunchpad-buildd
 install:
 	dh_testdir
 	dh_clean
 	dh_testroot
-	dh_installdirs usr/bin etc usr/share/launchpad-buildd/slavebin \
-	  usr/share/launchpad-buildd/lpbuildd \
-	  var/run/launchpad-buildd var/log/launchpad-buildd  \
-	  etc/launchpad-buildd \
-	  usr/share/doc/launchpad-buildd
+	dh_installdirs 
 	dh_installexamples
 
-	# Do installs here
-	install -m644 buildd-slave.tac $(targetshare)/buildd-slave.tac
+	install -m644 buildd-slave.tac $(python_lib_dir)/buildd-slave.tac
 
-	cp -r lpbuildd $(targetshare)
+	cp -r lpbuildd $(python_lib_dir)
+
 	for slavebin in $(slavebins); do \
 	  install -m755 ./$$slavebin $(targetshare)/slavebin/$$slavebin; \
 	done
@@ -61,7 +58,6 @@ install:
 binary-arch:
 	@echo No arch-specific binaries to make
 
-binary-indep: DH_OPTIONS=-plaunchpad-buildd
 binary-indep: install
 	dh_installdocs
 	dh_installchangelogs
