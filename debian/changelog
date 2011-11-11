@@ -1,23 +1,47 @@
-launchpad-buildd (83) hardy; urgency=low
+launchpad-buildd (87) UNRELEASED; urgency=low
 
   * Split launchpad-buildd completely out of the Launchpad source tree.
   * Rename the Python package to lpbuildd.
 
  -- Martin Pool <mbp@canonical.com>  Wed, 09 Nov 2011 20:04:02 +1100
 
-launchpad-buildd (82+ppa1) hardy; urgency=low
+launchpad-buildd (86) hardy-cat; urgency=low
 
-  * PPA trial build.
+  * Cope with orig tarballs in the recipe result directory.
 
- -- Martin Pool <mbp@canonical.com>  Wed, 09 Nov 2011 17:01:42 +1100
+ -- Jelmer Vernooij <jelmer@canonical.com>  Thu, 10 Nov 2011 19:16:44 +0100
 
-launchpad-buildd (82) hardy-cat; urgency=low
+launchpad-buildd (85) hardy-cat; urgency=low
 
-  * Cut out readyservice from the buildds.  LP: #800295
-  * buildrecipe shows the bzr and bzr-builder versions.  LP: #884092
-  * buildrecipe shows bzr rusage.  LP: 884997
+  * buildrecipe: Fix env argument to call_report_rusage.
 
- -- Martin Pool <mbp@canonical.com>  Thu, 03 Nov 2011 17:11:25 +1100
+ -- Jelmer Vernooij <jelmer@canonical.com>  Thu, 10 Nov 2011 17:34:57 +0100
+
+launchpad-buildd (84) hardy-cat; urgency=low
+
+  * Fix import of check_call in buildrecipe.
+  * Avoid using /usr/bin/env in buildrecipe, breaks use of -u argument to
+  Python.
+
+ -- Jelmer Vernooij <jelmer@canonical.com>  Thu, 10 Nov 2011 14:55:10 +0100
+
+launchpad-buildd (83) hardy-cat; urgency=low
+
+  [ Martin Pool ]
+   * Cut out readyservice from the buildds.  LP: #800295
+   * buildrecipe shows the bzr and bzr-builder versions.  LP: #884092
+   * buildrecipe shows bzr rusage.  LP: #884997
+
+  [ Steve Langasek ]
+  * Strip :any, :native qualifiers off all build-dependencies in sbuild, since
+    the distinction only matters once we want to do cross-building.
+
+  [ Jelmer Vernooij ]
+  * Pass --allow-fallback-to-native to "bzr dailydeb" for compatibility
+    with older recipe build behaviour. Depend on bzr-builder >= 0.7.1
+    which introduces this option. LP: #885497
+
+ -- Jelmer Vernooij <jelmer@canonical.com>  Wed, 09 Nov 2011 14:57:35 +0100
 
 launchpad-buildd (81) hardy-cat; urgency=low
 
