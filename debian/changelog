@@ -1,3 +1,10 @@
+launchpad-buildd (93) hardy; urgency=low
+
+  * Rename buildd-genconfig in the tree, rather than during install.
+  * Symlink check_implicit_function_pointers rather than copying.
+
+ -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 16:26:17 +1100
+
 launchpad-buildd (92) hardy; urgency=low
 
   * Use debhelper for more of the package build.

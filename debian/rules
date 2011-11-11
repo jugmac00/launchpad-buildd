@@ -37,8 +37,8 @@ install:
 		sbuildrc \
 		debian/upgrade-config \
 		usr/share/launchpad-buildd
-	install -m755 lpbuildd/check_implicit_pointer_functions.py \
-	       	$(target)/usr/bin/check-implicit-pointer-functions
+	dh_link usr/lib/launchpad-buildd/lpbuildd/check_implicit_pointer_functions.py \
+		usr/bin/check-implicit-pointer-functions
 
 binary-indep: install 
 	dh_installdocs
