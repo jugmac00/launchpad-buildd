@@ -1,3 +1,9 @@
+launchpad-buildd (94) hardy; urgency=low
+
+  * Auto-start on machines whose hostname fqdn ends in .buildd or .ppa.
+
+ -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 17:26:20 +1100
+
 launchpad-buildd (93) hardy; urgency=low
 
   * Rename buildd-genconfig in the tree, rather than during install.

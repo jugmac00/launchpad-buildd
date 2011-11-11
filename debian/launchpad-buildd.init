@@ -33,7 +33,24 @@ test -e $TACFILE || exit 0
 
 d_check_enabled() {
 RUN_NETWORK_REQUESTS_AS_ROOT=no   # Good idea generally
+
 [ -f /etc/default/launchpad-buildd ] && . /etc/default/launchpad-buildd
+
+hostname="`hostname -f`"
+case "$hostname" in
+*.ppa|*.buildd)
+	cat <<END
+
+launchpad-buildd: starting automatically because $hostname seems to be a buildd machine.
+
+CAUTION: this service accepts network commands and runs them as root.
+END
+	return
+	;;
+*)
+	echo "launchpad-buildd: not starting automatically on $hostname"
+	;;
+esac
 
 if [ "$RUN_NETWORK_REQUESTS_AS_ROOT" != yes ]
 then
