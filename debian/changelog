@@ -1,4 +1,11 @@
-launchpad-buildd (90) oneiric; urgency=low
+launchpad-buildd (91) hardy; urgency=low
+
+  * launchpad-buildd will not start unless you set
+    RUN_NETWORK_REQUESTS_AS_ROOT=yes in /etc/default/launchpad-buildd.
+
+ -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 15:02:12 +1100
+
+launchpad-buildd (90) hardy; urgency=low
 
   * debhelper is a Build-Depends because it is needed to run 'clean'. 
   * python-lpbuildd conflicts with launchpad-buildd << 88.
@@ -7,13 +14,13 @@ launchpad-buildd (90) oneiric; urgency=low
 
  -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 14:30:36 +1100
 
-launchpad-buildd (89) oneiric; urgency=low
+launchpad-buildd (89) hardy; urgency=low
 
   * Add debian/copyright file.
 
  -- Martin Pool <mbp@canonical.com>  Fri, 11 Nov 2011 13:12:22 +1100
 
-launchpad-buildd (88) oneiric; urgency=low
+launchpad-buildd (88) hardy; urgency=low
 
   * Separate python-lpbuildd from the main launchpad-buildd package, so that
     it can be used alone for integration tests.

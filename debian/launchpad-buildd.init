@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009,2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 #
 # launchpad-buildd
@@ -21,7 +21,7 @@ set -e
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="launchpad build slaves"
 
-TACFILE="/usr/share/launchpad-buildd/buildd-slave.tac"
+TACFILE="/usr/lib/launchpad-buildd/buildd-slave.tac"
 
 PIDROOT="/var/run/launchpad-buildd"
 LOGROOT="/var/log/launchpad-buildd"
@@ -29,6 +29,26 @@ CONFROOT="/etc/launchpad-buildd"
 
 # Gracefully exit if the package has been removed.
 test -e $TACFILE || exit 0
+
+
+d_check_enabled() {
+RUN_NETWORK_REQUESTS_AS_ROOT=no   # Good idea generally
+[ -f /etc/default/launchpad-buildd ] && . /etc/default/launchpad-buildd
+
+if [ "$RUN_NETWORK_REQUESTS_AS_ROOT" != yes ]
+then
+	cat <<END
+
+launchpad-buildd is disabled.
+When enabled, launchpad-buildd accepts network commands and runs them as root.
+If you are sure this server will only be reachable by trusted machines, edit
+/etc/default/launchpad-buildd.
+
+END
+	exit 0
+fi
+}
+
 
 #
 #       Function that starts a buildd slave
@@ -43,7 +63,7 @@ d_start() {
 	[a-j]*)	UMASK="";;
 	[k-z]*)	UMASK="--umask 022";;
     esac
-    su - buildd -c "BUILDD_SLAVE_CONFIG=$CONFROOT/$CONF PYTHONPATH=/usr/share/launchpad-buildd twistd --no_save --pidfile $PIDFILE --python $TACFILE --logfile $LOGFILE $UMASK"
+    su - buildd -c "BUILDD_SLAVE_CONFIG=$CONFROOT/$CONF PYTHONPATH=/usr/lib/launchpad-buildd twistd --no_save --pidfile $PIDFILE --python $TACFILE --logfile $LOGFILE $UMASK"
 }
 
 #
@@ -59,6 +79,8 @@ CONFS=$(cd $CONFROOT; ls|grep -v "^-"|grep -v "~$")
 
 case "$1" in
   start)
+	d_check_enabled
+
         echo -n "Starting $DESC:"
         install -m 755 -o buildd -g buildd -d $PIDROOT
 

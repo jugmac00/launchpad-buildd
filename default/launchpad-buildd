@@ -1,0 +1,11 @@
+# launchpad-buildd is disabled.
+# When enabled, launchpad-buildd accepts network commands and runs them as root.
+# If you are sure this server will only be reachable by trusted machines, edit
+# /etc/default/launchpad-buildd to enable it.
+
+# When 'yes', this machine will accept tcp connections and run arbitrary jobs
+# as root.  Do not enable this except on dedicated machines on a tightly
+# controlled network. 
+#
+# When 'no', the buildd will not run at all.
+RUN_NETWORK_REQUESTS_AS_ROOT=no

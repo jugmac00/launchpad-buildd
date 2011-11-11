@@ -1,7 +1,9 @@
 #!/usr/bin/make -f
 #
-# Copyright 2009, 2010 Canonical Ltd.  This software is licensed under the
-# GNU Affero General Public License version 3 (see the file LICENSE).
+# Copyright 2009, 2010, 2010 Canonical Ltd.  
+# 
+# This software is licensed under the GNU Affero General Public License version
+# 3 (see the file LICENSE).
 
 export DH_OPTIONS
 
@@ -34,6 +36,7 @@ install:
 	dh_testdir
 	dh_clean
 	dh_testroot
+	dh_install
 	dh_installdirs 
 	dh_installexamples
 
