@@ -1,3 +1,9 @@
+launchpad-buildd (96) hardy-cat; urgency=low
+
+  * only depend on bzr-builder on i386.
+
+ -- LaMont Jones <lamont@canonical.com>  Tue, 15 Nov 2011 02:46:54 -0700
+
 launchpad-buildd (95) hardy; urgency=low
 
   * Add explicit dependency on pristine-tar, recommended by newer
