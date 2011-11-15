@@ -1,3 +1,9 @@
+launchpad-buildd (99) hardy; urgency=low
+
+  * launchpad-buildd conflicts with sbuild.
+
+ -- Martin Pool <mbp@canonical.com>  Wed, 16 Nov 2011 10:53:43 +1100
+
 launchpad-buildd (98) hardy; urgency=low
 
   * Add launchpad-buildd dependency on python-apt, as an accomodation for it
