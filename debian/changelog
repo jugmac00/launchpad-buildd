@@ -1,3 +1,13 @@
+launchpad-buildd (100) UNRELEASED; urgency=low
+
+  * Move python-lpbuildd to section python.
+  * Don't create /var/run/launchpad-buildd during installation, it's
+    already created at init-time.
+  * Remove unnecessary debian/launchpad-buildd.conffiles. debhelper
+    already adds the required conffiles.
+
+ -- Jelmer Vernooij <jelmer@canonical.com>  Fri, 11 Nov 2011 14:43:31 +0100
+
 launchpad-buildd (99) hardy; urgency=low
 
   * launchpad-buildd conflicts with sbuild.

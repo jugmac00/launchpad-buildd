@@ -1,0 +1,3 @@
+launchpad-buildd binary: binary-without-manpage usr/bin/buildd-genconfig
+launchpad-buildd binary: binary-without-manpage usr/bin/check-implicit-pointer-functions
+launchpad-buildd binary: binary-without-manpage usr/bin/sbuild

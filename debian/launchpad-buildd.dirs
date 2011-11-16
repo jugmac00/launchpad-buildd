@@ -1,8 +1,7 @@
-etc 
-etc/launchpad-buildd 
-usr/bin 
-usr/share/doc/launchpad-buildd 
-usr/share/launchpad-buildd/lpbuildd 
+etc
+etc/launchpad-buildd
+usr/bin
+usr/share/doc/launchpad-buildd
+usr/share/launchpad-buildd/lpbuildd
 usr/share/launchpad-buildd/slavebin
-var/log/launchpad-buildd  
-var/run/launchpad-buildd
+var/log/launchpad-buildd

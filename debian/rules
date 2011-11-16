@@ -30,6 +30,7 @@ install:
 	dh_install
 	dh_installdirs 
 	dh_installexamples
+	dh_lintian
 
 	export DH_OPTIONS=-plaunchpad-buildd
 	dh_install $(slavebins) usr/share/launchpad-buildd/slavebin
