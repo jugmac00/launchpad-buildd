@@ -1,3 +1,9 @@
+launchpad-buildd (100) hardy; urgency=low
+
+  * Pass -Derror to bzr dailydeb. LP: 890892
+
+ -- Martin Pool <mbp@canonical.com>  Wed, 16 Nov 2011 21:05:12 +1100
+
 launchpad-buildd (99) hardy; urgency=low
 
   * launchpad-buildd conflicts with sbuild.
