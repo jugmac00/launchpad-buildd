@@ -28,9 +28,12 @@ install:
 	dh_clean
 	dh_testroot
 	dh_install
-	dh_installdirs 
+	dh_installdirs
 	dh_installexamples
-	dh_lintian
+	#hardy's debhelper doesn't provide dh_lintian
+	#dh_lintian
+	install -m644 debian/launchpad-buildd.lintian-overrides \
+		debian/launchpad-buildd/usr/share/lintian/overrides/launchpad-buildd
 
 	export DH_OPTIONS=-plaunchpad-buildd
 	dh_install $(slavebins) usr/share/launchpad-buildd/slavebin
