@@ -123,7 +123,7 @@ class BuildManager(object):
     def doLogStartup(self):
         self.runSubProcess('dpkg-query', [
             'dpkg-query', '-W', 'python-lpbuildd', 'launchpad-buildd', 'bzr',
-            'bzr-builder])
+            'bzr-builder'])
 
     def doUnpack(self):
         """Unpack the build chroot."""
