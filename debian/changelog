@@ -1,6 +1,7 @@
-launchpad-buildd (104.1) hardy; urgency=low
+launchpad-buildd (105) hardy; urgency=low
 
-  * Fix stupid syntax error.
+  * Remove attempt to run dpkg-query from inside the slave: each state machine
+    step can run only a single iteration.
 
  -- Martin Pool <mbp@canonical.com>  Fri, 18 Nov 2011 19:18:21 +1100
 
