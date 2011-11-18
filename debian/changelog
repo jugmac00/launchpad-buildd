@@ -1,4 +1,10 @@
-launchpad-buildd (100) UNRELEASED; urgency=low
+launchpad-buildd (101) hardy; urgency=low
+
+  * Pass -Derror to bzr dailydeb. LP: 890892
+
+ -- Martin Pool <mbp@canonical.com>  Wed, 16 Nov 2011 21:05:12 +1100
+
+launchpad-buildd (100) hardy; urgency=low
 
   * Move python-lpbuildd to section python.
   * Don't create /var/run/launchpad-buildd during installation, it's
