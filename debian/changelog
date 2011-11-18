@@ -5,6 +5,8 @@ launchpad-buildd (100) UNRELEASED; urgency=low
     already created at init-time.
   * Remove unnecessary debian/launchpad-buildd.conffiles. debhelper
     already adds the required conffiles.
+  * In buildrecipe, pass -sa to dpkg-buildpackage so the orig tarball(s)
+    always get included. LP: #891892
 
  -- Jelmer Vernooij <jelmer@canonical.com>  Fri, 11 Nov 2011 14:43:31 +0100
 

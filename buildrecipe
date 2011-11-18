@@ -179,7 +179,8 @@ class RecipeBuilder:
         :return: a retcode from dpkg-buildpackage.
         """
         retcode = self.chroot([
-            'su', '-c', 'cd %s && /usr/bin/dpkg-buildpackage -i -I -us -uc -S'
+            'su', '-c',
+            'cd %s && /usr/bin/dpkg-buildpackage -i -I -us -uc -S -sa'
             % self.source_dir_relative, self.username])
         for filename in os.listdir(self.tree_path):
             path = os.path.join(self.tree_path, filename)
