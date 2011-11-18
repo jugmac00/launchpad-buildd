@@ -1,9 +1,9 @@
 launchpad-buildd (102) hardy; urgency=low
 
-  * Run 'dpkg -l launchpad-buildd' and some other relevant commands at
+  * Show dpkg versions of launchpad-buildd and some other relevant packages at
     startup, for debuggability.
 
- -- Martin Pool <mbp@canonical.com>  Fri, 18 Nov 2011 13:15:31 +1100
+ -- Martin Pool <mbp@canonical.com>  Fri, 18 Nov 2011 13:26:30 +1100
 
 launchpad-buildd (101) hardy; urgency=low
 

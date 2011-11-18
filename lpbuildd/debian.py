@@ -54,7 +54,7 @@ class DebianBuildManager(BuildManager):
 
     def doLogStartup(self):
         self.runSubprocess('dpkg', [
-            'dpkg', '-s', 'python-lpbuildd', 'launchpad-buildd', 'bzr',
+            'dpkg-query', '-W', 'python-lpbuildd', 'launchpad-buildd', 'bzr',
             'bzr-builder', 'bzr-builddeb'])
 
     def doSourcesList(self):
