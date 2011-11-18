@@ -120,6 +120,11 @@ class BuildManager(object):
             self._subprocess, command, args, env=os.environ,
             path=self.home, childFDs=childfds)
 
+    def doLogStartup(self):
+        self.runSubProcess('dpkg-query', [
+            'dpkg-query', '-W', 'python-lpbuildd', 'launchpad-buildd', 'bzr',
+            'bzr-builder', 'bzr-builddeb'])
+
     def doUnpack(self):
         """Unpack the build chroot."""
         self.runSubProcess(
@@ -166,6 +171,7 @@ class BuildManager(object):
         if extra_args.get('archive_private'):
             self.is_archive_private = True
 
+        self.doLogStartup()
         self.runSubProcess(
             "/bin/echo", ["echo", "Forking build subprocess..."])
 

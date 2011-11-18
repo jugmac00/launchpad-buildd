@@ -1,3 +1,9 @@
+launchpad-buildd (103) hardy; urgency=low
+
+  * Log dpkg versions from the slave, where they will be externally visible.
+
+ -- Martin Pool <mbp@canonical.com>  Fri, 18 Nov 2011 15:17:08 +1100
+
 launchpad-buildd (102) hardy; urgency=low
 
   * Show dpkg versions of launchpad-buildd and some other relevant packages at

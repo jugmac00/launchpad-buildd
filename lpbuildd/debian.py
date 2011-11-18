@@ -52,11 +52,6 @@ class DebianBuildManager(BuildManager):
 
         BuildManager.initiate(self, files, chroot, extra_args)
 
-    def doLogStartup(self):
-        self.runSubprocess('dpkg', [
-            'dpkg-query', '-W', 'python-lpbuildd', 'launchpad-buildd', 'bzr',
-            'bzr-builder', 'bzr-builddeb'])
-
     def doSourcesList(self):
         """Override apt/sources.list.
 
@@ -144,7 +139,6 @@ class DebianBuildManager(BuildManager):
             self.doCleanup()
         else:
             self._state = DebianBuildState.UNPACK
-            self.doLogStartup()
             self.doUnpack()
 
     def iterate_UNPACK(self, success):
