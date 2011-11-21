@@ -1,10 +1,11 @@
 #!/usr/bin/python
 #
-# Copyright 2009, 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009, 2010, 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Upgrade a launchpad-buildd configuration file."""
 
+import re
 import sys
 import os
 import subprocess
@@ -103,8 +104,7 @@ def upgrade_to_63():
 
 
 if __name__ == "__main__":
-    if old_version.find("~") > 0:
-	old_version = old_version[:old_version.find("~")]
+    old_version = re.sub(r'[~-].*', '', old_version)
     if int(old_version) < 12:
         upgrade_to_12()
     if int(old_version) < 34:

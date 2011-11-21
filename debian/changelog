@@ -1,9 +1,15 @@
+launchpad-buildd (106) hardy; urgency=low
+
+  * Safer parsing in upgrade-config.
+
+ -- Martin Pool <mbp@canonical.com>  Mon, 21 Nov 2011 12:19:52 +1100
+
 launchpad-buildd (105.1) hardy; urgency=low
 
   * Add strict version dependency of launchpad-buildd on python-lpbuildd.
   * Add explicit Python dependency for lintian.
 
- -- Martin Pool <mbp@canonical.com>  Mon, 21 Nov 2011 12:12:59 +1100
+ -- Martin Pool <mbp@canonical.com>  Mon, 21 Nov 2011 12:16:34 +1100
 
 launchpad-buildd (105) hardy; urgency=low
 
