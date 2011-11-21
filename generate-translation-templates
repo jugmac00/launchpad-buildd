@@ -30,6 +30,7 @@ BRANCH_URL=$2
 RESULT_NAME=$3
 
 BUILDD_HOME=/usr/share/launchpad-buildd
+BUILDD_LIB=/usr/lib/launchpad-buildd
 SLAVEBIN=$BUILDD_HOME/slavebin
 BUILD_CHROOT="$HOME/build-$BUILDID/chroot-autobuild"
 USER=$(whoami)
@@ -55,7 +56,7 @@ debug_exec() {
 # Copy pottery files to chroot.
 debug_exec "$SUDO $MKDIR -vp $BUILD_CHROOT$PYMODULES/$BUILDD_PACKAGE"
 debug_exec "$SUDO $TOUCH $BUILD_CHROOT$PYMODULES/$BUILDD_PACKAGE/__init__.py"
-debug_exec "$SUDO $CP -vr $BUILDD_HOME/$POTTERY $BUILD_CHROOT$PYMODULES/$BUILDD_PACKAGE"
+debug_exec "$SUDO $CP -vr $BUILDD_LIB/$POTTERY $BUILD_CHROOT$PYMODULES/$BUILDD_PACKAGE"
 debug_exec "$SUDO $CHMOD -v -R go+rX $BUILD_CHROOT$PYMODULES/$BUILDD_PACKAGE"
 debug_exec "$SUDO $CHMOD -v 755 $BUILD_CHROOT$GENERATE_SCRIPT"
 

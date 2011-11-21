@@ -1,3 +1,9 @@
+launchpad-buildd (107) hardy; urgency=low
+
+  * Correction to generate-translation-templates for the new file location.
+
+ -- Martin Pool <mbp@canonical.com>  Mon, 21 Nov 2011 16:28:50 +1100
+
 launchpad-buildd (106) hardy; urgency=low
 
   * Safer parsing in upgrade-config.
