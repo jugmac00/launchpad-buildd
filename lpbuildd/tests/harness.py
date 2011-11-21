@@ -7,6 +7,7 @@ __all__ = [
     ]
 
 import os
+import shutil
 import tempfile
 import unittest
 from ConfigParser import SafeConfigParser
@@ -14,8 +15,6 @@ from ConfigParser import SafeConfigParser
 from txfixtures.tachandler import TacTestFixture
 
 from lpbuildd.slave import BuildDSlave
-
-from lp.services.osutils import remove_tree
 
 
 test_conffile = os.path.join(
@@ -47,7 +46,7 @@ class BuilddTestCase(unittest.TestCase):
 
     def tearDown(self):
         """Remove the 'filecache' directory used for the tests."""
-        remove_tree(self.slave._cachepath)
+        shutil.rmtree(self.slave._cachepath)
 
     def makeLog(self, size):
         """Inject data into the default buildlog file."""
@@ -98,7 +97,8 @@ class BuilddSlaveTestSetup(TacTestFixture):
     """
     def setUpRoot(self):
         """Recreate empty root directory to avoid problems."""
-        remove_tree(self.root)
+        if os.path.exists(self.root):
+            shutil.rmtree(self.root)
         os.mkdir(self.root)
         filecache = os.path.join(self.root, 'filecache')
         os.mkdir(filecache)
@@ -108,7 +108,7 @@ class BuilddSlaveTestSetup(TacTestFixture):
         # When we are about running it seriously we need :
         # * install sbuild package
         # * to copy the scripts for sbuild
-        self.addCleanup(remove_tree, self.root)
+        self.addCleanup(shutil.rmtree, self.root)
 
     @property
     def root(self):
