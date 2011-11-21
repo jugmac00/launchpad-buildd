@@ -87,6 +87,12 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # Read the expected differences from the prepared disk file.
         expected = read_file(os.path.join(self.here, 'test_1.diff'))
 
+        # Python difflib slightly changed the formatting of the headers; we
+        # don't care; let's make it look the same as it used to.
+        differences = differences.replace(
+            '--- \n\n+++ \n\n',
+            '---  \n\n+++  \n\n')
+        
         # Make sure they match.
         self.assertEqual(differences, expected)
 
@@ -117,6 +123,12 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # .. and the expected differences.
         expected = read_file(os.path.join(self.here, 'test_2.diff'))
 
+        # Python difflib slightly changed the formatting of the headers; we
+        # don't care; let's make it look the same as it used to.
+        differences = differences.replace(
+            '--- \n\n+++ \n\n',
+            '---  \n\n+++  \n\n')
+        
         # Finally make sure what we got is what we expected.
         self.assertEqual(differences, expected)
 
