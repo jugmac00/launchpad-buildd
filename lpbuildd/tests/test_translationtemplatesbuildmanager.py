@@ -1,11 +1,13 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010, 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import os
+import shutil
+import tempfile
 
-from lp.testing import TestCase
+from testtools import TestCase
 from lp.testing.fakemethod import FakeMethod
 
 from lpbuildd.translationtemplates import (
@@ -61,7 +63,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
     """Run TranslationTemplatesBuildManager through its iteration steps."""
     def setUp(self):
         super(TestTranslationTemplatesBuildManagerIteration, self).setUp()
-        self.working_dir = self.makeTemporaryDirectory()
+        self.working_dir = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(self.working_dir))
         slave_dir = os.path.join(self.working_dir, 'slave')
         home_dir = os.path.join(self.working_dir, 'home')
         for dir in (slave_dir, home_dir):
