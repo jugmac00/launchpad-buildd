@@ -8,7 +8,9 @@ Build-Depends: debhelper (>= 5)
 Package: launchpad-buildd
 Section: misc
 Architecture: all
-Depends: python-lpbuildd, debootstrap, dpkg-dev, linux32, file, bzip2, sudo, ntpdate, adduser, apt-transport-https, lsb-release, apache2, pristine-tar,
+Depends: python-lpbuildd (=${source:Version}),
+ python,
+ debootstrap, dpkg-dev, linux32, file, bzip2, sudo, ntpdate, adduser, apt-transport-https, lsb-release, apache2, pristine-tar,
  python-apt, ${misc:Depends}
 Conflicts: sbuild
 Description: Launchpad buildd slave
@@ -21,7 +23,7 @@ Description: Launchpad buildd slave
 Package: python-lpbuildd
 Section: python
 Architecture: all
-Depends: python-twisted-core, python-twisted-web, ${misc:Depends}
+Depends: python, python-twisted-core, python-twisted-web, ${misc:Depends}
 Conflicts: launchpad-buildd (<< 88)
 Description: Python libraries for a Launchpad buildd slave
  This contains the Python libraries that control the Launchpad buildd slave.
