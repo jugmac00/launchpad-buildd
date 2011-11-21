@@ -19,3 +19,15 @@ realclean:
 	rm -f ../launchpad-buildd*changes
 
 .PHONY: all clean deb
+
+PYTHON=python
+# NB: for this to pass, you must have txfixtures, lazr.restful, and lp on your pythonpath
+# already.  lp is not packaged so this is not enforced as a build time
+# dependency. In practice you probably just want to run this with PYTHON=bin/py from 
+# a Launchpad checkout.
+check:
+	PYTHONPATH=$(PWD):$(PYTHONPATH) $(PYTHON) -m testtools.run -v \
+		   lpbuildd.tests.test_buildd_slave \
+		   lpbuildd.tests.test_check_implicit_pointer_functions \
+		   lpbuildd.tests.test_harness \
+		   lpbuildd.tests.test_translationtemplatesbuildmanager

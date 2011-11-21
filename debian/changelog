@@ -1,6 +1,7 @@
 launchpad-buildd (106) hardy; urgency=low
 
   * Safer parsing in upgrade-config.
+  * Get 'make check' working for the split-out tree.
 
  -- Martin Pool <mbp@canonical.com>  Mon, 21 Nov 2011 12:19:52 +1100
 
