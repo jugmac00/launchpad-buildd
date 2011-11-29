@@ -1,3 +1,11 @@
+launchpad-buildd (109) hardy; urgency=low
+
+  * Use sudo when installing qemu into the chroot.
+  * Only install qemu into the chroot when building arm* on x86, so armhf
+    builds on armel hosts don't try to do it.
+
+ -- William Grant <wgrant@ubuntu.com>  Tue, 29 Nov 2011 22:02:00 +1100
+
 launchpad-buildd (108) hardy; urgency=low
 
   [ Adam Conrad ]

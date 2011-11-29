@@ -44,9 +44,13 @@ esac
 # inside and outside the chroot.
 if [ "$hostarch" != "$ARCHITECTURETAG" ]
 then
-  case "$ARCHITECTURETAG" in
-    arm*)
-      /usr/bin/install /usr/bin/qemu-arm-static $ROOT/usr/bin/
+  case "$hostarch" in
+    i386|amd64|lpia)
+      case "$ARCHITECTURETAG" in
+        arm*)
+          $SUDO /usr/bin/install /usr/bin/qemu-arm-static $ROOT/usr/bin/
+          ;;
+      esac
       ;;
   esac
 fi
