@@ -184,21 +184,22 @@ class BuildManager(object):
         """Abort the build by killing the subprocess."""
         if not self.alreadyfailed:
             self.alreadyfailed = True
-        # Either SIGKILL and SIGTERM presents the same behavior,
-        # the process is just killed some time after the signal was sent
-        # 10 s ~ 40 s, and returns None as exit_code, instead of the normal
-        # interger. See further info on DebianBuildermanager.iterate in
-        # debian.py
-        # XXX cprov 2005-09-02:
-        # we may want to follow the canonical.tachandler kill process style,
-        # which sends SIGTERM to the process wait a given timeout and if was
-        # not killed sends a SIGKILL. IMO it only would be worth if we found
-        # different behaviour than the previous described.
-        self._subprocess.transport.signalProcess('TERM')
-        # alternativelly to simply send SIGTERM, we can pend a request to
-        # send SIGKILL to the process if nothing happened in 10 seconds
-        # see base class process
-        self._subprocess.killCall = reactor.callLater(10, self.kill)
+        if self._subprocess is not None:
+            # Either SIGKILL and SIGTERM presents the same behavior, the
+            # process is just killed some time after the signal was sent 
+            # 10 s ~ 40 s, and returns None as exit_code, instead of the normal
+            # integer. See further info on DebianBuildermanager.iterate in
+            # debian.py
+            # XXX cprov 2005-09-02:
+            # we may want to follow the canonical.tachandler kill process
+            # style, which sends SIGTERM to the process wait a given timeout
+            # and if was not killed sends a SIGKILL. IMO it only would be worth
+            # if we found different behaviour than the previous described.
+            self._subprocess.transport.signalProcess('TERM')
+            # alternatively to simply send SIGTERM, we can pend a request to
+            # send SIGKILL to the process if nothing happened in 10 seconds
+            # see base class process
+            self._subprocess.killCall = reactor.callLater(10, self.kill)
 
     def kill(self):
         """Send SIGKILL to child process

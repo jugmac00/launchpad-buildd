@@ -2,8 +2,10 @@ launchpad-buildd (110) UNRELEASED; urgency=low
 
   * Use the actual target distroseries name in changelog, rather than
     the same as the last entry. LP: #855479
+  * Prevent slave from blowing up when it is aborted before a job has
+    started. LP: #497772
 
- -- Jelmer Vernooij <jelmer@ubuntu.com>  Tue, 29 Nov 2011 13:34:21 +0100
+ -- Jelmer Vernooij <jelmer@debian.org>  Tue, 29 Nov 2011 13:49:29 +0100
 
 launchpad-buildd (109) hardy; urgency=low
 
