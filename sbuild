@@ -2824,7 +2824,6 @@ sub parse_one_srcdep {
 						    "dpkg-architecture", "-a".$main::arch, "-i".$_) eq 0) {
 							$use_it = 1
 						}
-
 						$include = 1;
 					}
 				}
