@@ -912,7 +912,9 @@ sub fetch_source_files {
 	else {
 		my $valid_arch;
 		for my $a (split(/\s+/, $dscarchs)) {
-			if (system('dpkg-architecture', '-a' . $main::arch, '-i' . $a) eq 0) {
+			if (system("$conf::sudo", "/usr/sbin/chroot",
+			    "$main::cwd/$main::chroot_dir", 
+			    "dpkg-architecture", "-a".$main::arch, "-i".$a) eq 0) {
 				$valid_arch = 1;
 				last;
 			}
@@ -2810,10 +2812,18 @@ sub parse_one_srcdep {
 					# Use 'dpkg-architecture' to support architecture
 					# wildcards.
 					if (/^!/) {
-						$ignore_it = 1 if system('dpkg-architecture', '-a' . $main::arch, '-i' . substr($_, 1)) eq 0;
+						if (system("$conf::sudo", "/usr/sbin/chroot",
+						    "$main::cwd/$main::chroot_dir",
+						    "dpkg-architecture", "-a".$main::arch, "-i".substr($_, 1)) eq 0) {
+							$ignore_it = 1
+						}
 					}
 					else {
-						$use_it = 1 if system('dpkg-architecture', '-a' . $main::arch, '-i' . $_) eq 0;
+						if (system("$conf::sudo", "/usr/sbin/chroot",    
+						    "$main::cwd/$main::chroot_dir",
+						    "dpkg-architecture", "-a".$main::arch, "-i".$_) eq 0) {
+							$use_it = 1
+						}
 						$include = 1;
 					}
 				}
