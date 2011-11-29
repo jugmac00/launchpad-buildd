@@ -1,3 +1,10 @@
+launchpad-buildd (110) UNRELEASED; urgency=low
+
+  * Use the actual target distroseries name in changelog, rather than
+    the same as the last entry. LP: #855479
+
+ -- Jelmer Vernooij <jelmer@ubuntu.com>  Tue, 29 Nov 2011 13:34:21 +0100
+
 launchpad-buildd (109) hardy; urgency=low
 
   * Use sudo when installing qemu into the chroot.

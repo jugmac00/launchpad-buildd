@@ -127,6 +127,7 @@ class RecipeBuilder:
             '-Derror',
             'dailydeb', '--safe', '--no-build', recipe_path,
             self.tree_path, '--manifest', manifest_path,
+            '--distribution', self.distroseries_name,
             '--allow-fallback-to-native', '--append-version',
             '~%s1' % self.distroseries_name], env=env)
         if retcode != 0:
