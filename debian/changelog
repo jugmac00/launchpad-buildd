@@ -1,3 +1,9 @@
+launchpad-buildd (108) hardy; urgency=low
+
+  * Use the chroot's dpkg-architecture instead of the base system.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Mon, 28 Nov 2011 22:59:31 -0700
+
 launchpad-buildd (107) hardy; urgency=low
 
   * Correction to generate-translation-templates for the new file location.
