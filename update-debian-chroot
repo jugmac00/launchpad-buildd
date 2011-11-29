@@ -30,11 +30,26 @@ case $hostarch in
     CHROOT="linux32 $CHROOT"
     ;;
   amd64)
-    if [ "$hostarch" != "$ARCHITECTURETAG" ]; then
-      CHROOT="linux32 $CHROOT"
-    fi
+    case "$ARCHITECTURETAG" in
+      i386|lpia)
+        CHROOT="linux32 $CHROOT"
+        ;;
+    esac
     ;;
 esac
+
+# Anything more fancy than amd64->ia32 is done with qemu+syscall
+# emulation, handled via binfmt.misc hints to the kernel that require
+# the statically-compiled qemu binary to appear in the same place both
+# inside and outside the chroot.
+if [ "$hostarch" != "$ARCHITECTURETAG" ]
+then
+  case "$ARCHITECTURETAG" in
+    arm*)
+      /usr/bin/install /usr/bin/qemu-arm-static $ROOT/usr/bin/
+      ;;
+  esac
+fi
 
 export LANG=C
 export DEBIAN_FRONTEND=noninteractive

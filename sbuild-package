@@ -42,15 +42,17 @@ case $hostarch in
     SBUILD="linux32 $SBUILD"
     WARN="--warnonly"
     ;;
-  i386|lpia|armel)
+  i386|lpia|arm*)
     # SBUILD is already correct
     WARN="--warnonly"
     ;;
   amd64)
-    if [ "$hostarch" != "$ARCHITECTURETAG" ]; then
-      SBUILD="linux32 $SBUILD"
-      WARN="--warnonly"
-    fi
+    case "$ARCHITECTURETAG" in
+      i386|lpia)
+        SBUILD="linux32 $SBUILD"
+      ;;
+    esac
+    WARN="--warnonly"
     ;;
   ia64)
     ;;

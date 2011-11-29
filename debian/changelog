@@ -1,8 +1,15 @@
 launchpad-buildd (108) hardy; urgency=low
 
+  [ Adam Conrad ]
   * Use the chroot's dpkg-architecture instead of the base system.
 
- -- Adam Conrad <adconrad@ubuntu.com>  Mon, 28 Nov 2011 22:59:31 -0700
+  [ Nick Moffitt ]
+  * Fixed up sbuild-package and update-debian-chroot to support
+    syscall-emulated ARM builds on non-ARM hardware.
+  * Added Recommends for qemu-user-static to launchpad-buildd, as the
+    package only exists in Universe in natty and later.
+
+ -- William Grant <wgrant@ubuntu.com>  Tue, 29 Nov 2011 19:52:43 +1100
 
 launchpad-buildd (107) hardy; urgency=low
 
