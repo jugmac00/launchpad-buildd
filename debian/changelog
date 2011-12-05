@@ -15,7 +15,10 @@ launchpad-buildd (110) UNRELEASED; urgency=low
   * While doing the above, s/Synching/Syncing/ 'cause it drives me nuts
   * Make slave-prep output versions of bzr, bzr-builder, python-lpbuildd
 
- -- Adam Conrad <adconrad@ubuntu.com>  Sun, 04 Dec 2011 19:29:48 -0700
+  [ William Grant ]
+  * Log `uname -a` as well.
+
+ -- William Grant <wgrant@ubuntu.com>  Mon, 05 Dec 2011 15:01:43 +1100
 
 launchpad-buildd (109) hardy; urgency=low
 
