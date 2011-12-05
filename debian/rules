@@ -13,7 +13,6 @@ export DH_OPTIONS
 # this directory, so that the source package is valid.
 # after that, build the source package found in the parent directory.
 
-source_version = $(shell dpkg-parsechangelog | grep ^Version: | awk '{print $$2}')
 target = debian/launchpad-buildd
 topdir = .
 
@@ -64,7 +63,6 @@ binary: binary-indep
 
 clean:
 	dh_clean
-	rm -f slave-prep
 
 prepare:
 
@@ -73,8 +71,6 @@ package: prepare
 
 build:
 	@echo Mmm builders
-	sed -e 's/@@VERSION@@/$(source_version)/' slave-prep.in > slave-prep
-	chmod 755 slave-prep
 
 build-arch: build
 build-indep: build

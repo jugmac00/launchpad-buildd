@@ -13,6 +13,7 @@ launchpad-buildd (110) UNRELEASED; urgency=low
     - Add preppath to the default config, and add a version 110 upgrade
       stanza to our config file upgrading script to fix upgrades
   * While doing the above, s/Synching/Syncing/ 'cause it drives me nuts
+  * Make slave-prep output versions of bzr, bzr-builder, python-lpbuildd
 
  -- Adam Conrad <adconrad@ubuntu.com>  Sun, 04 Dec 2011 19:29:48 -0700
 
