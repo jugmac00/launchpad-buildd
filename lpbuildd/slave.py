@@ -99,6 +99,7 @@ class BuildManager(object):
         object.__init__(self)
         self._buildid = buildid
         self._slave = slave
+        self._preppath = slave._config.get("allmanagers", "preppath")
         self._unpackpath = slave._config.get("allmanagers", "unpackpath")
         self._cleanpath = slave._config.get("allmanagers", "cleanpath")
         self._mountpath = slave._config.get("allmanagers", "mountpath")
@@ -161,8 +162,7 @@ class BuildManager(object):
         if extra_args.get('archive_private'):
             self.is_archive_private = True
 
-        self.runSubProcess(
-            "/bin/echo", ["echo", "Forking build subprocess..."])
+        self.runSubProcess(self._preppath, ["slave-prep"])
 
     def iterate(self, success):
         """Perform an iteration of the slave.

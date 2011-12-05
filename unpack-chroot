@@ -15,7 +15,6 @@
 
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:${PATH}
 
-NTPDATE=ntpdate
 TAR=tar
 SUDO=sudo
 BUNZIP2=bunzip2
@@ -35,14 +34,6 @@ if [ x"$MIMETYPE" = "xapplication/x-bzip2" ]; then
   $BUNZIP2 -c < "$TARBALL" > "$TARBALL".tmp
   mv "$TARBALL".tmp "$TARBALL"
   exec $0 "$@"
-fi
-
-if [ -f /etc/launchpad-buildd/default ]; then
-  eval `grep ntphost /etc/launchpad-buildd/default | sed 's/ //g'`
-fi
-if [ -n "$ntphost" ]; then
-  echo "Synching the system clock with the buildd NTP service..."
-  $SUDO $NTPDATE -u $ntphost
 fi
 
 cd $HOME

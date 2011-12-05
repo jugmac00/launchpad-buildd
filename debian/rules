@@ -18,7 +18,7 @@ topdir = .
 
 slavebins = unpack-chroot mount-chroot update-debian-chroot sbuild-package \
     scan-for-processes umount-chroot remove-build override-sources-list \
-    buildrecipe generate-translation-templates
+    buildrecipe generate-translation-templates slave-prep
 
 BUILDDUID=65500
 BUILDDGID=65500
