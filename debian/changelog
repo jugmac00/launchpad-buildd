@@ -1,11 +1,20 @@
 launchpad-buildd (110) UNRELEASED; urgency=low
 
+  [ Jelmer Vernooij ]
   * Use the actual target distroseries name in changelog, rather than
     the same as the last entry. LP: #855479
   * Use os.SEEK_END constant now that all build slaves run at least
     hardy. LP: #239213
 
- -- Jelmer Vernooij <jelmer@debian.org>  Tue, 29 Nov 2011 13:38:07 +0100
+  [ Adam Conrad ]
+  * Create a new slavebin script called 'slave-prep' to kick off builds:
+    - Move useless "echo" fork to slave-prep, and include our version
+    - Move ntpdate call from unpack-chroot to slave-prep
+    - Add preppath to the default config, and add a version 110 upgrade
+      stanza to our config file upgrading script to fix upgrades
+  * While doing the above, s/Synching/Syncing/ 'cause it drives me nuts
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Sun, 04 Dec 2011 19:29:48 -0700
 
 launchpad-buildd (109) hardy; urgency=low
 

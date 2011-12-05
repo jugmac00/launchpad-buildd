@@ -102,6 +102,17 @@ def upgrade_to_63():
         if not line.startswith('ogrepath'):
             out_file.write(line)
 
+def upgrade_to_110():
+    print "Upgrading %s to version 110" % conf_file
+    subprocess.call(["mv", conf_file, conf_file+"-prev110~"])
+    in_file = open(conf_file+"-prev110~", "r")
+    out_file = open(conf_file, "w")
+    for line in in_file:
+        if line.startswith("[allmanagers]"):
+            line += "preppath = /usr/share/launchpad-buildd/slavebin/slave-prep\n"
+        out_file.write(line)
+    in_file.close()
+    out_file.close()
 
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
@@ -119,4 +130,6 @@ if __name__ == "__main__":
         upgrade_to_59()
     if int(old_version) < 63:
         upgrade_to_63()
+    if int(old_version) < 110:
+        upgrade_to_110()
 
