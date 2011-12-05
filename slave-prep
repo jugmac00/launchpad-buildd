@@ -9,19 +9,16 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin:${PATH}
 
 NTPDATE=ntpdate
 SUDO=sudo
-KERNEL=$(uname -a)
-LPBUILDD=$(dpkg-query -W launchpad-buildd 2>/dev/null | awk '{print $2}')
-PYBUILDD=$(dpkg-query -W python-lpbuildd 2>/dev/null | awk '{print $2}')
-BZRBUILDD=$(dpkg-query -W bzr-builder 2>/dev/null | awk '{print $2}')
-BZR=$(dpkg-query -W bzr 2>/dev/null | awk '{print $2}')
+PACKAGES="launchpad-buildd python-lpbuildd bzr-builder bzr"
+KERNEL=$(uname -rvm)
 
 echo "Forking launchpad-buildd slave process..."
 echo "Kernel version: $KERNEL"
 echo -n "Buildd toolchain package versions:"
-[ -z "$LPBUILDD" ] || echo -n " launchpad-buildd_$LPBUILDD"
-[ -z "$PYBUILDD" ] || echo -n " python-lpbuildd_$PYBUILDD"
-[ -z "$BZRBUILDD" ] || echo -n " bzr-builder_$BZRBUILDD"
-[ -z "$BZR" ] || echo -n " bzr_$BZR"
+for package in $PACKAGES; do
+  version=$(dpkg-query -W $package 2>/dev/null | awk '{print $2}')
+  [ -z "$version" ] || echo -n " ${package}_${version}"
+done
 echo "."
 
 if [ -f /etc/launchpad-buildd/default ]; then
