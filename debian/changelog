@@ -1,4 +1,10 @@
-launchpad-buildd (110) UNRELEASED; urgency=low
+launchpad-buildd (111) hardy; urgency=low
+
+  * Add preppath to buildd-slave-test.conf, to unbreak the LP test suite.
+
+ -- William Grant <wgrant@ubuntu.com>  Fri, 09 Dec 2011 08:58:17 +1100
+
+launchpad-buildd (110) hardy; urgency=low
 
   [ Jelmer Vernooij ]
   * Use the actual target distroseries name in changelog, rather than
