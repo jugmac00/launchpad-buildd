@@ -1,3 +1,10 @@
+launchpad-buildd (112) UNRELEASED; urgency=low
+
+  * Prevent slave from blowing up when it is aborted before a job has
+    started. LP: #497772
+
+ -- Jelmer Vernooij <jelmer@debian.org>  Thu, 22 Dec 2011 15:34:33 +0100
+
 launchpad-buildd (111) hardy; urgency=low
 
   * Add preppath to buildd-slave-test.conf, to unbreak the LP test suite.
