@@ -9,6 +9,8 @@ launchpad-buildd (112) hardy; urgency=low
     universally, and to pass --uname-2.6 when available, so we can
     use 3.x.x kernels to build older releases on the buildds.
   * Fix sbuild-package to report the correct number of cores/jobs.
+  * Make sure /usr/bin/check-implicit-pointer-functions is called for
+    all 64-bit builds on lucid and above, this logic got broken.
 
  -- Adam Conrad <adconrad@ubuntu.com>  Wed, 25 Jan 2012 11:27:55 -0700
 

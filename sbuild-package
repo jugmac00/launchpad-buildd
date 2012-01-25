@@ -24,7 +24,7 @@ SUITE=$3
 
 shift 3
 
-ACTUAL_NR_PROCESSORS=$(grep ^processor /proc/cpuinfo | wc -l | sed 's/^0$/1/')
+ACTUAL_NR_PROCESSORS=$(grep -c ^processor /proc/cpuinfo | sed 's/^0$/1/')
 export NR_PROCESSORS=$ACTUAL_NR_PROCESSORS
 
 echo "Initiating build $BUILDID with $NR_PROCESSORS jobs across $ACTUAL_NR_PROCESSORS processor cores."
