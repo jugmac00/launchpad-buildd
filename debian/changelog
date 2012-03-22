@@ -1,3 +1,9 @@
+launchpad-buildd (113) UNRELEASED; urgency=low
+
+  * Shut up umount-chroot's verbose output, it served its purpose.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Thu, 22 Mar 2012 04:01:48 -0600
+
 launchpad-buildd (112) hardy; urgency=low
 
   [ Jelmer Vernooij ]
