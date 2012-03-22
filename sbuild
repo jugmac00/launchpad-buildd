@@ -750,7 +750,7 @@ foreach $pkgv (@ARGV) {
 
   cleanup_packages:
 	undo_specials();
-	uninstall_deps();
+	#uninstall_deps();
 	remove_srcdep_lock_file();
   cleanup_symlinks:
 	remove_files( @files_to_rm );
@@ -1446,13 +1446,13 @@ EOF
 	check_watches();
 	check_space( @space_files );
 
-	if ($conf::purge_build_directory eq "always" ||
-		($conf::purge_build_directory eq "successful" && $rv == 0)) {
-		print PLOG "Purging $dir\n";
-		system "$conf::sudo rm -rf $dir";
-	}
-	
-	print PLOG "-"x78, "\n";
+	#if ($conf::purge_build_directory eq "always" ||
+	#	($conf::purge_build_directory eq "successful" && $rv == 0)) {
+	#	print PLOG "Purging $dir\n";
+	#	system "$conf::sudo rm -rf $dir";
+	#}
+	#
+	#print PLOG "-"x78, "\n";
 	return $rv == 0 ? 1 : 0;
 }
 
@@ -3031,10 +3031,10 @@ sub close_pkg_log {
 	
 	$pkg = basename( $pkg );
 	$t = 0 if $t < 0;
-	if ($main::pkg_status eq "successful") {
-		add_time_entry( $pkg, $t );
-		add_space_entry( $pkg, $main::this_space );
-	}
+	#if ($main::pkg_status eq "successful") {
+	#	add_time_entry( $pkg, $t );
+	#	add_space_entry( $pkg, $main::this_space );
+	#}
 	print PLOG "*"x78, "\n";
 	printf PLOG "Finished at ${date}Build needed %02d:%02d:%02d, %dk disk space\n",
 		   int($t/3600), int(($t%3600)/60), int($t%60), $main::this_space;
