@@ -1,3 +1,10 @@
+launchpad-buildd (114) hardy; urgency=low
+
+  * Don't use the uname-2.6 hack when building on quantal and newer.
+  * Display the linux32-faked kernel version before calling sbuild.
+
+ -- Adam Conrad <adconrad@ubuntu.com>  Tue, 24 Apr 2012 07:44:18 -0600
+
 launchpad-buildd (113) hardy; urgency=low
 
   * Shut up umount-chroot's verbose output, it served its purpose.

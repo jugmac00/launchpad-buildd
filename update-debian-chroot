@@ -25,11 +25,14 @@ echo "Updating debian chroot for build $BUILDID"
 
 hostarch=$(dpkg --print-architecture)
 
-if setarch --help | grep -q uname-2.6; then
-  UNAME26="--uname-2.6"
-else
-  UNAME26=""
-fi
+UNAME26=""
+case $SUITE in
+  hardy*|lucid*|maverick*|natty*|oneiric*|precise*)
+    if setarch --help | grep -q uname-2.6; then
+      UNAME26="--uname-2.6"
+    fi
+    ;;
+esac
 
 case $ARCHITECTURETAG in
   armel|armhf|hppa|i386|lpia|mips|mipsel|powerpc|s390|sparc)

@@ -37,22 +37,28 @@ cd "$HOME/build-$BUILDID"
 
 hostarch=$(dpkg --print-architecture)
 
-if setarch --help | grep -q uname-2.6; then
-  UNAME26="--uname-2.6"
-else
-  UNAME26=""
-fi
+UNAME26=""
+case $SUITE in
+  hardy*|lucid*|maverick*|natty*|oneiric*|precise*)
+    if setarch --help | grep -q uname-2.6; then
+      UNAME26="--uname-2.6"
+    fi
+    ;;
+esac
 
 WARN=""
 case $ARCHITECTURETAG in
   armel|armhf|hppa|i386|lpia|mips|mipsel|powerpc|s390|sparc)
-    SBUILD="linux32 $UNAME26 $SBUILD"
+    LINUX32="linux32"
     WARN="--warnonly"
     ;;
   alpha|amd64|arm64|hppa64|ia64|ppc64|s390x|sparc64)
-    SBUILD="linux64 $UNAME26 $SBUILD"
+    LINUX32="linux64"
     ;;
 esac
+
+echo "Kernel reported to sbuild: $($LINUX32 $UNAME26 uname -rvm)"
+SBUILD="$LINUX32 $UNAME26 $SBUILD"
 
 case $SUITE in
     warty*|hoary*|breezy*|dapper*|edgy*|feisty*|gutsy*|hardy*|karmic*)
