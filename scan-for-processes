@@ -27,7 +27,7 @@ PREFIX="$BUILDID"
 FOUND=0
 
 for ROOT in /proc/*/root; do
-    LINK=$(readlink $ROOT)
+    LINK=$(readlink $ROOT || true)
     if [ "x$LINK" != "x" ]; then
 	if [ "x${LINK:0:${#PREFIX}}" = "x$PREFIX" ]; then
 	    # this process is in the chroot...
