@@ -16,7 +16,6 @@ import xmlrpclib
 
 from twisted.internet import protocol
 from twisted.internet import reactor
-from twisted.internet import process
 from twisted.web import xmlrpc
 
 devnull = open("/dev/null", "r")
@@ -52,7 +51,7 @@ class RunCapture(protocol.ProcessProtocol):
     def __init__(self, slave, callback):
         self.slave = slave
         self.notify = callback
-        self.killCall = None
+        self.builderFailCall = None
 
     def outReceived(self, data):
         """Pass on stdout data to the log."""
@@ -67,21 +66,19 @@ class RunCapture(protocol.ProcessProtocol):
     def processEnded(self, statusobject):
         """This method is called when a child process got terminated.
 
-        Three actions are required at this point: identify if we are within an
-        "aborting" process, eliminate pending calls to "kill" and invoke the
-        programmed notification callback. We only really care about invoking
-        the notification callback last thing in this method. The order
-        of the rest of the method is not critical.
+        Three actions are required at this point: identify if we are within
+        an "aborting" process, eliminate pending calls to "builderFail", and
+        invoke the programmed notification callback.  We only really care
+        about invoking the notification callback last thing in this method.
+        The order of the rest of the method is not critical.
         """
         # finishing the ABORTING workflow
         if self.slave.builderstatus == BuilderStatus.ABORTING:
             self.slave.builderstatus = BuilderStatus.ABORTED
 
-        # check if there is a pending request for kill the process,
-        # in afirmative case simply cancel this request since it
-        # already died.
-        if self.killCall and self.killCall.active():
-            self.killCall.cancel()
+        # Since the process terminated, we don't need to fail the builder.
+        if self.builderFailCall and self.builderFailCall.active():
+            self.builderFailCall.cancel()
 
         # notify the slave, it'll perform the required actions
         self.notify(statusobject.value.exitCode)
@@ -186,31 +183,22 @@ class BuildManager(object):
             return
         else:
             self.alreadyfailed = True
-        # Either SIGKILL and SIGTERM presents the same behavior, the
-        # process is just killed some time after the signal was sent 
-        # 10 s ~ 40 s, and returns None as exit_code, instead of the normal
-        # integer. See further info on DebianBuildermanager.iterate in
-        # debian.py
-        # XXX cprov 2005-09-02:
-        # we may want to follow the canonical.tachandler kill process
-        # style, which sends SIGTERM to the process wait a given timeout
-        # and if was not killed sends a SIGKILL. IMO it only would be worth
-        # if we found different behaviour than the previous described.
-        self._subprocess.transport.signalProcess('TERM')
-        # alternatively to simply send SIGTERM, we can pend a request to
-        # send SIGKILL to the process if nothing happened in 10 seconds
-        # see base class process
-        self._subprocess.killCall = reactor.callLater(10, self.kill)
+        # Kill all processes in the chroot, as hard as we can.  We expect
+        # this to result in the main build process exiting non-zero and
+        # giving us some useful logs.
+        self.doReapProcesses()
+        # In extreme cases the build may be hung too badly for
+        # scan-for-processes to manage to kill it (blocked on I/O,
+        # forkbombing test suite, etc.).  In this case, fail the builder and
+        # let an admin sort it out.
+        self._subprocess.builderFailCall = reactor.callLater(
+            120, self.builderFail, "Failed to kill all processes.")
 
-    def kill(self):
-        """Send SIGKILL to child process
+    def builderFail(self, reason):
+        """Mark the builder as failed."""
+        self._slave.log("ABORTING: %s\n" % reason)
+        self._slave.builderFail()
 
-        Mask exception generated when the child process has already exited.
-        """
-        try:
-            self._subprocess.transport.signalProcess('KILL')
-        except process.ProcessExitedAlready:
-            self._slave.log("ABORTING: Process Exited Already\n")
 
 class BuilderStatus:
     """Status values for the builder."""
