@@ -33,7 +33,6 @@ class DebianBuildManager(BuildManager):
     def __init__(self, slave, buildid):
         BuildManager.__init__(self, slave, buildid)
         self._updatepath = slave._config.get("debianmanager", "updatepath")
-        self._scanpath = slave._config.get("debianmanager", "processscanpath")
         self._sourcespath = slave._config.get("debianmanager", "sourcespath")
         self._cachepath = slave._config.get("slave","filecache")
         self._state = DebianBuildState.INIT
@@ -73,10 +72,6 @@ class DebianBuildManager(BuildManager):
         Subclasses must override this.
         """
         raise NotImplementedError()
-
-    def doReapProcesses(self):
-        """Reap any processes left lying around in the chroot."""
-        self.runSubProcess( self._scanpath, [self._scanpath, self._buildid] )
 
     @staticmethod
     def _parseChangesFile(linesIter):

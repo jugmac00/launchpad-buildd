@@ -104,6 +104,7 @@ class BuildManager(object):
         self._cleanpath = slave._config.get("allmanagers", "cleanpath")
         self._mountpath = slave._config.get("allmanagers", "mountpath")
         self._umountpath = slave._config.get("allmanagers", "umountpath")
+        self._scanpath = slave._config.get("allmanagers", "processscanpath")
         self.is_archive_private = False
         self.home = os.environ['HOME']
 
@@ -121,6 +122,10 @@ class BuildManager(object):
         self.runSubProcess(
             self._unpackpath,
             ["unpack-chroot", self._buildid, self._chroottarfile])
+
+    def doReapProcesses(self):
+        """Reap any processes left lying around in the chroot."""
+        self.runSubProcess(self._scanpath, [self._scanpath, self._buildid])
 
     def doCleanup(self):
         """Remove the build tree etc."""
