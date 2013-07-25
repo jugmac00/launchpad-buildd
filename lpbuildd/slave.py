@@ -284,8 +284,9 @@ class BuildDSlave(object):
         """
         extra_info = 'No URL'
         if url is not None:
+            cachefile = self.cachePath(sha1sum)
             extra_info = 'Cache'
-            if not os.path.exists(self.cachePath(sha1sum)):
+            if not os.path.exists(cachefile):
                 self.log('Fetching %s by url %s' % (sha1sum, url))
                 if username:
                     opener = self.setupAuthHandler(
@@ -302,7 +303,7 @@ class BuildDSlave(object):
                     extra_info = 'Error accessing Librarian: %s' % info
                     self.log(extra_info)
                 else:
-                    of = open(self.cachePath(sha1sum), "w")
+                    of = open(cachefile + '.tmp', "w")
                     # Upped for great justice to 256k
                     check_sum = hashlib.sha1()
                     for chunk in iter(lambda: f.read(256*1024), ''):
@@ -312,10 +313,12 @@ class BuildDSlave(object):
                     f.close()
                     extra_info = 'Download'
                     if check_sum.hexdigest() != sha1sum:
-                        os.remove(self.cachePath(sha1sum))
+                        os.remove(cachefile + '.tmp')
                         extra_info = "Digests did not match, removing again!"
+                    else
+                        os.rename(cachefile + '.tmp', cachefile)
                     self.log(extra_info)
-        return (os.path.exists(self.cachePath(sha1sum)), extra_info)
+        return (os.path.exists(cachefile), extra_info)
 
     def storeFile(self, content):
         """Take the provided content and store it in the file cache."""
