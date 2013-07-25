@@ -8,6 +8,7 @@
 
 __metaclass__ = type
 
+from functools import partial
 import hashlib
 import os
 import re
@@ -15,7 +16,8 @@ import urllib2
 import xmlrpclib
 
 from twisted.internet import protocol
-from twisted.internet import reactor
+from twisted.internet import reactor as default_reactor
+from twisted.internet import process
 from twisted.web import xmlrpc
 
 devnull = open("/dev/null", "r")
@@ -52,6 +54,7 @@ class RunCapture(protocol.ProcessProtocol):
         self.slave = slave
         self.notify = callback
         self.builderFailCall = None
+        self.ignore = False
 
     def outReceived(self, data):
         """Pass on stdout data to the log."""
@@ -66,28 +69,27 @@ class RunCapture(protocol.ProcessProtocol):
     def processEnded(self, statusobject):
         """This method is called when a child process got terminated.
 
-        Three actions are required at this point: identify if we are within
-        an "aborting" process, eliminate pending calls to "builderFail", and
-        invoke the programmed notification callback.  We only really care
-        about invoking the notification callback last thing in this method.
-        The order of the rest of the method is not critical.
+        Two actions are required at this point: eliminate pending calls to
+        "builderFail", and invoke the programmed notification callback.  The
+        notification callback must be invoked last.
         """
-        # finishing the ABORTING workflow
-        if self.slave.builderstatus == BuilderStatus.ABORTING:
-            self.slave.builderstatus = BuilderStatus.ABORTED
+        if self.ignore:
+            # The build manager no longer cares about this process.
+            return
 
         # Since the process terminated, we don't need to fail the builder.
         if self.builderFailCall and self.builderFailCall.active():
             self.builderFailCall.cancel()
 
         # notify the slave, it'll perform the required actions
-        self.notify(statusobject.value.exitCode)
+        if self.notify is not None:
+            self.notify(statusobject.value.exitCode)
 
 
 class BuildManager(object):
     """Build Daemon slave build manager abstract parent"""
 
-    def __init__(self, slave, buildid):
+    def __init__(self, slave, buildid, reactor=None):
         """Create a BuildManager.
 
         :param slave: A `BuildDSlave`.
@@ -96,21 +98,27 @@ class BuildManager(object):
         object.__init__(self)
         self._buildid = buildid
         self._slave = slave
+        self._reactor = default_reactor if reactor is None else reactor
         self._preppath = slave._config.get("allmanagers", "preppath")
         self._unpackpath = slave._config.get("allmanagers", "unpackpath")
         self._cleanpath = slave._config.get("allmanagers", "cleanpath")
         self._mountpath = slave._config.get("allmanagers", "mountpath")
         self._umountpath = slave._config.get("allmanagers", "umountpath")
         self._scanpath = slave._config.get("allmanagers", "processscanpath")
+        self._subprocess = None
+        self._reaped_states = set()
         self.is_archive_private = False
         self.home = os.environ['HOME']
+        self.abort_timeout = 120
 
-    def runSubProcess(self, command, args):
+    def runSubProcess(self, command, args, iterate=None):
         """Run a sub process capturing the results in the log."""
-        self._subprocess = RunCapture(self._slave, self.iterate)
+        if iterate is None:
+            iterate = self.iterate
+        self._subprocess = RunCapture(self._slave, iterate)
         self._slave.log("RUN: %s %r\n" % (command, args))
         childfds = {0: devnull.fileno(), 1: "r", 2: "r"}
-        reactor.spawnProcess(
+        self._reactor.spawnProcess(
             self._subprocess, command, args, env=os.environ,
             path=self.home, childFDs=childfds)
 
@@ -120,9 +128,24 @@ class BuildManager(object):
             self._unpackpath,
             ["unpack-chroot", self._buildid, self._chroottarfile])
 
-    def doReapProcesses(self):
+    def doReapProcesses(self, state, notify=True):
         """Reap any processes left lying around in the chroot."""
-        self.runSubProcess(self._scanpath, [self._scanpath, self._buildid])
+        if state is not None and state in self._reaped_states:
+            # We've already reaped this state.  To avoid a loop, proceed
+            # immediately to the next iterator.
+            self._slave.log("Already reaped from state %s" % state)
+            if notify:
+                self.iterateReap(state, 0)
+        else:
+            if state is not None:
+                self._reaped_states.add(state)
+            if notify:
+                iterate = partial(self.iterateReap, state)
+            else:
+                iterate = lambda success: None
+            self.runSubProcess(
+                self._scanpath, [self._scanpath, self._buildid],
+                iterate=iterate)
 
     def doCleanup(self):
         """Remove the build tree etc."""
@@ -177,27 +200,65 @@ class BuildManager(object):
         raise NotImplementedError("BuildManager should be subclassed to be "
                                   "used")
 
+    def iterateReap(self, state, success):
+        """Perform an iteration of the slave following subprocess reaping.
+
+        Subprocess reaping is special, typically occurring at several
+        positions in a build manager's state machine.  We therefore keep
+        track of the state being reaped so that we can select the
+        appropriate next state.
+        """
+        raise NotImplementedError("BuildManager should be subclassed to be "
+                                  "used")
+
+    def abortReap(self):
+        """Abort by killing all processes in the chroot, as hard as we can.
+
+        We expect this to result in the main build process exiting non-zero
+        and giving us some useful logs.
+
+        This may be overridden in subclasses so that they can perform their
+        own state machine management.
+        """
+        self.doReapProcesses(None, notify=False)
+
     def abort(self):
         """Abort the build by killing the subprocess."""
         if self.alreadyfailed or self._subprocess is None:
             return
         else:
             self.alreadyfailed = True
-        # Kill all processes in the chroot, as hard as we can.  We expect
-        # this to result in the main build process exiting non-zero and
-        # giving us some useful logs.
-        self.doReapProcesses()
+        primary_subprocess = self._subprocess
+        self.abortReap()
         # In extreme cases the build may be hung too badly for
         # scan-for-processes to manage to kill it (blocked on I/O,
         # forkbombing test suite, etc.).  In this case, fail the builder and
         # let an admin sort it out.
-        self._subprocess.builderFailCall = reactor.callLater(
-            120, self.builderFail, "Failed to kill all processes.")
+        self._subprocess.builderFailCall = self._reactor.callLater(
+            self.abort_timeout, self.builderFail,
+            "Failed to kill all processes.", primary_subprocess)
 
-    def builderFail(self, reason):
+    def builderFail(self, reason, primary_subprocess):
         """Mark the builder as failed."""
         self._slave.log("ABORTING: %s\n" % reason)
+        self._subprocess.builderFailCall = None
         self._slave.builderFail()
+        self.alreadyfailed = True
+        # If we failed to kill all processes in the chroot, then the primary
+        # subprocess (i.e. the one running immediately before
+        # doReapProcesses was called) may not have exited.  Kill it so that
+        # we can proceed.
+        try:
+            primary_subprocess.transport.signalProcess('KILL')
+        except process.ProcessExitedAlready:
+            self._slave.log("ABORTING: Process Exited Already\n")
+        primary_subprocess.transport.loseConnection()
+        # Leave the reaper running, but disconnect it from our state
+        # machine.  Perhaps an admin can make something of it, and in any
+        # case scan-for-processes elevates itself to root so it's awkward to
+        # kill it.
+        self._subprocess.ignore = True
+        self._subprocess.transport.loseConnection()
 
 
 class BuilderStatus:
@@ -222,6 +283,7 @@ class BuildStatus:
     PACKAGEFAIL = "BuildStatus.PACKAGEFAIL"
     CHROOTFAIL = "BuildStatus.CHROOTFAIL"
     BUILDERFAIL = "BuildStatus.BUILDERFAIL"
+    ABORTED = "BuildStatus.ABORTED"
 
 
 class BuildDSlave(object):
@@ -448,8 +510,10 @@ class BuildDSlave(object):
 
     def builderFail(self):
         """Cease building because the builder has a problem."""
-        if self.builderstatus != BuilderStatus.BUILDING:
-            raise ValueError("Slave is not BUILDING when set to BUILDERFAIL")
+        if self.builderstatus not in (BuilderStatus.BUILDING,
+                                      BuilderStatus.ABORTING):
+            raise ValueError("Slave is not BUILDING|ABORTING when set to "
+                             "BUILDERFAIL")
         self.buildstatus = BuildStatus.BUILDERFAIL
 
     def chrootFail(self):
@@ -487,14 +551,25 @@ class BuildDSlave(object):
             raise ValueError("Slave is not BUILDING when set to GIVENBACK")
         self.buildstatus = BuildStatus.GIVENBACK
 
+    def buildAborted(self):
+        """Mark a build as aborted."""
+        if self.builderstatus != BuilderStatus.ABORTING:
+            raise ValueError("Slave is not ABORTING when set to ABORTED")
+        if self.buildstatus != BuildStatus.BUILDERFAIL:
+            self.buildstatus = BuildStatus.ABORTED
+
     def buildComplete(self):
         """Mark the build as complete and waiting interaction from the build
         daemon master.
         """
-        if self.builderstatus != BuilderStatus.BUILDING:
-            raise ValueError("Slave is not BUILDING when told build is "
-                             "complete")
-        self.builderstatus = BuilderStatus.WAITING
+        if self.builderstatus == BuilderStatus.BUILDING:
+            self.builderstatus = BuilderStatus.WAITING
+        elif self.builderstatus == BuilderStatus.ABORTING:
+            self.buildAborted()
+            self.builderstatus = BuilderStatus.WAITING
+        else:
+            raise ValueError("Slave is not BUILDING|ABORTING when told build "
+                             "is complete")
 
     def sanitizeBuildlog(self, log_path):
         """Removes passwords from buildlog URLs.

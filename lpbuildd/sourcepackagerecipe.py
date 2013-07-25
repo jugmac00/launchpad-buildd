@@ -124,8 +124,12 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
                 self._slave.builderFail()
                 print("Returning build status: Builder failed.")
             self.alreadyfailed = True
-        self._state = DebianBuildState.REAP
-        self.doReapProcesses()
+        self.doReapProcesses(self._state)
+
+    def iterateReap_BUILD_RECIPE(self, retcode):
+        """Finished reaping after recipe building."""
+        self._state = DebianBuildState.UMOUNT
+        self.doUnmounting()
 
     def getChangesFilename(self):
         """Return the path to the changes file."""

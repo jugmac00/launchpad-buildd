@@ -39,8 +39,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     initial_build_state = BinaryPackageBuildState.SBUILD
 
-    def __init__(self, slave, buildid):
-        DebianBuildManager.__init__(self, slave, buildid)
+    def __init__(self, slave, buildid, **kwargs):
+        DebianBuildManager.__init__(self, slave, buildid, **kwargs)
         self._sbuildpath = slave._config.get("binarypackagemanager", "sbuildpath")
         self._sbuildargs = slave._config.get("binarypackagemanager",
                                              "sbuildargs").split(" ")
@@ -124,10 +124,13 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     print("Returning build status: BUILDERFAIL")
                     self._slave.builderFail()
             self.alreadyfailed = True
-            self._state = DebianBuildState.REAP
-            self.doReapProcesses()
+            self.doReapProcesses(self._state)
         else:
             print("Returning build status: OK")
             self.gatherResults()
-            self._state = DebianBuildState.REAP
-            self.doReapProcesses()
+            self.doReapProcesses(self._state)
+
+    def iterateReap_SBUILD(self, success):
+        """Finished reaping after sbuild run."""
+        self._state = DebianBuildState.UMOUNT
+        self.doUnmounting()

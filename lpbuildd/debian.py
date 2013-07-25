@@ -22,7 +22,6 @@ class DebianBuildState:
     MOUNT = "MOUNT"
     SOURCES = "SOURCES"
     UPDATE = "UPDATE"
-    REAP = "REAP"
     UMOUNT = "UMOUNT"
     CLEANUP = "CLEANUP"
 
@@ -30,8 +29,8 @@ class DebianBuildState:
 class DebianBuildManager(BuildManager):
     """Base behaviour for Debian chrooted builds."""
 
-    def __init__(self, slave, buildid):
-        BuildManager.__init__(self, slave, buildid)
+    def __init__(self, slave, buildid, **kwargs):
+        BuildManager.__init__(self, slave, buildid, **kwargs)
         self._updatepath = slave._config.get("debianmanager", "updatepath")
         self._sourcespath = slave._config.get("debianmanager", "sourcespath")
         self._cachepath = slave._config.get("slave","filecache")
@@ -93,7 +92,7 @@ class DebianBuildManager(BuildManager):
 
     def getChangesFilename(self):
         changes = self._dscfile[:-4] + "_" + self.arch_tag + ".changes"
-        return get_build_path(self._buildid, changes)
+        return get_build_path(self.home, self._buildid, changes)
 
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache.
@@ -108,7 +107,8 @@ class DebianBuildManager(BuildManager):
         seenfiles = False
 
         for fn in self._parseChangesFile(chfile):
-            self._slave.addWaitingFile(get_build_path(self._buildid, fn))
+            self._slave.addWaitingFile(
+                get_build_path(self.home, self._buildid, fn))
 
         chfile.close()
 
@@ -121,6 +121,15 @@ class DebianBuildManager(BuildManager):
         func = getattr(self, "iterate_" + self._state, None)
         if func is None:
             raise ValueError, "Unknown internal state " + self._state
+        func(success)
+
+    def iterateReap(self, state, success):
+        print ("Iterating with success flag %s against stage %s after reaping "
+               "processes"
+               % (success, state))
+        func = getattr(self, "iterateReap_" + state, None)
+        if func is None:
+            raise ValueError, "Unknown internal post-reap state " + state
         func(success)
 
     def iterate_INIT(self, success):
@@ -178,11 +187,15 @@ class DebianBuildManager(BuildManager):
             if not self.alreadyfailed:
                 self._slave.chrootFail()
                 self.alreadyfailed = True
-            self._state = DebianBuildState.REAP
-            self.doReapProcesses()
+            self.doReapProcesses(self._state)
         else:
             self._state = DebianBuildState.UPDATE
             self.doUpdateChroot()
+
+    def iterateReap_SOURCES(self, success):
+        """Just finished reaping after failure to overwrite sources.list."""
+        self._state = DebianBuildState.UMOUNT
+        self.doUnmounting()
 
     def iterate_UPDATE(self, success):
         """Just finished updating the chroot."""
@@ -190,14 +203,13 @@ class DebianBuildManager(BuildManager):
             if not self.alreadyfailed:
                 self._slave.chrootFail()
                 self.alreadyfailed = True
-            self._state = DebianBuildState.REAP
-            self.doReapProcesses()
+            self.doReapProcesses(self._state)
         else:
             self._state = self.initial_build_state
             self.doRunBuild()
 
-    def iterate_REAP(self, success):
-        """Finished reaping processes; ignore error returns."""
+    def iterateReap_UPDATE(self, success):
+        """Just finished reaping after failure to update the chroot."""
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()
 
@@ -222,13 +234,20 @@ class DebianBuildManager(BuildManager):
                 self._slave.buildOK()
         self._slave.buildComplete()
 
+    def abortReap(self):
+        """Abort by killing all processes in the chroot, as hard as we can.
 
-def get_build_path(build_id, *extra):
+        Overridden here to handle state management.
+        """
+        self.doReapProcesses(self._state, notify=False)
+
+
+def get_build_path(home, build_id, *extra):
     """Generate a path within the build directory.
 
+    :param home: the user's home directory.
     :param build_id: the build id to use.
     :param extra: the extra path segments within the build directory.
     :return: the generated path.
     """
-    return os.path.join(
-        os.environ["HOME"], "build-" + build_id, *extra)
+    return os.path.join(home, "build-" + build_id, *extra)
