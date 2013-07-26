@@ -24,7 +24,9 @@ class MockBuildManager(TranslationTemplatesBuildManager):
 
     def runSubProcess(self, path, command, iterate=None):
         self.commands.append([path]+command)
-        self.iterators.append(self.iterate if iterate is None else iterate)
+        if iterate is None:
+            iterate = self.iterate
+        self.iterators.append(iterate)
         return 0
 
 

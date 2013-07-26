@@ -98,7 +98,9 @@ class BuildManager(object):
         object.__init__(self)
         self._buildid = buildid
         self._slave = slave
-        self._reactor = default_reactor if reactor is None else reactor
+        if reactor is None:
+            reactor = default_reactor
+        self._reactor = reactor
         self._preppath = slave._config.get("allmanagers", "preppath")
         self._unpackpath = slave._config.get("allmanagers", "unpackpath")
         self._cleanpath = slave._config.get("allmanagers", "cleanpath")
