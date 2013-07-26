@@ -16,6 +16,7 @@ from subprocess import (
     Popen,
     call,
     check_call,
+    check_output,
     )
 import sys
 
@@ -84,7 +85,7 @@ class RecipeBuilder:
         # XXX: AaronBentley 2010-07-07 bug=602463: pbuilder uses aptitude but
         # does not depend on it.
         return self.chroot([
-            'apt-get', 'install', '-y', 'pbuilder', 'aptitude'])
+            'apt-get', 'install', '-y', 'pbuilder', 'aptitude', 'lsb-release'])
 
     def buildTree(self):
         """Build the recipe into a source tree.
@@ -110,6 +111,9 @@ class RecipeBuilder:
         # using buildd@<hostname>.
         hostname = socket.gethostname()
         bzr_email = 'buildd@%s' % hostname
+        distroseries_version = check_output(['/usr/bin/sudo',
+            '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
+            '-r', '-s']).rstrip()
 
         print 'Bazaar versions:'
         check_call(['bzr', 'version'])
@@ -129,7 +133,7 @@ class RecipeBuilder:
             self.tree_path, '--manifest', manifest_path,
             '--distribution', self.distroseries_name,
             '--allow-fallback-to-native', '--append-version',
-            '~%s1' % self.distroseries_name], env=env)
+            '~ubuntu%s.1' % distroseries_version], env=env)
         if retcode != 0:
             return retcode
         (source,) = [name for name in os.listdir(self.tree_path)
