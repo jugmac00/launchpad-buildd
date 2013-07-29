@@ -116,11 +116,15 @@ def upgrade_to_110():
 def upgrade_to_115():
     print "Upgrading %s to version 115" % conf_file
     subprocess.call(["mv", conf_file, conf_file+"-prev115~"])
+    in_allmanagers = False
     in_file = open(conf_file+"-prev115~", "r")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[allmanagers]"):
-            line += "processscanpath = /usr/share/launchpad-buildd/slavebin/scan-for-processes\n"
+            in_allmanagers = True
+        elif in_allmanagers and (line.startswith("[") or not line.strip()):
+            out_file.write("processscanpath = /usr/share/launchpad-buildd/slavebin/scan-for-processes\n")
+            in_allmanagers = False
         if not line.startswith("processscanpath = "):
             out_file.write(line)
     in_file.close()
