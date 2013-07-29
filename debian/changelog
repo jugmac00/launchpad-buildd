@@ -8,6 +8,7 @@ launchpad-buildd (115) UNRELEASED; urgency=low
     in cron log on fresh installs that lack those dirs (LP: #559115)
   * Build buildd-slave-example.conf from template-buildd-slave.conf
     using buildd-genconfig at package build time so it's not stale.
+  * Add a build-dependency on python to make buildd-genconfig work.
   * Strip trailing whitespace in buildd-genconfig because I'm anal.
   * Mangle recipe versions to match backports policy (LP: #1095103)
 

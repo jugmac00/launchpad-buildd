@@ -71,7 +71,7 @@ package: prepare
 	debuild -uc -us -S
 
 build:
-	./buildd-genconfig --template=template-buildd-slave.conf \
+	python buildd-genconfig --template=template-buildd-slave.conf \
 	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
 		> buildd-slave-example.conf
 
