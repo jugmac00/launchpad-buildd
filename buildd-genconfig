@@ -50,5 +50,5 @@ for replacement_key in replacements:
     template = template.replace(replacement_key,
                                 replacements[replacement_key])
 
-print template
+print template.strip()
 
