@@ -110,7 +110,6 @@ class DebianBuildManager(BuildManager):
         chfile = open(path, "r")
         self._slave.waitingfiles[name] = self._slave.storeFile(chfile.read())
         chfile.seek(0)
-        seenfiles = False
 
         for fn in self._parseChangesFile(chfile):
             self._slave.addWaitingFile(get_build_path(self._buildid, fn))
