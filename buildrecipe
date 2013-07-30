@@ -13,10 +13,10 @@ import pwd
 from resource import RLIMIT_AS, setrlimit
 import socket
 from subprocess import (
+    PIPE,
     Popen,
     call,
     check_call,
-    check_output,
     )
 import sys
 
@@ -111,9 +111,11 @@ class RecipeBuilder:
         # using buildd@<hostname>.
         hostname = socket.gethostname()
         bzr_email = 'buildd@%s' % hostname
-        distroseries_version = check_output(['/usr/bin/sudo',
+        lsb_release = Popen(['/usr/bin/sudo',
             '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
-            '-r', '-s']).rstrip()
+            '-r', '-s'], stdout=PIPE)
+        distroseries_version = lsb_release.communicate()[0].rstrip()
+        assert lsb_release.returncode == 0
 
         print 'Bazaar versions:'
         check_call(['bzr', 'version'])
