@@ -315,7 +315,7 @@ class BuildDSlave(object):
                     if check_sum.hexdigest() != sha1sum:
                         os.remove(cachefile + '.tmp')
                         extra_info = "Digests did not match, removing again!"
-                    else
+                    else:
                         os.rename(cachefile + '.tmp', cachefile)
                     self.log(extra_info)
         return (os.path.exists(cachefile), extra_info)
