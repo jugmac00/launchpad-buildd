@@ -62,6 +62,7 @@ binary: binary-indep
 .PHONY: binary binary-indep binary-arch install clean build
 
 clean:
+	rm -f buildd-slave-example.conf
 	dh_clean
 
 prepare:
@@ -70,7 +71,9 @@ package: prepare
 	debuild -uc -us -S
 
 build:
-	@echo Mmm builders
+	python buildd-genconfig --template=template-buildd-slave.conf \
+	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
+		> buildd-slave-example.conf
 
 build-arch: build
 build-indep: build
