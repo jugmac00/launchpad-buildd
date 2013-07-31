@@ -9,6 +9,8 @@ launchpad-buildd (115) UNRELEASED; urgency=low
   * Build buildd-slave-example.conf from template-buildd-slave.conf
     using buildd-genconfig at package build time so it's not stale.
   * Add a build-dependency on python to make buildd-genconfig work.
+  * Add kernel name (hey, we might build on another kernel some day)
+    and hostname (to help us track build host issues) to uname call.
   * Strip trailing whitespace in buildd-genconfig because I'm anal.
   * Mangle recipe versions to match backports policy (LP: #1095103)
 
