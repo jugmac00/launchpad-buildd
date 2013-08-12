@@ -1,5 +1,6 @@
 launchpad-buildd (115) UNRELEASED; urgency=low
 
+  [ Adam Conrad ]
   * Short the readlink call in scan-for-process with a true to avoid
     prematurely exiting the process scan when tripping over zombies.
   * Write to temporary cache files and then rename after validation
@@ -14,6 +15,12 @@ launchpad-buildd (115) UNRELEASED; urgency=low
   * Add x32 and ppc64el to the list of 64-bit arches for linux64.
   * Strip trailing whitespace in buildd-genconfig because I'm anal.
   * Mangle recipe versions to match backports policy (LP: #1095103)
+
+  [ Colin Watson ]
+  * Move scan-for-processes up to the top-level slave code so that it is
+    available for more general use.
+  * Make abort work properly, calling scan-for-processes to kill all
+    processes in the chroot.
 
  -- Adam Conrad <adconrad@ubuntu.com>  Mon, 29 Apr 2013 15:47:20 -0600
 

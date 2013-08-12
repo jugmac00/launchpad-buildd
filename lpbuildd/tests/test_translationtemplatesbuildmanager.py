@@ -9,109 +9,24 @@ import tempfile
 
 from testtools import TestCase
 
+from lpbuildd.tests.fakeslave import FakeSlave
 from lpbuildd.translationtemplates import (
     TranslationTemplatesBuildManager,
     TranslationTemplatesBuildState,
     )
 
 
-class FakeMethod:
-    """Catch any function or method call, and record the fact.
-
-    Use this for easy stubbing.  The call operator can return a fixed
-    value, or raise a fixed exception object.
-
-    This is useful when unit-testing code that does things you don't
-    want to integration-test, e.g. because it wants to talk to remote
-    systems.
-    """
-
-    def __init__(self, result=None, failure=None):
-        """Set up a fake function or method.
-
-        :param result: Value to return.
-        :param failure: Exception to raise.
-        """
-        self.result = result
-        self.failure = failure
-
-        # A log of arguments for each call to this method.
-        self.calls = []
-
-    def __call__(self, *args, **kwargs):
-        """Catch an invocation to the method.
-
-        Increment `call_count`, and adds the arguments to `calls`.
-
-        Accepts any and all parameters.  Raises the failure passed to
-        the constructor, if any; otherwise, returns the result value
-        passed to the constructor.
-        """
-        self.calls.append((args, kwargs))
-
-        if self.failure is None:
-            return self.result
-        else:
-            # pylint thinks this raises None, which is clearly not
-            # possible.  That's why this test disables pylint message
-            # E0702.
-            raise self.failure
-
-    @property
-    def call_count(self):
-        return len(self.calls)
-
-    def extract_args(self):
-        """Return just the calls' positional-arguments tuples."""
-        return [args for args, kwargs in self.calls]
-
-    def extract_kwargs(self):
-        """Return just the calls' keyword-arguments dicts."""
-        return [kwargs for args, kwargs in self.calls]
-
-
-class FakeConfig:
-    def get(self, section, key):
-        return key
-
-
-class FakeSlave:
-    def __init__(self, tempdir):
-        self._cachepath = tempdir
-        self._config = FakeConfig()
-        self._was_called = set()
-
-    def cachePath(self, file):
-        return os.path.join(self._cachepath, file)
-
-    def anyMethod(self, *args, **kwargs):
-        pass
-
-    fake_methods = ['emptyLog', 'chrootFail', 'buildFail', 'builderFail',]
-    def __getattr__(self, name):
-        """Remember which fake methods were called."""
-        if name not in self.fake_methods:
-            raise AttributeError(
-                "'%s' object has no attribute '%s'" % (self.__class__, name))
-        self._was_called.add(name)
-        return self.anyMethod
-
-    def wasCalled(self, name):
-        return name in self._was_called
-
-    def getArch(self):
-        return 'i386'
-
-    addWaitingFile = FakeMethod()
-
-
 class MockBuildManager(TranslationTemplatesBuildManager):
     def __init__(self, *args, **kwargs):
         super(MockBuildManager, self).__init__(*args, **kwargs)
         self.commands = []
+        self.iterators = []
 
-    def runSubProcess(self, path, command):
+    def runSubProcess(self, path, command, iterate=None):
         self.commands.append([path]+command)
+        if iterate is None:
+            iterate = self.iterate
+        self.iterators.append(iterate)
         return 0
 
 
@@ -143,7 +58,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # after INIT.
         self.buildmanager.initiate({}, 'chroot.tar.gz', {'branch_url': url})
 
-        # Skip states that are done in DebianBuldManager to the state
+        # Skip states that are done in DebianBuildManager to the state
         # directly before INSTALL.
         self.buildmanager._state = TranslationTemplatesBuildState.UPDATE
 
@@ -158,6 +73,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             'apt-get',
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1][:5])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
         # GENERATE: Run the slave's payload, the script that generates
         # templates.
@@ -168,6 +85,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             'generatepath', 'generatepath', self.buildid, url, 'resultarchive'
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('chrootFail'))
 
         outfile_path = os.path.join(
@@ -179,17 +98,31 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         outfile.write("I am a template tarball. Seriously.")
         outfile.close()
 
-        # The control returns to the DebianBuildManager in the REAP state.
+        # After generating templates, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
             'processscanpath', 'processscanpath', self.buildid
             ]
         self.assertEqual(
-            TranslationTemplatesBuildState.REAP, self.getState())
+            TranslationTemplatesBuildState.GENERATE, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual(
             [((outfile_path,), {})], self.slave.addWaitingFile.calls)
+
+        # The control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            'umountpath', 'umount-chroot', self.buildid
+            ]
+        self.assertEqual(
+            TranslationTemplatesBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled('buildFail'))
 
     def test_iterate_fail_INSTALL(self):
         # See that a failing INSTALL is handled properly.
@@ -209,6 +142,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             'umountpath', 'umount-chroot', self.buildid
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertTrue(self.slave.wasCalled('chrootFail'))
 
     def test_iterate_fail_GENERATE(self):
@@ -221,12 +156,25 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # Skip states to the INSTALL state.
         self.buildmanager._state = TranslationTemplatesBuildState.GENERATE
 
-        # The buildmanager fails and iterates to the REAP state.
+        # The buildmanager fails and reaps processes.
         self.buildmanager.iterate(-1)
         expected_command = [
             'processscanpath', 'processscanpath', self.buildid
             ]
         self.assertEqual(
-            TranslationTemplatesBuildState.REAP, self.getState())
+            TranslationTemplatesBuildState.GENERATE, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertTrue(self.slave.wasCalled('buildFail'))
+
+        # The buildmanager iterates to the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        self.assertEqual(
+            TranslationTemplatesBuildState.UMOUNT, self.getState())
+        expected_command = [
+            'umountpath', 'umount-chroot', self.buildid
+            ]
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])

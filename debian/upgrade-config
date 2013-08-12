@@ -7,7 +7,6 @@
 
 import re
 import sys
-import os
 import subprocess
 
 (old_version, conf_file) = sys.argv[1:]
@@ -114,6 +113,23 @@ def upgrade_to_110():
     in_file.close()
     out_file.close()
 
+def upgrade_to_115():
+    print "Upgrading %s to version 115" % conf_file
+    subprocess.call(["mv", conf_file, conf_file+"-prev115~"])
+    in_allmanagers = False
+    in_file = open(conf_file+"-prev115~", "r")
+    out_file = open(conf_file, "w")
+    for line in in_file:
+        if line.startswith("[allmanagers]"):
+            in_allmanagers = True
+        elif in_allmanagers and (line.startswith("[") or not line.strip()):
+            out_file.write("processscanpath = /usr/share/launchpad-buildd/slavebin/scan-for-processes\n")
+            in_allmanagers = False
+        if not line.startswith("processscanpath = "):
+            out_file.write(line)
+    in_file.close()
+    out_file.close()
+
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
     if int(old_version) < 12:
@@ -132,4 +148,6 @@ if __name__ == "__main__":
         upgrade_to_63()
     if int(old_version) < 110:
         upgrade_to_110()
+    if int(old_version) < 115:
+        upgrade_to_115()
 

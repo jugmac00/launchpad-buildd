@@ -88,12 +88,14 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
         if success == 0:
             # It worked! Now let's bring in the harvest.
             self.gatherResults()
-            self._state = TranslationTemplatesBuildState.REAP
-            self.doReapProcesses()
+            self.doReapProcesses(self._state)
         else:
             if not self.alreadyfailed:
                 self._slave.buildFail()
                 self.alreadyfailed = True
-            self._state = TranslationTemplatesBuildState.REAP
-            self.doReapProcesses()
+            self.doReapProcesses(self._state)
 
+    def iterateReap_GENERATE(self, success):
+        """Finished reaping after template generation."""
+        self._state = TranslationTemplatesBuildState.UMOUNT
+        self.doUnmounting()
