@@ -340,8 +340,8 @@ class BuildDSlave(object):
         Return a tuple containing: (<present>, <info>)
         """
         extra_info = 'No URL'
+        cachefile = self.cachePath(sha1sum)
         if url is not None:
-            cachefile = self.cachePath(sha1sum)
             extra_info = 'Cache'
             if not os.path.exists(cachefile):
                 self.log('Fetching %s by url %s' % (sha1sum, url))
