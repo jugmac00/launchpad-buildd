@@ -146,7 +146,7 @@ class BuildManager(object):
             else:
                 iterate = lambda success: None
             self.runSubProcess(
-                self._scanpath, [self._scanpath, self._buildid],
+                self._scanpath, ["scan-for-processes", self._buildid],
                 iterate=iterate)
 
     def doCleanup(self):
