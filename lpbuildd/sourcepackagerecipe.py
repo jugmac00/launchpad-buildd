@@ -32,14 +32,15 @@ def splat_file(path, contents):
         file_obj.close()
 
 
-def get_chroot_path(build_id, *extra):
+def get_chroot_path(home, build_id, *extra):
     """Return a path within the chroot.
 
+    :param home: The user's home directory.
     :param build_id: The build_id of the build.
     :param extra: Additional path elements.
     """
     return get_build_path(
-        build_id, 'chroot-autobuild', os.environ['HOME'][1:], *extra)
+        home, build_id, 'chroot-autobuild', os.environ['HOME'][1:], *extra)
 
 
 class SourcePackageRecipeBuildState(DebianBuildState):
@@ -82,8 +83,8 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
 
     def doRunBuild(self):
         """Run the build process to build the source package."""
-        os.makedirs(get_chroot_path(self._buildid, 'work'))
-        recipe_path = get_chroot_path(self._buildid, 'work/recipe')
+        os.makedirs(get_chroot_path(self.home, self._buildid, 'work'))
+        recipe_path = get_chroot_path(self.home, self._buildid, 'work/recipe')
         splat_file(recipe_path, self.recipe_text)
         args = [
             "buildrecipe", self._buildid, self.author_name.encode('utf-8'),
@@ -133,7 +134,7 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
 
     def getChangesFilename(self):
         """Return the path to the changes file."""
-        work_path = get_build_path(self._buildid)
+        work_path = get_build_path(self.home, self._buildid)
         for name in os.listdir(work_path):
             if name.endswith('_source.changes'):
                 return os.path.join(work_path, name)
@@ -145,4 +146,5 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         The manifest is also a useful record.
         """
         DebianBuildManager.gatherResults(self)
-        self._slave.addWaitingFile(get_build_path(self._buildid, 'manifest'))
+        self._slave.addWaitingFile(get_build_path(
+            self.home, self._buildid, 'manifest'))
