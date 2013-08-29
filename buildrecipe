@@ -221,10 +221,10 @@ def ensure_virtualized():
 if __name__ == '__main__':
     setrlimit(RLIMIT_AS, (1000000000, -1))
     builder = RecipeBuilder(*sys.argv[1:])
-    if builder.buildTree() != 0:
-        sys.exit(RETCODE_FAILURE_BUILD_TREE)
     if builder.install() != 0:
         sys.exit(RETCODE_FAILURE_INSTALL)
+    if builder.buildTree() != 0:
+        sys.exit(RETCODE_FAILURE_BUILD_TREE)
     if builder.installBuildDeps() != 0:
         sys.exit(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
     if builder.buildSourcePackage() != 0:
