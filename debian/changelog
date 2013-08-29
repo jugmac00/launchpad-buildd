@@ -1,4 +1,4 @@
-launchpad-buildd (115) UNRELEASED; urgency=low
+launchpad-buildd (115) hardy; urgency=low
 
   [ Adam Conrad ]
   * Short the readlink call in scan-for-process with a true to avoid
@@ -23,7 +23,7 @@ launchpad-buildd (115) UNRELEASED; urgency=low
   * Make abort work properly, calling scan-for-processes to kill all
     processes in the chroot.
 
- -- Adam Conrad <adconrad@ubuntu.com>  Mon, 29 Apr 2013 15:47:20 -0600
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 29 Aug 2013 11:32:23 +0100
 
 launchpad-buildd (114) hardy; urgency=low
 
