@@ -270,7 +270,6 @@ class BuilderStatus:
     BUILDING = "BuilderStatus.BUILDING"
     WAITING = "BuilderStatus.WAITING"
     ABORTING = "BuilderStatus.ABORTING"
-    ABORTED = "BuilderStatus.ABORTED"
 
     UNKNOWNSUM = "BuilderStatus.UNKNOWNSUM"
     UNKNOWNBUILDER = "BuilderStatus.UNKNOWNBUILDER"
@@ -426,10 +425,8 @@ class BuildDSlave(object):
 
     def clean(self):
         """Clean up pending files and reset the internal build state."""
-        if self.builderstatus not in [BuilderStatus.WAITING,
-                                      BuilderStatus.ABORTED]:
-            raise ValueError('Slave is not WAITING|ABORTED when asked'
-                             'to clean')
+        if self.builderstatus != BuilderStatus.WAITING:
+            raise ValueError('Slave is not WAITING when asked to clean')
         for f in self.waitingfiles:
             os.remove(self.cachePath(self.waitingfiles[f]))
         self.builderstatus = BuilderStatus.IDLE
@@ -688,14 +685,6 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
             return (self.slave.buildstatus, self.buildid,
                     self.slave.waitingfiles, self.slave.builddependencies)
         return (self.slave.buildstatus, self.buildid)
-
-    def status_ABORTED(self):
-        """Handler for xmlrpc_status ABORTED.
-
-        The only action the master can take is clean, other than ask status,
-        of course, it returns the build id only.
-        """
-        return (self.buildid, )
 
     def status_ABORTING(self):
         """Handler for xmlrpc_status ABORTING.
