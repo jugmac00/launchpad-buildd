@@ -135,7 +135,7 @@ class BuildManager(object):
         if state is not None and state in self._reaped_states:
             # We've already reaped this state.  To avoid a loop, proceed
             # immediately to the next iterator.
-            self._slave.log("Already reaped from state %s" % state)
+            self._slave.log("Already reaped from state %s...\n" % state)
             if notify:
                 self.iterateReap(state, 0)
         else:
