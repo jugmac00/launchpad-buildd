@@ -396,16 +396,6 @@ class BuildDSlave(object):
         finally:
             f.close()
 
-    def fetchFile(self, sha1sum):
-        """Fetch the file of the given sha1sum."""
-        present, info = self.ensurePresent(sha1sum)
-        if not present:
-            raise ValueError("Unknown SHA1sum %s" % sha1sum)
-        f = open(self.cachePath(sha1sum), "r")
-        c = f.read()
-        f.close()
-        return c
-
     def abort(self):
         """Abort the current build."""
         # XXX: dsilvers: 2005-01-21: Current abort mechanism doesn't wait
