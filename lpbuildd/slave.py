@@ -376,25 +376,32 @@ class BuildDSlave(object):
                     self.log(extra_info)
         return (os.path.exists(cachefile), extra_info)
 
-    def storeFile(self, content):
-        """Take the provided content and store it in the file cache."""
-        sha1sum = hashlib.sha1(content).hexdigest()
+    def storeFile(self, path):
+        """Store the content of the provided path in the file cache."""
+        f = open(path)
+        try:
+            sha1 = hashlib.sha1()
+            for chunk in iter(lambda: f.read(256*1024), ''):
+                sha1.update(chunk)
+            sha1sum = sha1.hexdigest()
+        finally:
+            f.close()
         present, info = self.ensurePresent(sha1sum)
         if present:
             return sha1sum
-        f = open(self.cachePath(sha1sum), "w")
-        f.write(content)
-        f.close()
+        f = open(path)
+        of = open(self.cachePath(sha1sum), "w")
+        try:
+            for chunk in iter(lambda: f.read(256*1024), ''):
+                of.write(chunk)
+        finally:
+            of.close()
+            f.close()
         return sha1sum
 
     def addWaitingFile(self, path):
         """Add a file to the cache and store its details for reporting."""
-        fn = os.path.basename(path)
-        f = open(path)
-        try:
-            self.waitingfiles[fn] = self.storeFile(f.read())
-        finally:
-            f.close()
+        self.waitingfiles[os.path.basename(path)] = self.storeFile(path)
 
     def abort(self):
         """Abort the current build."""
