@@ -88,25 +88,30 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def iterate_SBUILD(self, success):
         """Finished the sbuild run."""
-        tmpLog = self.getTmpLogContents()
         if success != SBuildExitCodes.OK:
+            log_patterns = []
+
             if (success == SBuildExitCodes.DEPFAIL or
                 success == SBuildExitCodes.PACKAGEFAIL):
                 for rx in BuildLogRegexes.GIVENBACK:
-                    mo = re.search(rx, tmpLog, re.M)
-                    if mo:
-                        success = SBuildExitCodes.GIVENBACK
+                    log_patterns.append([rx, re.M])
 
             if success == SBuildExitCodes.DEPFAIL:
                 for rx, dep in BuildLogRegexes.DEPFAIL:
-                    mo = re.search(rx, tmpLog, re.M)
-                    if mo:
+                    log_patterns.append([rx, re.M])
+
+            if log_patterns:
+                rx, mo = self.searchLogContents(log_patterns)
+                if mo:
+                    if rx in BuildLogRegexes.GIVENBACK:
+                        success = SBuildExitCodes.GIVENBACK
+                    elif rx in BuildLogRegexes.DEPFAIL:
                         if not self.alreadyfailed:
+                            dep = BuildLogRegexes.DEPFAIL[rx]
                             print("Returning build status: DEPFAIL")
                             print("Dependencies: " + mo.expand(dep))
                             self._slave.depFail(mo.expand(dep))
                             success = SBuildExitCodes.DEPFAIL
-                            break
                     else:
                         success = SBuildExitCodes.PACKAGEFAIL
 

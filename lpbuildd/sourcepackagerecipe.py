@@ -99,11 +99,10 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
             print("Returning build status: OK")
         elif retcode == RETCODE_FAILURE_INSTALL_BUILD_DEPS:
             if not self.alreadyfailed:
-                tmpLog = self.getTmpLogContents()
                 rx = (
                     'The following packages have unmet dependencies:\n'
                     '.*: Depends: ([^ ]*( \([^)]*\))?)')
-                mo = re.search(rx, tmpLog, re.M)
+                _, mo = self.searchLogContents([rx, re.M])
                 if mo:
                     self._slave.depFail(mo.group(1))
                     print("Returning build status: DEPFAIL")
