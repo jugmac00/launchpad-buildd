@@ -2,6 +2,7 @@ launchpad-buildd (116) UNRELEASED; urgency=low
 
   [ Colin Watson ]
   * Remove obsolete BuilderStatus.ABORTED.
+  * Remove obsolete BuildDSlave.fetchFile method, unused since October 2005.
   * If the expected .changes file doesn't exist, consider this as a package
     build failure rather than crashing (LP: #993642).
 
