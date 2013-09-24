@@ -9,6 +9,7 @@
 __metaclass__ = type
 
 import os
+import re
 
 from lpbuildd.slave import (
     BuildManager,
@@ -100,16 +101,15 @@ class DebianBuildManager(BuildManager):
         The primary file we care about is the .changes file. We key from there.
         """
         path = self.getChangesFilename()
-        name = os.path.basename(path)
+        self._slave.addWaitingFile(path)
+
         chfile = open(path, "r")
-        self._slave.waitingfiles[name] = self._slave.storeFile(chfile.read())
-        chfile.seek(0)
-
-        for fn in self._parseChangesFile(chfile):
-            self._slave.addWaitingFile(
-                get_build_path(self.home, self._buildid, fn))
-
-        chfile.close()
+        try:
+            for fn in self._parseChangesFile(chfile):
+                self._slave.addWaitingFile(
+                    get_build_path(self.home, self._buildid, fn))
+        finally:
+            chfile.close()
 
     def iterate(self, success):
         # When a Twisted ProcessControl class is killed by SIGTERM,
@@ -173,12 +173,36 @@ class DebianBuildManager(BuildManager):
                 self._state = DebianBuildState.UPDATE
                 self.doUpdateChroot()
 
-    def getTmpLogContents(self):
+    def searchLogContents(self, patterns_and_flags):
+        """Search for any of a list of regex patterns in the build log.
+
+        The build log is matched using a sliding window, which avoids having
+        to read the whole file into memory at once but requires that matches
+        be no longer than the chunk size (currently 256KiB).
+
+        :return: A tuple of the regex pattern that matched and the match
+            object, or (None, None).
+        """
+        chunk_size = 256 * 1024
+        regexes = [
+            re.compile(pattern, flags)
+            for pattern, flags in patterns_and_flags]
+        log = open(os.path.join(self._cachepath, "buildlog"))
         try:
-            tmpLogHandle = open(os.path.join(self._cachepath, "buildlog"))
-            return tmpLogHandle.read()
+            window = ""
+            chunk = log.read(chunk_size)
+            while chunk:
+                window += chunk
+                for regex in regexes:
+                    match = regex.search(window)
+                    if match is not None:
+                        return regex.pattern, match
+                if len(window) > chunk_size:
+                    window = window[chunk_size:]
+                chunk = log.read(chunk_size)
         finally:
-            tmpLogHandle.close()
+            log.close()
+        return None, None
 
     def iterate_SOURCES(self, success):
         """Just finished overwriting sources.list."""

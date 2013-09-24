@@ -5,6 +5,10 @@ launchpad-buildd (116) UNRELEASED; urgency=low
   * Remove obsolete BuildDSlave.fetchFile method, unused since October 2005.
   * If the expected .changes file doesn't exist, consider this as a package
     build failure rather than crashing (LP: #993642).
+  * Don't attempt to read entire files into memory at once when storing them
+    in the file cache.
+  * Rearrange build log searching to avoid reading the entire build log into
+    memory at once (LP: #1227086).
 
   [ Adam Conrad ]
   * Tidy up log formatting of the "Already reaped..." message. 
