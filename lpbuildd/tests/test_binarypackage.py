@@ -204,3 +204,43 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+    def test_missing_changes(self):
+        # The build manager recovers if the expected .changes file does not
+        # exist, and considers it a package build failure.
+        self.startBuild()
+
+        log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
+        log = open(log_path, 'w')
+        log.write("I am a build log.")
+        log.close()
+
+        changes_path = os.path.join(
+            self.buildmanager.home, 'build-%s' % self.buildid,
+            'foo_2_i386.changes')
+        changes = open(changes_path, 'w')
+        changes.write("I am a changes file.")
+        changes.close()
+
+        # After building the package, reap processes.
+        self.buildmanager.iterate(0)
+        expected_command = [
+            'processscanpath', 'processscanpath', self.buildid,
+            ]
+        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertTrue(self.slave.wasCalled('buildFail'))
+        self.assertEqual([], self.slave.addWaitingFile.calls)
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            'umountpath', 'umount-chroot', self.buildid
+            ]
+        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertTrue(self.slave.wasCalled('buildFail'))

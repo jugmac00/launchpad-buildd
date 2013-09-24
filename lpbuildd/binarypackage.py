@@ -127,7 +127,12 @@ class BinaryPackageBuildManager(DebianBuildManager):
             self.doReapProcesses(self._state)
         else:
             print("Returning build status: OK")
-            self.gatherResults()
+            try:
+                self.gatherResults()
+            except Exception, e:
+                print("Failed to gather results: %s" % e)
+                self._slave.buildFail()
+                self.alreadyfailed = True
             self.doReapProcesses(self._state)
 
     def iterateReap_SBUILD(self, success):
