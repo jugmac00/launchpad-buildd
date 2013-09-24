@@ -379,24 +379,22 @@ class BuildDSlave(object):
     def storeFile(self, path):
         """Store the content of the provided path in the file cache."""
         f = open(path)
+        tmppath = self.cachePath("storeFile.tmp")
+        of = open(tmppath, "w")
         try:
             sha1 = hashlib.sha1()
             for chunk in iter(lambda: f.read(256*1024), ''):
                 sha1.update(chunk)
-            sha1sum = sha1.hexdigest()
-        finally:
-            f.close()
-        present, info = self.ensurePresent(sha1sum)
-        if present:
-            return sha1sum
-        f = open(path)
-        of = open(self.cachePath(sha1sum), "w")
-        try:
-            for chunk in iter(lambda: f.read(256*1024), ''):
                 of.write(chunk)
+            sha1sum = sha1.hexdigest()
         finally:
             of.close()
             f.close()
+        present, info = self.ensurePresent(sha1sum)
+        if present:
+            os.unlink(tmppath)
+            return sha1sum
+        os.rename(tmppath, self.cachePath(sha1sum))
         return sha1sum
 
     def addWaitingFile(self, path):
