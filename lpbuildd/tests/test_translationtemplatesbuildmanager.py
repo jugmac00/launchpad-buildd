@@ -101,7 +101,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # After generating templates, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'processscanpath', 'processscanpath', self.buildid
+            'processscanpath', 'scan-for-processes', self.buildid
             ]
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
@@ -159,7 +159,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The buildmanager fails and reaps processes.
         self.buildmanager.iterate(-1)
         expected_command = [
-            'processscanpath', 'processscanpath', self.buildid
+            'processscanpath', 'scan-for-processes', self.buildid
             ]
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())

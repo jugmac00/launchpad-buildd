@@ -114,7 +114,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'processscanpath', 'processscanpath', self.buildid,
+            'processscanpath', 'scan-for-processes', self.buildid,
             ]
         self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -141,7 +141,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # Send an abort command.  The build manager reaps processes.
         self.buildmanager.abort()
         expected_command = [
-            'processscanpath', 'processscanpath', self.buildid
+            'processscanpath', 'scan-for-processes', self.buildid
             ]
         self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -170,7 +170,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # Send an abort command.  The build manager reaps processes.
         self.buildmanager.abort()
         expected_command = [
-            'processscanpath', 'processscanpath', self.buildid
+            'processscanpath', 'scan-for-processes', self.buildid
             ]
         self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -225,7 +225,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'processscanpath', 'processscanpath', self.buildid,
+            'processscanpath', 'scan-for-processes', self.buildid,
             ]
         self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
