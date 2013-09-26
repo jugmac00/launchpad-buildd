@@ -122,7 +122,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual([], self.slave.addWaitingFile.calls)
+        self.assertEqual(
+            [((changes_path,), {})], self.slave.addWaitingFile.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
@@ -216,9 +217,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         log.write("I am a build log.")
         log.close()
 
-        changes_path = os.path.join(
-            self.buildmanager.home, 'build-%s' % self.buildid,
-            'foo_2_i386.changes')
+        build_dir = os.path.join(
+            self.buildmanager.home, 'build-%s' % self.buildid)
+        changes_path = os.path.join(build_dir, 'foo_2_i386.changes')
         changes = open(changes_path, 'w')
         changes.write("I am a changes file.")
         changes.close()
@@ -233,7 +234,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertTrue(self.slave.wasCalled('buildFail'))
-        self.assertEqual([], self.slave.addWaitingFile.calls)
+        self.assertEqual(
+            [((os.path.join(build_dir, 'foo_1_i386.changes'),), {})],
+            self.slave.addWaitingFile.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
