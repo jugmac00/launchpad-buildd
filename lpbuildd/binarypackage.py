@@ -90,6 +90,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
         """Finished the sbuild run."""
         if success != SBuildExitCodes.OK:
             log_patterns = []
+            stop_patterns = [["^Toolchain package versions:", re.M]]
 
             if (success == SBuildExitCodes.DEPFAIL or
                 success == SBuildExitCodes.PACKAGEFAIL):
@@ -101,7 +102,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     log_patterns.append([rx, re.M])
 
             if log_patterns:
-                rx, mo = self.searchLogContents(log_patterns)
+                rx, mo = self.searchLogContents(log_patterns, stop_patterns)
                 if mo:
                     if rx in BuildLogRegexes.GIVENBACK:
                         success = SBuildExitCodes.GIVENBACK

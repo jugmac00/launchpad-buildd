@@ -173,12 +173,16 @@ class DebianBuildManager(BuildManager):
                 self._state = DebianBuildState.UPDATE
                 self.doUpdateChroot()
 
-    def searchLogContents(self, patterns_and_flags):
+    def searchLogContents(self, patterns_and_flags,
+                          stop_patterns_and_flags=[]):
         """Search for any of a list of regex patterns in the build log.
 
         The build log is matched using a sliding window, which avoids having
         to read the whole file into memory at once but requires that matches
         be no longer than the chunk size (currently 256KiB).
+
+        If any of the stop patterns are matched, the search stops
+        immediately without reading the rest of the file.
 
         :return: A tuple of the regex pattern that matched and the match
             object, or (None, None).
@@ -187,6 +191,9 @@ class DebianBuildManager(BuildManager):
         regexes = [
             re.compile(pattern, flags)
             for pattern, flags in patterns_and_flags]
+        stop_regexes = [
+            re.compile(pattern, flags)
+            for pattern, flags in stop_patterns_and_flags]
         log = open(os.path.join(self._cachepath, "buildlog"))
         try:
             window = ""
@@ -197,6 +204,9 @@ class DebianBuildManager(BuildManager):
                     match = regex.search(window)
                     if match is not None:
                         return regex.pattern, match
+                for regex in stop_regexes:
+                    if regex.search(window) is not None:
+                        return None, None
                 if len(window) > chunk_size:
                     window = window[chunk_size:]
                 chunk = log.read(chunk_size)
