@@ -22,8 +22,9 @@ from lpbuildd.tests.fakeslave import (
 
 
 class MockTransport:
-    loseConnection = FakeMethod()
-    signalProcess = FakeMethod()
+    def __init__(self):
+        self.loseConnection = FakeMethod()
+        self.signalProcess = FakeMethod()
 
 
 class MockSubprocess:

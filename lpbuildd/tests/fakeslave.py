@@ -76,6 +76,8 @@ class FakeSlave:
         self._config = FakeConfig()
         self._was_called = set()
         self.waitingfiles = {}
+        self.storeFile = FakeMethod()
+        self.addWaitingFile = FakeMethod()
 
     def cachePath(self, file):
         return os.path.join(self._cachepath, file)
@@ -99,6 +101,3 @@ class FakeSlave:
 
     def getArch(self):
         return 'i386'
-
-    storeFile = FakeMethod()
-    addWaitingFile = FakeMethod()
