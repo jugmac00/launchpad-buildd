@@ -136,7 +136,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
             try:
                 self.gatherResults()
             except Exception, e:
-                print("Failed to gather results: %s" % e)
+                self._slave.log("Failed to gather results: %s" % e)
                 self._slave.buildFail()
                 self.alreadyfailed = True
             self.doReapProcesses(self._state)
