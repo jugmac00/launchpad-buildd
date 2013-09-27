@@ -74,10 +74,12 @@ class FakeSlave:
     def __init__(self, tempdir):
         self._cachepath = tempdir
         self._config = FakeConfig()
-        self._was_called = set()
         self.waitingfiles = {}
-        self.storeFile = FakeMethod()
-        self.addWaitingFile = FakeMethod()
+        for fake_method in (
+            "storeFile", "addWaitingFile", "emptyLog", "log",
+            "chrootFail", "buildFail", "builderFail", "depFail",
+            ):
+            setattr(self, fake_method, FakeMethod())
 
     def cachePath(self, file):
         return os.path.join(self._cachepath, file)
@@ -85,19 +87,8 @@ class FakeSlave:
     def anyMethod(self, *args, **kwargs):
         pass
 
-    fake_methods = [
-        'emptyLog', 'log', 'chrootFail', 'buildFail', 'builderFail',
-        ]
-    def __getattr__(self, name):
-        """Remember which fake methods were called."""
-        if name not in self.fake_methods:
-            raise AttributeError(
-                "'%s' object has no attribute '%s'" % (self.__class__, name))
-        self._was_called.add(name)
-        return self.anyMethod
-
     def wasCalled(self, name):
-        return name in self._was_called
+        return getattr(self, name).call_count > 0
 
     def getArch(self):
         return 'i386'

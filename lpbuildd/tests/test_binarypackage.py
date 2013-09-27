@@ -248,3 +248,35 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertTrue(self.slave.wasCalled('buildFail'))
+
+    def test_detects_depfail(self):
+        # The build manager detects dependency installation failures.
+        self.startBuild()
+
+        log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
+        log = open(log_path, 'w')
+        log.write("E: Unable to locate package nonexistent\n")
+        log.close()
+
+        # After building the package, reap processes.
+        self.buildmanager.iterate(1)
+        expected_command = [
+            'processscanpath', 'scan-for-processes', self.buildid,
+            ]
+        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertEqual([(("nonexistent",), {})], self.slave.depFail.calls)
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            'umountpath', 'umount-chroot', self.buildid
+            ]
+        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled('buildFail'))
