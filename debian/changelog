@@ -1,4 +1,4 @@
-launchpad-buildd (116) UNRELEASED; urgency=low
+launchpad-buildd (116) hardy; urgency=low
 
   [ Colin Watson ]
   * Remove obsolete BuilderStatus.ABORTED.
@@ -13,7 +13,7 @@ launchpad-buildd (116) UNRELEASED; urgency=low
   [ Adam Conrad ]
   * Tidy up log formatting of the "Already reaped..." message. 
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 30 Aug 2013 00:31:15 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 27 Sep 2013 13:08:59 +0100
 
 launchpad-buildd (115) hardy; urgency=low
 
