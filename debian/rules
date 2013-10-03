@@ -63,6 +63,7 @@ binary: binary-indep
 
 clean:
 	rm -f buildd-slave-example.conf
+	find -name \*.pyc -print0 | xargs -0r rm -f
 	dh_clean
 
 prepare:

@@ -2,6 +2,7 @@ launchpad-buildd (117) UNRELEASED; urgency=low
 
   * Fix dep-wait detection when recipes fail to install build-dependencies
     (LP: #1234621).
+  * Remove *.pyc files from source tree on clean.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 03 Oct 2013 11:38:46 +0100
 
