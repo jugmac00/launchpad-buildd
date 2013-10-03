@@ -102,7 +102,7 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
                 rx = (
                     'The following packages have unmet dependencies:\n'
                     '.*: Depends: ([^ ]*( \([^)]*\))?)')
-                _, mo = self.searchLogContents([rx, re.M])
+                _, mo = self.searchLogContents([[rx, re.M]])
                 if mo:
                     self._slave.depFail(mo.group(1))
                     print("Returning build status: DEPFAIL")
