@@ -1,3 +1,10 @@
+launchpad-buildd (117) UNRELEASED; urgency=low
+
+  * Fix dep-wait detection when recipes fail to install build-dependencies
+    (LP: #1234621).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 03 Oct 2013 11:38:46 +0100
+
 launchpad-buildd (116) hardy; urgency=low
 
   [ Colin Watson ]
