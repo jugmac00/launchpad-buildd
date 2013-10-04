@@ -115,6 +115,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
                             success = SBuildExitCodes.DEPFAIL
                     else:
                         success = SBuildExitCodes.PACKAGEFAIL
+                else:
+                    success = SBuildExitCodes.PACKAGEFAIL
 
             if success == SBuildExitCodes.GIVENBACK:
                 if not self.alreadyfailed:
