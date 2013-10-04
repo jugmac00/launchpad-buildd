@@ -1,3 +1,10 @@
+launchpad-buildd (118) UNRELEASED; urgency=low
+
+  * Fail the builder immediately if $HOME/.sbuildrc is corrupt
+    (LP: #1235287).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 04 Oct 2013 16:07:00 +0100
+
 launchpad-buildd (117) hardy; urgency=low
 
   * Fix dep-wait detection when recipes fail to install build-dependencies

@@ -17,6 +17,12 @@ exec 2>&1
 
 export LANG=C LC_ALL=C 
 
+# On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
+# sync, and we notice this by way of a corrupted .sbuildrc.  We aren't going
+# to be able to build anything in this situation, so immediately return
+# BUILDERFAIL.
+perl -c "$HOME/.sbuildrc" || exit 4
+
 SBUILD=/usr/bin/sbuild
 BUILDID=$1
 ARCHITECTURETAG=$2
@@ -91,6 +97,7 @@ STEP=$(cat build-progress | awk '{print $3}')
 # Any other reason (which we'll treat as a build failure), exit 3
 exit 3
 
-# There is an exit code of "4" that means the builder itself
-# is having problems.  Currently, we don't use it at all.
+# There is an exit code of "4" that means the builder itself is having
+# problems.  Currently, we don't use it at all, except for the .sbuildrc
+# check above.
 # exit 4
