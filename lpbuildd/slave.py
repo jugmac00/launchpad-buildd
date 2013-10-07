@@ -681,9 +681,9 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         func = getattr(self, "status_dict_" + statusname, None)
         if func is None:
             raise ValueError("Unknown status '%s'" % status)
-        ret = {"status": status}
+        ret = {"builder_status": status}
         if self._version is not None:
-            ret["version"] = self._version
+            ret["builder_version"] = self._version
         ret.update(func())
         return ret
 
@@ -714,7 +714,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         Returns the build id and up to one kilobyte of log tail.
         """
         tail = self.slave.getLogTail()
-        return {"buildid": self.buildid, "logtail": xmlrpclib.Binary(tail)}
+        return {"build_id": self.buildid, "logtail": xmlrpclib.Binary(tail)}
 
     def status_WAITING(self):
         """Handler for xmlrpc_status WAITING.
@@ -736,11 +736,14 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         unless the builder failed in which case we return the buildstatus
         and the build id but no file set.
         """
-        ret = {"buildstatus": self.slave.buildstatus, "buildid": self.buildid}
+        ret = {
+            "build_status": self.slave.buildstatus,
+            "build_id": self.buildid,
+            }
         if self.slave.buildstatus in (BuildStatus.OK, BuildStatus.PACKAGEFAIL,
                                       BuildStatus.DEPFAIL):
-            ret["waitingfiles"] = self.slave.waitingfiles
-            ret["builddependencies"] = self.slave.builddependencies
+            ret["filemap"] = self.slave.waitingfiles
+            ret["dependencies"] = self.slave.builddependencies
         return ret
 
     def status_ABORTING(self):
@@ -759,7 +762,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         not able to do anything else than answer its status, so returns the
         build id only.
         """
-        return {"buildid": self.buildid}
+        return {"build_id": self.buildid}
 
     def xmlrpc_ensurepresent(self, sha1sum, url, username, password):
         """Attempt to ensure the given file is present."""

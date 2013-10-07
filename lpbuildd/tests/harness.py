@@ -95,7 +95,7 @@ class BuilddSlaveTestSetup(TacTestFixture):
     >>> s.status()
     ['BuilderStatus.IDLE', '']
 
-    >>> s.status_dict()["status"]
+    >>> s.status_dict()["builder_status"]
     'BuilderStatus.IDLE'
 
     >>> fixture.tearDown()
