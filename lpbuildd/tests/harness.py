@@ -95,6 +95,9 @@ class BuilddSlaveTestSetup(TacTestFixture):
     >>> s.status()
     ['BuilderStatus.IDLE', '']
 
+    >>> s.status_dict()["status"]
+    'BuilderStatus.IDLE'
+
     >>> fixture.tearDown()
     """
     def setUpRoot(self):
