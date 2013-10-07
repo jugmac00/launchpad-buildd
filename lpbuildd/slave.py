@@ -13,12 +13,19 @@ import hashlib
 import os
 import re
 import urllib2
+import warnings
 import xmlrpclib
 
+import apt
 from twisted.internet import protocol
 from twisted.internet import reactor as default_reactor
 from twisted.internet import process
 from twisted.web import xmlrpc
+
+# XXX cjwatson 2013-10-07: Remove when all builders are on Ubuntu 10.04 LTS
+# or newer.
+warnings.filterwarnings(
+    "ignore", "apt API not stable yet", category=FutureWarning)
 
 devnull = open("/dev/null", "r")
 
@@ -623,6 +630,16 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         self.protocolversion = '1.0'
         self.slave = BuildDSlave(config)
         self._builders = {}
+        cache = apt.Cache()
+        try:
+            try:
+                self._version = cache["python-lpbuildd"].installed.version
+            except AttributeError:
+                # XXX cjwatson 2013-10-07: Remove when all builders are on
+                # Ubuntu 10.04 LTS or newer.
+                self._version = cache["python-lpbuildd"].installedVersion
+        except KeyError:
+            self._version = None
         print "Initialized"
 
     def registerBuilder(self, builderclass, buildertag):
@@ -643,6 +660,8 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         Depending on the builder status we return differing amounts of
         data. We do however always return the builder status as the first
         value.
+
+        This method is deprecated in favour of `xmlrpc_status_dict`.
         """
         status = self.slave.builderstatus
         statusname = status.split('.')[-1]
@@ -650,6 +669,23 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         if func is None:
             raise ValueError("Unknown status '%s'" % status)
         return (status, ) + func()
+
+    def xmlrpc_status_dict(self):
+        """Return the status of the build daemon, as a dictionary.
+
+        Depending on the builder status we return differing amounts of data,
+        but this always includes the builder status itself.
+        """
+        status = self.slave.builderstatus
+        statusname = status.split('.')[-1]
+        func = getattr(self, "status_dict_" + statusname, None)
+        if func is None:
+            raise ValueError("Unknown status '%s'" % status)
+        ret = {"builder_status": status}
+        if self._version is not None:
+            ret["builder_version"] = self._version
+        ret.update(func())
+        return ret
 
     def status_IDLE(self):
         """Handler for xmlrpc_status IDLE.
@@ -660,13 +696,25 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         # keep the result code sane
         return ('', )
 
+    def status_dict_IDLE(self):
+        """Handler for xmlrpc_status_dict IDLE."""
+        return {}
+
     def status_BUILDING(self):
         """Handler for xmlrpc_status BUILDING.
 
-        Returns the build id and up to one kilobyte of log tail
+        Returns the build id and up to one kilobyte of log tail.
         """
         tail = self.slave.getLogTail()
         return (self.buildid, xmlrpclib.Binary(tail))
+
+    def status_dict_BUILDING(self):
+        """Handler for xmlrpc_status_dict BUILDING.
+
+        Returns the build id and up to one kilobyte of log tail.
+        """
+        tail = self.slave.getLogTail()
+        return {"build_id": self.buildid, "logtail": xmlrpclib.Binary(tail)}
 
     def status_WAITING(self):
         """Handler for xmlrpc_status WAITING.
@@ -681,14 +729,40 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
                     self.slave.waitingfiles, self.slave.builddependencies)
         return (self.slave.buildstatus, self.buildid)
 
+    def status_dict_WAITING(self):
+        """Handler for xmlrpc_status_dict WAITING.
+
+        Returns the build id and the set of files waiting to be returned
+        unless the builder failed in which case we return the buildstatus
+        and the build id but no file set.
+        """
+        ret = {
+            "build_status": self.slave.buildstatus,
+            "build_id": self.buildid,
+            }
+        if self.slave.buildstatus in (BuildStatus.OK, BuildStatus.PACKAGEFAIL,
+                                      BuildStatus.DEPFAIL):
+            ret["filemap"] = self.slave.waitingfiles
+            ret["dependencies"] = self.slave.builddependencies
+        return ret
+
     def status_ABORTING(self):
         """Handler for xmlrpc_status ABORTING.
 
-        This state means the builder performing the ABORT command and is
-        not able to do anything else than answer its status, returns the
+        This state means the builder is performing the ABORT command and is
+        not able to do anything else than answer its status, so returns the
         build id only.
         """
         return (self.buildid, )
+
+    def status_dict_ABORTING(self):
+        """Handler for xmlrpc_status_dict ABORTING.
+
+        This state means the builder is performing the ABORT command and is
+        not able to do anything else than answer its status, so returns the
+        build id only.
+        """
+        return {"build_id": self.buildid}
 
     def xmlrpc_ensurepresent(self, sha1sum, url, username, password):
         """Attempt to ensure the given file is present."""
