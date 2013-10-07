@@ -1,9 +1,14 @@
 launchpad-buildd (118) UNRELEASED; urgency=low
 
+  [ William Grant ]
+  * Fix fallback to PACKAGEFAIL of unknown sbuild DEPFAIL conditions
+    (LP: #1235038).
+
+  [ Colin Watson ]
   * Fail the builder immediately if $HOME/.sbuildrc is corrupt
     (LP: #1235287).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 04 Oct 2013 16:07:00 +0100
+ -- William Grant <william.grant@canonical.com>  Fri, 04 Oct 2013 11:03:51 +1000
 
 launchpad-buildd (117) hardy; urgency=low
 
