@@ -21,7 +21,10 @@ export LANG=C LC_ALL=C
 # sync, and we notice this by way of a corrupted .sbuildrc.  We aren't going
 # to be able to build anything in this situation, so immediately return
 # BUILDERFAIL.
-perl -c "$HOME/.sbuildrc" || exit 4
+if ! perl -c "$HOME/.sbuildrc" >/dev/null 2>&1; then
+    echo "$HOME/.sbuildrc is corrupt; builder needs repair work" 2>&1
+    exit 4
+fi
 
 SBUILD=/usr/bin/sbuild
 BUILDID=$1
