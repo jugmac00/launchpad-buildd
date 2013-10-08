@@ -1,4 +1,4 @@
-launchpad-buildd (118) UNRELEASED; urgency=low
+launchpad-buildd (118) hardy; urgency=low
 
   [ William Grant ]
   * Fix fallback to PACKAGEFAIL of unknown sbuild DEPFAIL conditions
@@ -10,7 +10,7 @@ launchpad-buildd (118) UNRELEASED; urgency=low
   * Add a status_dict XML-RPC method for better extensibility, including
     reporting the python-lpbuildd version (LP: #680514).
 
- -- William Grant <william.grant@canonical.com>  Fri, 04 Oct 2013 11:03:51 +1000
+ -- William Grant <william.grant@canonical.com>  Tue, 08 Oct 2013 15:09:47 +1100
 
 launchpad-buildd (117) hardy; urgency=low
 
