@@ -31,6 +31,8 @@ unset LC_TELEPHONE
 unset LC_MEASUREMENT
 unset LC_IDENTIFICATION
 unset LC_ALL
+unset DISPLAY
+unset TERM
 
 # On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
 # sync, and we notice this by way of a corrupted .sbuildrc.  We aren't going
