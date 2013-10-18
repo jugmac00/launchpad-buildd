@@ -15,7 +15,24 @@
 
 exec 2>&1
 
-export LANG=C LC_ALL=C 
+# Keep this in sync with sbuild/lib/Buildd.pm.
+unset LANG
+unset LANGUAGE
+unset LC_CTYPE
+unset LC_NUMERIC
+unset LC_TIME
+unset LC_COLLATE
+unset LC_MONETARY
+unset LC_MESSAGES
+unset LC_PAPER
+unset LC_NAME
+unset LC_ADDRESS
+unset LC_TELEPHONE
+unset LC_MEASUREMENT
+unset LC_IDENTIFICATION
+unset LC_ALL
+unset DISPLAY
+unset TERM
 
 # On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
 # sync, and we notice this by way of a corrupted .sbuildrc.  We aren't going

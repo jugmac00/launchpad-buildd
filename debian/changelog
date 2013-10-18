@@ -1,3 +1,11 @@
+launchpad-buildd (120) UNRELEASED; urgency=low
+
+  * Unset LANG and LC_ALL rather than setting them to C, and unset a number
+    of other environment variables too (including DISPLAY and TERM), in line
+    with Debian buildds.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 18 Oct 2013 12:24:00 +0100
+
 launchpad-buildd (119) hardy; urgency=low
 
   * Mount /dev/pts with -o gid=5,mode=620 to avoid needing pt_chown.
