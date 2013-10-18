@@ -655,22 +655,6 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
                 self._builders.keys())
 
     def xmlrpc_status(self):
-        """Return the status of the build daemon.
-
-        Depending on the builder status we return differing amounts of
-        data. We do however always return the builder status as the first
-        value.
-
-        This method is deprecated in favour of `xmlrpc_status_dict`.
-        """
-        status = self.slave.builderstatus
-        statusname = status.split('.')[-1]
-        func = getattr(self, "status_" + statusname, None)
-        if func is None:
-            raise ValueError("Unknown status '%s'" % status)
-        return (status, ) + func()
-
-    def xmlrpc_status_dict(self):
         """Return the status of the build daemon, as a dictionary.
 
         Depending on the builder status we return differing amounts of data,
@@ -678,7 +662,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         """
         status = self.slave.builderstatus
         statusname = status.split('.')[-1]
-        func = getattr(self, "status_dict_" + statusname, None)
+        func = getattr(self, "status_" + statusname, None)
         if func is None:
             raise ValueError("Unknown status '%s'" % status)
         ret = {"builder_status": status}
@@ -687,17 +671,11 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         ret.update(func())
         return ret
 
+    def xmlrpc_status_dict(self):
+        return self.xmlrpc_status()
+
     def status_IDLE(self):
-        """Handler for xmlrpc_status IDLE.
-
-        Returns a tuple containing a empty string since there's nothing
-        to report.
-        """
-        # keep the result code sane
-        return ('', )
-
-    def status_dict_IDLE(self):
-        """Handler for xmlrpc_status_dict IDLE."""
+        """Handler for xmlrpc_status IDLE."""
         return {}
 
     def status_BUILDING(self):
@@ -706,31 +684,10 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         Returns the build id and up to one kilobyte of log tail.
         """
         tail = self.slave.getLogTail()
-        return (self.buildid, xmlrpclib.Binary(tail))
-
-    def status_dict_BUILDING(self):
-        """Handler for xmlrpc_status_dict BUILDING.
-
-        Returns the build id and up to one kilobyte of log tail.
-        """
-        tail = self.slave.getLogTail()
         return {"build_id": self.buildid, "logtail": xmlrpclib.Binary(tail)}
 
     def status_WAITING(self):
         """Handler for xmlrpc_status WAITING.
-
-        Returns the build id and the set of files waiting to be returned
-        unless the builder failed in which case we return the buildstatus
-        and the build id but no file set.
-        """
-        if self.slave.buildstatus in (BuildStatus.OK, BuildStatus.PACKAGEFAIL,
-                                      BuildStatus.DEPFAIL):
-            return (self.slave.buildstatus, self.buildid,
-                    self.slave.waitingfiles, self.slave.builddependencies)
-        return (self.slave.buildstatus, self.buildid)
-
-    def status_dict_WAITING(self):
-        """Handler for xmlrpc_status_dict WAITING.
 
         Returns the build id and the set of files waiting to be returned
         unless the builder failed in which case we return the buildstatus
@@ -748,15 +705,6 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
 
     def status_ABORTING(self):
         """Handler for xmlrpc_status ABORTING.
-
-        This state means the builder is performing the ABORT command and is
-        not able to do anything else than answer its status, so returns the
-        build id only.
-        """
-        return (self.buildid, )
-
-    def status_dict_ABORTING(self):
-        """Handler for xmlrpc_status_dict ABORTING.
 
         This state means the builder is performing the ABORT command and is
         not able to do anything else than answer its status, so returns the

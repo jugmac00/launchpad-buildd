@@ -92,8 +92,8 @@ class BuilddSlaveTestSetup(TacTestFixture):
     sourcepackagerecipe
     translation-templates
 
-    >>> s.status()
-    ['BuilderStatus.IDLE', '']
+    >>> s.status()["builder_status"]
+    'BuilderStatus.IDLE'
 
     >>> s.status_dict()["builder_status"]
     'BuilderStatus.IDLE'
