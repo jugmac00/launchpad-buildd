@@ -52,6 +52,8 @@ class LiveFSBuilder:
 
         :param args: the command and arguments to run.
         """
+        if self.options.arch == "powerpc":
+            args = ["linux32"] + args
         if echo:
             print "Running in chroot: %s" % ' '.join(
                 "'%s'" % arg for arg in args)
