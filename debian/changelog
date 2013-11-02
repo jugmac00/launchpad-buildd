@@ -4,6 +4,8 @@ launchpad-buildd (120) UNRELEASED; urgency=low
     of other environment variables too (including DISPLAY and TERM), in line
     with Debian buildds.
   * Make the status XML-RPC method a synonym for status_dict.
+  * Add a new "livefs" build manager, based on livecd-rootfs/BuildLiveCD
+    (LP: #1247461).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 18 Oct 2013 12:24:00 +0100
 
