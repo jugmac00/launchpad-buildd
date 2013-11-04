@@ -6,7 +6,6 @@
 
 __metaclass__ = type
 
-from datetime import date
 from optparse import OptionParser
 import os
 import re
@@ -114,8 +113,9 @@ class LiveFSBuilder:
             if self.options.subarch is not None:
                 base_lb_env["SUBARCH"] = self.options.subarch
             lb_env = dict(base_lb_env)
-            lb_env["NOW"] = date.today().strftime("%Y%m%d")
             lb_env["SUITE"] = self.options.suite
+            if self.options.datestamp is not None:
+                lb_env["NOW"] = self.options.datestamp
             if self.options.image_format is not None:
                 lb_env["IMAGEFORMAT"] = self.options.image_format
             if self.options.proposed:
@@ -138,6 +138,7 @@ def main():
         "--subproject", metavar="SUBPROJECT",
         help="build for subproject SUBPROJECT")
     parser.add_option("--suite", metavar="SUITE", help="build for suite SUITE")
+    parser.add_option("--datestamp", help="date stamp")
     parser.add_option(
         "--image-format", metavar="FORMAT", help="produce an image in FORMAT")
     parser.add_option(

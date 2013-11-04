@@ -38,6 +38,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.project = extra_args["project"]
         self.subproject = extra_args.get("subproject")
         self.suite = extra_args["suite"]
+        self.datestamp = extra_args.get("datestamp")
         self.image_format = extra_args.get("image_format")
         self.proposed = extra_args.get("proposed", False)
         self.locale = extra_args.get("locale")
@@ -58,6 +59,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         if self.subproject:
             args.extend(["--subproject", self.subproject])
         args.extend(["--suite", self.suite])
+        if self.datestamp:
+            args.extend(["--datestamp", self.datestamp])
         if self.image_format:
             args.extend(["--image-format", self.image_format])
         if self.proposed:
