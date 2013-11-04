@@ -13,6 +13,11 @@ from lpbuildd.debian import (
     )
 
 
+RETCODE_SUCCESS = 0
+RETCODE_FAILURE_INSTALL = 200
+RETCODE_FAILURE_BUILD = 201
+
+
 class LiveFilesystemBuildState(DebianBuildState):
     BUILD_LIVEFS = "BUILD_LIVEFS"
 
@@ -71,13 +76,19 @@ class LiveFilesystemBuildManager(DebianBuildManager):
 
     def iterate_BUILD_LIVEFS(self, retcode):
         """Finished building the live filesystem."""
-        if retcode == 0:
+        if retcode == RETCODE_SUCCESS:
             self.gatherResults()
             print("Returning build status: OK")
-        else:
+        elif (retcode >= RETCODE_FAILURE_INSTALL and
+              retcode <= RETCODE_FAILURE_BUILD):
             if not self.alreadyfailed:
                 self._slave.buildFail()
                 print("Returning build status: Build failed.")
+            self.alreadyfailed = True
+        else:
+            if not self.alreadyfailed:
+                self._slave.builderFail()
+                print("Returning build status: Builder failed.")
             self.alreadyfailed = True
         self.doReapProcesses(self._state)
 
