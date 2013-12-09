@@ -27,13 +27,6 @@ RETCODE_FAILURE_INSTALL_BUILD_DEPS = 202
 RETCODE_FAILURE_BUILD_SOURCE_PACKAGE = 203
 
 
-class NotVirtualized(Exception):
-    """Exception raised when not running in a virtualized environment."""
-
-    def __init__(self):
-        Exception.__init__(self, 'Not running under Xen.')
-
-
 def call_report_rusage(args, env):
     """Run a subprocess.
 
@@ -92,12 +85,6 @@ class RecipeBuilder:
         As a side-effect, sets self.source_dir_relative.
         :return: a retcode from `bzr dailydeb`.
         """
-        try:
-            ensure_virtualized()
-        except NotVirtualized, e:
-            sys.stderr.write('Aborting on failed virtualization check:\n')
-            sys.stderr.write(str(e))
-            return 1
         assert not os.path.exists(self.tree_path)
         recipe_path = os.path.join(self.work_dir, 'recipe')
         manifest_path = os.path.join(self.tree_path, 'manifest')
@@ -206,15 +193,6 @@ def get_build_path(build_id, *extra):
     """
     return os.path.join(
         os.environ["HOME"], "build-" + build_id, *extra)
-
-
-def ensure_virtualized():
-    """Raise an exception if not running in a virtualized environment.
-
-    Raises if not running under Xen.
-    """
-    if not os.path.isdir('/proc/xen') or os.path.exists('/proc/xen/xsd_kva'):
-        raise NotVirtualized()
 
 
 if __name__ == '__main__':
