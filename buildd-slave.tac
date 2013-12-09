@@ -8,6 +8,7 @@
 from twisted.application import service, strports
 from lpbuildd.slave import XMLRPCBuildDSlave
 from lpbuildd.binarypackage import BinaryPackageBuildManager
+from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.sourcepackagerecipe import (
     SourcePackageRecipeBuildManager)
 from lpbuildd.translationtemplates import (
@@ -30,6 +31,7 @@ slave.registerBuilder(BinaryPackageBuildManager, "binarypackage")
 slave.registerBuilder(SourcePackageRecipeBuildManager, "sourcepackagerecipe")
 slave.registerBuilder(
     TranslationTemplatesBuildManager, 'translation-templates')
+slave.registerBuilder(LiveFilesystemBuildManager, "livefs")
 
 application = service.Application('BuildDSlave')
 builddslaveService = service.IServiceCollection(application)

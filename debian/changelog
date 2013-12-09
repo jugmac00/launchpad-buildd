@@ -5,6 +5,8 @@ launchpad-buildd (120) UNRELEASED; urgency=low
     of other environment variables too (including DISPLAY and TERM), in line
     with Debian buildds.
   * Make the status XML-RPC method a synonym for status_dict.
+  * Add a new "livefs" build manager, based on livecd-rootfs/BuildLiveCD
+    (LP: #1247461).
 
   [ Adam Conrad ]
   * update-debian-chroot: Allow arm64-on-x86 builds with qemu-arm64-static.
