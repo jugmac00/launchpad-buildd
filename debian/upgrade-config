@@ -132,7 +132,7 @@ def upgrade_to_115():
 
 def upgrade_to_120():
     print "Upgrading %s to version 120" % conf_file
-    subprocess.call(["mv", conf_file, conf_file+"-prev115~"])
+    subprocess.call(["mv", conf_file, conf_file+"-prev120~"])
     in_file = open(conf_file+"-prev120~", "r")
     out_file = open(conf_file, "w")
     out_file.write(in_file.read())
