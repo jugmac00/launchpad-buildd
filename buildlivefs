@@ -38,6 +38,32 @@ def shell_escape(arg):
         return "'%s'" % arg.replace("'", "'\\''")
 
 
+linux32_arches = [
+    "armel",
+    "armhf",
+    "hppa",
+    "i386",
+    "lpia",
+    "mips",
+    "mipsel",
+    "powerpc",
+    "s390",
+    "sparc",
+    ]
+linux64_arches = [
+    "alpha",
+    "amd64",
+    "arm64",
+    "hppa64",
+    "ia64",
+    "ppc64",
+    "ppc64el",
+    "s390x",
+    "sparc64",
+    "x32",
+    ]
+
+
 class LiveFSBuilder:
     """Builds a live file system."""
 
@@ -51,8 +77,10 @@ class LiveFSBuilder:
 
         :param args: the command and arguments to run.
         """
-        if self.options.arch == "powerpc":
+        if self.options.arch in linux32_arches:
             args = ["linux32"] + args
+        elif self.options.arch in linux64_arches:
+            args = ["linux64"] + args
         if echo:
             print "Running in chroot: %s" % ' '.join(
                 "'%s'" % arg for arg in args)
