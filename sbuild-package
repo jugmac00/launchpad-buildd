@@ -73,12 +73,12 @@ case $SUITE in
 esac
 
 WARN=""
-case $(dpkg-architecture -a"$ARCHITECTURETAG" -qDEB_HOST_ARCH_BITS) in
-  32)
+case $ARCHITECTURETAG in
+  armel|armhf|hppa|i386|lpia|mips|mipsel|powerpc|s390|sparc)
     LINUX32="linux32"
     WARN="--warnonly"
     ;;
-  64)
+  alpha|amd64|arm64|hppa64|ia64|ppc64|ppc64el|s390x|sparc64|x32)
     LINUX32="linux64"
     ;;
 esac
