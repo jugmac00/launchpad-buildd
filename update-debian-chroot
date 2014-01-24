@@ -69,6 +69,7 @@ export TTY=unknown
 
 if ! $SUDO $CHROOT $ROOT $APTGET -uy update < /dev/null; then
 	echo "Waiting 15 seconds and trying again ..." >&2
+	sleep 15
 	$SUDO $CHROOT $ROOT $APTGET -uy update < /dev/null
 fi
 $SUDO $CHROOT $ROOT $APTGET $OPTIONS -uy --purge dist-upgrade < /dev/null
