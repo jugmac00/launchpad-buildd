@@ -1,3 +1,10 @@
+launchpad-buildd (121) UNRELEASED; urgency=medium
+
+  * Retry "apt-get update" on failure after a short delay, as this
+    occasionally fails due to racing with an archive pulse.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 24 Jan 2014 10:34:01 +0000
+
 launchpad-buildd (120) hardy; urgency=low
 
   [ Colin Watson ]
