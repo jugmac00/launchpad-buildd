@@ -1,4 +1,4 @@
-launchpad-buildd (121) UNRELEASED; urgency=medium
+launchpad-buildd (121) hardy; urgency=medium
 
   * Retry "apt-get update" on failure after a short delay, as this
     occasionally fails due to racing with an archive pulse.
@@ -6,7 +6,7 @@ launchpad-buildd (121) UNRELEASED; urgency=medium
     than unsetting them, since otherwise sudo/pam_env may fill in unwanted
     values from /etc/default/locale.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 24 Jan 2014 10:34:01 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Jan 2014 13:40:40 +0000
 
 launchpad-buildd (120) hardy; urgency=low
 
