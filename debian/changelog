@@ -2,6 +2,9 @@ launchpad-buildd (121) UNRELEASED; urgency=medium
 
   * Retry "apt-get update" on failure after a short delay, as this
     occasionally fails due to racing with an archive pulse.
+  * Go back to setting explicit values for LANG, LC_ALL, and LANGUAGE rather
+    than unsetting them, since otherwise sudo/pam_env may fill in unwanted
+    values from /etc/default/locale.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 24 Jan 2014 10:34:01 +0000
 
