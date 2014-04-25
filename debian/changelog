@@ -1,3 +1,10 @@
+launchpad-buildd (122) UNRELEASED; urgency=medium
+
+  * Drop the status_dict XML-RPC method, now that the master uses the
+    new-style dict-flavoured status method.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 25 Apr 2014 13:59:16 +0100
+
 launchpad-buildd (121) hardy; urgency=medium
 
   * Retry "apt-get update" on failure after a short delay, as this

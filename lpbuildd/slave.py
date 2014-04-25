@@ -671,9 +671,6 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         ret.update(func())
         return ret
 
-    def xmlrpc_status_dict(self):
-        return self.xmlrpc_status()
-
     def status_IDLE(self):
         """Handler for xmlrpc_status IDLE."""
         return {}
