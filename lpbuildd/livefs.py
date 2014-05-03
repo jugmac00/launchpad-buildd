@@ -100,6 +100,6 @@ class LiveFilesystemBuildManager(DebianBuildManager):
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
         for entry in sorted(os.listdir(self.build_path)):
-            if entry.startswith("livecd."):
-                self._slave.addWaitingFile(
-                    os.path.join(self.build_path, entry))
+            path = os.path.join(self.build_path, entry)
+            if entry.startswith("livecd.") and not os.path.islink(path):
+                self._slave.addWaitingFile(path)
