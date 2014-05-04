@@ -116,3 +116,25 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
+
+    def test_omits_symlinks(self):
+        # Symlinks in the build output are not included in gathered results.
+        self.startBuild()
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        log = open(log_path, "w")
+        log.write("I am a build log.")
+        log.close()
+
+        os.makedirs(self.build_dir)
+        target_path = os.path.join(
+            self.build_dir, "livecd.ubuntu.kernel-generic")
+        target = open(target_path, "w")
+        target.write("I am a kernel.")
+        target.close()
+        link_path = os.path.join(self.build_dir, "livecd.ubuntu.kernel")
+        os.symlink("livecd.ubuntu.kernel-generic", link_path)
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(
+            [((target_path,), {})], self.slave.addWaitingFile.calls)
