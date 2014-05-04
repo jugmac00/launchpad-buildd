@@ -3,6 +3,8 @@ launchpad-buildd (122) UNRELEASED; urgency=medium
   * Drop the status_dict XML-RPC method, now that the master uses the
     new-style dict-flavoured status method.
   * Don't add symlinks to the results of livefs builds (LP: #1247461).
+  * If a build is aborted between subprocesses, pretend that it was
+    terminated by a signal.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 25 Apr 2014 13:59:16 +0100
 

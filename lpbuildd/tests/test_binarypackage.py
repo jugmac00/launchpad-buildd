@@ -207,6 +207,30 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
+    def test_abort_between_subprocesses(self):
+        # If a build is aborted between subprocesses, the build manager
+        # pretends that it was terminated by a signal.
+        self.buildmanager.initiate(
+            {'foo_1.dsc': ''}, 'chroot.tar.gz',
+            {'suite': 'warty', 'ogrecomponent': 'main'})
+
+        self.buildmanager.abort()
+        expected_command = [
+            'processscanpath', 'scan-for-processes', self.buildid
+            ]
+        self.assertEqual(BinaryPackageBuildState.INIT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterate(0)
+        expected_command = ['cleanpath', 'remove-build', self.buildid]
+        self.assertEqual(BinaryPackageBuildState.CLEANUP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled('builderFail'))
+
     def test_missing_changes(self):
         # The build manager recovers if the expected .changes file does not
         # exist, and considers it a package build failure.
