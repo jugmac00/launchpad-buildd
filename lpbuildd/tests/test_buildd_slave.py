@@ -18,12 +18,16 @@ __all__ = ['LaunchpadBuilddSlaveTests']
 import difflib
 import os
 import shutil
+import tempfile
 import urllib2
 import unittest
 import xmlrpclib
 
 from lpbuildd.tests.harness import (
-    BuilddSlaveTestSetup, BuilddTestCase)
+    BuilddSlaveTestSetup,
+    BuilddTestCase,
+    MockBuildManager,
+    )
 
 
 def read_file(path):
@@ -182,6 +186,22 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # Instead of shocking the getLogTail call, return an empty string.
         log_tail = self.slave.getLogTail()
         self.assertEqual(len(log_tail), 0)
+
+    def testCleanDuplicateFiles(self):
+        """The clean method copes with duplicate waiting files."""
+        workdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, workdir)
+        self.slave._log = None
+        self.slave.startBuild(MockBuildManager())
+        self.slave.buildComplete()
+        paths = [os.path.join(workdir, name) for name in ('a', 'b')]
+        for path in paths:
+            f = open(path, 'w')
+            f.write('data')
+            f.close()
+            self.slave.addWaitingFile(path)
+        self.slave.clean()
+        self.assertEqual([], os.listdir(self.slave._cachepath))
 
 
 class XMLRPCBuildDSlaveTests(unittest.TestCase):
