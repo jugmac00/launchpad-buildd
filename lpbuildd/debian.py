@@ -10,6 +10,7 @@ __metaclass__ = type
 
 import os
 import re
+import signal
 
 from lpbuildd.slave import (
     BuildManager,
@@ -115,6 +116,10 @@ class DebianBuildManager(BuildManager):
         # When a Twisted ProcessControl class is killed by SIGTERM,
         # which we call 'build process aborted', 'None' is returned as
         # exit_code.
+        if self.alreadyfailed and success == 0:
+            # We may have been aborted in between subprocesses; pretend that
+            # we were terminated by a signal, which is close enough.
+            success = 128 + signal.SIGKILL
         print ("Iterating with success flag %s against stage %s"
                % (success, self._state))
         func = getattr(self, "iterate_" + self._state, None)

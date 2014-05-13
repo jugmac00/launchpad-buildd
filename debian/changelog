@@ -4,6 +4,8 @@ launchpad-buildd (122) UNRELEASED; urgency=medium
     new-style dict-flavoured status method.
   * Don't add symlinks to the results of livefs builds (LP: #1247461).
   * Cope with builds that return multiple files with identical content.
+  * If a build is aborted between subprocesses, pretend that it was
+    terminated by a signal.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 25 Apr 2014 13:59:16 +0100
 
