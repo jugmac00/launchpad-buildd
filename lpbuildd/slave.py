@@ -429,8 +429,8 @@ class BuildDSlave(object):
         """Clean up pending files and reset the internal build state."""
         if self.builderstatus != BuilderStatus.WAITING:
             raise ValueError('Slave is not WAITING when asked to clean')
-        for f in self.waitingfiles:
-            os.remove(self.cachePath(self.waitingfiles[f]))
+        for f in set(self.waitingfiles.values()):
+            os.remove(self.cachePath(f))
         self.builderstatus = BuilderStatus.IDLE
         if self._log is not None:
             self._log.close()
