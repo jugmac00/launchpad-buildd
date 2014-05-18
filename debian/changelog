@@ -1,3 +1,9 @@
+launchpad-buildd (123) UNRELEASED; urgency=medium
+
+  * Fix handling of livefs builds for the -proposed pocket.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Sun, 18 May 2014 14:18:49 +0100
+
 launchpad-buildd (122) hardy; urgency=medium
 
   * Drop the status_dict XML-RPC method, now that the master uses the

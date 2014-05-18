@@ -42,10 +42,14 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.subarch = extra_args.get("subarch")
         self.project = extra_args["project"]
         self.subproject = extra_args.get("subproject")
-        self.suite = extra_args["suite"]
+        suite = extra_args["suite"]
+        if "-" in suite:
+            self.series, self.pocket = suite.rsplit("-", 1)
+        else:
+            self.series = suite
+            self.pocket = "release"
         self.datestamp = extra_args.get("datestamp")
         self.image_format = extra_args.get("image_format")
-        self.proposed = extra_args.get("proposed", False)
         self.locale = extra_args.get("locale")
 
         super(LiveFilesystemBuildManager, self).initiate(
@@ -63,12 +67,12 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         args.extend(["--project", self.project])
         if self.subproject:
             args.extend(["--subproject", self.subproject])
-        args.extend(["--suite", self.suite])
+        args.extend(["--series", self.series])
         if self.datestamp:
             args.extend(["--datestamp", self.datestamp])
         if self.image_format:
             args.extend(["--image-format", self.image_format])
-        if self.proposed:
+        if self.pocket == "proposed":
             args.append("--proposed")
         if self.locale:
             args.extend(["--locale", self.locale])
