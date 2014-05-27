@@ -149,7 +149,7 @@ class LiveFSBuilder:
             if self.options.proposed:
                 lb_env["PROPOSED"] = "1"
             if self.options.extra_ppas:
-                lb_env["EXTRA_PPAS"] = "\n".join(self.options.extra_ppas)
+                lb_env["EXTRA_PPAS"] = " ".join(self.options.extra_ppas)
             self.run_build_command(["lb", "config"], env=lb_env)
             self.run_build_command(["lb", "build"], env=base_lb_env)
 
