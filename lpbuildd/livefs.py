@@ -58,6 +58,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.datestamp = extra_args.get("datestamp")
         self.image_format = extra_args.get("image_format")
         self.locale = extra_args.get("locale")
+        self.extra_ppas = extra_args.get("extra_ppas", [])
 
         super(LiveFilesystemBuildManager, self).initiate(
             files, chroot, extra_args)
@@ -83,6 +84,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.append("--proposed")
         if self.locale:
             args.extend(["--locale", self.locale])
+        for ppa in self.extra_ppas:
+            args.extend(["--extra-ppa", ppa])
         self.runSubProcess(self.build_livefs_path, args)
 
     def iterate_BUILD_LIVEFS(self, retcode):
