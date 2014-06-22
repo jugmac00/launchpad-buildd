@@ -1,11 +1,11 @@
-launchpad-buildd (123) UNRELEASED; urgency=medium
+launchpad-buildd (123) hardy; urgency=medium
 
   * Fix handling of livefs builds for the -proposed pocket.
   * Accept an "extra_ppas" entry in livefs arguments, which is passed to
     livecd-rootfs to request that the image be built against additional
     PPAs.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Sun, 18 May 2014 14:18:49 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Sun, 22 Jun 2014 16:10:44 +0100
 
 launchpad-buildd (122) hardy; urgency=medium
 
