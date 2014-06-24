@@ -109,6 +109,10 @@ class LiveFSBuilder:
 
     def install(self):
         self.chroot(["apt-get", "-y", "install", "livecd-rootfs"])
+        self.chroot([
+            "apt-get", "-y", "--no-install-recommends", "install",
+            "ltsp-server",
+            ])
         if self.options.locale is not None:
             self.chroot([
                 "apt-get", "-y", "--install-recommends", "install",

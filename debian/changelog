@@ -1,3 +1,10 @@
+launchpad-buildd (124) UNRELEASED; urgency=medium
+
+  * Install ltsp-server (but not its Recommends) for livefs builds, as
+    Edubuntu needs it.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 24 Jun 2014 14:58:16 +0100
+
 launchpad-buildd (123) hardy; urgency=medium
 
   * Fix handling of livefs builds for the -proposed pocket.
