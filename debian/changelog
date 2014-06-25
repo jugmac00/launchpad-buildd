@@ -1,5 +1,9 @@
 launchpad-buildd (124) UNRELEASED; urgency=medium
 
+  [ Adam Conrad ]
+  * Update Standards-Version, and switch Conflicts to Breaks/Replaces.
+
+  [ Colin Watson ]
   * Install ltsp-server (but not its Recommends) for i386 livefs builds, as
     Edubuntu needs it.
 
