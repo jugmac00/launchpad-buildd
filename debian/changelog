@@ -9,6 +9,7 @@ launchpad-buildd (124) UNRELEASED; urgency=medium
     - Remove now unnecessary lintian overrides for launchpad-buildd
   * Remove empty and obsolete /usr/share/launchpad-buildd/lpbuildd
   * Update Standards-Version, and switch Conflicts to Breaks/Replaces.
+  * Remove instance configuration from /etc/launchpad-buildd/ on purge.
 
   [ Colin Watson ]
   * Install ltsp-server (but not its Recommends) for i386 livefs builds, as
