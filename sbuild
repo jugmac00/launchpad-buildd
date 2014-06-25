@@ -484,8 +484,8 @@ $srcdep_lock_wait = 1; # minutes
 %individual_stalled_pkg_timeout = ();
 $path = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin:/usr/games";
 # read conf files
-require "/etc/sbuild.conf" if -r "/etc/sbuild.conf";
-require "$HOME/.sbuildrc" if -r "$HOME/.sbuildrc";
+require "/usr/share/launchpad-buildd/sbuild.conf" if -r "/usr/share/launchpad-buildd/sbuild.conf";
+require "$HOME/.lp-sbuildrc" if -r "$HOME/.lp-sbuildrc";
 # some checks
 #die "mailprog binary $conf::mailprog does not exist or isn't executable\n"
 #	if !-x $conf::mailprog;

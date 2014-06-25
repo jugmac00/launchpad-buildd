@@ -1,8 +1,4 @@
-etc
 etc/launchpad-buildd
-usr/bin
 usr/share/doc/launchpad-buildd
-usr/share/lintian/overrides
-usr/share/launchpad-buildd/lpbuildd
 usr/share/launchpad-buildd/slavebin
 var/log/launchpad-buildd

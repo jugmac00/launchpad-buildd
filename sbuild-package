@@ -39,15 +39,15 @@ unset TERM
 export LANG=C LC_ALL=C LANGUAGE=
 
 # On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
-# sync, and we notice this by way of a corrupted .sbuildrc.  We aren't going
+# sync, and we notice this by way of a corrupted .lp-sbuildrc.  We aren't going
 # to be able to build anything in this situation, so immediately return
 # BUILDERFAIL.
-if ! perl -c "$HOME/.sbuildrc" >/dev/null 2>&1; then
-    echo "$HOME/.sbuildrc is corrupt; builder needs repair work" 2>&1
+if ! perl -c "$HOME/.lp-sbuildrc" >/dev/null 2>&1; then
+    echo "$HOME/.lp-sbuildrc is corrupt; builder needs repair work" 2>&1
     exit 4
 fi
 
-SBUILD=/usr/bin/sbuild
+SBUILD=/usr/share/launchpad-buildd/slavebin/sbuild
 BUILDID=$1
 ARCHITECTURETAG=$2
 SUITE=$3
@@ -96,7 +96,7 @@ case $SUITE in
         ;;
 esac
 
-$SBUILD "$@" | /usr/bin/check-implicit-pointer-functions --inline $WARN
+$SBUILD "$@" | /usr/share/launchpad-buildd/slavebin/check-implicit-pointer-functions --inline $WARN
 RET=$?
 
 # really successful returns
@@ -122,6 +122,6 @@ STEP=$(cat build-progress | awk '{print $3}')
 exit 3
 
 # There is an exit code of "4" that means the builder itself is having
-# problems.  Currently, we don't use it at all, except for the .sbuildrc
+# problems.  Currently, we don't use it at all, except for the .lp-sbuildrc
 # check above.
 # exit 4

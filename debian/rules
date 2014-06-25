@@ -30,10 +30,6 @@ install:
 	dh_install
 	dh_installdirs
 	dh_installexamples
-	#hardy's debhelper doesn't provide dh_lintian
-	#dh_lintian
-	install -m644 debian/launchpad-buildd.lintian-overrides \
-		debian/launchpad-buildd/usr/share/lintian/overrides/launchpad-buildd
 
 	export DH_OPTIONS=-plaunchpad-buildd
 	dh_install $(slavebins) usr/share/launchpad-buildd/slavebin
@@ -42,7 +38,7 @@ install:
 		debian/upgrade-config \
 		usr/share/launchpad-buildd
 	dh_link usr/lib/launchpad-buildd/lpbuildd/check_implicit_pointer_functions.py \
-		usr/bin/check-implicit-pointer-functions
+		usr/share/launchpad-buildd/slavebin/check-implicit-pointer-functions
 
 binary-indep: install 
 	dh_installdocs

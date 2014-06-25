@@ -14,7 +14,7 @@ BUILDDUID=${BUILDD_UID:-2001}
 
 make_buildd()
 {
- buildd-genconfig --name=default --host=0.0.0.0 --port=8221 > \
+ /usr/share/launchpad-buildd/buildd-genconfig --name=default --host=0.0.0.0 --port=8221 > \
   /etc/launchpad-buildd/default
  echo Default buildd created.
 }
@@ -51,17 +51,17 @@ EOF
 
         install -d -o${USER} -m0755 /home/${USER}
 
-	# Create ~buildd/.sbuildrc if needed
-	if [ ! -f /home/${USER}/.sbuildrc ]; then
+	# Create ~buildd/.lp-sbuildrc if needed
+	if [ ! -f /home/${USER}/.lp-sbuildrc ]; then
 	    cp  /usr/share/launchpad-buildd/sbuildrc \
-		/home/${USER}/sbuildrc.tmp
+		/home/${USER}/.lp-sbuildrc.tmp
 	    cd /home/${USER}
 	    sed -e's/@ARCHTAG@/'$(dpkg --print-architecture)'/g' \
 		-e's/@FQDN@/'$(hostname --fqdn)'/g' \
-		<sbuildrc.tmp > .sbuildrc
-	    chown $USER:buildd .sbuildrc
-	    chmod 0644 .sbuildrc
-	    rm sbuildrc.tmp
+		< .lp-sbuildrc.tmp > .lp-sbuildrc
+	    chown $USER:buildd .lp-sbuildrc
+	    chmod 0644 .lp-sbuildrc
+	    rm .lp-sbuildrc.tmp
 	fi
 
 	# Prepare a default buildd...
@@ -83,6 +83,11 @@ EOF
 	                  | grep -v "^-" | grep -v "~$"); do
 		/usr/share/launchpad-buildd/upgrade-config $2 $CONFIG
 	    done
+	    if dpkg --compare-versions "$2" lt 124; then
+		# we used to ship /etc/sbuild.conf, but we moved it to
+		# /usr/share and, frankly, don't care if you modified it
+		rm -f /etc/sbuild.conf
+	    fi
 	fi
 
 	;;

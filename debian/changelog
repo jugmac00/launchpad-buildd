@@ -1,6 +1,13 @@
 launchpad-buildd (124) UNRELEASED; urgency=medium
 
   [ Adam Conrad ]
+  * Make launchpad-buildd more self-contained to avoid sbuild conflict:
+    - Move our forked sbuild to /usr/share/launchpad-buildd/slavebin
+    - Look for and use ~/.lp-sbuildrc instead of ~/.sbuildrc
+    - Move /etc/sbuild.conf to /usr/share/launchpad-buildd/sbuild.conf
+    - Move our internal helper binaries to /usr/share/launchpad-buildd
+    - Remove now unnecessary lintian overrides for launchpad-buildd
+  * Remove empty and obsolete /usr/share/launchpad-buildd/lpbuildd
   * Update Standards-Version, and switch Conflicts to Breaks/Replaces.
 
   [ Colin Watson ]
