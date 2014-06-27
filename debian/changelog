@@ -14,6 +14,8 @@ launchpad-buildd (124) UNRELEASED; urgency=medium
   [ Colin Watson ]
   * Install ltsp-server (but not its Recommends) for i386 livefs builds, as
     Edubuntu needs it.
+  * Stop accepting the "suite" argument to livefs builds, now that Launchpad
+    has been updated to use the newer series/pocket protocol.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 24 Jun 2014 14:58:16 +0100
 
