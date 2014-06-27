@@ -42,19 +42,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.subarch = extra_args.get("subarch")
         self.project = extra_args["project"]
         self.subproject = extra_args.get("subproject")
-        if "series" in extra_args:
-            self.series = extra_args["series"]
-            self.pocket = extra_args["pocket"]
-        else:
-            # For compatibility; remove once launchpad-buildd 123 is
-            # deployed in production and the Launchpad master has been
-            # adjusted to pass series and pocket rather than suite.
-            suite = extra_args["suite"]
-            if "-" in suite:
-                self.series, self.pocket = suite.rsplit("-", 1)
-            else:
-                self.series = suite
-                self.pocket = "release"
+        self.series = extra_args["series"]
+        self.pocket = extra_args["pocket"]
         self.datestamp = extra_args.get("datestamp")
         self.image_format = extra_args.get("image_format")
         self.locale = extra_args.get("locale")
