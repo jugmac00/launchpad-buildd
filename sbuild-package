@@ -38,6 +38,10 @@ unset TERM
 # values from /etc/default/locale.
 export LANG=C LC_ALL=C LANGUAGE=
 
+# Set DH_VERBOSE which controls verbose build-logs since debhelper
+# 9.20140613ubuntu1 for supported build-systems.
+export DH_VERBOSE=1
+
 # On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
 # sync, and we notice this by way of a corrupted .lp-sbuildrc.  We aren't going
 # to be able to build anything in this situation, so immediately return
