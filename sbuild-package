@@ -38,8 +38,8 @@ unset TERM
 # values from /etc/default/locale.
 export LANG=C LC_ALL=C LANGUAGE=
 
-# Set DH_VERBOSE which controls verbose build-logs since debhelper
-# 9.20140613ubuntu1 for supported build-systems.
+# Set DH_VERBOSE which controls verbose build-logs in debhelper
+# 9.20140613 and up, for supported dh_auto_build build-systems.
 export DH_VERBOSE=1
 
 # On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
