@@ -1,3 +1,11 @@
+launchpad-buildd (125) UNRELEASED; urgency=medium
+
+  * Calculate the FQDN dynamically in sbuildrc rather than substituting it
+    in from the postinst.  This is friendlier to scalingstack, where a
+    single image is used for multiple guests.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 10 Jul 2014 11:19:41 +0100
+
 launchpad-buildd (124) hardy; urgency=medium
 
   [ Adam Conrad ]
