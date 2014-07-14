@@ -9,7 +9,9 @@ $srcdep_lock_dir = "/home/buildd/";
 $arch="@ARCHTAG@";
 
 # Maintainer name to use in .changes files (mandatory, no default!)
-$maintainer_name="Ubuntu Build Daemon <buildd\@@FQDN@>";
+$fqdn=`hostname --fqdn`;
+chomp $fqdn;
+$maintainer_name="Ubuntu Build Daemon <buildd\@$fqdn>";
 
 # When to purge the build directory afterwards; possible values are
 # "never", "successful", and "always"
