@@ -8,6 +8,10 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
     in from the postinst.  This is friendlier to scalingstack, where a
     single image is used for multiple guests.
 
+  [ Adam Conrad ]
+  * scan-for-processes: Don't explode if one of the processes we were
+    going to kill completes before we get around to killing it.
+
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 14 Jul 2014 18:24:29 +0100
 
 launchpad-buildd (124) hardy; urgency=medium
