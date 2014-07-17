@@ -7,6 +7,8 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
   * Calculate the FQDN dynamically in sbuildrc rather than substituting it
     in from the postinst.  This is friendlier to scalingstack, where a
     single image is used for multiple guests.
+  * Set V=1 rather than DH_VERBOSE=1, in line with Debian buildds and to
+    cover some more build systems (see https://bugs.debian.org/751528).
 
   [ Adam Conrad ]
   * scan-for-processes: Don't explode if one of the processes we were
