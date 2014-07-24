@@ -11,6 +11,9 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
     cover some more build systems (see https://bugs.debian.org/751528).
   * Fix lpbuildd.livefs tests to account for the "suite" argument no longer
     being accepted.
+  * Drop support for running binarypackage builds without a "suite"
+    argument; Launchpad has passed this for all binarypackage builds since
+    2007.
 
   [ Adam Conrad ]
   * scan-for-processes: Don't explode if one of the processes we were
