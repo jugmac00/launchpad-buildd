@@ -9,6 +9,8 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
     single image is used for multiple guests.
   * Set V=1 rather than DH_VERBOSE=1, in line with Debian buildds and to
     cover some more build systems (see https://bugs.debian.org/751528).
+  * Fix lpbuildd.livefs tests to account for the "suite" argument no longer
+    being accepted.
 
   [ Adam Conrad ]
   * scan-for-processes: Don't explode if one of the processes we were

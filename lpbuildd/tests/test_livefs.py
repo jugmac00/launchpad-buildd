@@ -57,7 +57,8 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         # after INIT.
         extra_args = {
             "project": "ubuntu",
-            "suite": "saucy",
+            "series": "saucy",
+            "pocket": "release",
             "arch_tag": "i386",
             }
         self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
@@ -72,7 +73,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
         expected_command = [
             "buildlivefspath", "buildlivefs", "--build-id", self.buildid,
-            "--arch", "i386", "--project", "ubuntu", "--suite", "saucy",
+            "--arch", "i386", "--project", "ubuntu", "--series", "saucy",
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
