@@ -77,7 +77,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # after INIT.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'suite': 'warty', 'ogrecomponent': 'main'})
+            {'distribution': 'ubuntu', 'suite': 'warty',
+             'ogrecomponent': 'main'})
 
         # Skip DebianBuildManager states to the state directly before
         # SBUILD.
@@ -88,8 +89,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
         expected_command = [
             'sbuildpath', 'sbuild-package', self.buildid, 'i386', 'warty',
-            'sbuildargs', '--dist=warty', '--architecture=i386', '--comp=main',
-            'foo_1.dsc',
+            'sbuildargs', '--archive=ubuntu', '--dist=warty',
+            '--architecture=i386', '--comp=main', 'foo_1.dsc',
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
@@ -212,7 +213,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # pretends that it was terminated by a signal.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'suite': 'warty', 'ogrecomponent': 'main'})
+            {'distribution': 'ubuntu', 'suite': 'warty',
+             'ogrecomponent': 'main'})
 
         self.buildmanager.abort()
         expected_command = [
