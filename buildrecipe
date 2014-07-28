@@ -113,7 +113,9 @@ class RecipeBuilder:
         env = {
             'DEBEMAIL': self.author_email,
             'DEBFULLNAME': self.author_name.encode('utf-8'),
-            'BZR_EMAIL': bzr_email}
+            'BZR_EMAIL': bzr_email,
+            'LANG': 'C.UTF-8',
+            }
         retcode = call_report_rusage([
             'bzr',
             '-Derror',

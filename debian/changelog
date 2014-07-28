@@ -11,6 +11,8 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
     cover some more build systems (see https://bugs.debian.org/751528).
   * Fix lpbuildd.livefs tests to account for the "suite" argument no longer
     being accepted.
+  * Set LANG=C.UTF-8 when running "bzr builder", to ensure that it can
+    handle UTF-8 file and author names (LP: #1273487).
 
   [ Adam Conrad ]
   * scan-for-processes: Don't explode if one of the processes we were
