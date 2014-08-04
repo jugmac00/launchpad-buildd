@@ -1,4 +1,4 @@
-launchpad-buildd (125) UNRELEASED; urgency=medium
+launchpad-buildd (125) trusty; urgency=medium
 
   [ Dimitri John Ledkov ]
   * Enable verbose build logs (LP: #516208).
@@ -18,7 +18,7 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
   * scan-for-processes: Don't explode if one of the processes we were
     going to kill completes before we get around to killing it.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 14 Jul 2014 18:24:29 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 04 Aug 2014 08:51:37 +0200
 
 launchpad-buildd (124) hardy; urgency=medium
 
