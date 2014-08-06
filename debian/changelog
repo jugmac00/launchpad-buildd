@@ -1,4 +1,16 @@
-launchpad-buildd (125) UNRELEASED; urgency=medium
+launchpad-buildd (126) UNRELEASED; urgency=medium
+
+  * Build with dpkg-deb -Zgzip, so that the resulting .deb can still be
+    installed on lucid.
+  * Drop support for running binarypackage builds without a "suite"
+    argument; Launchpad has passed this for all binarypackage builds since
+    2007.
+  * Expect a "distribution" argument in binarypackage and pass it to
+    sbuild's --archive option (LP: #1348077).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 05 Aug 2014 01:39:21 +0200
+
+launchpad-buildd (125) trusty; urgency=medium
 
   [ Dimitri John Ledkov ]
   * Enable verbose build logs (LP: #516208).
@@ -11,17 +23,14 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
     cover some more build systems (see https://bugs.debian.org/751528).
   * Fix lpbuildd.livefs tests to account for the "suite" argument no longer
     being accepted.
-  * Drop support for running binarypackage builds without a "suite"
-    argument; Launchpad has passed this for all binarypackage builds since
-    2007.
-  * Expect a "distribution" argument in binarypackage and pass it to
-    sbuild's --archive option (LP: #1348077).
+  * Set LANG=C.UTF-8 when running "bzr builder", to ensure that it can
+    handle UTF-8 file and author names (LP: #1273487).
 
   [ Adam Conrad ]
   * scan-for-processes: Don't explode if one of the processes we were
     going to kill completes before we get around to killing it.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 14 Jul 2014 18:24:29 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 04 Aug 2014 08:51:37 +0200
 
 launchpad-buildd (124) hardy; urgency=medium
 
