@@ -9,7 +9,6 @@ __metaclass__ = type
 
 import os
 import pwd
-from resource import RLIMIT_AS, setrlimit
 import socket
 from subprocess import (
     PIPE,
@@ -198,7 +197,6 @@ def get_build_path(build_id, *extra):
 
 
 if __name__ == '__main__':
-    setrlimit(RLIMIT_AS, (1000000000, -1))
     builder = RecipeBuilder(*sys.argv[1:])
     if builder.install() != 0:
         sys.exit(RETCODE_FAILURE_INSTALL)
