@@ -25,8 +25,6 @@ conf = SafeConfigParser()
 conf.read(conffile)
 slave = XMLRPCBuildDSlave(conf)
 
-# 'debian' is the old name. It remains here for compatibility.
-slave.registerBuilder(BinaryPackageBuildManager, "debian")
 slave.registerBuilder(BinaryPackageBuildManager, "binarypackage")
 slave.registerBuilder(SourcePackageRecipeBuildManager, "sourcepackagerecipe")
 slave.registerBuilder(
