@@ -56,7 +56,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
             raise ValueError, files
 
         self.archive_purpose = extra_args.get('archive_purpose')
-        self.suite = extra_args.get('suite')
+        self.distribution = extra_args['distribution']
+        self.suite = extra_args['suite']
         self.component = extra_args['ogrecomponent']
         self.arch_indep = extra_args.get('arch_indep', False)
         self.build_debug_symbols = extra_args.get('build_debug_symbols', False)
@@ -67,23 +68,19 @@ class BinaryPackageBuildManager(DebianBuildManager):
     def doRunBuild(self):
         """Run the sbuild process to build the package."""
         args = ["sbuild-package", self._buildid, self.arch_tag]
-        if self.suite:
-            args.extend([self.suite])
-            args.extend(self._sbuildargs)
-            args.extend(["--dist=" + self.suite])
-        else:
-            args.extend(['autobuild'])
-            args.extend(self._sbuildargs)
-            args.extend(["--dist=autobuild"])
+        args.append(self.suite)
+        args.extend(self._sbuildargs)
+        args.append("--archive=" + self.distribution)
+        args.append("--dist=" + self.suite)
         if self.arch_indep:
-            args.extend(["-A"])
+            args.append("-A")
         if self.archive_purpose:
-            args.extend(["--purpose=" + self.archive_purpose])
+            args.append("--purpose=" + self.archive_purpose)
         if self.build_debug_symbols:
-            args.extend(["--build-debug-symbols"])
-        args.extend(["--architecture=" + self.arch_tag])
-        args.extend(["--comp=" + self.component])
-        args.extend([self._dscfile])
+            args.append("--build-debug-symbols")
+        args.append("--architecture=" + self.arch_tag)
+        args.append("--comp=" + self.component)
+        args.append(self._dscfile)
         self.runSubProcess( self._sbuildpath, args )
 
     def iterate_SBUILD(self, success):

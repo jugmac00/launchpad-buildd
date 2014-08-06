@@ -142,6 +142,20 @@ def upgrade_to_120():
     in_file.close()
     out_file.close()
 
+def upgrade_to_126():
+    print "Upgrading %s to version 126" % conf_file
+    subprocess.call(["mv", conf_file, conf_file+"-prev126~"])
+    in_file = open(conf_file+"-prev126~", "r")
+    out_file = open(conf_file, "w")
+    archive_ubuntu = " --archive=ubuntu"
+    for line in in_file:
+        line = line.rstrip("\n")
+        if line.endswith(archive_ubuntu):
+            line = line[:-len(archive_ubuntu)]
+        out_file.write(line + "\n")
+    in_file.close()
+    out_file.close()
+
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
     if int(old_version) < 12:
@@ -164,3 +178,5 @@ if __name__ == "__main__":
         upgrade_to_115()
     if int(old_version) < 120:
         upgrade_to_120()
+    if int(old_version) < 126:
+        upgrade_to_126()

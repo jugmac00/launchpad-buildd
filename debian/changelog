@@ -3,6 +3,12 @@ launchpad-buildd (126) UNRELEASED; urgency=medium
   [ Colin Watson ]
   * Build with dpkg-deb -Zgzip, so that the resulting .deb can still be
     installed on lucid.
+  * Drop support for running binarypackage builds without a "suite"
+    argument; Launchpad has passed this for all binarypackage builds since
+    2007.
+  * Expect a "distribution" argument in binarypackage and pass it to
+    sbuild's --archive option (LP: #1348077).  Remove the hardcoded
+    --archive=ubuntu from the configuration file.
 
   [ William Grant ]
   * Remove the 1GB RLIMIT_AS for recipe builds. All virtual builders now have
