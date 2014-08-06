@@ -6,7 +6,8 @@ launchpad-buildd (126) UNRELEASED; urgency=medium
     argument; Launchpad has passed this for all binarypackage builds since
     2007.
   * Expect a "distribution" argument in binarypackage and pass it to
-    sbuild's --archive option (LP: #1348077).
+    sbuild's --archive option (LP: #1348077).  Remove the hardcoded
+    --archive=ubuntu from the configuration file.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 05 Aug 2014 01:39:21 +0200
 
