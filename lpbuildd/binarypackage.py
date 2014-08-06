@@ -56,7 +56,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
             raise ValueError, files
 
         self.archive_purpose = extra_args.get('archive_purpose')
-        self.distribution = extra_args.get('distribution')
+        self.distribution = extra_args['distribution']
         self.suite = extra_args['suite']
         self.component = extra_args['ogrecomponent']
         self.arch_indep = extra_args.get('arch_indep', False)
@@ -70,8 +70,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
         args = ["sbuild-package", self._buildid, self.arch_tag]
         args.append(self.suite)
         args.extend(self._sbuildargs)
-        if self.distribution:
-            args.append("--archive=" + self.distribution)
+        args.append("--archive=" + self.distribution)
         args.append("--dist=" + self.suite)
         if self.arch_indep:
             args.append("-A")

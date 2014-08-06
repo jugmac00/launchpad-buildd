@@ -14,8 +14,8 @@ launchpad-buildd (125) UNRELEASED; urgency=medium
   * Drop support for running binarypackage builds without a "suite"
     argument; Launchpad has passed this for all binarypackage builds since
     2007.
-  * If binarypackage gets a "distribution" argument, pass it to sbuild's
-    --archive option (LP: #1348077).
+  * Expect a "distribution" argument in binarypackage and pass it to
+    sbuild's --archive option (LP: #1348077).
 
   [ Adam Conrad ]
   * scan-for-processes: Don't explode if one of the processes we were
