@@ -9,6 +9,17 @@ import re
 import sys
 import subprocess
 
+import apt_pkg
+
+
+apt_pkg.init()
+# Compatibility with ancient python-apt, needed until the last hardy
+# builders go away.
+if hasattr(apt_pkg, "version_compare"):
+    version_compare = apt_pkg.version_compare  # modern
+else:
+    version_compare = apt_pkg.VersionCompare   # ancient
+
 (old_version, conf_file) = sys.argv[1:]
 
 def upgrade_to_12():
@@ -158,25 +169,25 @@ def upgrade_to_126():
 
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
-    if int(old_version) < 12:
+    if version_compare(old_version, "12") < 0:
         upgrade_to_12()
-    if int(old_version) < 34:
+    if version_compare(old_version, "34") < 0:
         upgrade_to_34()
-    if int(old_version) < 39:
+    if version_compare(old_version, "39") < 0:
         upgrade_to_39()
-    if int(old_version) < 57:
+    if version_compare(old_version, "57") < 0:
         upgrade_to_57()
-    if int(old_version) < 58:
+    if version_compare(old_version, "58") < 0:
         upgrade_to_58()
-    if int(old_version) < 59:
+    if version_compare(old_version, "59") < 0:
         upgrade_to_59()
-    if int(old_version) < 63:
+    if version_compare(old_version, "63") < 0:
         upgrade_to_63()
-    if int(old_version) < 110:
+    if version_compare(old_version, "110") < 0:
         upgrade_to_110()
-    if int(old_version) < 115:
+    if version_compare(old_version, "115") < 0:
         upgrade_to_115()
-    if int(old_version) < 120:
+    if version_compare(old_version, "120") < 0:
         upgrade_to_120()
-    if int(old_version) < 126:
+    if version_compare(old_version, "126") < 0:
         upgrade_to_126()
