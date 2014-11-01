@@ -10,5 +10,7 @@ CLEANDIRS="$CLEANDIRS /home/buildd/public_html/translations/"
 CLEANDIRS="$CLEANDIRS /home/buildd/filecache-default/"
 
 for cleandir in $CLEANDIRS; do
-  [ ! -d "$cleandir" ] || find "$cleandir" -mindepth 1 -mtime +2 -print0 | xargs -r -0 rm
+  [ ! -d "$cleandir" ] || find "$cleandir" -mindepth 1 -mtime +2 \
+			  -not -name buildlog -print0 | \
+			  xargs -r -0 rm
 done

@@ -20,6 +20,10 @@ launchpad-buildd (126) UNRELEASED; urgency=medium
   * Drop the long-obsolete "debian" alias for the "binarypackage" build
     manager (LP: #538844).
 
+  [ Adam Conrad ]
+  * Avoid removing the buildlog in the cron.daily cleanup job, so that we
+    don't end up removing it and crashing lp-buildd on a long-hung build.
+
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 05 Aug 2014 01:39:21 +0200
 
 launchpad-buildd (125) trusty; urgency=medium
