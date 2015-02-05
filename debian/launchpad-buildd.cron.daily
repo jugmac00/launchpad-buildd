@@ -12,5 +12,5 @@ CLEANDIRS="$CLEANDIRS /home/buildd/filecache-default/"
 for cleandir in $CLEANDIRS; do
   [ ! -d "$cleandir" ] || find "$cleandir" -mindepth 1 -mtime +2 \
 			  -not -name buildlog -print0 | \
-			  xargs -r -0 rm
+			  xargs -r -0 rm -r
 done

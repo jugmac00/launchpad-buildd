@@ -10,6 +10,8 @@ launchpad-buildd (126) UNRELEASED; urgency=medium
     sbuild's --archive option (LP: #1348077).  Remove the hardcoded
     --archive=ubuntu from the configuration file.
   * upgrade-config: Use python-apt for version comparison (LP: #574713).
+  * debian/launchpad-buildd.cron.daily: Remove old ddebs and translations
+    directories recursively (LP: #1417893).
 
   [ William Grant ]
   * Remove the 1GB RLIMIT_AS for recipe builds. All virtual builders now have
