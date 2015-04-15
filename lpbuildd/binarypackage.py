@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 
+import os
 import re
 
 from lpbuildd.debian import DebianBuildManager, DebianBuildState
@@ -42,8 +43,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
     def __init__(self, slave, buildid, **kwargs):
         DebianBuildManager.__init__(self, slave, buildid, **kwargs)
         self._sbuildpath = slave._config.get("binarypackagemanager", "sbuildpath")
-        self._sbuildargs = slave._config.get("binarypackagemanager",
-                                             "sbuildargs").split(" ")
+        self.chroot_path = os.path.join(
+            os.environ["HOME"], "build-" + buildid, 'chroot-autobuild')
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
@@ -67,21 +68,32 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def doRunBuild(self):
         """Run the sbuild process to build the package."""
+        currently_building_path = os.path.join(
+            self.chroot_path, 'CurrentlyBuilding')
+        currently_building_contents = (
+            'Package: %s\n'
+            'Component: %s\n'
+            'Suite: %s\n'
+            'Purpose: %s\n'
+            % (self._dscfile.split('_')[0], self.component, self.suite,
+               self.archive_purpose))
+        if self.build_debug_symbols:
+            currently_building_contents += 'Build-Debug-Symbols: yes\n'
+        currently_building = open(currently_building_path, 'w')
+        currently_building.write(currently_building_contents)
+        currently_building.close()
+
         args = ["sbuild-package", self._buildid, self.arch_tag]
         args.append(self.suite)
-        args.extend(self._sbuildargs)
-        args.append("--archive=" + self.distribution)
+        args.extend(["-c", "chroot:autobuild"])
+        args.append("--arch=" + self.arch_tag)
         args.append("--dist=" + self.suite)
+        args.append("--purge=never")
+        args.append("--nolog")
         if self.arch_indep:
             args.append("-A")
-        if self.archive_purpose:
-            args.append("--purpose=" + self.archive_purpose)
-        if self.build_debug_symbols:
-            args.append("--build-debug-symbols")
-        args.append("--architecture=" + self.arch_tag)
-        args.append("--comp=" + self.component)
         args.append(self._dscfile)
-        self.runSubProcess( self._sbuildpath, args )
+        self.runSubProcess(self._sbuildpath, args)
 
     def iterate_SBUILD(self, success):
         """Finished the sbuild run."""

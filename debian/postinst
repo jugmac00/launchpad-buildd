@@ -27,6 +27,7 @@ case "$1" in
 	getent passwd buildd >/dev/null 2>&1 ||
         adduser --ingroup buildd --disabled-login --gecos 'Buildd user' \
                 --uid $BUILDDUID ${USER}
+        adduser --quiet buildd sbuild
 
 	SUDO_VERSION=$(sudo -V | sed -n '/^Sudo version/s/.* //p')
 	if dpkg --compare-versions $SUDO_VERSION lt 1.7 ||
@@ -51,16 +52,16 @@ EOF
 
         install -d -o${USER} -m0755 /home/${USER}
 
-	# Create ~buildd/.lp-sbuildrc if needed
-	if [ ! -f /home/${USER}/.lp-sbuildrc ]; then
+	# Create ~buildd/.sbuildrc if needed
+	if [ ! -f /home/${USER}/.sbuildrc ]; then
 	    cp  /usr/share/launchpad-buildd/sbuildrc \
-		/home/${USER}/.lp-sbuildrc.tmp
+		/home/${USER}/.sbuildrc.tmp
 	    cd /home/${USER}
 	    sed -e's/@ARCHTAG@/'$(dpkg --print-architecture)'/g' \
-		< .lp-sbuildrc.tmp > .lp-sbuildrc
-	    chown $USER:buildd .lp-sbuildrc
-	    chmod 0644 .lp-sbuildrc
-	    rm .lp-sbuildrc.tmp
+		< .sbuildrc.tmp > .sbuildrc
+	    chown $USER:buildd .sbuildrc
+	    chmod 0644 .sbuildrc
+	    rm .sbuildrc.tmp
 	fi
 
 	# Prepare a default buildd...

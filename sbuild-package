@@ -43,15 +43,14 @@ export LANG=C LC_ALL=C LANGUAGE=
 export V=1
 
 # On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
-# sync, and we notice this by way of a corrupted .lp-sbuildrc.  We aren't going
+# sync, and we notice this by way of a corrupted .sbuildrc.  We aren't going
 # to be able to build anything in this situation, so immediately return
 # BUILDERFAIL.
-if ! perl -c "$HOME/.lp-sbuildrc" >/dev/null 2>&1; then
-    echo "$HOME/.lp-sbuildrc is corrupt; builder needs repair work" 2>&1
+if ! perl -c "$HOME/.sbuildrc" >/dev/null 2>&1; then
+    echo "$HOME/.sbuildrc is corrupt; builder needs repair work" 2>&1
     exit 4
 fi
 
-SBUILD=/usr/share/launchpad-buildd/slavebin/sbuild
 BUILDID=$1
 ARCHITECTURETAG=$2
 SUITE=$3
@@ -68,6 +67,12 @@ if [ $NR_PROCESSORS -lt 2 ]; then
 fi
 
 cd "$HOME/build-$BUILDID"
+
+# sbuild tries to do this itself, but can end up trying to mkdir in
+# /build too early.
+getent group sbuild | sudo tee -a chroot-autobuild/etc/group > /dev/null || exit 2
+getent passwd sbuild | sudo tee -a chroot-autobuild/etc/passwd > /dev/null || exit 2
+sudo chown sbuild:sbuild chroot-autobuild/build || exit 2
 
 hostarch=$(dpkg --print-architecture)
 
@@ -92,7 +97,7 @@ case $ARCHITECTURETAG in
 esac
 
 echo "Kernel reported to sbuild: $($LINUX32 $UNAME26 uname -rvm)"
-SBUILD="$LINUX32 $UNAME26 $SBUILD"
+SBUILD="$LINUX32 $UNAME26 sbuild"
 
 case $SUITE in
     warty*|hoary*|breezy*|dapper*|edgy*|feisty*|gutsy*|hardy*|karmic*)
@@ -105,6 +110,8 @@ RET=$?
 
 # really successful returns
 [ $RET = 0 ] || exit $RET
+
+exit $RET
 
 STATE=$(cat build-progress | awk '{print $2}')
 STEP=$(cat build-progress | awk '{print $3}')
@@ -126,6 +133,6 @@ STEP=$(cat build-progress | awk '{print $3}')
 exit 3
 
 # There is an exit code of "4" that means the builder itself is having
-# problems.  Currently, we don't use it at all, except for the .lp-sbuildrc
+# problems.  Currently, we don't use it at all, except for the .sbuildrc
 # check above.
 # exit 4
