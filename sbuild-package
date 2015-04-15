@@ -58,12 +58,12 @@ SUITE=$3
 shift 3
 
 ACTUAL_NR_PROCESSORS=$(grep -c ^processor /proc/cpuinfo | sed 's/^0$/1/')
-export NR_PROCESSORS=$ACTUAL_NR_PROCESSORS
+NR_PROCESSORS=$ACTUAL_NR_PROCESSORS
 
 echo "Initiating build $BUILDID with $NR_PROCESSORS jobs across $ACTUAL_NR_PROCESSORS processor cores."
 
-if [ $NR_PROCESSORS -lt 2 ]; then
-        unset NR_PROCESSORS
+if [ $NR_PROCESSORS -gt 1 ]; then
+  export DEB_BUILD_OPTIONS=parallel=$NR_PROCESSORS
 fi
 
 cd "$HOME/build-$BUILDID"
