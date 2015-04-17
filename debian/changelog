@@ -1,3 +1,9 @@
+launchpad-buildd (127) UNRELEASED; urgency=low
+
+  * Refactor lpbuildd.binarypackage tests to be readable.
+
+ -- William Grant <wgrant@ubuntu.com>  Sat, 18 Apr 2015 06:41:52 +1000
+
 launchpad-buildd (126) trusty; urgency=medium
 
   [ Colin Watson ]
