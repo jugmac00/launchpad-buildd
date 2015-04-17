@@ -91,37 +91,37 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
         # SBUILD: Build the package.
         self.buildmanager.iterate(0)
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        expected_command = [
+        self.assertState(
+            BinaryPackageBuildState.SBUILD,
+            [
             'sbuildpath', 'sbuild-package', self.buildid, 'i386', 'warty',
             'sbuildargs', '--archive=ubuntu', '--dist=warty',
             '--architecture=i386', '--comp=main', 'foo_1.dsc',
-            ]
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            ], True)
         self.assertFalse(self.slave.wasCalled('chrootFail'))
+
+    def assertState(self, state, command, final):
+        self.assertEqual(state, self.getState())
+        self.assertEqual(command, self.buildmanager.commands[-1])
+        if final:
+            self.assertEqual(
+                self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        else:
+            self.assertNotEqual(
+                self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
     def assertScansSanely(self, exit_code):
         # After building the package, reap processes.
         self.buildmanager.iterate(exit_code)
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid,
-            ]
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertState(
+            BinaryPackageBuildState.SBUILD,
+            ['processscanpath', 'scan-for-processes', self.buildid], False)
 
     def assertUnmountsSanely(self):
         self.buildmanager.iterateReap(self.getState(), 0)
-        expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertState(
+            BinaryPackageBuildState.UMOUNT,
+            ['umountpath', 'umount-chroot', self.buildid], True)
 
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
@@ -151,13 +151,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
         # Send an abort command.  The build manager reaps processes.
         self.buildmanager.abort()
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertState(
+            BinaryPackageBuildState.SBUILD,
+            ['processscanpath', 'scan-for-processes', self.buildid], False)
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
         # If reaping completes successfully, the build manager returns
@@ -173,13 +169,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
         # Send an abort command.  The build manager reaps processes.
         self.buildmanager.abort()
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertState(
+            BinaryPackageBuildState.SBUILD,
+            ['processscanpath', 'scan-for-processes', self.buildid], False)
         self.assertFalse(self.slave.wasCalled('builderFail'))
         reap_subprocess = self.buildmanager._subprocess
 
@@ -200,13 +192,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # When sbuild exits, it does not reap processes again, but proceeds
         # directly to UMOUNT.
         self.buildmanager.iterate(128 + 9)  # SIGKILL
-        expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertState(
+            BinaryPackageBuildState.UMOUNT,
+            ['umountpath', 'umount-chroot', self.buildid], True)
 
     def test_abort_between_subprocesses(self):
         # If a build is aborted between subprocesses, the build manager
@@ -217,20 +205,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
              'ogrecomponent': 'main'})
 
         self.buildmanager.abort()
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.INIT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertState(
+            BinaryPackageBuildState.INIT,
+            ['processscanpath', 'scan-for-processes', self.buildid], False)
 
         self.buildmanager.iterate(0)
-        expected_command = ['cleanpath', 'remove-build', self.buildid]
-        self.assertEqual(BinaryPackageBuildState.CLEANUP, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertState(
+            BinaryPackageBuildState.CLEANUP,
+            ['cleanpath', 'remove-build', self.buildid], True)
         self.assertFalse(self.slave.wasCalled('builderFail'))
 
     def test_missing_changes(self):
