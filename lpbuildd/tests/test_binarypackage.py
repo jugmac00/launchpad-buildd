@@ -97,6 +97,27 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('chrootFail'))
 
+    def assertScansSanely(self, exit_code):
+        # After building the package, reap processes.
+        self.buildmanager.iterate(exit_code)
+        expected_command = [
+            'processscanpath', 'scan-for-processes', self.buildid,
+            ]
+        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+    def assertUnmountsSanely(self):
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            'umountpath', 'umount-chroot', self.buildid
+            ]
+        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
         self.startBuild()
@@ -114,27 +135,13 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         changes.close()
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(0)
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid,
-            ]
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertScansSanely(0)
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual(
             [((changes_path,), {})], self.slave.addWaitingFile.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
-        self.buildmanager.iterateReap(self.getState(), 0)
-        expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
     def test_abort_sbuild(self):
@@ -154,14 +161,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
         # If reaping completes successfully, the build manager returns
         # control to the DebianBuildManager in the UMOUNT state.
-        self.buildmanager.iterateReap(self.getState(), 0)
-        expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
     def test_abort_sbuild_fail(self):
@@ -251,28 +251,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         changes.close()
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(0)
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid,
-            ]
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertScansSanely(0)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertEqual(
             [((os.path.join(build_dir, 'foo_1_i386.changes'),), {})],
             self.slave.addWaitingFile.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
-        self.buildmanager.iterateReap(self.getState(), 0)
-        expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertUnmountsSanely()
         self.assertTrue(self.slave.wasCalled('buildFail'))
 
     def test_detects_depfail(self):
@@ -285,26 +271,12 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         log.close()
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(1)
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid,
-            ]
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertScansSanely(1)
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual([(("nonexistent",), {})], self.slave.depFail.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
-        self.buildmanager.iterateReap(self.getState(), 0)
-        expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
-            ]
-        self.assertEqual(BinaryPackageBuildState.UMOUNT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
     def test_depfail_with_unknown_error_converted_to_packagefail(self):
@@ -317,14 +289,6 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         log.write("E: Everything is broken.\n")
         log.close()
 
-        # After building the package, reap processes.
-        self.buildmanager.iterate(1)
-        expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid,
-            ]
-        self.assertEqual(BinaryPackageBuildState.SBUILD, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertScansSanely(1)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertFalse(self.slave.wasCalled('depFail'))
