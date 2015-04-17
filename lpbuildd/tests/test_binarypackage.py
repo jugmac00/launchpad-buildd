@@ -48,6 +48,11 @@ class MockBuildManager(BinaryPackageBuildManager):
         return 0
 
 
+def write_file(path, content):
+    with open(path, 'w') as f:
+        f.write(content)
+
+
 class TestBinaryPackageBuildManagerIteration(TestCase):
     """Run BinaryPackageBuildManager through its iteration steps."""
     def setUp(self):
@@ -122,17 +127,13 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # The build manager iterates a normal build from start to finish.
         self.startBuild()
 
-        log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write("I am a build log.")
-        log.close()
-
+        write_file(
+            os.path.join(self.buildmanager._cachepath, 'buildlog'),
+            "I am a build log.")
         changes_path = os.path.join(
             self.buildmanager.home, 'build-%s' % self.buildid,
             'foo_1_i386.changes')
-        changes = open(changes_path, 'w')
-        changes.write("I am a changes file.")
-        changes.close()
+        write_file(changes_path, "I am a changes file.")
 
         # After building the package, reap processes.
         self.assertScansSanely(0)
@@ -192,10 +193,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             [], sbuild_subprocess.transport.loseConnection.calls)
         self.assertNotEqual([], reap_subprocess.transport.loseConnection.calls)
 
-        log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write("I am a build log.")
-        log.close()
+        write_file(
+            os.path.join(self.buildmanager._cachepath, 'buildlog'),
+            "I am a build log.")
 
         # When sbuild exits, it does not reap processes again, but proceeds
         # directly to UMOUNT.
@@ -237,18 +237,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # The build manager recovers if the expected .changes file does not
         # exist, and considers it a package build failure.
         self.startBuild()
-
-        log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write("I am a build log.")
-        log.close()
-
+        write_file(
+            os.path.join(self.buildmanager._cachepath, 'buildlog'),
+            "I am a build log.")
         build_dir = os.path.join(
             self.buildmanager.home, 'build-%s' % self.buildid)
-        changes_path = os.path.join(build_dir, 'foo_2_i386.changes')
-        changes = open(changes_path, 'w')
-        changes.write("I am a changes file.")
-        changes.close()
+        write_file(
+            os.path.join(build_dir, 'foo_2_i386.changes'),
+            "I am a changes file.")
 
         # After building the package, reap processes.
         self.assertScansSanely(0)
@@ -264,11 +260,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
     def test_detects_depfail(self):
         # The build manager detects dependency installation failures.
         self.startBuild()
-
-        log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write("E: Unable to locate package nonexistent\n")
-        log.close()
+        write_file(
+            os.path.join(self.buildmanager._cachepath, 'buildlog'),
+            "E: Unable to locate package nonexistent\n")
 
         # After building the package, reap processes.
         self.assertScansSanely(1)
@@ -283,11 +277,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # The build manager converts a DEPFAIL to a PACKAGEFAIL if the
         # missing dependency can't be determined from the log.
         self.startBuild()
-
-        log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write("E: Everything is broken.\n")
-        log.close()
+        write_file(
+            os.path.join(self.buildmanager._cachepath, 'buildlog'),
+            "E: Everything is broken.\n")
 
         self.assertScansSanely(1)
         self.assertTrue(self.slave.wasCalled('buildFail'))
