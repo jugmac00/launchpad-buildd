@@ -43,8 +43,11 @@ class BinaryPackageBuildManager(DebianBuildManager):
     def __init__(self, slave, buildid, **kwargs):
         DebianBuildManager.__init__(self, slave, buildid, **kwargs)
         self._sbuildpath = slave._config.get("binarypackagemanager", "sbuildpath")
-        self.chroot_path = os.path.join(
-            os.environ["HOME"], "build-" + buildid, 'chroot-autobuild')
+
+    @property
+    def chroot_path(self):
+        return os.path.join(
+            self.home, "build-" + self._buildid, 'chroot-autobuild')
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""

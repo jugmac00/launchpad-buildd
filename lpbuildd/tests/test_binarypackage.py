@@ -85,6 +85,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             {'distribution': 'ubuntu', 'suite': 'warty',
              'ogrecomponent': 'main'})
 
+        os.makedirs(self.chrootdir)
+
         # Skip DebianBuildManager states to the state directly before
         # SBUILD.
         self.buildmanager._state = BinaryPackageBuildState.UPDATE
@@ -95,8 +97,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             BinaryPackageBuildState.SBUILD,
             [
             'sbuildpath', 'sbuild-package', self.buildid, 'i386', 'warty',
-            'sbuildargs', '--archive=ubuntu', '--dist=warty',
-            '--architecture=i386', '--comp=main', 'foo_1.dsc',
+            '-c', 'chroot:autobuild', '--arch=i386', '--dist=warty',
+            '--purge=never', '--nolog', 'foo_1.dsc',
             ], True)
         self.assertFalse(self.slave.wasCalled('chrootFail'))
 
