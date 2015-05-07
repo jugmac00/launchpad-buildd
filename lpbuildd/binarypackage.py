@@ -100,55 +100,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def iterate_SBUILD(self, success):
         """Finished the sbuild run."""
-        if success != SBuildExitCodes.OK:
-            log_patterns = []
-            stop_patterns = [["^Toolchain package versions:", re.M]]
-
-            # We don't distinguish attempted and failed.
-            if success == SBuildExitCodes.ATTEMPTED:
-                success = SBuildExitCodes.FAILED
-
-            if success == SBuildExitCodes.GIVENBACK:
-                for rx in BuildLogRegexes.GIVENBACK:
-                    log_patterns.append([rx, re.M])
-                # XXX: Check if it has the right Fail-Stage
-                if True:
-                    for rx in BuildLogRegexes.DEPFAIL:
-                        log_patterns.append([rx, re.M])
-
-            missing_dep = None
-            if log_patterns:
-                rx, mo = self.searchLogContents(log_patterns, stop_patterns)
-                if mo is None:
-                    # It was givenback, but we can't see a valid reason.
-                    # Assume it failed.
-                    success = SBuildExitCodes.FAILED
-                elif rx in BuildLogRegexes.DEPFAIL:
-                    # A depwait match forces depwait.
-                    missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
-                else:
-                    # Otherwise it was a givenback pattern, so leave it
-                    # in givenback.
-                    pass
-
-            if not self.alreadyfailed:
-                if missing_dep is not None:
-                    print("Returning build status: DEPFAIL")
-                    print("Dependencies: " + missing_dep)
-                    self._slave.depFail(missing_dep)
-                elif success == SBuildExitCodes.GIVENBACK:
-                    print("Returning build status: GIVENBACK")
-                    self._slave.giveBack()
-                elif success == SBuildExitCodes.FAILED:
-                    print("Returning build status: PACKAGEFAIL")
-                    self._slave.buildFail()
-                elif success >= SBuildExitCodes.BUILDERFAIL:
-                    # anything else is assumed to be a buildd failure
-                    print("Returning build status: BUILDERFAIL")
-                    self._slave.builderFail()
-                self.alreadyfailed = True
-            self.doReapProcesses(self._state)
-        else:
+        if success == SBuildExitCodes.OK:
             print("Returning build status: OK")
             try:
                 self.gatherResults()
@@ -157,6 +109,55 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 self._slave.buildFail()
                 self.alreadyfailed = True
             self.doReapProcesses(self._state)
+            return
+
+        log_patterns = []
+        stop_patterns = [["^Toolchain package versions:", re.M]]
+
+        # We don't distinguish attempted and failed.
+        if success == SBuildExitCodes.ATTEMPTED:
+            success = SBuildExitCodes.FAILED
+
+        if success == SBuildExitCodes.GIVENBACK:
+            for rx in BuildLogRegexes.GIVENBACK:
+                log_patterns.append([rx, re.M])
+            # XXX: Check if it has the right Fail-Stage
+            if True:
+                for rx in BuildLogRegexes.DEPFAIL:
+                    log_patterns.append([rx, re.M])
+
+        missing_dep = None
+        if log_patterns:
+            rx, mo = self.searchLogContents(log_patterns, stop_patterns)
+            if mo is None:
+                # It was givenback, but we can't see a valid reason.
+                # Assume it failed.
+                success = SBuildExitCodes.FAILED
+            elif rx in BuildLogRegexes.DEPFAIL:
+                # A depwait match forces depwait.
+                missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
+            else:
+                # Otherwise it was a givenback pattern, so leave it
+                # in givenback.
+                pass
+
+        if not self.alreadyfailed:
+            if missing_dep is not None:
+                print("Returning build status: DEPFAIL")
+                print("Dependencies: " + missing_dep)
+                self._slave.depFail(missing_dep)
+            elif success == SBuildExitCodes.GIVENBACK:
+                print("Returning build status: GIVENBACK")
+                self._slave.giveBack()
+            elif success == SBuildExitCodes.FAILED:
+                print("Returning build status: PACKAGEFAIL")
+                self._slave.buildFail()
+            elif success >= SBuildExitCodes.BUILDERFAIL:
+                # anything else is assumed to be a buildd failure
+                print("Returning build status: BUILDERFAIL")
+                self._slave.builderFail()
+            self.alreadyfailed = True
+        self.doReapProcesses(self._state)
 
     def iterateReap_SBUILD(self, success):
         """Finished reaping after sbuild run."""
