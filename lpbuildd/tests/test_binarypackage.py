@@ -14,6 +14,7 @@ from twisted.internet.task import Clock
 from lpbuildd.binarypackage import (
     BinaryPackageBuildManager,
     BinaryPackageBuildState,
+    SBuildExitCodes,
     )
 from lpbuildd.tests.fakeslave import (
     FakeMethod,
@@ -138,7 +139,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         write_file(changes_path, "I am a changes file.")
 
         # After building the package, reap processes.
-        self.assertScansSanely(0)
+        self.assertScansSanely(SBuildExitCodes.OK)
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual(
             [((changes_path,), {})], self.slave.addWaitingFile.calls)
@@ -231,7 +232,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             "I am a changes file.")
 
         # After building the package, reap processes.
-        self.assertScansSanely(0)
+        self.assertScansSanely(SBuildExitCodes.OK)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertEqual(
             [((os.path.join(build_dir, 'foo_1_i386.changes'),), {})],
@@ -249,7 +250,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             "E: Unable to locate package nonexistent\n")
 
         # After building the package, reap processes.
-        self.assertScansSanely(1)
+        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual([(("nonexistent",), {})], self.slave.depFail.calls)
 
@@ -265,6 +266,6 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "E: Everything is broken.\n")
 
-        self.assertScansSanely(1)
+        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertFalse(self.slave.wasCalled('depFail'))

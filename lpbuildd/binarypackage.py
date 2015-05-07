@@ -11,9 +11,9 @@ from lpbuildd.debian import DebianBuildManager, DebianBuildState
 class SBuildExitCodes:
     """SBUILD process result codes."""
     OK = 0
-    DEPFAIL = 1
-    GIVENBACK = 2
-    PACKAGEFAIL = 3
+    FAILED = 1
+    ATTEMPTED = 2
+    GIVENBACK = 3
     BUILDERFAIL = 4
 
 
@@ -104,46 +104,49 @@ class BinaryPackageBuildManager(DebianBuildManager):
             log_patterns = []
             stop_patterns = [["^Toolchain package versions:", re.M]]
 
-            if (success == SBuildExitCodes.DEPFAIL or
-                success == SBuildExitCodes.PACKAGEFAIL):
-                for rx in BuildLogRegexes.GIVENBACK:
-                    log_patterns.append([rx, re.M])
-
-            if success == SBuildExitCodes.DEPFAIL:
-                for rx in BuildLogRegexes.DEPFAIL:
-                    log_patterns.append([rx, re.M])
-
-            if log_patterns:
-                rx, mo = self.searchLogContents(log_patterns, stop_patterns)
-                if mo:
-                    if rx in BuildLogRegexes.GIVENBACK:
-                        success = SBuildExitCodes.GIVENBACK
-                    elif rx in BuildLogRegexes.DEPFAIL:
-                        if not self.alreadyfailed:
-                            dep = BuildLogRegexes.DEPFAIL[rx]
-                            print("Returning build status: DEPFAIL")
-                            print("Dependencies: " + mo.expand(dep))
-                            self._slave.depFail(mo.expand(dep))
-                            success = SBuildExitCodes.DEPFAIL
-                    else:
-                        success = SBuildExitCodes.PACKAGEFAIL
-                else:
-                    success = SBuildExitCodes.PACKAGEFAIL
+            # We don't distinguish attempted and failed.
+            if success == SBuildExitCodes.ATTEMPTED:
+                success = SBuildExitCodes.FAILED
 
             if success == SBuildExitCodes.GIVENBACK:
-                if not self.alreadyfailed:
+                for rx in BuildLogRegexes.GIVENBACK:
+                    log_patterns.append([rx, re.M])
+                # XXX: Check if it has the right Fail-Stage
+                if True:
+                    for rx in BuildLogRegexes.DEPFAIL:
+                        log_patterns.append([rx, re.M])
+
+            missing_dep = None
+            if log_patterns:
+                rx, mo = self.searchLogContents(log_patterns, stop_patterns)
+                if mo is None:
+                    # It was givenback, but we can't see a valid reason.
+                    # Assume it failed.
+                    success = SBuildExitCodes.FAILED
+                elif rx in BuildLogRegexes.DEPFAIL:
+                    # A depwait match forces depwait.
+                    missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
+                else:
+                    # Otherwise it was a givenback pattern, so leave it
+                    # in givenback.
+                    pass
+
+            if not self.alreadyfailed:
+                if missing_dep is not None:
+                    print("Returning build status: DEPFAIL")
+                    print("Dependencies: " + missing_dep)
+                    self._slave.depFail(missing_dep)
+                elif success == SBuildExitCodes.GIVENBACK:
                     print("Returning build status: GIVENBACK")
                     self._slave.giveBack()
-            elif success == SBuildExitCodes.PACKAGEFAIL:
-                if not self.alreadyfailed:
+                elif success == SBuildExitCodes.FAILED:
                     print("Returning build status: PACKAGEFAIL")
                     self._slave.buildFail()
-            elif success >= SBuildExitCodes.BUILDERFAIL:
-                # anything else is assumed to be a buildd failure
-                if not self.alreadyfailed:
+                elif success >= SBuildExitCodes.BUILDERFAIL:
+                    # anything else is assumed to be a buildd failure
                     print("Returning build status: BUILDERFAIL")
                     self._slave.builderFail()
-            self.alreadyfailed = True
+                self.alreadyfailed = True
             self.doReapProcesses(self._state)
         else:
             print("Returning build status: OK")
