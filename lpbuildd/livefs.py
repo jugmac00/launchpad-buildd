@@ -29,8 +29,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
 
     def __init__(self, slave, buildid, **kwargs):
         DebianBuildManager.__init__(self, slave, buildid, **kwargs)
-        self.build_livefs_path = slave._config.get(
-            "livefilesystemmanager", "buildlivefspath")
+        self.build_livefs_path = os.path.join(self._slavebin, "buildlivefs")
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""

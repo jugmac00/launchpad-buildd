@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 
+import os
 import re
 
 from lpbuildd.debian import DebianBuildManager, DebianBuildState
@@ -41,7 +42,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def __init__(self, slave, buildid, **kwargs):
         DebianBuildManager.__init__(self, slave, buildid, **kwargs)
-        self._sbuildpath = slave._config.get("binarypackagemanager", "sbuildpath")
+        self._sbuildpath = os.path.join(self._slavebin, "sbuild-package")
         self._sbuildargs = slave._config.get("binarypackagemanager",
                                              "sbuildargs").split(" ")
 

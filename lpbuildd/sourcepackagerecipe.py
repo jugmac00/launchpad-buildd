@@ -60,8 +60,7 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         :param buildid: The id of the build (a str).
         """
         DebianBuildManager.__init__(self, slave, buildid)
-        self.build_recipe_path = slave._config.get(
-            "sourcepackagerecipemanager", "buildrecipepath")
+        self.build_recipe_path = os.path.join(self._slavebin, "buildrecipe")
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot.

@@ -25,8 +25,8 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
 
     def __init__(self, slave, buildid):
         super(TranslationTemplatesBuildManager, self).__init__(slave, buildid)
-        self._generatepath = slave._config.get(
-            "translationtemplatesmanager", "generatepath")
+        self._generatepath = os.path.join(
+            self._slavebin, "generate-translation-templates")
         self._resultname = slave._config.get(
             "translationtemplatesmanager", "resultarchive")
 
