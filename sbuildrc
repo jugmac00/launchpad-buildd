@@ -6,6 +6,9 @@ my $fqdn=`hostname --fqdn`;
 chomp $fqdn;
 $maintainer_name="Launchpad Build Daemon <buildd\@$fqdn>";
 
+# launchpad-buildd does this before sbuild.
+$apt_update = 0;
+$apt_distupgrade = 0;
 $apt_allow_unauthenticated = 1;
 
 # After that time (in minutes) of inactivity a build is terminated.
