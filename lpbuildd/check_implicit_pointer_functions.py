@@ -92,7 +92,7 @@ def main():
                     errlist += err+"\n"
                     print err
                     if not warn_only:
-                        rv = 3
+                        rv = 2
 
     if len(errlist):
         if in_line:

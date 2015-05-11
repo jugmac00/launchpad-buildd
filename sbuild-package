@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
@@ -12,6 +12,10 @@
 # Expects rest of arguments to be to pass to sbuild
 
 # Needs SBUILD to be set to a sbuild instance with passwordless sudo ability
+
+# We want a non-zero exit code from sbuild even if the implicit function
+# pointer check succeeds.
+set -o pipefail
 
 exec 2>&1
 
