@@ -181,11 +181,10 @@ def upgrade_to_127():
     # all inside slavebin.
     config.set('slave', 'sharepath', '/usr/share/launchpad-buildd')
     deprecated_sections = [
-        'allmanagers', 'debianmanager', 'sourcepackagerecipemanager',
-        'livefilesystemmanager']
+        'allmanagers', 'binarypackagemanager', 'debianmanager',
+        'sourcepackagerecipemanager', 'livefilesystemmanager']
     for section in deprecated_sections:
         config.remove_section(section)
-    config.remove_option('binarypackagemanager', 'sbuildpath')
     config.remove_option('translationtemplatesmanager', 'generatepath')
 
     out_file = open(conf_file, "w")
