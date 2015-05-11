@@ -255,7 +255,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.startBuild()
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
-            "E: Unable to locate package nonexistent\n")
+            "E: Unable to locate package nonexistent\n"
+            + ("a" * 4096) + "\n"
+            + "Fail-Stage: install-deps\n")
 
         # After building the package, reap processes.
         self.assertScansSanely(SBuildExitCodes.GIVENBACK)

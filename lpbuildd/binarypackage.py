@@ -121,8 +121,17 @@ class BinaryPackageBuildManager(DebianBuildManager):
         if success == SBuildExitCodes.GIVENBACK:
             for rx in BuildLogRegexes.GIVENBACK:
                 log_patterns.append([rx, re.M])
-            # XXX: Check if it has the right Fail-Stage
-            if True:
+            # Check the last 4KiB for the Fail-Stage. If it failed
+            # during install-deps, search for the missing dependency
+            # string.
+            log = open(os.path.join(self._cachepath, "buildlog"))
+            try:
+                log.seek(-4096, os.SEEK_END)
+            except IOError:
+                pass
+            tail = log.read(4096)
+            log.close()
+            if re.search("^Fail-Stage: install-deps$", tail, re.M):
                 for rx in BuildLogRegexes.DEPFAIL:
                     log_patterns.append([rx, re.M])
 
