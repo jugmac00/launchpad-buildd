@@ -23,11 +23,8 @@ class BuildLogRegexes:
         ("^E: There are problems and -y was used without --force-yes"),
         ]
     DEPFAIL = {
-        "(?P<pk>[\-+.\w]+)\(inst [^ ]+ ! >> wanted (?P<v>[\-.+\w:~]+)\)": "\g<pk> (>> \g<v>)",
-        "(?P<pk>[\-+.\w]+)\(inst [^ ]+ ! >?= wanted (?P<v>[\-.+\w:~]+)\)": "\g<pk> (>= \g<v>)",
-        "(?s)^E: Couldn't find package (?P<pk>[\-+.\w]+)(?!.*^E: Couldn't find package)": "\g<pk>",
-        "(?s)^E: Package '?(?P<pk>[\-+.\w]+)'? has no installation candidate(?!.*^E: Package)": "\g<pk>",
-        "(?s)^E: Unable to locate package (?P<pk>[\-+.\w]+)(?!.*^E: Unable to locate package)": "\g<pk>",
+        'The following packages have unmet dependencies:\n'
+        '.*: Depends: (?P<p>[^ ]*( \([^)]*\))?)': "\g<p>",
         }
 
 

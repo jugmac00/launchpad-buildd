@@ -255,14 +255,17 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.startBuild()
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
-            "E: Unable to locate package nonexistent\n"
+            "The following packages have unmet dependencies:\n"
+            + " sbuild-build-depends-hello-dummy : Depends: enoent but it is "
+            + "not installable\n"
+            + "E: Unable to correct problems, you have held broken packages.\n"
             + ("a" * 4096) + "\n"
             + "Fail-Stage: install-deps\n")
 
         # After building the package, reap processes.
         self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual([(("nonexistent",), {})], self.slave.depFail.calls)
+        self.assertEqual([(("enoent",), {})], self.slave.depFail.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()
