@@ -12,6 +12,7 @@ from twisted.application import (
     service,
     strports,
     )
+from twisted.scripts.twistd import ServerOptions
 from twisted.web import (
     resource,
     server,
@@ -20,10 +21,14 @@ from twisted.web import (
 
 from lpbuildd.binarypackage import BinaryPackageBuildManager
 from lpbuildd.livefs import LiveFilesystemBuildManager
+from lpbuildd.log import RotatableFileLogObserver
 from lpbuildd.slave import XMLRPCBuildDSlave
 from lpbuildd.sourcepackagerecipe import SourcePackageRecipeBuildManager
 from lpbuildd.translationtemplates import TranslationTemplatesBuildManager
 
+
+options = ServerOptions()
+options.parseOptions()
 
 conffile = os.environ.get('BUILDD_SLAVE_CONFIG', 'buildd-slave-example.conf')
 
@@ -38,6 +43,8 @@ slave.registerBuilder(
 slave.registerBuilder(LiveFilesystemBuildManager, "livefs")
 
 application = service.Application('BuildDSlave')
+application.addComponent(
+    RotatableFileLogObserver(options.get('logfile')), ignoreClass=1)
 builddslaveService = service.IServiceCollection(application)
 
 root = resource.Resource()

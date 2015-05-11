@@ -1,0 +1,13 @@
+/var/log/launchpad-buildd/*.log {
+    rotate 14
+    daily
+    dateext
+    delaycompress
+    compress
+    notifempty
+    missingok
+    create 0644 buildd buildd
+    postrotate
+        service launchpad-buildd reload
+    endscript
+}
