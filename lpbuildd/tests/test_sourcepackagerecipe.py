@@ -84,7 +84,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
         expected_command = [
-            'buildrecipepath', 'buildrecipe', self.buildid,
+            'sharepath/slavebin/buildrecipe', 'buildrecipe', self.buildid,
             'Steve\u1234'.encode('utf-8'), 'stevea@example.org',
             'maverick', 'maverick', 'universe', 'puppies',
             ]
@@ -118,7 +118,8 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid,
+            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            self.buildid,
             ]
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
@@ -133,7 +134,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
+            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -156,7 +157,8 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls depFail correctly and reaps processes.
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid
+            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            self.buildid,
             ]
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
@@ -170,7 +172,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
+            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -191,7 +193,8 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls buildFail correctly and reaps processes.
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid
+            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            self.buildid,
             ]
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
@@ -204,7 +207,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
+            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])

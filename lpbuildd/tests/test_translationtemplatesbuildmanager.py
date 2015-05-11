@@ -82,7 +82,9 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
-            'generatepath', 'generatepath', self.buildid, url, 'resultarchive'
+            'sharepath/slavebin/generate-translation-templates',
+            'sharepath/slavebin/generate-translation-templates',
+            self.buildid, url, 'resultarchive'
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
@@ -101,7 +103,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # After generating templates, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid
+            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            self.buildid,
             ]
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
@@ -115,7 +118,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
+            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
             ]
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
@@ -139,7 +142,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
+            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
@@ -159,7 +162,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The buildmanager fails and reaps processes.
         self.buildmanager.iterate(-1)
         expected_command = [
-            'processscanpath', 'scan-for-processes', self.buildid
+            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            self.buildid,
             ]
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
@@ -173,7 +177,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'umountpath', 'umount-chroot', self.buildid
+            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(

@@ -5,9 +5,12 @@
 
 """Upgrade a launchpad-buildd configuration file."""
 
+import os
 import re
 import sys
 import subprocess
+
+from ConfigParser import SafeConfigParser
 
 import apt_pkg
 
@@ -167,6 +170,28 @@ def upgrade_to_126():
     in_file.close()
     out_file.close()
 
+def upgrade_to_127():
+    print "Upgrading %s to version 127" % conf_file
+    os.rename(conf_file, conf_file + "-prev127~")
+
+    config = SafeConfigParser()
+    config.read(conf_file + "-prev127~")
+
+    # Remove all of the pointlessly configurable binary paths which are
+    # all inside slavebin.
+    config.set('slave', 'sharepath', '/usr/share/launchpad-buildd')
+    deprecated_sections = [
+        'allmanagers', 'debianmanager', 'sourcepackagerecipemanager',
+        'livefilesystemmanager']
+    for section in deprecated_sections:
+        config.remove_section(section)
+    config.remove_option('binarypackagemanager', 'sbuildpath')
+    config.remove_option('translationtemplatesmanager', 'generatepath')
+
+    out_file = open(conf_file, "w")
+    config.write(out_file)
+    out_file.close()
+
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
     if version_compare(old_version, "12") < 0:
@@ -191,3 +216,5 @@ if __name__ == "__main__":
         upgrade_to_120()
     if version_compare(old_version, "126") < 0:
         upgrade_to_126()
+    if version_compare(old_version, "127") < 0:
+        upgrade_to_127()

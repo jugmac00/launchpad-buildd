@@ -97,9 +97,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             [
-            'sbuildpath', 'sbuild-package', self.buildid, 'i386', 'warty',
-            '-c', 'chroot:autobuild', '--arch=i386', '--dist=warty',
-            '--purge=never', '--nolog', 'foo_1.dsc',
+            'sharepath/slavebin/sbuild-package', 'sbuild-package',
+            self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
+            '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
+            'foo_1.dsc',
             ], True)
         self.assertFalse(self.slave.wasCalled('chrootFail'))
 
@@ -118,13 +119,15 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterate(exit_code)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['processscanpath', 'scan-for-processes', self.buildid], False)
+            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             self.buildid], False)
 
     def assertUnmountsSanely(self):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['umountpath', 'umount-chroot', self.buildid], True)
+            ['sharepath/slavebin/umount-chroot', 'umount-chroot',
+             self.buildid], True)
 
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
@@ -156,7 +159,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['processscanpath', 'scan-for-processes', self.buildid], False)
+            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             self.buildid], False)
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
         # If reaping completes successfully, the build manager returns
@@ -174,7 +178,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['processscanpath', 'scan-for-processes', self.buildid], False)
+            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             self.buildid], False)
         self.assertFalse(self.slave.wasCalled('builderFail'))
         reap_subprocess = self.buildmanager._subprocess
 
@@ -197,7 +202,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterate(128 + 9)  # SIGKILL
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['umountpath', 'umount-chroot', self.buildid], True)
+            ['sharepath/slavebin/umount-chroot', 'umount-chroot',
+             self.buildid], True)
 
     def test_abort_between_subprocesses(self):
         # If a build is aborted between subprocesses, the build manager
@@ -210,12 +216,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.INIT,
-            ['processscanpath', 'scan-for-processes', self.buildid], False)
+            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             self.buildid], False)
 
         self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.CLEANUP,
-            ['cleanpath', 'remove-build', self.buildid], True)
+            ['sharepath/slavebin/remove-build', 'remove-build', self.buildid],
+            True)
         self.assertFalse(self.slave.wasCalled('builderFail'))
 
     def test_missing_changes(self):
