@@ -52,16 +52,21 @@ EOF
 
         install -d -o${USER} -m0755 /home/${USER}
 
+	if [ "x$2" != "x" ]; then
+		if dpkg --compare-versions "$2" lt 127; then
+			# .lp-sbuildrc is no longer used.
+			rm -f /home/${USER}/.lp-sbuildrc
+			# .sbuildrc used to be a normal file, but nowadays it's a
+			# symlink.
+			rm -f /home/${USER}/.sbuildrc
+		fi
+	fi
+
 	# Create ~buildd/.sbuildrc if needed
 	if [ ! -f /home/${USER}/.sbuildrc ]; then
-	    cp  /usr/share/launchpad-buildd/sbuildrc \
-		/home/${USER}/.sbuildrc.tmp
-	    cd /home/${USER}
-	    sed -e's/@ARCHTAG@/'$(dpkg --print-architecture)'/g' \
-		< .sbuildrc.tmp > .sbuildrc
-	    chown $USER:buildd .sbuildrc
-	    chmod 0644 .sbuildrc
-	    rm .sbuildrc.tmp
+		ln -s /usr/share/launchpad-buildd/sbuildrc /home/${USER}/.sbuildrc
+		chown $USER:buildd /home/${USER}/.sbuildrc
+		chmod 0644 /home/${USER}/.sbuildrc
 	fi
 
 	# Prepare a default buildd...
