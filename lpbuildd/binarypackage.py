@@ -79,9 +79,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
                self.archive_purpose))
         if self.build_debug_symbols:
             currently_building_contents += 'Build-Debug-Symbols: yes\n'
-        currently_building = open(currently_building_path, 'w')
-        currently_building.write(currently_building_contents)
-        currently_building.close()
+        with open(currently_building_path, 'w') as currently_building:
+            currently_building.write(currently_building_contents)
 
         args = ["sbuild-package", self._buildid, self.arch_tag]
         args.append(self.suite)
@@ -121,13 +120,12 @@ class BinaryPackageBuildManager(DebianBuildManager):
             # Check the last 4KiB for the Fail-Stage. If it failed
             # during install-deps, search for the missing dependency
             # string.
-            log = open(os.path.join(self._cachepath, "buildlog"))
-            try:
-                log.seek(-4096, os.SEEK_END)
-            except IOError:
-                pass
-            tail = log.read(4096)
-            log.close()
+            with open(os.path.join(self._cachepath, "buildlog")) as log:
+                try:
+                    log.seek(-4096, os.SEEK_END)
+                except IOError:
+                    pass
+                tail = log.read(4096)
             if re.search("^Fail-Stage: install-deps$", tail, re.M):
                 for rx in BuildLogRegexes.DEPFAIL:
                     log_patterns.append([rx, re.M])
