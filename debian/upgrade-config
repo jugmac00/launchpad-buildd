@@ -10,8 +10,6 @@ import re
 import sys
 import subprocess
 
-from ConfigParser import SafeConfigParser
-
 import apt_pkg
 
 
