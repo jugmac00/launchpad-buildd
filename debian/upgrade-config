@@ -174,22 +174,32 @@ def upgrade_to_127():
     print "Upgrading %s to version 127" % conf_file
     os.rename(conf_file, conf_file + "-prev127~")
 
-    config = SafeConfigParser()
-    config.read(conf_file + "-prev127~")
-
-    # Remove all of the pointlessly configurable binary paths which are
-    # all inside slavebin.
-    config.set('slave', 'sharepath', '/usr/share/launchpad-buildd')
-    deprecated_sections = [
-        'allmanagers', 'debianmanager', 'sourcepackagerecipemanager',
-        'livefilesystemmanager']
-    for section in deprecated_sections:
-        config.remove_section(section)
-    config.remove_option('binarypackagemanager', 'sbuildpath')
-    config.remove_option('translationtemplatesmanager', 'generatepath')
-
+    in_file = open(conf_file + "-prev127~", "r")
     out_file = open(conf_file, "w")
-    config.write(out_file)
+    obsolete_prefixes = [
+        '[allmanagers]', '[debianmanager]', '[sourcepackagerecipemanager]',
+        '[livefilesystemmanager]', 'preppath ', 'unpackpath ', 'cleanpath ',
+        'mountpath ', 'umountpath ', 'processscanpath ', 'updatepath ',
+        'sourcespath ', 'sbuildpath ', 'buildrecipepath ', 'generatepath ',
+        'buildlivefspath ',
+        ]
+    wrote_blank = False
+    for line in in_file:
+        # Remove obsolete paths and sections.
+        if any(line.startswith(p) for p in obsolete_prefixes):
+            continue
+        # Squash any sequences of blank lines into a single one.
+        if not line.strip():
+            if wrote_blank:
+                continue
+            wrote_blank = True
+        else:
+            wrote_blank = False
+        out_file.write(line)
+        # Add single new sharepath to the end of the slave section.
+        if line.startswith("ntphost "):
+            out_file.write("sharepath = /usr/share/launchpad-buildd\n")
+    in_file.close()
     out_file.close()
 
 if __name__ == "__main__":
