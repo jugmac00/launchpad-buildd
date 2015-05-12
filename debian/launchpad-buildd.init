@@ -92,6 +92,15 @@ d_stop() {
     test -r $PIDFILE && kill -TERM $(cat $PIDFILE) || true
 }
 
+#
+#       Function that reloads a buildd slave
+#
+d_reload() {
+    CONF=$1
+    PIDFILE="$PIDROOT"/"$CONF".pid
+    test -r $PIDFILE && kill -HUP $(cat $PIDFILE) || true
+}
+
 CONFS=$(cd $CONFROOT; ls|grep -v "^-"|grep -v "~$")
 
 case "$1" in
@@ -128,8 +137,13 @@ case "$1" in
 	sleep 1
 	$0 start
         ;;
+  reload)
+        for conf in $CONFS; do
+            d_reload $conf
+        done
+        ;;
   *)
-        echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+        echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload|reload}" >&2
         exit 1
         ;;
 esac
