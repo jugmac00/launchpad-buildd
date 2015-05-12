@@ -65,8 +65,6 @@ EOF
 	# Create ~buildd/.sbuildrc if needed
 	if [ ! -f /home/${USER}/.sbuildrc ]; then
 		ln -s /usr/share/launchpad-buildd/sbuildrc /home/${USER}/.sbuildrc
-		chown $USER:buildd /home/${USER}/.sbuildrc
-		chmod 0644 /home/${USER}/.sbuildrc
 	fi
 
 	# Prepare a default buildd...
