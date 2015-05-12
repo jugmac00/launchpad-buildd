@@ -5,6 +5,7 @@
 
 """Upgrade a launchpad-buildd configuration file."""
 
+import os
 import re
 import sys
 import subprocess
@@ -167,6 +168,38 @@ def upgrade_to_126():
     in_file.close()
     out_file.close()
 
+def upgrade_to_127():
+    print "Upgrading %s to version 127" % conf_file
+    os.rename(conf_file, conf_file + "-prev127~")
+
+    in_file = open(conf_file + "-prev127~", "r")
+    out_file = open(conf_file, "w")
+    obsolete_prefixes = [
+        '[allmanagers]', '[debianmanager]', '[sourcepackagerecipemanager]',
+        '[livefilesystemmanager]', 'preppath ', 'unpackpath ', 'cleanpath ',
+        'mountpath ', 'umountpath ', 'processscanpath ', 'updatepath ',
+        'sourcespath ', 'sbuildpath ', 'buildrecipepath ', 'generatepath ',
+        'buildlivefspath ',
+        ]
+    wrote_blank = False
+    for line in in_file:
+        # Remove obsolete paths and sections.
+        if any(line.startswith(p) for p in obsolete_prefixes):
+            continue
+        # Squash any sequences of blank lines into a single one.
+        if not line.strip():
+            if wrote_blank:
+                continue
+            wrote_blank = True
+        else:
+            wrote_blank = False
+        out_file.write(line)
+        # Add single new sharepath to the end of the slave section.
+        if line.startswith("ntphost "):
+            out_file.write("sharepath = /usr/share/launchpad-buildd\n")
+    in_file.close()
+    out_file.close()
+
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
     if version_compare(old_version, "12") < 0:
@@ -191,3 +224,5 @@ if __name__ == "__main__":
         upgrade_to_120()
     if version_compare(old_version, "126") < 0:
         upgrade_to_126()
+    if version_compare(old_version, "127") < 0:
+        upgrade_to_127()

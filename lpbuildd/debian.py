@@ -33,9 +33,10 @@ class DebianBuildManager(BuildManager):
 
     def __init__(self, slave, buildid, **kwargs):
         BuildManager.__init__(self, slave, buildid, **kwargs)
-        self._updatepath = slave._config.get("debianmanager", "updatepath")
-        self._sourcespath = slave._config.get("debianmanager", "sourcespath")
-        self._cachepath = slave._config.get("slave","filecache")
+        self._updatepath = os.path.join(self._slavebin, "update-debian-chroot")
+        self._sourcespath = os.path.join(
+            self._slavebin, "override-sources-list")
+        self._cachepath = slave._config.get("slave", "filecache")
         self._state = DebianBuildState.INIT
         slave.emptyLog()
         self.alreadyfailed = False

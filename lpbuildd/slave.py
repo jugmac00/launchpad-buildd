@@ -108,12 +108,14 @@ class BuildManager(object):
         if reactor is None:
             reactor = default_reactor
         self._reactor = reactor
-        self._preppath = slave._config.get("allmanagers", "preppath")
-        self._unpackpath = slave._config.get("allmanagers", "unpackpath")
-        self._cleanpath = slave._config.get("allmanagers", "cleanpath")
-        self._mountpath = slave._config.get("allmanagers", "mountpath")
-        self._umountpath = slave._config.get("allmanagers", "umountpath")
-        self._scanpath = slave._config.get("allmanagers", "processscanpath")
+        self._sharepath = slave._config.get("slave", "sharepath")
+        self._slavebin = os.path.join(self._sharepath, "slavebin")
+        self._preppath = os.path.join(self._slavebin, "slave-prep")
+        self._unpackpath = os.path.join(self._slavebin, "unpack-chroot")
+        self._cleanpath = os.path.join(self._slavebin, "remove-build")
+        self._mountpath = os.path.join(self._slavebin, "mount-chroot")
+        self._umountpath = os.path.join(self._slavebin, "umount-chroot")
+        self._scanpath = os.path.join(self._slavebin, "scan-for-processes")
         self._subprocess = None
         self._reaped_states = set()
         self.is_archive_private = False
