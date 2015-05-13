@@ -1,5 +1,6 @@
 launchpad-buildd (127) UNRELEASED; urgency=low
 
+  [ William Grant ]
   * Switch from an internal sbuild fork to the system package.
     - Dropped copy of sbuild.
     - Install ~buildd/.sbuildrc instead of ~buildd/.lp-sbuildrc.
@@ -8,6 +9,11 @@ launchpad-buildd (127) UNRELEASED; urgency=low
     - Rewrite failure stage and depwait detection to cope with modern sbuild.
   * Refactor lpbuildd.binarypackage tests to be readable.
   * Drop duplicated paths from the config file.
+
+  [ Colin Watson ]
+  * Apply more reasonable log handling, as well as logrotate.
+    RotatableFileLogObserver class borrowed from Launchpad, amended to use
+    SIGHUP as its reopening signal.
 
  -- William Grant <wgrant@ubuntu.com>  Mon, 11 May 2015 20:55:37 +1000
 

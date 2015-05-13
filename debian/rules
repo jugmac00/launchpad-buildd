@@ -45,6 +45,7 @@ binary-indep: install
 	dh_installchangelogs
 	dh_installinit
 	dh_installcron
+	dh_installlogrotate
 	dh_strip
 	dh_compress
 	dh_fixperms
