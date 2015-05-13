@@ -1,6 +1,12 @@
 launchpad-buildd (127) UNRELEASED; urgency=low
 
   [ William Grant ]
+  * Switch from an internal sbuild fork to the system package.
+    - Dropped copy of sbuild.
+    - Install ~buildd/.sbuildrc instead of ~buildd/.lp-sbuildrc.
+    - Clean and update sbuildrc.
+    - Write out /CurrentlyBuilding from Python.
+    - Rewrite failure stage and depwait detection to cope with modern sbuild.
   * Refactor lpbuildd.binarypackage tests to be readable.
   * Drop duplicated paths from the config file.
 
@@ -9,7 +15,7 @@ launchpad-buildd (127) UNRELEASED; urgency=low
     RotatableFileLogObserver class borrowed from Launchpad, amended to use
     SIGHUP as its reopening signal.
 
- -- William Grant <wgrant@ubuntu.com>  Sat, 18 Apr 2015 06:41:52 +1000
+ -- William Grant <wgrant@ubuntu.com>  Mon, 11 May 2015 20:55:37 +1000
 
 launchpad-buildd (126) trusty; urgency=medium
 

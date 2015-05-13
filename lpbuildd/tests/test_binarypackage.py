@@ -14,6 +14,7 @@ from twisted.internet.task import Clock
 from lpbuildd.binarypackage import (
     BinaryPackageBuildManager,
     BinaryPackageBuildState,
+    SBuildExitCodes,
     )
 from lpbuildd.tests.fakeslave import (
     FakeMethod,
@@ -85,6 +86,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             {'distribution': 'ubuntu', 'suite': 'warty',
              'ogrecomponent': 'main'})
 
+        os.makedirs(self.chrootdir)
+
         # Skip DebianBuildManager states to the state directly before
         # SBUILD.
         self.buildmanager._state = BinaryPackageBuildState.UPDATE
@@ -95,8 +98,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             BinaryPackageBuildState.SBUILD,
             [
             'sharepath/slavebin/sbuild-package', 'sbuild-package',
-            self.buildid, 'i386', 'warty', 'sbuildargs', '--archive=ubuntu',
-            '--dist=warty', '--architecture=i386', '--comp=main', 'foo_1.dsc',
+            self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
+            '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
+            'foo_1.dsc',
             ], True)
         self.assertFalse(self.slave.wasCalled('chrootFail'))
 
@@ -138,7 +142,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         write_file(changes_path, "I am a changes file.")
 
         # After building the package, reap processes.
-        self.assertScansSanely(0)
+        self.assertScansSanely(SBuildExitCodes.OK)
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual(
             [((changes_path,), {})], self.slave.addWaitingFile.calls)
@@ -236,7 +240,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             "I am a changes file.")
 
         # After building the package, reap processes.
-        self.assertScansSanely(0)
+        self.assertScansSanely(SBuildExitCodes.OK)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertEqual(
             [((os.path.join(build_dir, 'foo_1_i386.changes'),), {})],
@@ -251,12 +255,17 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.startBuild()
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
-            "E: Unable to locate package nonexistent\n")
+            "The following packages have unmet dependencies:\n"
+            + " sbuild-build-depends-hello-dummy : Depends: enoent but it is "
+            + "not installable\n"
+            + "E: Unable to correct problems, you have held broken packages.\n"
+            + ("a" * 4096) + "\n"
+            + "Fail-Stage: install-deps\n")
 
         # After building the package, reap processes.
-        self.assertScansSanely(1)
+        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual([(("nonexistent",), {})], self.slave.depFail.calls)
+        self.assertEqual([(("enoent",), {})], self.slave.depFail.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()
@@ -270,6 +279,6 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "E: Everything is broken.\n")
 
-        self.assertScansSanely(1)
+        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertFalse(self.slave.wasCalled('depFail'))

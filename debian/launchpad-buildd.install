@@ -1,4 +1,2 @@
 default/launchpad-buildd 			etc/default
-sbuild						usr/share/launchpad-buildd/slavebin
-sbuild.conf 					usr/share/launchpad-buildd
 buildd-genconfig				usr/share/launchpad-buildd

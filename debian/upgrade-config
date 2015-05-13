@@ -175,10 +175,11 @@ def upgrade_to_127():
     in_file = open(conf_file + "-prev127~", "r")
     out_file = open(conf_file, "w")
     obsolete_prefixes = [
-        '[allmanagers]', '[debianmanager]', '[sourcepackagerecipemanager]',
-        '[livefilesystemmanager]', 'preppath ', 'unpackpath ', 'cleanpath ',
-        'mountpath ', 'umountpath ', 'processscanpath ', 'updatepath ',
-        'sourcespath ', 'sbuildpath ', 'buildrecipepath ', 'generatepath ',
+        '[allmanagers]', '[debianmanager]', '[binarypackagemanager]',
+        '[sourcepackagerecipemanager]', '[livefilesystemmanager]',
+        'preppath ', 'unpackpath ', 'cleanpath ', 'mountpath ', 'umountpath ',
+        'processscanpath ', 'updatepath ', 'sourcespath ', 'sbuildpath ',
+        'sbuildargs ', 'buildrecipepath ', 'generatepath ',
         'buildlivefspath ',
         ]
     wrote_blank = False

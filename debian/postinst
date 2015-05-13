@@ -27,6 +27,7 @@ case "$1" in
 	getent passwd buildd >/dev/null 2>&1 ||
         adduser --ingroup buildd --disabled-login --gecos 'Buildd user' \
                 --uid $BUILDDUID ${USER}
+        adduser --quiet buildd sbuild
 
 	SUDO_VERSION=$(sudo -V | sed -n '/^Sudo version/s/.* //p')
 	if dpkg --compare-versions $SUDO_VERSION lt 1.7 ||
@@ -51,16 +52,19 @@ EOF
 
         install -d -o${USER} -m0755 /home/${USER}
 
-	# Create ~buildd/.lp-sbuildrc if needed
-	if [ ! -f /home/${USER}/.lp-sbuildrc ]; then
-	    cp  /usr/share/launchpad-buildd/sbuildrc \
-		/home/${USER}/.lp-sbuildrc.tmp
-	    cd /home/${USER}
-	    sed -e's/@ARCHTAG@/'$(dpkg --print-architecture)'/g' \
-		< .lp-sbuildrc.tmp > .lp-sbuildrc
-	    chown $USER:buildd .lp-sbuildrc
-	    chmod 0644 .lp-sbuildrc
-	    rm .lp-sbuildrc.tmp
+	if [ "x$2" != "x" ]; then
+		if dpkg --compare-versions "$2" lt 127; then
+			# .lp-sbuildrc is no longer used.
+			rm -f /home/${USER}/.lp-sbuildrc
+			# .sbuildrc used to be a normal file, but nowadays it's a
+			# symlink.
+			rm -f /home/${USER}/.sbuildrc
+		fi
+	fi
+
+	# Create ~buildd/.sbuildrc if needed
+	if [ ! -f /home/${USER}/.sbuildrc ]; then
+		ln -s /usr/share/launchpad-buildd/sbuildrc /home/${USER}/.sbuildrc
 	fi
 
 	# Prepare a default buildd...

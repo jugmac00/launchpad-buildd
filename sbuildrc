@@ -1,34 +1,35 @@
 # Mail address where logs are sent to (mandatory, no default!)
-$mailto = "buildd-maint@canonical.com";
-
-$srcdep_lock_dir = "/home/buildd/";
-
-%mailto = (
-);
-
-$arch="@ARCHTAG@";
+$mailto = "buildd-maint\@canonical.com";
 
 # Maintainer name to use in .changes files (mandatory, no default!)
-$fqdn=`hostname --fqdn`;
+my $fqdn=`hostname --fqdn`;
 chomp $fqdn;
-$maintainer_name="Ubuntu Build Daemon <buildd\@$fqdn>";
+$maintainer_name="Launchpad Build Daemon <buildd\@$fqdn>";
 
-# When to purge the build directory afterwards; possible values are
-# "never", "successful", and "always"
- $purge_build_directory="always";
-#$purge_build_directory="successful";
+# launchpad-buildd does this before sbuild.
+$apt_update = 0;
+$apt_distupgrade = 0;
+$apt_allow_unauthenticated = 1;
 
-# Hack a "frozen" into the Distribution: line if compiling for frozen
-#$hack_changes_for_frozen = 1;
+# Also let LANG through to subprocesses, or sudo will set it to
+# /etc/default/locale on the host, which probably doesn't exist in the
+# chroot. sbuild-package invokes sbuild with LANG=C, which is what we
+# want.
+$environment_filter = [
+    '^PATH$',
+    '^DEB(IAN|SIGN)?_[A-Z_]+$',
+    '^(C(PP|XX)?|LD|F)FLAGS(_APPEND)?$',
+    '^USER(NAME)?$',
+    '^LOGNAME$',
+    '^HOME$',
+    '^TERM$',
+    '^SHELL$',
+    '^LANG$'];
 
 # After that time (in minutes) of inactivity a build is terminated.
 # Activity
 # is measured by output to the log file.
 $stalled_pkg_timeout = 150;
 
-# Some packages may exceed the general timeout (e.g. redirecting output to
-# a file) and need a different timeout. Below are some examples.
-#%individual_stalled_pkg_timeout = (
-#        ivtools => 600,
-#        smalleiffel => 600
-#);
+$chroot_mode="sudo";
+$sbuild_mode="buildd";

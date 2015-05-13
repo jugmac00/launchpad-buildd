@@ -11,9 +11,9 @@ from lpbuildd.debian import DebianBuildManager, DebianBuildState
 class SBuildExitCodes:
     """SBUILD process result codes."""
     OK = 0
-    DEPFAIL = 1
-    GIVENBACK = 2
-    PACKAGEFAIL = 3
+    FAILED = 1
+    ATTEMPTED = 2
+    GIVENBACK = 3
     BUILDERFAIL = 4
 
 
@@ -23,11 +23,8 @@ class BuildLogRegexes:
         ("^E: There are problems and -y was used without --force-yes"),
         ]
     DEPFAIL = {
-        "(?P<pk>[\-+.\w]+)\(inst [^ ]+ ! >> wanted (?P<v>[\-.+\w:~]+)\)": "\g<pk> (>> \g<v>)",
-        "(?P<pk>[\-+.\w]+)\(inst [^ ]+ ! >?= wanted (?P<v>[\-.+\w:~]+)\)": "\g<pk> (>= \g<v>)",
-        "(?s)^E: Couldn't find package (?P<pk>[\-+.\w]+)(?!.*^E: Couldn't find package)": "\g<pk>",
-        "(?s)^E: Package '?(?P<pk>[\-+.\w]+)'? has no installation candidate(?!.*^E: Package)": "\g<pk>",
-        "(?s)^E: Unable to locate package (?P<pk>[\-+.\w]+)(?!.*^E: Unable to locate package)": "\g<pk>",
+        'The following packages have unmet dependencies:\n'
+        '.*: Depends: (?P<p>[^ ]*( \([^)]*\))?)': "\g<p>",
         }
 
 
@@ -43,8 +40,11 @@ class BinaryPackageBuildManager(DebianBuildManager):
     def __init__(self, slave, buildid, **kwargs):
         DebianBuildManager.__init__(self, slave, buildid, **kwargs)
         self._sbuildpath = os.path.join(self._slavebin, "sbuild-package")
-        self._sbuildargs = slave._config.get("binarypackagemanager",
-                                             "sbuildargs").split(" ")
+
+    @property
+    def chroot_path(self):
+        return os.path.join(
+            self.home, "build-" + self._buildid, 'chroot-autobuild')
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
@@ -68,70 +68,35 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def doRunBuild(self):
         """Run the sbuild process to build the package."""
+        currently_building_path = os.path.join(
+            self.chroot_path, 'CurrentlyBuilding')
+        currently_building_contents = (
+            'Package: %s\n'
+            'Component: %s\n'
+            'Suite: %s\n'
+            'Purpose: %s\n'
+            % (self._dscfile.split('_')[0], self.component, self.suite,
+               self.archive_purpose))
+        if self.build_debug_symbols:
+            currently_building_contents += 'Build-Debug-Symbols: yes\n'
+        with open(currently_building_path, 'w') as currently_building:
+            currently_building.write(currently_building_contents)
+
         args = ["sbuild-package", self._buildid, self.arch_tag]
         args.append(self.suite)
-        args.extend(self._sbuildargs)
-        args.append("--archive=" + self.distribution)
+        args.extend(["-c", "chroot:autobuild"])
+        args.append("--arch=" + self.arch_tag)
         args.append("--dist=" + self.suite)
+        args.append("--purge=never")
+        args.append("--nolog")
         if self.arch_indep:
             args.append("-A")
-        if self.archive_purpose:
-            args.append("--purpose=" + self.archive_purpose)
-        if self.build_debug_symbols:
-            args.append("--build-debug-symbols")
-        args.append("--architecture=" + self.arch_tag)
-        args.append("--comp=" + self.component)
         args.append(self._dscfile)
-        self.runSubProcess( self._sbuildpath, args )
+        self.runSubProcess(self._sbuildpath, args)
 
     def iterate_SBUILD(self, success):
         """Finished the sbuild run."""
-        if success != SBuildExitCodes.OK:
-            log_patterns = []
-            stop_patterns = [["^Toolchain package versions:", re.M]]
-
-            if (success == SBuildExitCodes.DEPFAIL or
-                success == SBuildExitCodes.PACKAGEFAIL):
-                for rx in BuildLogRegexes.GIVENBACK:
-                    log_patterns.append([rx, re.M])
-
-            if success == SBuildExitCodes.DEPFAIL:
-                for rx in BuildLogRegexes.DEPFAIL:
-                    log_patterns.append([rx, re.M])
-
-            if log_patterns:
-                rx, mo = self.searchLogContents(log_patterns, stop_patterns)
-                if mo:
-                    if rx in BuildLogRegexes.GIVENBACK:
-                        success = SBuildExitCodes.GIVENBACK
-                    elif rx in BuildLogRegexes.DEPFAIL:
-                        if not self.alreadyfailed:
-                            dep = BuildLogRegexes.DEPFAIL[rx]
-                            print("Returning build status: DEPFAIL")
-                            print("Dependencies: " + mo.expand(dep))
-                            self._slave.depFail(mo.expand(dep))
-                            success = SBuildExitCodes.DEPFAIL
-                    else:
-                        success = SBuildExitCodes.PACKAGEFAIL
-                else:
-                    success = SBuildExitCodes.PACKAGEFAIL
-
-            if success == SBuildExitCodes.GIVENBACK:
-                if not self.alreadyfailed:
-                    print("Returning build status: GIVENBACK")
-                    self._slave.giveBack()
-            elif success == SBuildExitCodes.PACKAGEFAIL:
-                if not self.alreadyfailed:
-                    print("Returning build status: PACKAGEFAIL")
-                    self._slave.buildFail()
-            elif success >= SBuildExitCodes.BUILDERFAIL:
-                # anything else is assumed to be a buildd failure
-                if not self.alreadyfailed:
-                    print("Returning build status: BUILDERFAIL")
-                    self._slave.builderFail()
-            self.alreadyfailed = True
-            self.doReapProcesses(self._state)
-        else:
+        if success == SBuildExitCodes.OK:
             print("Returning build status: OK")
             try:
                 self.gatherResults()
@@ -140,6 +105,63 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 self._slave.buildFail()
                 self.alreadyfailed = True
             self.doReapProcesses(self._state)
+            return
+
+        log_patterns = []
+        stop_patterns = [["^Toolchain package versions:", re.M]]
+
+        # We don't distinguish attempted and failed.
+        if success == SBuildExitCodes.ATTEMPTED:
+            success = SBuildExitCodes.FAILED
+
+        if success == SBuildExitCodes.GIVENBACK:
+            for rx in BuildLogRegexes.GIVENBACK:
+                log_patterns.append([rx, re.M])
+            # Check the last 4KiB for the Fail-Stage. If it failed
+            # during install-deps, search for the missing dependency
+            # string.
+            with open(os.path.join(self._cachepath, "buildlog")) as log:
+                try:
+                    log.seek(-4096, os.SEEK_END)
+                except IOError:
+                    pass
+                tail = log.read(4096)
+            if re.search("^Fail-Stage: install-deps$", tail, re.M):
+                for rx in BuildLogRegexes.DEPFAIL:
+                    log_patterns.append([rx, re.M])
+
+        missing_dep = None
+        if log_patterns:
+            rx, mo = self.searchLogContents(log_patterns, stop_patterns)
+            if mo is None:
+                # It was givenback, but we can't see a valid reason.
+                # Assume it failed.
+                success = SBuildExitCodes.FAILED
+            elif rx in BuildLogRegexes.DEPFAIL:
+                # A depwait match forces depwait.
+                missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
+            else:
+                # Otherwise it was a givenback pattern, so leave it
+                # in givenback.
+                pass
+
+        if not self.alreadyfailed:
+            if missing_dep is not None:
+                print("Returning build status: DEPFAIL")
+                print("Dependencies: " + missing_dep)
+                self._slave.depFail(missing_dep)
+            elif success == SBuildExitCodes.GIVENBACK:
+                print("Returning build status: GIVENBACK")
+                self._slave.giveBack()
+            elif success == SBuildExitCodes.FAILED:
+                print("Returning build status: PACKAGEFAIL")
+                self._slave.buildFail()
+            elif success >= SBuildExitCodes.BUILDERFAIL:
+                # anything else is assumed to be a buildd failure
+                print("Returning build status: BUILDERFAIL")
+                self._slave.builderFail()
+            self.alreadyfailed = True
+        self.doReapProcesses(self._state)
 
     def iterateReap_SBUILD(self, success):
         """Finished reaping after sbuild run."""
