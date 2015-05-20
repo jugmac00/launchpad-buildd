@@ -1,4 +1,4 @@
-launchpad-buildd (127) UNRELEASED; urgency=low
+launchpad-buildd (127) trusty; urgency=low
 
   [ William Grant ]
   * Switch from an internal sbuild fork to the system package.
@@ -15,7 +15,7 @@ launchpad-buildd (127) UNRELEASED; urgency=low
     RotatableFileLogObserver class borrowed from Launchpad, amended to use
     SIGHUP as its reopening signal.
 
- -- William Grant <wgrant@ubuntu.com>  Mon, 11 May 2015 20:55:37 +1000
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 May 2015 13:38:51 +0100
 
 launchpad-buildd (126) trusty; urgency=medium
 
