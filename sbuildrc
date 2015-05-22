@@ -11,6 +11,8 @@ $apt_update = 0;
 $apt_distupgrade = 0;
 $apt_allow_unauthenticated = 1;
 
+$resolve_alternatives = 1;
+
 # Also let LANG through to subprocesses, or sudo will set it to
 # /etc/default/locale on the host, which probably doesn't exist in the
 # chroot. sbuild-package invokes sbuild with LANG=C, which is what we
