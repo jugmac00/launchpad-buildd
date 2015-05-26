@@ -1,9 +1,10 @@
-launchpad-buildd (128) UNRELEASED; urgency=medium
+launchpad-buildd (128) trusty; urgency=medium
 
+  [ Colin Watson ]
   * Use sbuild's --resolve-alternatives mode, to match the behaviour of the
     old internal sbuild fork.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 22 May 2015 11:02:29 +0100
+ -- William Grant <wgrant@ubuntu.com>  Tue, 26 May 2015 11:27:26 +1000
 
 launchpad-buildd (127) trusty; urgency=low
 
