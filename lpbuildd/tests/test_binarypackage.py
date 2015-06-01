@@ -250,26 +250,46 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertUnmountsSanely()
         self.assertTrue(self.slave.wasCalled('buildFail'))
 
-    def test_detects_depfail(self):
-        # The build manager detects dependency installation failures.
+    def assertMatchesDepfail(self, error, dep):
         self.startBuild()
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "The following packages have unmet dependencies:\n"
-            + " sbuild-build-depends-hello-dummy : Depends: enoent but it is "
-            + "not installable\n"
+            + (" sbuild-build-depends-hello-dummy : Depends: %s\n" % error)
             + "E: Unable to correct problems, you have held broken packages.\n"
             + ("a" * 4096) + "\n"
             + "Fail-Stage: install-deps\n")
 
-        # After building the package, reap processes.
         self.assertScansSanely(SBuildExitCodes.GIVENBACK)
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual([(("enoent",), {})], self.slave.depFail.calls)
-
-        # Control returns to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        if dep is not None:
+            self.assertFalse(self.slave.wasCalled('buildFail'))
+            self.assertEqual([((dep,), {})], self.slave.depFail.calls)
+        else:
+            self.assertFalse(self.slave.wasCalled('depFail'))
+            self.assertTrue(self.slave.wasCalled('buildFail'))
+
+    def test_detects_depfail(self):
+        # The build manager detects dependency installation failures.
+        self.assertMatchesDepfail(
+            "enoent but it is not installable", "enoent")
+
+    def test_detects_versioned_depfail(self):
+        # The build manager detects dependency installation failures.
+        self.assertMatchesDepfail(
+            "ebadver (< 2.0) but 3.0 is to be installed", "ebadver (< 2.0)")
+
+    def test_detects_versioned_current_depfail(self):
+        # The build manager detects dependency installation failures.
+        self.assertMatchesDepfail(
+            "ebadver (< 2.0) but 3.0 is installed", "ebadver (< 2.0)")
+
+    def test_uninstallable_deps_fail(self):
+        # Uninstallable build dependencies are considered to be
+        # failures, as we can't determine installability to
+        # automatically retry.
+        self.assertMatchesDepfail(
+            "ebadver but it is not going to be installed", None)
 
     def test_depfail_with_unknown_error_converted_to_packagefail(self):
         # The build manager converts a DEPFAIL to a PACKAGEFAIL if the

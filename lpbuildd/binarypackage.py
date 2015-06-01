@@ -17,6 +17,14 @@ class SBuildExitCodes:
     BUILDERFAIL = 4
 
 
+APT_MISSING_DEP_PATTERNS = [
+    'but [^ ]* is to be installed',
+    'but [^ ]* is installed',
+    'but it is not installable',
+    'but it is a virtual package',
+    ]
+
+
 class BuildLogRegexes:
     """Build log regexes for performing actions based on regexes, and extracting dependencies for auto dep-waits"""
     GIVENBACK = [
@@ -24,7 +32,8 @@ class BuildLogRegexes:
         ]
     DEPFAIL = {
         'The following packages have unmet dependencies:\n'
-        '.*: Depends: (?P<p>[^ ]*( \([^)]*\))?)': "\g<p>",
+        '.*: Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
+        % '|'.join(APT_MISSING_DEP_PATTERNS): "\g<p>",
         }
 
 
