@@ -1,8 +1,9 @@
-launchpad-buildd (129) UNRELEASED; urgency=low
+launchpad-buildd (129) trusty; urgency=low
 
+  [ William Grant ]
   * Tighten apt depwait parsing to not return uninstallable deps as missing.
 
- -- William Grant <wgrant@ubuntu.com>  Mon, 01 Jun 2015 09:39:37 +1000
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 04 Jun 2015 11:42:13 +0100
 
 launchpad-buildd (128) trusty; urgency=medium
 
