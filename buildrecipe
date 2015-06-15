@@ -17,6 +17,9 @@ from subprocess import (
     check_call,
     )
 import sys
+from textwrap import dedent
+
+from debian.deb822 import Deb822
 
 
 RETCODE_SUCCESS = 0
@@ -66,17 +69,18 @@ class RecipeBuilder:
                                      self.work_dir_relative[1:])
 
         self.tree_path = os.path.join(self.work_dir, 'tree')
+        self.apt_dir_relative = os.path.join(self.work_dir_relative, 'apt')
+        self.apt_dir = os.path.join(self.work_dir, 'apt')
         self.username = pwd.getpwuid(os.getuid())[0]
+        self.apt_sources_list_dir = os.path.join(
+            self.chroot_path, "etc/apt/sources.list.d")
 
     def install(self):
         """Install all the requirements for building recipes.
 
         :return: A retcode from apt.
         """
-        # XXX: AaronBentley 2010-07-07 bug=602463: pbuilder uses aptitude but
-        # does not depend on it.
-        return self.chroot([
-            'apt-get', 'install', '-y', 'pbuilder', 'aptitude', 'lsb-release'])
+        return self.chroot(['apt-get', 'install', '-y', 'lsb-release'])
 
     def buildTree(self):
         """Build the recipe into a source tree.
@@ -137,6 +141,101 @@ class RecipeBuilder:
         changelog = os.path.join(source_dir, 'debian/changelog')
         return open(changelog, 'r').readline().split(' ')[0]
 
+    def getSourceControl(self):
+        """Return the parsed source control stanza from the source tree."""
+        source_dir = os.path.join(
+            self.chroot_path, self.source_dir_relative.lstrip('/'))
+        with open(os.path.join(source_dir, 'debian/control')) as control_file:
+            # Don't let Deb822.iter_paragraphs use apt_pkg.TagFile
+            # internally, since that only handles real tag files and not the
+            # slightly more permissive syntax of debian/control which also
+            # allows comments.
+            return Deb822.iter_paragraphs(
+                control_file, use_apt_pkg=False).next()
+
+    def makeDummyDsc(self, package):
+        control = self.getSourceControl()
+        with open(os.path.join(
+                self.apt_dir, "%s.dsc" % package), "w") as dummy_dsc:
+            print >>dummy_dsc, dedent("""\
+                Format: 1.0
+                Source: %(package)s
+                Architecture: any
+                Version: 99:0
+                Maintainer: invalid@example.org""") % {"package": package}
+            for field in (
+                    "Build-Depends", "Build-Depends-Indep",
+                    "Build-Conflicts", "Build-Conflicts-Indep",
+                    ):
+                if field in control:
+                    print >>dummy_dsc, "%s: %s" % (field, control[field])
+            print >>dummy_dsc
+
+    def runAptFtparchive(self):
+        conf_path = os.path.join(self.apt_dir, "ftparchive.conf")
+        with open(conf_path, "w") as conf:
+            print >>conf, dedent("""\
+                Dir::ArchiveDir "%(apt_dir)s";
+                Default::Sources::Compress ". bzip2";
+                BinDirectory "%(apt_dir)s" { Sources "Sources"; };
+                APT::FTPArchive::Release {
+                    Origin "buildrecipe-archive";
+                    Label "buildrecipe-archive";
+                    Suite "invalid";
+                    Codename "invalid";
+                    Description "buildrecipe temporary archive";
+                };""") % {"apt_dir": self.apt_dir}
+        ftparchive_env = dict(os.environ)
+        ftparchive_env.pop("APT_CONFIG", None)
+        ret = call(
+            ["apt-ftparchive", "-q=2", "generate", conf_path],
+            env=ftparchive_env)
+        if ret != 0:
+            return ret
+
+        with open(os.path.join(self.apt_dir, "Release"), "w") as release:
+            return call(
+                ["apt-ftparchive", "-q=2", "-c", conf_path, "release",
+                 self.apt_dir],
+                stdout=release, env=ftparchive_env)
+
+    def enableAptArchive(self):
+        """Enable the dummy apt archive.
+
+        We run "apt-get update" with a temporary sources.list and some
+        careful use of APT::Get::List-Cleanup=false, so that we don't have
+        to update all sources (and potentially need to mimic the care taken
+        by update-debian-chroot, etc.).
+        """
+        tmp_list_path = os.path.join(self.apt_dir, "buildrecipe-archive.list")
+        tmp_list_path_relative = os.path.join(
+            self.apt_dir_relative, "buildrecipe-archive.list")
+        with open(tmp_list_path, "w") as tmp_list:
+            print >>tmp_list, "deb-src file://%s ./" % self.apt_dir_relative
+        ret = self.chroot([
+                'apt-get',
+                '-o', 'Dir::Etc::sourcelist=%s' % tmp_list_path_relative,
+                '-o', 'APT::Get::List-Cleanup=false',
+                'update',
+                ])
+        if ret == 0:
+            list_path = os.path.join(
+                self.apt_sources_list_dir, "buildrecipe-archive.list")
+            return call(['sudo', 'mv', tmp_list_path, list_path])
+        return ret
+
+    def setUpAptArchive(self, package):
+        """Generate a dummy apt archive with appropriate build-dependencies.
+
+        Based on Sbuild::ResolverBase.
+        """
+        os.makedirs(self.apt_dir)
+        self.makeDummyDsc(package)
+        ret = self.runAptFtparchive()
+        if ret != 0:
+            return ret
+        return self.enableAptArchive()
+
     def installBuildDeps(self):
         """Install the build-depends of the source tree."""
         package = self.getPackageName()
@@ -152,9 +251,8 @@ class RecipeBuilder:
         currently_building = open(currently_building_path, 'w')
         currently_building.write(currently_building_contents)
         currently_building.close()
-        return self.chroot(['sh', '-c', 'cd %s &&'
-                     '/usr/lib/pbuilder/pbuilder-satisfydepends'
-                     % self.source_dir_relative])
+        self.setUpAptArchive(package)
+        return self.chroot(['apt-get', 'build-dep', '-y', package])
 
     def chroot(self, args, echo=False):
         """Run a command in the chroot.
