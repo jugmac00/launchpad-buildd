@@ -5,8 +5,6 @@
 
 CLEANDIRS=""
 CLEANDIRS="$CLEANDIRS /var/log/launchpad-buildd/"
-CLEANDIRS="$CLEANDIRS /home/buildd/public_html/ddebs/"
-CLEANDIRS="$CLEANDIRS /home/buildd/public_html/translations/"
 CLEANDIRS="$CLEANDIRS /home/buildd/filecache-default/"
 
 for cleandir in $CLEANDIRS; do

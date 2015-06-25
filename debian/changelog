@@ -3,6 +3,9 @@ launchpad-buildd (130) UNRELEASED; urgency=medium
   * Reimplement build-dependency installation for recipes by hand using
     sbuild-like logic, allowing us to drop use of pbuilder (LP: #728494) and
     support :native in recipe build-dependencies (LP: #1322294).
+  * Stop cleaning /home/buildd/public_html/ddebs/ and
+    /home/buildd/public_html/translations/, now that we're using an sbuild
+    that doesn't publish anything there.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 15 Jun 2015 12:27:56 +0100
 
