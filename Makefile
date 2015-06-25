@@ -29,6 +29,7 @@ check:
 	PYTHONPATH=$(PWD):$(PYTHONPATH) $(PYTHON) -m testtools.run -v \
 		   lpbuildd.tests.test_binarypackage \
 		   lpbuildd.tests.test_buildd_slave \
+		   lpbuildd.tests.test_buildrecipe \
 		   lpbuildd.tests.test_check_implicit_pointer_functions \
 		   lpbuildd.tests.test_harness \
 		   lpbuildd.tests.test_livefs \
