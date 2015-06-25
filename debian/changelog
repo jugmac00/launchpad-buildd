@@ -6,6 +6,8 @@ launchpad-buildd (130) UNRELEASED; urgency=medium
   * Stop cleaning /home/buildd/public_html/ddebs/ and
     /home/buildd/public_html/translations/, now that we're using an sbuild
     that doesn't publish anything there.
+  * Drop apache2 dependency, which was only needed for old-style
+    ddeb/translation publishing.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 15 Jun 2015 12:27:56 +0100
 
