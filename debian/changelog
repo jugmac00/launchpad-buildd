@@ -1,4 +1,4 @@
-launchpad-buildd (130) UNRELEASED; urgency=medium
+launchpad-buildd (130) trusty; urgency=medium
 
   * Reimplement build-dependency installation for recipes by hand using
     sbuild-like logic, allowing us to drop use of pbuilder (LP: #728494) and
@@ -9,7 +9,7 @@ launchpad-buildd (130) UNRELEASED; urgency=medium
   * Drop apache2 dependency, which was only needed for old-style
     ddeb/translation publishing.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 15 Jun 2015 12:27:56 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 29 Jun 2015 17:56:52 +0100
 
 launchpad-buildd (129) trusty; urgency=low
 
