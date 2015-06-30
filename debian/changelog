@@ -1,3 +1,10 @@
+launchpad-buildd (131) UNRELEASED; urgency=medium
+
+  * slave-prep: Output current sbuild version, now that it's a separate
+    package.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 30 Jun 2015 13:09:34 +0100
+
 launchpad-buildd (130) trusty; urgency=medium
 
   * Reimplement build-dependency installation for recipes by hand using
