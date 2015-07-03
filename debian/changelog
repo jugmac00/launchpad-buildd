@@ -2,6 +2,10 @@ launchpad-buildd (131) UNRELEASED; urgency=medium
 
   * slave-prep: Output current sbuild version, now that it's a separate
     package.
+  * Analyse dubious dep-wait cases ("but it is not installed" or "but it is
+    not going to be installed") manually to check whether any direct
+    build-dependencies are missing, and if so generate an appropriate
+    dep-wait (LP: #1468755).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 30 Jun 2015 13:09:34 +0100
 

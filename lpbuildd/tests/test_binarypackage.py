@@ -3,12 +3,19 @@
 
 __metaclass__ = type
 
-import tempfile
-
 import os
 import shutil
-from testtools import TestCase
+import tempfile
+from textwrap import dedent
 
+from debian.deb822 import PkgRelation
+from testtools import TestCase
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    Is,
+    MatchesListwise,
+    )
 from twisted.internet.task import Clock
 
 from lpbuildd.binarypackage import (
@@ -39,6 +46,7 @@ class MockBuildManager(BinaryPackageBuildManager):
         super(MockBuildManager, self).__init__(*args, **kwargs)
         self.commands = []
         self.iterators = []
+        self.arch_indep = False
 
     def runSubProcess(self, path, command, iterate=None):
         self.commands.append([path]+command)
@@ -250,7 +258,170 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertUnmountsSanely()
         self.assertTrue(self.slave.wasCalled('buildFail'))
 
-    def assertMatchesDepfail(self, error, dep):
+    def test_getAvailablePackages(self):
+        # getAvailablePackages scans the correct set of files and returns
+        # reasonable version information.
+        apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
+        os.makedirs(apt_lists)
+        write_file(
+            os.path.join(
+                apt_lists,
+                "archive.ubuntu.com_ubuntu_trusty_main_binary-amd64_Packages"),
+            dedent("""\
+                Package: foo
+                Version: 1.0
+                Provides: virt
+
+                Package: bar
+                Version: 2.0
+                Provides: versioned-virt (= 3.0)
+                """))
+        write_file(
+            os.path.join(
+                apt_lists,
+                "archive.ubuntu.com_ubuntu_trusty-proposed_main_binary-amd64_"
+                "Packages"),
+            dedent("""\
+                Package: foo
+                Version: 1.1
+                """))
+        write_file(os.path.join(apt_lists, "other"), "some other stuff")
+        expected = {
+            "foo": set(["1.0", "1.1"]),
+            "bar": set(["2.0"]),
+            "virt": set([None]),
+            "versioned-virt": set(["3.0"]),
+            }
+        self.assertEqual(expected, self.buildmanager.getAvailablePackages())
+
+    def test_getBuildDepends_arch_dep(self):
+        # getBuildDepends returns only Build-Depends for
+        # architecture-dependent builds.
+        dscpath = os.path.join(self.working_dir, "foo.dsc")
+        write_file(
+            dscpath,
+            dedent("""\
+                Package: foo
+                Build-Depends: debhelper (>= 9~), bar | baz
+                Build-Depends-Indep: texlive-base
+                """))
+        self.assertThat(
+            self.buildmanager.getBuildDepends(dscpath, False),
+            MatchesListwise([
+                MatchesListwise([
+                    ContainsDict({
+                        "name": Equals("debhelper"),
+                        "version": Equals((">=", "9~")),
+                        }),
+                    ]),
+                MatchesListwise([
+                    ContainsDict({"name": Equals("bar"), "version": Is(None)}),
+                    ContainsDict({"name": Equals("baz"), "version": Is(None)}),
+                    ])]))
+
+    def test_getBuildDepends_arch_indep(self):
+        # getBuildDepends returns both Build-Depends and Build-Depends-Indep
+        # for architecture-independent builds.
+        dscpath = os.path.join(self.working_dir, "foo.dsc")
+        write_file(
+            dscpath,
+            dedent("""\
+                Package: foo
+                Build-Depends: debhelper (>= 9~), bar | baz
+                Build-Depends-Indep: texlive-base
+                """))
+        self.assertThat(
+            self.buildmanager.getBuildDepends(dscpath, True),
+            MatchesListwise([
+                MatchesListwise([
+                    ContainsDict({
+                        "name": Equals("debhelper"),
+                        "version": Equals((">=", "9~")),
+                        }),
+                    ]),
+                MatchesListwise([
+                    ContainsDict({"name": Equals("bar"), "version": Is(None)}),
+                    ContainsDict({"name": Equals("baz"), "version": Is(None)}),
+                    ]),
+                MatchesListwise([
+                    ContainsDict({
+                        "name": Equals("texlive-base"),
+                        "version": Is(None),
+                        }),
+                    ])]))
+
+    def test_getBuildDepends_missing_fields(self):
+        # getBuildDepends tolerates missing fields.
+        dscpath = os.path.join(self.working_dir, "foo.dsc")
+        write_file(dscpath, "Package: foo\n")
+        self.assertEqual([], self.buildmanager.getBuildDepends(dscpath, True))
+
+    def test_relationMatches_missing_package(self):
+        # relationMatches returns False if a dependency's package name is
+        # entirely missing.
+        self.assertFalse(self.buildmanager.relationMatches(
+            {"name": "foo", "version": (">=", "1")}, {"bar": set(["2"])}))
+
+    def test_relationMatches_unversioned(self):
+        # relationMatches returns True if a dependency's package name is
+        # present and the dependency is unversioned.
+        self.assertTrue(self.buildmanager.relationMatches(
+            {"name": "foo", "version": None}, {"foo": set(["1"])}))
+
+    def test_relationMatches_versioned(self):
+        # relationMatches handles versioned dependencies correctly.
+        for version, expected in (
+            (("<<", "1"), False), (("<<", "1.1"), True),
+            (("<=", "0.9"), False), (("<=", "1"), True),
+            (("=", "1"), True), (("=", "2"), False),
+            ((">=", "1"), True), ((">=", "1.1"), False),
+            ((">>", "0.9"), True), ((">>", "1"), False),
+            ):
+            assert_method = self.assertTrue if expected else self.assertFalse
+            assert_method(self.buildmanager.relationMatches(
+                {"name": "foo", "version": version}, {"foo": set(["1"])}),
+                "%s %s 1 was not %s" % (version[1], version[0], expected))
+
+    def test_relationMatches_multiple_versions(self):
+        # If multiple versions of a package are present, relationMatches
+        # returns True for dependencies that match any of them.
+        for version, expected in (
+            (("=", "1"), True),
+            (("=", "1.1"), True),
+            (("=", "2"), False),
+            ):
+            assert_method = self.assertTrue if expected else self.assertFalse
+            assert_method(self.buildmanager.relationMatches(
+                {"name": "foo", "version": version},
+                {"foo": set(["1", "1.1"])}))
+
+    def test_relationMatches_unversioned_virtual(self):
+        # Unversioned dependencies match an unversioned virtual package, but
+        # versioned dependencies do not.
+        for version, expected in ((None, True), ((">=", "1"), False)):
+            assert_method = self.assertTrue if expected else self.assertFalse
+            assert_method(self.buildmanager.relationMatches(
+                {"name": "foo", "version": version},
+                {"foo": set([None])}))
+
+    def test_analyseDepWait_all_satisfied(self):
+        # If all direct build-dependencies are satisfied, analyseDepWait
+        # returns None.
+        self.assertIsNone(self.buildmanager.analyseDepWait(
+            PkgRelation.parse_relations("debhelper, foo (>= 1)"),
+            {"debhelper": set(["9"]), "foo": set(["1"])}))
+
+    def test_analyseDepWait_unsatisfied(self):
+        # If some direct build-dependencies are unsatisfied, analyseDepWait
+        # returns a stringified representation of them.
+        self.assertEqual(
+            "foo (>= 1), bar (<< 1) | bar (>= 2)",
+            self.buildmanager.analyseDepWait(
+                PkgRelation.parse_relations(
+                    "debhelper (>= 9~), foo (>= 1), bar (<< 1) | bar (>= 2)"),
+                {"debhelper": set(["9"]), "bar": set(["1", "1.5"])}))
+
+    def startDepFail(self, error):
         self.startBuild()
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
@@ -260,6 +431,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             + ("a" * 4096) + "\n"
             + "Fail-Stage: install-deps\n")
 
+    def assertMatchesDepfail(self, error, dep):
+        self.startDepFail(error)
         self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
         if dep is not None:
@@ -284,12 +457,57 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertMatchesDepfail(
             "ebadver (< 2.0) but 3.0 is installed", "ebadver (< 2.0)")
 
-    def test_uninstallable_deps_fail(self):
-        # Uninstallable build dependencies are considered to be
-        # failures, as we can't determine installability to
-        # automatically retry.
-        self.assertMatchesDepfail(
-            "ebadver but it is not going to be installed", None)
+    def test_uninstallable_deps_analysis_failure(self):
+        # If there are uninstallable build-dependencies and analysis can't
+        # find any missing direct build-dependencies, the build manager
+        # fails the build as it doesn't have a condition on which it can
+        # automatically retry later.
+        write_file(
+            os.path.join(self.buildmanager.home, "foo_1.dsc"),
+            dedent("""\
+                Package: foo
+                Version: 1
+                Build-Depends: uninstallable (>= 1)
+                """))
+        self.startDepFail(
+            "uninstallable (>= 1) but it is not going to be installed")
+        apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
+        os.makedirs(apt_lists)
+        write_file(
+            os.path.join(apt_lists, "archive_Packages"),
+            dedent("""\
+                Package: uninstallable
+                Version: 1
+                """))
+        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        self.assertUnmountsSanely()
+        self.assertFalse(self.slave.wasCalled('depFail'))
+        self.assertTrue(self.slave.wasCalled('buildFail'))
+
+    def test_uninstallable_deps_analysis_depfail(self):
+        # If there are uninstallable build-dependencies and analysis reports
+        # some missing direct build-dependencies, the build manager marks
+        # the build as DEPFAIL.
+        write_file(
+            os.path.join(self.buildmanager.home, "foo_1.dsc"),
+            dedent("""\
+                Package: foo
+                Version: 1
+                Build-Depends: ebadver (>= 2)
+                """))
+        self.startDepFail("ebadver (>= 2) but it is not going to be installed")
+        apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
+        os.makedirs(apt_lists)
+        write_file(
+            os.path.join(apt_lists, "archive_Packages"),
+            dedent("""\
+                Package: ebadver
+                Version: 1
+                """))
+        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        self.assertUnmountsSanely()
+        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertEqual([(("ebadver (>= 2)",), {})], self.slave.depFail.calls)
 
     def test_depfail_with_unknown_error_converted_to_packagefail(self):
         # The build manager converts a DEPFAIL to a PACKAGEFAIL if the
