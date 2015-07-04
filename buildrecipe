@@ -252,7 +252,8 @@ class RecipeBuilder:
         currently_building.write(currently_building_contents)
         currently_building.close()
         self.setUpAptArchive(package)
-        return self.chroot(['apt-get', 'build-dep', '-y', package])
+        return self.chroot(
+            ['apt-get', 'build-dep', '-y', '--only-source', package])
 
     def chroot(self, args, echo=False):
         """Run a command in the chroot.

@@ -2,6 +2,9 @@ launchpad-buildd (131) UNRELEASED; urgency=medium
 
   * slave-prep: Output current sbuild version, now that it's a separate
     package.
+  * buildrecipe: Pass --only-source to "apt-get build-dep" to force it to
+    use the source package we care about rather than trying to map through
+    binary package names.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 30 Jun 2015 13:09:34 +0100
 
