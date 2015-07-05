@@ -28,6 +28,10 @@ $environment_filter = [
     '^SHELL$',
     '^LANG$'];
 
+# We need to use "sudo -E" so that the above environment variables are
+# allowed through.
+$sudo = "/usr/share/launchpad-buildd/slavebin/sudo-wrapper";
+
 # After that time (in minutes) of inactivity a build is terminated.
 # Activity
 # is measured by output to the log file.

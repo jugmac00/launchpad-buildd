@@ -18,7 +18,8 @@ topdir = .
 
 slavebins = unpack-chroot mount-chroot update-debian-chroot sbuild-package \
     scan-for-processes umount-chroot remove-build override-sources-list \
-    buildrecipe generate-translation-templates slave-prep buildlivefs
+    buildrecipe generate-translation-templates slave-prep buildlivefs \
+    sudo-wrapper
 
 BUILDDUID=65500
 BUILDDGID=65500
