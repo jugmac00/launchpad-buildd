@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from collections import defaultdict
 import os
 import re
+import traceback
 
 import apt_pkg
 from debian.deb822 import (
@@ -232,8 +233,10 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     unsat_deps.append(or_dep)
             if unsat_deps:
                 return PkgRelation.str(unsat_deps)
-        except Exception as e:
-            print("Failed to analyse dep-wait: %s" % e)
+        except Exception:
+            self._slave.log("Failed to analyse dep-wait:\n")
+            for line in traceback.format_exc().splitlines(True):
+                self._slave.log(line)
         return None
 
     def iterate_SBUILD(self, success):
