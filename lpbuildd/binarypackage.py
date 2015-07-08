@@ -142,7 +142,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     for section in apt_pkg.TagFile(packages_file):
                         available[section["package"]].add(section["version"])
                         if "provides" in section:
-                            provides = PkgRelation.parse_relations(
+                            provides = apt_pkg.parse_depends(
                                 section["provides"])
                             for provide in provides:
                                 # Disjunctions are currently undefined here.
@@ -150,13 +150,10 @@ class BinaryPackageBuildManager(DebianBuildManager):
                                     continue
                                 # Virtual packages may only provide an exact
                                 # version or none.
-                                provide_version = provide[0].get("version")
-                                if (provide_version is not None and
-                                        provide_version[0] != "="):
+                                if provide[0][1] and provide[0][2] != "=":
                                     continue
-                                available[provide[0]["name"]].add(
-                                    provide_version[1]
-                                    if provide_version else None)
+                                available[provide[0][0]].add(
+                                    provide[0][1] if provide[0][1] else None)
         return available
 
     def getBuildDepends(self, dscpath, arch_indep):
