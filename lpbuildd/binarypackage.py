@@ -177,7 +177,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
         return deps
 
     def relationMatches(self, dep, available):
-        """Return True iff a dependency matches para.
+        """Return True iff a dependency matches an available package.
 
         :param dep: A dictionary with at least a "name" key, perhaps also a
             "version" key, and optionally other keys, of the kind returned
