@@ -1,4 +1,4 @@
-launchpad-buildd (131) UNRELEASED; urgency=medium
+launchpad-buildd (131) trusty; urgency=medium
 
   * slave-prep: Output current sbuild version, now that it's a separate
     package.
@@ -14,7 +14,7 @@ launchpad-buildd (131) UNRELEASED; urgency=medium
     build-dependencies are missing, and if so generate an appropriate
     dep-wait (LP: #1468755).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 30 Jun 2015 13:09:34 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 13 Jul 2015 14:16:11 +0100
 
 launchpad-buildd (130) trusty; urgency=medium
 
