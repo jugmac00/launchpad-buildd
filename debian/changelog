@@ -1,9 +1,9 @@
-launchpad-buildd (132) UNRELEASED; urgency=medium
+launchpad-buildd (132) trusty; urgency=medium
 
   * Fix incorrect dscpath construction that caused a crash when analysing
     dubious dep-wait cases.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 15 Jul 2015 12:07:11 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 15 Jul 2015 12:09:08 +0100
 
 launchpad-buildd (131) trusty; urgency=medium
 
