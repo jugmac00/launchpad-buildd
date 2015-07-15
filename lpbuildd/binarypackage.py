@@ -289,7 +289,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
             elif rx in BuildLogRegexes.MAYBEDEPFAIL:
                 # These matches need further analysis.
-                dscpath = os.path.join(self.home, self._dscfile)
+                dscpath = os.path.join(
+                    self.home, "build-%s" % self._buildid, self._dscfile)
                 missing_dep = self.analyseDepWait(
                     self.getBuildDepends(dscpath, self.arch_indep),
                     self.getAvailablePackages())

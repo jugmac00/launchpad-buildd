@@ -1,3 +1,10 @@
+launchpad-buildd (132) UNRELEASED; urgency=medium
+
+  * Fix incorrect dscpath construction that caused a crash when analysing
+    dubious dep-wait cases.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 15 Jul 2015 12:07:11 +0100
+
 launchpad-buildd (131) trusty; urgency=medium
 
   * slave-prep: Output current sbuild version, now that it's a separate

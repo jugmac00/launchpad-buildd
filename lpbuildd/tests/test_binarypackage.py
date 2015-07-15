@@ -58,6 +58,8 @@ class MockBuildManager(BinaryPackageBuildManager):
 
 
 def write_file(path, content):
+    if not os.path.isdir(os.path.dirname(path)):
+        os.makedirs(os.path.dirname(path))
     with open(path, 'w') as f:
         f.write(content)
 
@@ -86,11 +88,11 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
-    def startBuild(self):
+    def startBuild(self, dscname=''):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         self.buildmanager.initiate(
-            {'foo_1.dsc': ''}, 'chroot.tar.gz',
+            {'foo_1.dsc': dscname}, 'chroot.tar.gz',
             {'distribution': 'ubuntu', 'suite': 'warty',
              'ogrecomponent': 'main'})
 
@@ -297,7 +299,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
     def test_getBuildDepends_arch_dep(self):
         # getBuildDepends returns only Build-Depends for
         # architecture-dependent builds.
-        dscpath = os.path.join(self.working_dir, "foo.dsc")
+        dscpath = os.path.join(
+            self.working_dir, "build-%s" % self.buildid, "foo.dsc")
         write_file(
             dscpath,
             dedent("""\
@@ -322,7 +325,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
     def test_getBuildDepends_arch_indep(self):
         # getBuildDepends returns both Build-Depends and Build-Depends-Indep
         # for architecture-independent builds.
-        dscpath = os.path.join(self.working_dir, "foo.dsc")
+        dscpath = os.path.join(
+            self.working_dir, "build-%s" % self.buildid, "foo.dsc")
         write_file(
             dscpath,
             dedent("""\
@@ -352,7 +356,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
     def test_getBuildDepends_missing_fields(self):
         # getBuildDepends tolerates missing fields.
-        dscpath = os.path.join(self.working_dir, "foo.dsc")
+        dscpath = os.path.join(
+            self.working_dir, "build-%s" % self.buildid, "foo.dsc")
         write_file(dscpath, "Package: foo\n")
         self.assertEqual([], self.buildmanager.getBuildDepends(dscpath, True))
 
@@ -421,8 +426,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                     "debhelper (>= 9~), foo (>= 1), bar (<< 1) | bar (>= 2)"),
                 {"debhelper": set(["9"]), "bar": set(["1", "1.5"])}))
 
-    def startDepFail(self, error):
-        self.startBuild()
+    def startDepFail(self, error, dscname=''):
+        self.startBuild(dscname=dscname)
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "The following packages have unmet dependencies:\n"
@@ -463,14 +468,15 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # fails the build as it doesn't have a condition on which it can
         # automatically retry later.
         write_file(
-            os.path.join(self.buildmanager.home, "foo_1.dsc"),
+            os.path.join(self.buildmanager._cachepath, "123"),
             dedent("""\
                 Package: foo
                 Version: 1
                 Build-Depends: uninstallable (>= 1)
                 """))
         self.startDepFail(
-            "uninstallable (>= 1) but it is not going to be installed")
+            "uninstallable (>= 1) but it is not going to be installed",
+            dscname="123")
         apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
         os.makedirs(apt_lists)
         write_file(
@@ -489,13 +495,15 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # some missing direct build-dependencies, the build manager marks
         # the build as DEPFAIL.
         write_file(
-            os.path.join(self.buildmanager.home, "foo_1.dsc"),
+            os.path.join(self.buildmanager._cachepath, "123"),
             dedent("""\
                 Package: foo
                 Version: 1
                 Build-Depends: ebadver (>= 2)
                 """))
-        self.startDepFail("ebadver (>= 2) but it is not going to be installed")
+        self.startDepFail(
+            "ebadver (>= 2) but it is not going to be installed",
+            dscname="123")
         apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
         os.makedirs(apt_lists)
         write_file(
