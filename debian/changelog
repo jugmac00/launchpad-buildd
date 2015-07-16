@@ -1,3 +1,11 @@
+launchpad-buildd (133) UNRELEASED; urgency=medium
+
+  * Liberalise dep-wait matching regexes slightly so that they match
+    multi-line output properly, as in the case where multiple
+    build-dependencies are uninstallable.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Jul 2015 14:00:16 +0100
+
 launchpad-buildd (132) trusty; urgency=medium
 
   * Fix incorrect dscpath construction that caused a crash when analysing

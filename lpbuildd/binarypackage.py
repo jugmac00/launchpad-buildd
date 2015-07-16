@@ -51,12 +51,12 @@ class BuildLogRegexes:
         ]
     DEPFAIL = {
         'The following packages have unmet dependencies:\n'
-        '.*: Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
+        '.* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
         % '|'.join(APT_MISSING_DEP_PATTERNS): "\g<p>",
         }
     MAYBEDEPFAIL = [
         'The following packages have unmet dependencies:\n'
-        '.*: Depends: [^ ]*( \([^)]*\))? (%s)\n'
+        '.* Depends: [^ ]*( \([^)]*\))? (%s)\n'
         % '|'.join(APT_DUBIOUS_DEP_PATTERNS),
         ]
 
@@ -273,9 +273,9 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 tail = log.read(4096)
             if re.search("^Fail-Stage: install-deps$", tail, re.M):
                 for rx in BuildLogRegexes.DEPFAIL:
-                    log_patterns.append([rx, re.M])
+                    log_patterns.append([rx, re.M | re.S])
                 for rx in BuildLogRegexes.MAYBEDEPFAIL:
-                    log_patterns.append([rx, re.M])
+                    log_patterns.append([rx, re.M | re.S])
 
         missing_dep = None
         if log_patterns:
