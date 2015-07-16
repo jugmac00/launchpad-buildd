@@ -49,16 +49,16 @@ class BuildLogRegexes:
     GIVENBACK = [
         ("^E: There are problems and -y was used without --force-yes"),
         ]
-    DEPFAIL = {
-        'The following packages have unmet dependencies:\n'
-        '.* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
-        % '|'.join(APT_MISSING_DEP_PATTERNS): "\g<p>",
-        }
     MAYBEDEPFAIL = [
         'The following packages have unmet dependencies:\n'
         '.* Depends: [^ ]*( \([^)]*\))? (%s)\n'
         % '|'.join(APT_DUBIOUS_DEP_PATTERNS),
         ]
+    DEPFAIL = {
+        'The following packages have unmet dependencies:\n'
+        '.* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
+        % '|'.join(APT_MISSING_DEP_PATTERNS): "\g<p>",
+        }
 
 
 class BinaryPackageBuildState(DebianBuildState):
@@ -272,9 +272,9 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     pass
                 tail = log.read(4096)
             if re.search("^Fail-Stage: install-deps$", tail, re.M):
-                for rx in BuildLogRegexes.DEPFAIL:
-                    log_patterns.append([rx, re.M | re.S])
                 for rx in BuildLogRegexes.MAYBEDEPFAIL:
+                    log_patterns.append([rx, re.M | re.S])
+                for rx in BuildLogRegexes.DEPFAIL:
                     log_patterns.append([rx, re.M | re.S])
 
         missing_dep = None
@@ -284,9 +284,6 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 # It was givenback, but we can't see a valid reason.
                 # Assume it failed.
                 success = SBuildExitCodes.FAILED
-            elif rx in BuildLogRegexes.DEPFAIL:
-                # A depwait match forces depwait.
-                missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
             elif rx in BuildLogRegexes.MAYBEDEPFAIL:
                 # These matches need further analysis.
                 dscpath = os.path.join(
@@ -296,6 +293,9 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     self.getAvailablePackages())
                 if missing_dep is None:
                     success = SBuildExitCodes.FAILED
+            elif rx in BuildLogRegexes.DEPFAIL:
+                # A depwait match forces depwait.
+                missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
             else:
                 # Otherwise it was a givenback pattern, so leave it
                 # in givenback.

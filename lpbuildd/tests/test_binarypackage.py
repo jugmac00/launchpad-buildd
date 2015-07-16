@@ -517,6 +517,44 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual([(("ebadver (>= 2)",), {})], self.slave.depFail.calls)
 
+    def test_uninstallable_deps_analysis_mixed_depfail(self):
+        # If there is a mix of definite and dubious dep-wait output, then
+        # the build manager analyses the situation rather than trusting just
+        # the definite information.
+        write_file(
+            os.path.join(self.buildmanager._cachepath, "123"),
+            dedent("""\
+                Package: foo
+                Version: 1
+                Build-Depends: ebadver (>= 2), uninstallable
+                """))
+        self.startBuild(dscname="123")
+        write_file(
+            os.path.join(self.buildmanager._cachepath, 'buildlog'),
+            "The following packages have unmet dependencies:\n"
+            + (" sbuild-build-depends-hello-dummy : Depends: ebadver (>= 2) "
+               "but it is not going to be installed\n")
+            + ("                                    Depends: uninstallable "
+               "but it is not installable\n")
+            + "E: Unable to correct problems, you have held broken packages.\n"
+            + ("a" * 4096) + "\n"
+            + "Fail-Stage: install-deps\n")
+        apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
+        os.makedirs(apt_lists)
+        write_file(
+            os.path.join(apt_lists, "archive_Packages"),
+            dedent("""\
+                Package: ebadver
+                Version: 1
+
+                Package: uninstallable
+                Version: 1
+                """))
+        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        self.assertUnmountsSanely()
+        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertEqual([(("ebadver (>= 2)",), {})], self.slave.depFail.calls)
+
     def test_depfail_with_unknown_error_converted_to_packagefail(self):
         # The build manager converts a DEPFAIL to a PACKAGEFAIL if the
         # missing dependency can't be determined from the log.
