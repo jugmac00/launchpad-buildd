@@ -6,6 +6,7 @@ from __future__ import absolute_import
 from collections import defaultdict
 import os
 import re
+import subprocess
 import traceback
 
 import apt_pkg
@@ -59,6 +60,25 @@ class BuildLogRegexes:
         '.* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
         % '|'.join(APT_MISSING_DEP_PATTERNS): "\g<p>",
         }
+
+
+class DpkgArchitectureCache:
+    """Cache the results of asking questions of dpkg-architecture."""
+
+    def __init__(self):
+        self._matches = {}
+
+    def match(self, arch, wildcard):
+        if (arch, wildcard) not in self._matches:
+            command = ["dpkg-architecture", "-i%s" % wildcard]
+            env = dict(os.environ)
+            env["DEB_HOST_ARCH"] = arch
+            ret = (subprocess.call(command, env=env) == 0)
+            self._matches[(arch, wildcard)] = ret
+        return self._matches[(arch, wildcard)]
+
+
+dpkg_architecture = DpkgArchitectureCache()
 
 
 class BinaryPackageBuildState(DebianBuildState):
@@ -180,18 +200,42 @@ class BinaryPackageBuildManager(DebianBuildManager):
     def relationMatches(self, dep, available):
         """Return True iff a dependency matches an available package.
 
-        :param dep: A dictionary with at least a "name" key, perhaps also a
-            "version" key, and optionally other keys, of the kind returned
-            in a list of lists by
+        :param dep: A dictionary with at least a "name" key, perhaps also
+            "version" and "arch" keys, and optionally other keys, of the
+            kind returned in a list of lists by
             `debian.deb822.PkgRelation.parse_relations`.
         :param available: A dictionary mapping package names to a list of
             the available versions of each package.
         """
+        dep_arch = dep.get("arch")
+        if dep_arch is not None:
+            seen_arch = False
+            for polarity, arch_wildcard in dep_arch:
+                if dpkg_architecture.match(self.arch_tag, arch_wildcard):
+                    seen_arch = polarity
+                    break
+                elif not polarity:
+                    # Any !other-architecture restriction implies that this
+                    # architecture is allowed, unless it's specifically
+                    # excluded later.
+                    seen_arch = True
+            if not seen_arch:
+                # This dependency "matches" in the sense that it's ignored
+                # on this architecture.
+                return True
+        dep_restrictions = dep.get("restrictions")
+        if dep_restrictions is not None:
+            if all(
+                any(restriction.enabled for restriction in restrlist)
+                for restrlist in dep_restrictions):
+                # This dependency "matches" in the sense that it's ignored
+                # when no build profiles are enabled.
+                return True
         if dep["name"] not in available:
             return False
-        if dep.get("version") is None:
-            return True
         dep_version = dep.get("version")
+        if dep_version is None:
+            return True
         operator_map = {
             "<<": (lambda a, b: a < b),
             "<=": (lambda a, b: a <= b),
@@ -230,7 +274,14 @@ class BinaryPackageBuildManager(DebianBuildManager):
             unsat_deps = []
             for or_dep in deps:
                 if not any(self.relationMatches(dep, avail) for dep in or_dep):
-                    unsat_deps.append(or_dep)
+                    stripped_or_dep = []
+                    for simple_dep in or_dep:
+                        stripped_simple_dep = dict(simple_dep)
+                        stripped_simple_dep["arch"] = None
+                        stripped_simple_dep["archqual"] = None
+                        stripped_simple_dep["restrictions"] = None
+                        stripped_or_dep.append(stripped_simple_dep)
+                    unsat_deps.append(stripped_or_dep)
             if unsat_deps:
                 return PkgRelation.str(unsat_deps)
         except Exception:
