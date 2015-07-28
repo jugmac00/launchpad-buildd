@@ -5,6 +5,8 @@ launchpad-buildd (133) UNRELEASED; urgency=medium
     build-dependencies are uninstallable.
   * If there is a mix of definite and dubious dep-wait output, then analyse
     the situation rather than trusting just the definite information.
+  * Handle architecture restrictions, architecture qualifications, and
+    restriction formulas (build profiles) in build-dependencies.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Jul 2015 14:00:16 +0100
 

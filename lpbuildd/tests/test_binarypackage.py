@@ -426,6 +426,48 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                     "debhelper (>= 9~), foo (>= 1), bar (<< 1) | bar (>= 2)"),
                 {"debhelper": set(["9"]), "bar": set(["1", "1.5"])}))
 
+    def test_analyseDepWait_strips_arch_restrictions(self):
+        # analyseDepWait removes architecture restrictions (e.g. "[amd64]")
+        # from the unsatisfied build-dependencies it returns, and only
+        # returns those relevant to the current architecture.
+        self.buildmanager.initiate(
+            {'foo_1.dsc': ''}, 'chroot.tar.gz',
+            {'distribution': 'ubuntu', 'suite': 'warty',
+             'ogrecomponent': 'main', 'arch_tag': 'i386'})
+        self.assertEqual(
+            "foo (>= 1)",
+            self.buildmanager.analyseDepWait(
+                PkgRelation.parse_relations(
+                    "foo (>= 1) [any-i386], bar (>= 1) [amd64]"),
+                {}))
+
+    def test_analyseDepWait_strips_arch_qualifications(self):
+        # analyseDepWait removes architecture qualifications (e.g. ":any")
+        # from the unsatisfied build-dependencies it returns.
+        self.buildmanager.initiate(
+            {'foo_1.dsc': ''}, 'chroot.tar.gz',
+            {'distribution': 'ubuntu', 'suite': 'warty',
+             'ogrecomponent': 'main', 'arch_tag': 'i386'})
+        self.assertEqual(
+            "foo",
+            self.buildmanager.analyseDepWait(
+                PkgRelation.parse_relations("foo:any, bar:any"),
+                {"bar": set(["1"])}))
+
+    def test_analyseDepWait_strips_restrictions(self):
+        # analyseDepWait removes restrictions (e.g. "<stage1>") from the
+        # unsatisfied build-dependencies it returns, and only returns those
+        # that evaluate to true when no build profiles are active.
+        self.buildmanager.initiate(
+            {'foo_1.dsc': ''}, 'chroot.tar.gz',
+            {'distribution': 'ubuntu', 'suite': 'warty',
+             'ogrecomponent': 'main', 'arch_tag': 'i386'})
+        self.assertEqual(
+            "foo",
+            self.buildmanager.analyseDepWait(
+                PkgRelation.parse_relations("foo <!nocheck>, bar <stage1>"),
+                {}))
+
     def startDepFail(self, error, dscname=''):
         self.startBuild(dscname=dscname)
         write_file(
