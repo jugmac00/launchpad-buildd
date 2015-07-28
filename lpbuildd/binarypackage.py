@@ -201,8 +201,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
         """Return True iff a dependency matches an available package.
 
         :param dep: A dictionary with at least a "name" key, perhaps also
-            "version" and "arch" keys, and optionally other keys, of the
-            kind returned in a list of lists by
+            "version", "arch", and "restrictions" keys, and optionally other
+            keys, of the kind returned in a list of lists by
             `debian.deb822.PkgRelation.parse_relations`.
         :param available: A dictionary mapping package names to a list of
             the available versions of each package.
