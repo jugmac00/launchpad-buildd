@@ -217,7 +217,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 elif not enabled:
                     # Any !other-architecture restriction implies that this
                     # architecture is allowed, unless it's specifically
-                    # excluded later.
+                    # excluded by some other restriction.
                     arch_match = True
             if not arch_match:
                 # This dependency "matches" in the sense that it's ignored
