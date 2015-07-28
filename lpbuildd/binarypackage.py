@@ -209,17 +209,17 @@ class BinaryPackageBuildManager(DebianBuildManager):
         """
         dep_arch = dep.get("arch")
         if dep_arch is not None:
-            seen_arch = False
-            for polarity, arch_wildcard in dep_arch:
+            arch_match = False
+            for enabled, arch_wildcard in dep_arch:
                 if dpkg_architecture.match(self.arch_tag, arch_wildcard):
-                    seen_arch = polarity
+                    arch_match = enabled
                     break
-                elif not polarity:
+                elif not enabled:
                     # Any !other-architecture restriction implies that this
                     # architecture is allowed, unless it's specifically
                     # excluded later.
-                    seen_arch = True
-            if not seen_arch:
+                    arch_match = True
+            if not arch_match:
                 # This dependency "matches" in the sense that it's ignored
                 # on this architecture.
                 return True
