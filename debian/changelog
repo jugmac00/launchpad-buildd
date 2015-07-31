@@ -7,6 +7,7 @@ launchpad-buildd (133) UNRELEASED; urgency=medium
     the situation rather than trusting just the definite information.
   * Handle architecture restrictions, architecture qualifications, and
     restriction formulas (build profiles) in build-dependencies.
+  * Add support for building snaps (LP: #1476405).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Jul 2015 14:00:16 +0100
 

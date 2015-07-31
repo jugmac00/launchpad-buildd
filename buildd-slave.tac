@@ -23,6 +23,7 @@ from lpbuildd.binarypackage import BinaryPackageBuildManager
 from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.log import RotatableFileLogObserver
 from lpbuildd.slave import XMLRPCBuildDSlave
+from lpbuildd.snap import SnapBuildManager
 from lpbuildd.sourcepackagerecipe import SourcePackageRecipeBuildManager
 from lpbuildd.translationtemplates import TranslationTemplatesBuildManager
 
@@ -41,6 +42,7 @@ slave.registerBuilder(SourcePackageRecipeBuildManager, "sourcepackagerecipe")
 slave.registerBuilder(
     TranslationTemplatesBuildManager, 'translation-templates')
 slave.registerBuilder(LiveFilesystemBuildManager, "livefs")
+slave.registerBuilder(SnapBuildManager, "snap")
 
 application = service.Application('BuildDSlave')
 application.addComponent(
