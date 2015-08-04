@@ -1,4 +1,4 @@
-launchpad-buildd (133) UNRELEASED; urgency=medium
+launchpad-buildd (133) trusty; urgency=medium
 
   * Liberalise dep-wait matching regexes slightly so that they match
     multi-line output properly, as in the case where multiple
@@ -13,7 +13,7 @@ launchpad-buildd (133) UNRELEASED; urgency=medium
   * Strip qualifications and restrictions even from dep-waits derived solely
     from sbuild output.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Jul 2015 14:00:16 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 04 Aug 2015 22:58:47 +0100
 
 launchpad-buildd (132) trusty; urgency=medium
 
