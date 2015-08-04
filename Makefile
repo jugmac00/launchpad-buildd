@@ -33,5 +33,6 @@ check:
 		   lpbuildd.tests.test_check_implicit_pointer_functions \
 		   lpbuildd.tests.test_harness \
 		   lpbuildd.tests.test_livefs \
+		   lpbuildd.tests.test_snap \
 		   lpbuildd.tests.test_sourcepackagerecipe \
 		   lpbuildd.tests.test_translationtemplatesbuildmanager
