@@ -10,6 +10,8 @@ launchpad-buildd (133) UNRELEASED; urgency=medium
   * Add support for building snaps (LP: #1476405).
   * slave-prep: Output current python-debian version, useful for debugging
     build-dependency parsing problems.
+  * Strip qualifications and restrictions even from dep-waits derived solely
+    from sbuild output.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Jul 2015 14:00:16 +0100
 

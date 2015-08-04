@@ -504,6 +504,12 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertMatchesDepfail(
             "ebadver (< 2.0) but 3.0 is installed", "ebadver (< 2.0)")
 
+    def test_strips_depfail(self):
+        # The build manager strips qualifications and restrictions from
+        # dependency installation failures.
+        self.assertMatchesDepfail(
+            "ebadver:any (>= 3.0) but 2.0 is installed", "ebadver (>= 3.0)")
+
     def test_uninstallable_deps_analysis_failure(self):
         # If there are uninstallable build-dependencies and analysis can't
         # find any missing direct build-dependencies, the build manager

@@ -251,6 +251,34 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 return True
         return False
 
+    def stripDependencies(self, deps):
+        """Return a stripped and stringified representation of a dependency.
+
+        The build master can't handle the various qualifications and
+        restrictions that may be present in control-format
+        build-dependencies (e.g. ":any", "[amd64]", or "<!nocheck>"), so we
+        strip these out before returning them.
+
+        :param deps: Build-dependencies in the form returned by
+            `debian.deb822.PkgRelation.parse_relations`.
+        :return: A stripped dependency relation string, or None if deps is
+            empty.
+        """
+        stripped_deps = []
+        for or_dep in deps:
+            stripped_or_dep = []
+            for simple_dep in or_dep:
+                stripped_simple_dep = dict(simple_dep)
+                stripped_simple_dep["arch"] = None
+                stripped_simple_dep["archqual"] = None
+                stripped_simple_dep["restrictions"] = None
+                stripped_or_dep.append(stripped_simple_dep)
+            stripped_deps.append(stripped_or_dep)
+        if stripped_deps:
+            return PkgRelation.str(stripped_deps)
+        else:
+            return None
+
     def analyseDepWait(self, deps, avail):
         """Work out the correct dep-wait for a failed build, if any.
 
@@ -274,21 +302,13 @@ class BinaryPackageBuildManager(DebianBuildManager):
             unsat_deps = []
             for or_dep in deps:
                 if not any(self.relationMatches(dep, avail) for dep in or_dep):
-                    stripped_or_dep = []
-                    for simple_dep in or_dep:
-                        stripped_simple_dep = dict(simple_dep)
-                        stripped_simple_dep["arch"] = None
-                        stripped_simple_dep["archqual"] = None
-                        stripped_simple_dep["restrictions"] = None
-                        stripped_or_dep.append(stripped_simple_dep)
-                    unsat_deps.append(stripped_or_dep)
-            if unsat_deps:
-                return PkgRelation.str(unsat_deps)
+                    unsat_deps.append(or_dep)
+            return self.stripDependencies(unsat_deps)
         except Exception:
             self._slave.log("Failed to analyse dep-wait:\n")
             for line in traceback.format_exc().splitlines(True):
                 self._slave.log(line)
-        return None
+            return None
 
     def iterate_SBUILD(self, success):
         """Finished the sbuild run."""
@@ -347,6 +367,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
             elif rx in BuildLogRegexes.DEPFAIL:
                 # A depwait match forces depwait.
                 missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
+                missing_dep = self.stripDependencies(
+                    PkgRelation.parse_relations(missing_dep))
             else:
                 # Otherwise it was a givenback pattern, so leave it
                 # in givenback.
