@@ -1,3 +1,9 @@
+launchpad-buildd (134) UNRELEASED; urgency=medium
+
+  * buildsnap: Drop explicit installation of sudo, now fixed in snapcraft.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 06 Aug 2015 13:56:15 +0100
+
 launchpad-buildd (133) trusty; urgency=medium
 
   * Liberalise dep-wait matching regexes slightly so that they match

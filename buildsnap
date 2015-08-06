@@ -90,10 +90,6 @@ class SnapBuilder:
             deps.append("bzr")
         else:
             deps.append("git")
-        # Fixed better by
-        # https://code.launchpad.net/~cjwatson/snapcraft/depend-sudo/+merge/266533;
-        # drop this when that has been merged.
-        deps.append("sudo")
         self.chroot(["apt-get", "-y", "install"] + deps)
 
     def build(self):
