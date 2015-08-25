@@ -1,6 +1,7 @@
 launchpad-buildd (134) UNRELEASED; urgency=medium
 
   * buildsnap: Drop explicit installation of sudo, now fixed in snapcraft.
+  * Rewrite debian/rules in modern dh style.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 06 Aug 2015 13:56:15 +0100
 

@@ -1,78 +1,23 @@
 #!/usr/bin/make -f
 #
-# Copyright 2009, 2010, 2011 Canonical Ltd.  
+# Copyright 2009-2015 Canonical Ltd.  
 # 
 # This software is licensed under the GNU Affero General Public License version
 # 3 (see the file LICENSE).
 
-export DH_OPTIONS
+%:
+	dh $@
 
-# This is an incomplete debian rules file for making the launchpad-buildd deb
-# Only ever invoke this as debian/rules package, which will build the source
-# package in the parent directory, after copying in the files that live above
-# this directory, so that the source package is valid.
-# after that, build the source package found in the parent directory.
-
-target = debian/launchpad-buildd
-topdir = .
-
-slavebins = unpack-chroot mount-chroot update-debian-chroot sbuild-package \
-    scan-for-processes umount-chroot remove-build override-sources-list \
-    buildrecipe generate-translation-templates slave-prep buildlivefs \
-    sudo-wrapper buildsnap
-
-BUILDDUID=65500
-BUILDDGID=65500
-
-install:
-	dh_testdir
-	dh_clean
-	dh_testroot
-	dh_install
-	dh_installdirs
-	dh_installexamples
-
-	export DH_OPTIONS=-plaunchpad-buildd
-	dh_install $(slavebins) usr/share/launchpad-buildd/slavebin
-	dh_install template-buildd-slave.conf \
-		sbuildrc \
-		debian/upgrade-config \
-		usr/share/launchpad-buildd
-	dh_link usr/lib/launchpad-buildd/lpbuildd/check_implicit_pointer_functions.py \
-		usr/share/launchpad-buildd/slavebin/check-implicit-pointer-functions
-
-binary-indep: install 
-	dh_installdocs
-	dh_installchangelogs
-	dh_installinit
-	dh_installcron
-	dh_installlogrotate
-	dh_strip
-	dh_compress
-	dh_fixperms
-	dh_installdeb
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb -- -Zgzip
-
-binary: binary-indep
-
-.PHONY: binary binary-indep binary-arch install clean build
-
-clean:
-	rm -f buildd-slave-example.conf
-	find -name \*.pyc -print0 | xargs -0r rm -f
-	dh_clean
-
-prepare:
-
-package: prepare
-	debuild -uc -us -S
-
-build:
+override_dh_auto_build:
 	python buildd-genconfig --template=template-buildd-slave.conf \
 	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
 		> buildd-slave-example.conf
 
-build-arch: build
-build-indep: build
+override_dh_auto_test:
+	:
+
+override_dh_auto_clean:
+	find -name \*.pyc -print0 | xargs -0r rm -f
+
+override_dh_builddeb:
+	dh_builddeb -- -Zgzip
