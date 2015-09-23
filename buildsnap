@@ -108,7 +108,8 @@ class SnapBuilder:
                 self.options.git_repository, self.name],
                 env=env)
         self.run_build_command(
-            ["snapcraft", "assemble"], path=os.path.join("/build", self.name))
+            ["snapcraft", "assemble"], path=os.path.join("/build", self.name),
+            env={"SNAPCRAFT_LOCAL_SOURCES": "1"})
 
 
 def main():

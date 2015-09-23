@@ -2,6 +2,8 @@ launchpad-buildd (134) UNRELEASED; urgency=medium
 
   * buildsnap: Drop explicit installation of sudo, now fixed in snapcraft.
   * Rewrite debian/rules in modern dh style.
+  * buildsnap: Pass SNAPCRAFT_LOCAL_SOURCES=1 to snapcraft so that it uses
+    the build's sources.list.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 06 Aug 2015 13:56:15 +0100
 
