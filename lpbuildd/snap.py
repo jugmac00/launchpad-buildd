@@ -40,8 +40,12 @@ class SnapBuildManager(DebianBuildManager):
 
         self.name = extra_args["name"]
         self.branch = extra_args.get("branch")
+        self.build_cookie = extra_args.get("build_cookie")
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
+        self.proxy_host = extra_args.get("proxy_host")
+        self.proxy_port = extra_args.get("proxy_port")
+        self.proxy_token = extra_args.get("proxy_token")
 
         super(SnapBuildManager, self).initiate(files, chroot, extra_args)
 
@@ -52,6 +56,15 @@ class SnapBuildManager(DebianBuildManager):
             "--build-id", self._buildid,
             "--arch", self.arch_tag,
             ]
+        if self.proxy_token:
+            proxy_env = (
+                "http_proxy=http://{username}:{password}"
+                "@{host}:{port}".format(
+                    username=self.build_cookie,
+                    password=self.proxy_token,
+                    host=self.proxy_host,
+                    port=self.proxy_port))
+            args.insert(0, proxy_env)
         if self.branch is not None:
             args.extend(["--branch", self.branch])
         if self.git_repository is not None:
