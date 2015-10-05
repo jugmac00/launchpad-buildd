@@ -122,7 +122,7 @@ class BuildManager(object):
         self.home = os.environ['HOME']
         self.abort_timeout = 120
 
-    def runSubProcess(self, command, args, iterate=None):
+    def runSubProcess(self, command, args, iterate=None, env=None):
         """Run a sub process capturing the results in the log."""
         if iterate is None:
             iterate = self.iterate
@@ -130,7 +130,7 @@ class BuildManager(object):
         self._slave.log("RUN: %s %r\n" % (command, args))
         childfds = {0: devnull.fileno(), 1: "r", 2: "r"}
         self._reactor.spawnProcess(
-            self._subprocess, command, args, env=os.environ,
+            self._subprocess, command, args, env=env,
             path=self.home, childFDs=childfds)
 
     def doUnpack(self):

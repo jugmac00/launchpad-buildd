@@ -22,7 +22,7 @@ class MockBuildManager(SnapBuildManager):
         self.commands = []
         self.iterators = []
 
-    def runSubProcess(self, path, command, iterate=None):
+    def runSubProcess(self, path, command, iterate=None, env=None):
         self.commands.append([path] + command)
         if iterate is None:
             iterate = self.iterate
