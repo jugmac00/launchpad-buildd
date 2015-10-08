@@ -53,9 +53,8 @@ class SnapBuildManager(DebianBuildManager):
             "--build-id", self._buildid,
             "--arch", self.arch_tag,
             ]
-        env = os.environ.copy()
         if self.proxy_url:
-            env['http_proxy'] = self.proxy_url
+            args.extend(["--proxy_url", self.proxy_url])
         if self.branch is not None:
             args.extend(["--branch", self.branch])
         if self.git_repository is not None:
@@ -63,7 +62,7 @@ class SnapBuildManager(DebianBuildManager):
         if self.git_path is not None:
             args.extend(["--git-path", self.git_path])
         args.append(self.name)
-        self.runSubProcess(self.build_snap_path, args, env=env)
+        self.runSubProcess(self.build_snap_path, args)
 
     def iterate_BUILD_SNAP(self, retcode):
         """Finished building the snap."""

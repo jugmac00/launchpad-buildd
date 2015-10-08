@@ -92,7 +92,18 @@ class SnapBuilder:
             deps.append("git")
         self.chroot(["apt-get", "-y", "install"] + deps)
 
+    def pull(self):
+        """Run pull phase."""
+        env = {"SNAPCRAFT_LOCAL_SOURCES": "1"}
+        if self.options.proxy_url:
+            env["http_proxy"] = self.options.proxy_url
+        self.run_build_command(
+            ["snapcraft", "pull"],
+            path=os.path.join("/build", self.name),
+            env=env)
+
     def build(self):
+        """Run all build, stage and snap phases."""
         if self.options.branch is not None:
             self.run_build_command([
                 "bzr", "branch", self.options.branch, self.name])
@@ -108,8 +119,7 @@ class SnapBuilder:
                 self.options.git_repository, self.name],
                 env=env)
         self.run_build_command(
-            ["snapcraft", "assemble"], path=os.path.join("/build", self.name),
-            env={"SNAPCRAFT_LOCAL_SOURCES": "1"})
+            ["snapcraft", "all"], path=os.path.join("/build", self.name))
 
 
 def main():
@@ -125,6 +135,7 @@ def main():
     parser.add_option(
         "--git-path", metavar="REF-PATH",
         help="build from this ref path in REPOSITORY")
+    parser.add_option("--proxy-url", help="builder proxy url")
     options, args = parser.parse_args()
     if (options.git_repository is None) != (options.git_path is None):
         parser.error(
@@ -143,6 +154,7 @@ def main():
         traceback.print_exc()
         return RETCODE_FAILURE_INSTALL
     try:
+        builder.pull()
         builder.build()
     except Exception:
         traceback.print_exc()
