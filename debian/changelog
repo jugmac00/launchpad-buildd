@@ -4,6 +4,8 @@ launchpad-buildd (135) UNRELEASED; urgency=medium
     launchpad-buildd 133.
   * debian/control: Drop dependency on linux32.  It's been in util-linux for
     ages, which is Essential, and utopic dropped the Provides.
+  * debian/launchpad-buildd.init: Set "Should-Start: cloud-init" to ensure
+    that launchpad-buildd is started after the hostname is set.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 06 Oct 2015 16:46:18 +0100
 
