@@ -2,6 +2,8 @@ launchpad-buildd (135) UNRELEASED; urgency=medium
 
   * debian/control: Require python-debian (>= 0.1.23), needed for changes in
     launchpad-buildd 133.
+  * debian/control: Drop dependency on linux32.  It's been in util-linux for
+    ages, which is Essential, and utopic dropped the Provides.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 06 Oct 2015 16:46:18 +0100
 

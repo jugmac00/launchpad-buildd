@@ -9,7 +9,7 @@ Package: launchpad-buildd
 Section: misc
 Architecture: all
 Depends: python-lpbuildd (=${source:Version}), python, debootstrap, dpkg-dev,
- linux32, file, bzip2, sudo, ntpdate, adduser, apt-transport-https, lsb-release,
+ file, bzip2, sudo, ntpdate, adduser, apt-transport-https, lsb-release,
  pristine-tar, python-apt, sbuild, ${misc:Depends}
 Recommends: qemu-user-static
 Description: Launchpad buildd slave
