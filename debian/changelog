@@ -6,6 +6,7 @@ launchpad-buildd (135) UNRELEASED; urgency=medium
     ages, which is Essential, and utopic dropped the Provides.
   * debian/launchpad-buildd.init: Set "Should-Start: cloud-init" to ensure
     that launchpad-buildd is started after the hostname is set.
+  * Simplify BuilddSlaveTestSetup slightly.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 06 Oct 2015 16:46:18 +0100
 

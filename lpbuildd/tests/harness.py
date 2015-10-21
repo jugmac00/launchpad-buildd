@@ -133,10 +133,7 @@ class BuilddSlaveTestSetup(TacTestFixture):
     def logfile(self):
         return '/var/tmp/build-slave.log'
 
-    def _hasDaemonStarted(self):
-        """Called by the superclass to check if the daemon is listening.
-
-        The slave is ready when it's accepting connections.
-        """
+    @property
+    def daemon_port(self):
         # This must match buildd-slave-test.conf.
-        return self._isPortListening('localhost', 8221)
+        return 8221
