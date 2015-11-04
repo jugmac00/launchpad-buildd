@@ -1,3 +1,13 @@
+launchpad-buildd (136) UNRELEASED; urgency=medium
+
+  * Use twisted.python.log.msg rather than print to write to the log file.
+    Twisted 15.2's stdio wrapper tries to decode as ASCII and thus breaks on
+    sbuild's UTF-8 section markers, and this seems to be the simplest way to
+    fix that while preserving source compatibility with earlier versions of
+    Twisted.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 04 Nov 2015 11:49:27 +0000
+
 launchpad-buildd (135) trusty; urgency=medium
 
   * debian/control: Require python-debian (>= 0.1.23), needed for changes in

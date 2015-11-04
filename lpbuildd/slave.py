@@ -20,6 +20,7 @@ import apt
 from twisted.internet import protocol
 from twisted.internet import reactor as default_reactor
 from twisted.internet import process
+from twisted.python import log
 from twisted.web import xmlrpc
 
 # XXX cjwatson 2013-10-07: Remove when all builders are on Ubuntu 10.04 LTS
@@ -450,7 +451,7 @@ class BuildDSlave(object):
             self._log.flush()
         if data.endswith("\n"):
             data = data[:-1]
-        print "Build log: " + data
+        log.msg("Build log: " + data)
 
     def getLogTail(self):
         """Return the tail of the log.
@@ -642,7 +643,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
                 self._version = cache["python-lpbuildd"].installedVersion
         except KeyError:
             self._version = None
-        print "Initialized"
+        log.msg("Initialized")
 
     def registerBuilder(self, builderclass, buildertag):
         self._builders[buildertag] = builderclass
