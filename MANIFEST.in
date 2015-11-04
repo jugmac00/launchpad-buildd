@@ -1,0 +1,24 @@
+include LICENSE
+include Makefile
+include buildd-genconfig
+include buildd-slave.tac
+include buildlivefs
+include buildrecipe
+include buildsnap
+include debian/changelog
+include generate-translation-templates
+include mount-chroot
+include override-sources-list
+include remove-build
+include sbuild-package
+include sbuildrc
+include scan-for-processes
+include slave-prep
+include sudo-wrapper
+include template-buildd-slave.conf
+include test_buildd_generatetranslationtemplates
+include test_buildd_recipe
+include umount-chroot
+include unpack-chroot
+include update-debian-chroot
+recursive-include lpbuildd/tests *.diff *.tar.gz buildd-slave-test.conf buildlog buildlog.long

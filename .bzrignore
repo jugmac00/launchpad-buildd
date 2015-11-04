@@ -1,4 +1,6 @@
+*.egg-info
 *.pyc
+dist
 debian/files
 debian/launchpad-buildd
 debian/python-lpbuildd
