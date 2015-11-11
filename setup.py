@@ -59,19 +59,21 @@ setup(
     license='Affero GPL v3',
     install_requires=[
         'bzr',
-        'fixtures',
         # XXX cjwatson 2015-11-04: This does in fact require python-apt, but
         # that's normally shipped as a system package and specifying it here
         # causes problems for Launchpad's build system.
         #'python-apt',
         'python-debian',
-        'testtools',
         'Twisted',
-        'txfixtures',
         'zope.interface',
         ],
     data_files=[
         ('', ['buildd-slave.tac', 'template-buildd-slave.conf']),
         ],
     test_suite='lpbuildd.tests',
+    tests_require=[
+        'fixtures',
+        'testtools',
+        'txfixtures',
+        ],
     )
