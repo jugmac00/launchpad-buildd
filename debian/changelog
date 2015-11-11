@@ -5,6 +5,9 @@ launchpad-buildd (136) UNRELEASED; urgency=medium
     sbuild's UTF-8 section markers, and this seems to be the simplest way to
     fix that while preserving source compatibility with earlier versions of
     Twisted.
+  * Add Python packaging files so that Launchpad's test suite can
+    incorporate this as a Python dependency rather than requiring
+    python-lpbuildd to be installed on the test system.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 04 Nov 2015 11:49:27 +0000
 
