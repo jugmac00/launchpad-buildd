@@ -1,3 +1,10 @@
+launchpad-buildd (137) UNRELEASED; urgency=medium
+
+  * Remove handling for pre-karmic versions of Twisted that didn't support
+    --umask.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
+
 launchpad-buildd (136) trusty; urgency=medium
 
   * Use twisted.python.log.msg rather than print to write to the log file.
