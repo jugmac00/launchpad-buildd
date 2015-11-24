@@ -2,6 +2,8 @@ launchpad-buildd (137) UNRELEASED; urgency=medium
 
   * Remove handling for pre-karmic versions of Twisted that didn't support
     --umask.
+  * Stop cleaning /var/log/launchpad-buildd/ from cron; logrotate handles
+    that now.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
 
