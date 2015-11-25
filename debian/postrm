@@ -4,4 +4,8 @@ set -e
 
 if [ "$1" = purge ]; then
 	rm -f /etc/launchpad-buildd/*
+	rm -f /etc/systemd/timesyncd.conf.d/00-launchpad-buildd.conf
+	if [ -d /etc/systemd/timesyncd.conf.d ]; then
+		rmdir -p --ignore-fail-on-non-empty /etc/systemd/timesyncd.conf.d
+	fi
 fi

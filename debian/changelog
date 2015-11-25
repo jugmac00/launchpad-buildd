@@ -4,6 +4,8 @@ launchpad-buildd (137) UNRELEASED; urgency=medium
     --umask.
   * Stop cleaning /var/log/launchpad-buildd/ from cron; logrotate handles
     that now.
+  * Configure systemd-timesyncd to use the NTP server configured in
+    /etc/launchpad-buildd/default.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
 
