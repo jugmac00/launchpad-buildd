@@ -6,6 +6,7 @@ launchpad-buildd (137) UNRELEASED; urgency=medium
     that now.
   * Configure systemd-timesyncd to use the NTP server configured in
     /etc/launchpad-buildd/default.
+  * buildrecipe: Add option parsing framework.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
 

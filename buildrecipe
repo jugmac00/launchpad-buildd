@@ -7,6 +7,7 @@
 __metaclass__ = type
 
 
+from optparse import OptionParser
 import os
 import pwd
 import socket
@@ -295,14 +296,23 @@ def get_build_path(build_id, *extra):
         os.environ["HOME"], "build-" + build_id, *extra)
 
 
-if __name__ == '__main__':
-    builder = RecipeBuilder(*sys.argv[1:])
+def main():
+    parser = OptionParser(usage=(
+        "usage: %prog BUILD-ID AUTHOR-NAME AUTHOR-EMAIL SUITE "
+        "DISTROSERIES-NAME COMPONENT ARCHIVE-PURPOSE"))
+    _, args = parser.parse_args()
+
+    builder = RecipeBuilder(*args)
     if builder.install() != 0:
-        sys.exit(RETCODE_FAILURE_INSTALL)
+        return RETCODE_FAILURE_INSTALL
     if builder.buildTree() != 0:
-        sys.exit(RETCODE_FAILURE_BUILD_TREE)
+        return RETCODE_FAILURE_BUILD_TREE
     if builder.installBuildDeps() != 0:
-        sys.exit(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
+        return RETCODE_FAILURE_INSTALL_BUILD_DEPS
     if builder.buildSourcePackage() != 0:
-        sys.exit(RETCODE_FAILURE_BUILD_SOURCE_PACKAGE)
-    sys.exit(RETCODE_SUCCESS)
+        return RETCODE_FAILURE_BUILD_SOURCE_PACKAGE
+    return RETCODE_SUCCESS
+
+
+if __name__ == '__main__':
+    sys.exit(main())
