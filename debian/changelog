@@ -7,6 +7,7 @@ launchpad-buildd (137) UNRELEASED; urgency=medium
   * Configure systemd-timesyncd to use the NTP server configured in
     /etc/launchpad-buildd/default.
   * buildrecipe: Add option parsing framework.
+  * Use git-build-recipe to run git-based recipe builds (LP: #1453022).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
 
