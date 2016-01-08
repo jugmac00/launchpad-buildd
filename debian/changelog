@@ -6,6 +6,8 @@ launchpad-buildd (137) UNRELEASED; urgency=medium
     that now.
   * Configure systemd-timesyncd to use the NTP server configured in
     /etc/launchpad-buildd/default.
+  * Try to load the nbd module when starting launchpad-buildd
+    (LP: #1531171).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
 

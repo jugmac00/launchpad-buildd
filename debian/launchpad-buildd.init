@@ -75,6 +75,10 @@ d_start() {
     CONF=$1
     PIDFILE="$PIDROOT"/"$CONF".pid
     LOGFILE="$LOGROOT"/"$CONF".log
+
+    # Useful for certain kinds of image builds.
+    modprobe nbd || true
+
     su - buildd -c "BUILDD_SLAVE_CONFIG=$CONFROOT/$CONF PYTHONPATH=/usr/lib/launchpad-buildd twistd --no_save --pidfile $PIDFILE --python $TACFILE --logfile $LOGFILE --umask 022"
 }
 
