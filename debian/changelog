@@ -8,6 +8,8 @@ launchpad-buildd (137) UNRELEASED; urgency=medium
     /etc/launchpad-buildd/default.
   * Try to load the nbd module when starting launchpad-buildd
     (LP: #1531171).
+  * buildrecipe: Add option parsing framework.
+  * Use git-build-recipe to run git-based recipe builds (LP: #1453022).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
 
