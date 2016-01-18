@@ -1,4 +1,4 @@
-launchpad-buildd (137) UNRELEASED; urgency=medium
+launchpad-buildd (137) trusty; urgency=medium
 
   * Remove handling for pre-karmic versions of Twisted that didn't support
     --umask.
@@ -11,7 +11,7 @@ launchpad-buildd (137) UNRELEASED; urgency=medium
   * buildrecipe: Add option parsing framework.
   * Use git-build-recipe to run git-based recipe builds (LP: #1453022).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Nov 2015 18:12:29 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 18 Jan 2016 11:50:05 +0000
 
 launchpad-buildd (136) trusty; urgency=medium
 
