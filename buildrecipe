@@ -16,6 +16,7 @@ from subprocess import (
     Popen,
     call,
     check_call,
+    check_output,
     )
 import sys
 from textwrap import dedent
@@ -113,6 +114,9 @@ class RecipeBuilder:
         if self.git:
             print 'Git version:'
             check_call(['git', '--version'])
+            print check_output(
+                ['dpkg-query', '-W', 'git-build-recipe']).rstrip(
+                    '\n').replace('\t', ' ')
         else:
             print 'Bazaar versions:'
             check_call(['bzr', 'version'])
