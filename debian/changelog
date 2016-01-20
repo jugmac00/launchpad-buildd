@@ -1,3 +1,10 @@
+launchpad-buildd (138) UNRELEASED; urgency=medium
+
+  * slave-prep: Output current versions of git-build-recipe, git, and
+    qemu-user-static.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 Jan 2016 14:05:44 +0000
+
 launchpad-buildd (137) trusty; urgency=medium
 
   * Remove handling for pre-karmic versions of Twisted that didn't support
