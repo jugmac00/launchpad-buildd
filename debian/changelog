@@ -1,3 +1,50 @@
+launchpad-buildd (138) UNRELEASED; urgency=medium
+
+  * slave-prep: Output current versions of git-build-recipe, git, and
+    qemu-user-static.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 Jan 2016 14:05:44 +0000
+
+launchpad-buildd (137) trusty; urgency=medium
+
+  * Remove handling for pre-karmic versions of Twisted that didn't support
+    --umask.
+  * Stop cleaning /var/log/launchpad-buildd/ from cron; logrotate handles
+    that now.
+  * Configure systemd-timesyncd to use the NTP server configured in
+    /etc/launchpad-buildd/default.
+  * Try to load the nbd module when starting launchpad-buildd
+    (LP: #1531171).
+  * buildrecipe: Add option parsing framework.
+  * Use git-build-recipe to run git-based recipe builds (LP: #1453022).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 18 Jan 2016 11:50:05 +0000
+
+launchpad-buildd (136) trusty; urgency=medium
+
+  * Use twisted.python.log.msg rather than print to write to the log file.
+    Twisted 15.2's stdio wrapper tries to decode as ASCII and thus breaks on
+    sbuild's UTF-8 section markers, and this seems to be the simplest way to
+    fix that while preserving source compatibility with earlier versions of
+    Twisted.
+  * Add Python packaging files so that Launchpad's test suite can
+    incorporate this as a Python dependency rather than requiring
+    python-lpbuildd to be installed on the test system.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 13 Nov 2015 13:59:48 +0000
+
+launchpad-buildd (135) trusty; urgency=medium
+
+  * debian/control: Require python-debian (>= 0.1.23), needed for changes in
+    launchpad-buildd 133.
+  * debian/control: Drop dependency on linux32.  It's been in util-linux for
+    ages, which is Essential, and utopic dropped the Provides.
+  * debian/launchpad-buildd.init: Set "Should-Start: cloud-init" to ensure
+    that launchpad-buildd is started after the hostname is set.
+  * Simplify BuilddSlaveTestSetup slightly.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 29 Oct 2015 17:49:57 +0000
+
 launchpad-buildd (134) trusty; urgency=medium
 
   * buildsnap: Drop explicit installation of sudo, now fixed in snapcraft.

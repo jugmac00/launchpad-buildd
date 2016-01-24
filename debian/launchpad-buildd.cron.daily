@@ -4,7 +4,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 CLEANDIRS=""
-CLEANDIRS="$CLEANDIRS /var/log/launchpad-buildd/"
 CLEANDIRS="$CLEANDIRS /home/buildd/filecache-default/"
 
 for cleandir in $CLEANDIRS; do

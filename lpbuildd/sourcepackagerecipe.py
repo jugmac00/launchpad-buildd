@@ -76,6 +76,7 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         self.author_email = extra_args['author_email']
         self.archive_purpose = extra_args['archive_purpose']
         self.distroseries_name = extra_args['distroseries_name']
+        self.git = extra_args.get('git', False)
 
         super(SourcePackageRecipeBuildManager, self).initiate(
             files, chroot, extra_args)
@@ -85,10 +86,13 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         os.makedirs(get_chroot_path(self.home, self._buildid, 'work'))
         recipe_path = get_chroot_path(self.home, self._buildid, 'work/recipe')
         splat_file(recipe_path, self.recipe_text)
-        args = [
-            "buildrecipe", self._buildid, self.author_name.encode('utf-8'),
+        args = ["buildrecipe"]
+        if self.git:
+            args.append("--git")
+        args.extend([
+            self._buildid, self.author_name.encode('utf-8'),
             self.author_email, self.suite, self.distroseries_name,
-            self.component, self.archive_purpose]
+            self.component, self.archive_purpose])
         self.runSubProcess(self.build_recipe_path, args)
 
     def iterate_BUILD_RECIPE(self, retcode):

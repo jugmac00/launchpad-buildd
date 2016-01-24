@@ -12,6 +12,8 @@ import os
 import re
 import signal
 
+from twisted.python import log
+
 from lpbuildd.slave import (
     BuildManager,
     )
@@ -121,17 +123,17 @@ class DebianBuildManager(BuildManager):
             # We may have been aborted in between subprocesses; pretend that
             # we were terminated by a signal, which is close enough.
             success = 128 + signal.SIGKILL
-        print ("Iterating with success flag %s against stage %s"
-               % (success, self._state))
+        log.msg("Iterating with success flag %s against stage %s"
+                % (success, self._state))
         func = getattr(self, "iterate_" + self._state, None)
         if func is None:
             raise ValueError, "Unknown internal state " + self._state
         func(success)
 
     def iterateReap(self, state, success):
-        print ("Iterating with success flag %s against stage %s after reaping "
-               "processes"
-               % (success, state))
+        log.msg("Iterating with success flag %s against stage %s after "
+                "reaping processes"
+                % (success, state))
         func = getattr(self, "iterateReap_" + state, None)
         if func is None:
             raise ValueError, "Unknown internal post-reap state " + state
@@ -200,10 +202,10 @@ class DebianBuildManager(BuildManager):
         stop_regexes = [
             re.compile(pattern, flags)
             for pattern, flags in stop_patterns_and_flags]
-        log = open(os.path.join(self._cachepath, "buildlog"))
+        buildlog = open(os.path.join(self._cachepath, "buildlog"))
         try:
             window = ""
-            chunk = log.read(chunk_size)
+            chunk = buildlog.read(chunk_size)
             while chunk:
                 window += chunk
                 for regex in regexes:
@@ -215,9 +217,9 @@ class DebianBuildManager(BuildManager):
                         return None, None
                 if len(window) > chunk_size:
                     window = window[chunk_size:]
-                chunk = log.read(chunk_size)
+                chunk = buildlog.read(chunk_size)
         finally:
-            log.close()
+            buildlog.close()
         return None, None
 
     def iterate_SOURCES(self, success):

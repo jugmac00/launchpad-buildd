@@ -54,7 +54,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
-    def startBuild(self):
+    def startBuild(self, git=False):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         extra_args = {
@@ -73,6 +73,8 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
                     'ubuntu main',
                 ],
             }
+        if git:
+            extra_args['git'] = True
         self.buildmanager.initiate({}, 'chroot.tar.gz', extra_args)
 
         # Skip states that are done in DebianBuildManager to the state
@@ -84,10 +86,14 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
         expected_command = [
-            'sharepath/slavebin/buildrecipe', 'buildrecipe', self.buildid,
+            'sharepath/slavebin/buildrecipe', 'buildrecipe']
+        if git:
+            expected_command.append('--git')
+        expected_command.extend([
+            self.buildid,
             'Steve\u1234'.encode('utf-8'), 'stevea@example.org',
             'maverick', 'maverick', 'universe', 'puppies',
-            ]
+            ])
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
@@ -213,3 +219,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+    def test_iterate_git(self):
+        # Starting a git-based recipe build passes the correct option.  (The
+        # rest of the build is identical to bzr-based recipe builds from the
+        # build manager's point of view.)
+        self.startBuild(git=True)

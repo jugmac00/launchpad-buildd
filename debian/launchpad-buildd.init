@@ -10,6 +10,7 @@
 # Provides:          launchpad_buildd
 # Required-Start:    $local_fs $network $syslog $time $remote_fs
 # Required-Stop:     $local_fs $network $syslog $time $remote_fs
+# Should-Start:      cloud-init
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # X-Interactive:     false
@@ -74,13 +75,11 @@ d_start() {
     CONF=$1
     PIDFILE="$PIDROOT"/"$CONF".pid
     LOGFILE="$LOGROOT"/"$CONF".log
-    # prior to karmic, twisted didn't support --umask, and defaulted it well.
-    # we need it to be 022, not 077.
-    case $(lsb_release -sc) in
-	[a-j]*)	UMASK="";;
-	[k-z]*)	UMASK="--umask 022";;
-    esac
-    su - buildd -c "BUILDD_SLAVE_CONFIG=$CONFROOT/$CONF PYTHONPATH=/usr/lib/launchpad-buildd twistd --no_save --pidfile $PIDFILE --python $TACFILE --logfile $LOGFILE $UMASK"
+
+    # Useful for certain kinds of image builds.
+    modprobe nbd || true
+
+    su - buildd -c "BUILDD_SLAVE_CONFIG=$CONFROOT/$CONF PYTHONPATH=/usr/lib/launchpad-buildd twistd --no_save --pidfile $PIDFILE --python $TACFILE --logfile $LOGFILE --umask 022"
 }
 
 #

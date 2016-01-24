@@ -93,6 +93,18 @@ EOF
 	    fi
 	fi
 
+	# Configure systemd-timesyncd to use the buildd NTP service
+	if which systemd >/dev/null 2>&1; then
+	    eval `grep ntphost /etc/launchpad-buildd/default | sed 's/ //g'`
+	    if [ "$ntphost" ]; then
+		mkdir -p /etc/systemd/timesyncd.conf.d
+		cat << EOF > /etc/systemd/timesyncd.conf.d/00-launchpad-buildd.conf
+[Time]
+NTP=$ntphost
+EOF
+	    fi
+	fi
+
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)
 

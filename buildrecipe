@@ -7,6 +7,7 @@
 __metaclass__ = type
 
 
+from optparse import OptionParser
 import os
 import pwd
 import socket
@@ -15,6 +16,7 @@ from subprocess import (
     Popen,
     call,
     check_call,
+    check_output,
     )
 import sys
 from textwrap import dedent
@@ -47,13 +49,16 @@ class RecipeBuilder:
     """Builds a package from a recipe."""
 
     def __init__(self, build_id, author_name, author_email,
-                 suite, distroseries_name, component, archive_purpose):
+                 suite, distroseries_name, component, archive_purpose,
+                 git=False):
         """Constructor.
 
         :param build_id: The id of the build (a str).
         :param author_name: The name of the author (a str).
         :param author_email: The email address of the author (a str).
         :param suite: The suite the package should be built for (a str).
+        :param git: If True, build a git-based recipe; if False, build a
+            bzr-based recipe.
         """
         self.build_id = build_id
         self.author_name = author_name.decode('utf-8')
@@ -62,7 +67,7 @@ class RecipeBuilder:
         self.component = component
         self.distroseries_name = distroseries_name
         self.suite = suite
-        self.base_branch = None
+        self.git = git
         self.chroot_path = get_build_path(build_id, 'chroot-autobuild')
         self.work_dir_relative = os.environ['HOME'] + '/work'
         self.work_dir = os.path.join(self.chroot_path,
@@ -86,7 +91,7 @@ class RecipeBuilder:
         """Build the recipe into a source tree.
 
         As a side-effect, sets self.source_dir_relative.
-        :return: a retcode from `bzr dailydeb`.
+        :return: a retcode from `bzr dailydeb` or `git-build-recipe`.
         """
         assert not os.path.exists(self.tree_path)
         recipe_path = os.path.join(self.work_dir, 'recipe')
@@ -99,16 +104,23 @@ class RecipeBuilder:
         # As of bzr 2.2, a defined identity is needed.  In this case, we're
         # using buildd@<hostname>.
         hostname = socket.gethostname()
-        bzr_email = 'buildd@%s' % hostname
+        email = 'buildd@%s' % hostname
         lsb_release = Popen(['/usr/bin/sudo',
             '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
             '-r', '-s'], stdout=PIPE)
         distroseries_version = lsb_release.communicate()[0].rstrip()
         assert lsb_release.returncode == 0
 
-        print 'Bazaar versions:'
-        check_call(['bzr', 'version'])
-        check_call(['bzr', 'plugins'])
+        if self.git:
+            print 'Git version:'
+            check_call(['git', '--version'])
+            print check_output(
+                ['dpkg-query', '-W', 'git-build-recipe']).rstrip(
+                    '\n').replace('\t', ' ')
+        else:
+            print 'Bazaar versions:'
+            check_call(['bzr', 'version'])
+            check_call(['bzr', 'plugins'])
 
         print 'Building recipe:'
         print recipe
@@ -116,17 +128,22 @@ class RecipeBuilder:
         env = {
             'DEBEMAIL': self.author_email,
             'DEBFULLNAME': self.author_name.encode('utf-8'),
-            'BZR_EMAIL': bzr_email,
+            'EMAIL': email,
             'LANG': 'C.UTF-8',
             }
-        retcode = call_report_rusage([
-            'bzr',
-            '-Derror',
-            'dailydeb', '--safe', '--no-build', recipe_path,
-            self.tree_path, '--manifest', manifest_path,
+        if self.git:
+            cmd = ['git-build-recipe']
+        else:
+            cmd = ['bzr', '-Derror', 'dailydeb']
+        cmd.extend([
+            '--safe', '--no-build',
+            '--manifest', manifest_path,
             '--distribution', self.distroseries_name,
-            '--allow-fallback-to-native', '--append-version',
-            '~ubuntu%s.1' % distroseries_version], env=env)
+            '--allow-fallback-to-native',
+            '--append-version', '~ubuntu%s.1' % distroseries_version,
+            recipe_path, self.tree_path,
+            ])
+        retcode = call_report_rusage(cmd, env=env)
         if retcode != 0:
             return retcode
         (source,) = [name for name in os.listdir(self.tree_path)
@@ -295,14 +312,26 @@ def get_build_path(build_id, *extra):
         os.environ["HOME"], "build-" + build_id, *extra)
 
 
-if __name__ == '__main__':
-    builder = RecipeBuilder(*sys.argv[1:])
+def main():
+    parser = OptionParser(usage=(
+        "usage: %prog BUILD-ID AUTHOR-NAME AUTHOR-EMAIL SUITE "
+        "DISTROSERIES-NAME COMPONENT ARCHIVE-PURPOSE"))
+    parser.add_option(
+        "--git", default=False, action="store_true",
+        help="build a git recipe (default: bzr)")
+    options, args = parser.parse_args()
+
+    builder = RecipeBuilder(*args, git=options.git)
     if builder.install() != 0:
-        sys.exit(RETCODE_FAILURE_INSTALL)
+        return RETCODE_FAILURE_INSTALL
     if builder.buildTree() != 0:
-        sys.exit(RETCODE_FAILURE_BUILD_TREE)
+        return RETCODE_FAILURE_BUILD_TREE
     if builder.installBuildDeps() != 0:
-        sys.exit(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
+        return RETCODE_FAILURE_INSTALL_BUILD_DEPS
     if builder.buildSourcePackage() != 0:
-        sys.exit(RETCODE_FAILURE_BUILD_SOURCE_PACKAGE)
-    sys.exit(RETCODE_SUCCESS)
+        return RETCODE_FAILURE_BUILD_SOURCE_PACKAGE
+    return RETCODE_SUCCESS
+
+
+if __name__ == '__main__':
+    sys.exit(main())
