@@ -54,7 +54,7 @@ class SnapBuildManager(DebianBuildManager):
             "--arch", self.arch_tag,
             ]
         if self.proxy_url:
-            args.extend(["--proxy_url", self.proxy_url])
+            args.extend(["--proxy-url", self.proxy_url])
         if self.branch is not None:
             args.extend(["--branch", self.branch])
         if self.git_repository is not None:
