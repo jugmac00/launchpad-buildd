@@ -93,6 +93,7 @@ class SnapBuilder:
         self.chroot(["apt-get", "-y", "install"] + deps)
 
     def repo(self):
+        """Collect git or bzr branch."""
         if self.options.branch is not None:
             self.run_build_command([
                 "bzr", "branch", self.options.branch, self.name])
