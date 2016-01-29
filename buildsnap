@@ -92,18 +92,7 @@ class SnapBuilder:
             deps.append("git")
         self.chroot(["apt-get", "-y", "install"] + deps)
 
-    def pull(self):
-        """Run pull phase."""
-        env = {"SNAPCRAFT_LOCAL_SOURCES": "1"}
-        if self.options.proxy_url:
-            env["http_proxy"] = self.options.proxy_url
-        self.run_build_command(
-            ["snapcraft", "pull"],
-            path=os.path.join("/build", self.name),
-            env=env)
-
-    def build(self):
-        """Run all build, stage and snap phases."""
+    def repo(self):
         if self.options.branch is not None:
             self.run_build_command([
                 "bzr", "branch", self.options.branch, self.name])
@@ -118,6 +107,19 @@ class SnapBuilder:
                 "git", "clone", "-b", self.options.git_path,
                 self.options.git_repository, self.name],
                 env=env)
+
+    def pull(self):
+        """Run pull phase."""
+        env = {"SNAPCRAFT_LOCAL_SOURCES": "1"}
+        if self.options.proxy_url:
+            env["http_proxy"] = self.options.proxy_url
+        self.run_build_command(
+            ["snapcraft", "pull"],
+            path=os.path.join("/build", self.name),
+            env=env)
+
+    def build(self):
+        """Run all build, stage and snap phases."""
         self.run_build_command(
             ["snapcraft", "all"], path=os.path.join("/build", self.name))
 
@@ -154,6 +156,7 @@ def main():
         traceback.print_exc()
         return RETCODE_FAILURE_INSTALL
     try:
+        builder.repo()
         builder.pull()
         builder.build()
     except Exception:
