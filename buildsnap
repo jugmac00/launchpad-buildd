@@ -45,7 +45,7 @@ class SnapBuilder:
             self.options.build_id, 'chroot-autobuild')
         # Set to False for local testing if your chroot doesn't have an
         # appropriate certificate for your codehosting system.
-        self.ssl_verify = True
+        self.ssl_verify = False
 
     def chroot(self, args, echo=False):
         """Run a command in the chroot.
@@ -82,9 +82,11 @@ class SnapBuilder:
                 "%s=%s" % (key, shell_escape(value))
                 for key, value in env.items()] + args
         command = "cd %s && %s" % (path, " ".join(args))
+        print('running command: %s' % command)
         self.chroot(["/bin/sh", "-c", command], echo=echo)
 
     def install(self):
+        print("Running install phase.")
         deps = ["snapcraft"]
         if self.options.branch is not None:
             deps.append("bzr")
@@ -95,8 +97,15 @@ class SnapBuilder:
     def repo(self):
         """Collect git or bzr branch."""
         if self.options.branch is not None:
-            self.run_build_command([
-                "bzr", "branch", self.options.branch, self.name])
+            print('contents of /build:\n')
+            self.run_build_command(['ls', '/build'])
+            if not self.ssl_verify:
+                self.run_build_command([
+                    "bzr", "-Ossl.cert_reqs=none",
+                    "branch", self.options.branch, self.name])
+            else:
+                self.run_build_command([
+                    "bzr", "branch", self.options.branch, self.name])
         else:
             assert self.options.git_repository is not None
             assert self.options.git_path is not None
@@ -111,6 +120,7 @@ class SnapBuilder:
 
     def pull(self):
         """Run pull phase."""
+        print("Running pull phase.")
         env = {"SNAPCRAFT_LOCAL_SOURCES": "1"}
         if self.options.proxy_url:
             env["http_proxy"] = self.options.proxy_url
@@ -121,6 +131,7 @@ class SnapBuilder:
 
     def build(self):
         """Run all build, stage and snap phases."""
+        print("Running build phase.")
         self.run_build_command(
             ["snapcraft", "all"], path=os.path.join("/build", self.name))
 
