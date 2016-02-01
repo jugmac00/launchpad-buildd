@@ -48,7 +48,7 @@ class SnapBuilder:
             self.options.build_id, 'chroot-autobuild')
         # Set to False for local testing if your chroot doesn't have an
         # appropriate certificate for your codehosting system.
-        self.ssl_verify = False
+        self.ssl_verify = True
 
     def chroot(self, args, echo=False):
         """Run a command in the chroot.
