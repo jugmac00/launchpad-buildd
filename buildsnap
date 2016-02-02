@@ -188,10 +188,11 @@ def main():
         builder.repo()
         builder.pull()
         builder.build()
-        builder.revoke_token()
     except Exception:
         traceback.print_exc()
         return RETCODE_FAILURE_BUILD
+    finally:
+        builder.revoke_token()
     return RETCODE_SUCCESS
 
 
