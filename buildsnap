@@ -100,7 +100,6 @@ class SnapBuilder:
         """Collect git or bzr branch."""
         print("Running repo phase...")
         if self.options.branch is not None:
-            print('contents of /build:\n')
             self.run_build_command(['ls', '/build'])
             if not self.ssl_verify:
                 self.run_build_command([
