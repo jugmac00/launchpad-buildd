@@ -31,6 +31,10 @@ class SnapBuildManager(DebianBuildManager):
         super(SnapBuildManager, self).__init__(slave, buildid, **kwargs)
         self.build_snap_path = os.path.join(self._slavebin, "buildsnap")
 
+    @property
+    def needs_sanitized_logs(self):
+        return True
+
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
         self.build_path = get_build_path(

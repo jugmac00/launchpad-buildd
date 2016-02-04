@@ -101,13 +101,10 @@ class SnapBuilder:
         print("Running repo phase...")
         if self.options.branch is not None:
             self.run_build_command(['ls', '/build'])
+            cmd = ["bzr", "branch", self.options.branch, self.name]
             if not self.ssl_verify:
-                self.run_build_command([
-                    "bzr", "-Ossl.cert_reqs=none",
-                    "branch", self.options.branch, self.name])
-            else:
-                self.run_build_command([
-                    "bzr", "branch", self.options.branch, self.name])
+                cmd.insert(1, "-Ossl.cert_reqs=none")
+            self.run_build_command(cmd)
         else:
             assert self.options.git_repository is not None
             assert self.options.git_path is not None
@@ -144,10 +141,13 @@ class SnapBuilder:
         auth = '{}:{}'.format(url.username, url.password)
         headers = {
             'Authorization': 'Basic {}'.format(base64.b64encode(auth))
-        }
+            }
         req = urllib2.Request(self.options.revocation_endpoint, None, headers)
         req.get_method = lambda: 'DELETE'
-        urllib2.urlopen(req)
+        try:
+            urllib2.urlopen(req)
+        except urllib2.HTTPError:
+            print('Unable to revoke token for %s' % url.username)
 
 
 def main():

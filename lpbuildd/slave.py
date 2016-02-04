@@ -123,6 +123,10 @@ class BuildManager(object):
         self.home = os.environ['HOME']
         self.abort_timeout = 120
 
+    @property
+    def needs_sanitized_logs(self):
+        return self.is_archive_private
+
     def runSubProcess(self, command, args, iterate=None, env=None):
         """Run a sub process capturing the results in the log."""
         if iterate is None:
@@ -165,7 +169,7 @@ class BuildManager(object):
 
         # Sanitize the URLs in the buildlog file if this is a build
         # in a private archive.
-        if self.is_archive_private:
+        if self.needs_sanitized_logs:
             self._slave.sanitizeBuildlog(self._slave.cachePath("buildlog"))
 
     def doMounting(self):
@@ -492,7 +496,7 @@ class BuildDSlave(object):
             if rlog is not None:
                 rlog.close()
 
-        if self.manager.is_archive_private:
+        if self.manager.needs_sanitized_logs:
             # This is a build in a private archive. We need to scrub
             # the URLs contained in the buildlog excerpt in order to
             # avoid leaking passwords.
