@@ -193,7 +193,8 @@ def main():
         traceback.print_exc()
         return RETCODE_FAILURE_BUILD
     finally:
-        builder.revoke_token()
+        if options.revocation_endpoint is not None:
+            builder.revoke_token()
     return RETCODE_SUCCESS
 
 
