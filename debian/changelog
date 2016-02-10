@@ -1,7 +1,13 @@
 launchpad-buildd (138) UNRELEASED; urgency=medium
 
+  [ Colin Watson ]
   * slave-prep: Output current versions of git-build-recipe, git, and
     qemu-user-static.
+
+  [ Kit Randel ]
+  * Add http/s proxy support for snap builds.
+  * Refactor buildsnap into distinct repo, pull, build and proxy token
+    revocation phases.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 Jan 2016 14:05:44 +0000
 
