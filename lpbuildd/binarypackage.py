@@ -107,7 +107,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
             if f.endswith(".dsc"):
                 self._dscfile = f
         if self._dscfile is None:
-            raise ValueError, files
+            raise ValueError(files)
 
         self.archive_purpose = extra_args.get('archive_purpose')
         self.distribution = extra_args['distribution']

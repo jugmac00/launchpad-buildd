@@ -127,7 +127,7 @@ class DebianBuildManager(BuildManager):
                 % (success, self._state))
         func = getattr(self, "iterate_" + self._state, None)
         if func is None:
-            raise ValueError, "Unknown internal state " + self._state
+            raise ValueError("Unknown internal state " + self._state)
         func(success)
 
     def iterateReap(self, state, success):
@@ -136,7 +136,7 @@ class DebianBuildManager(BuildManager):
                 % (success, state))
         func = getattr(self, "iterateReap_" + state, None)
         if func is None:
-            raise ValueError, "Unknown internal post-reap state " + state
+            raise ValueError("Unknown internal post-reap state " + state)
         func(success)
 
     def iterate_INIT(self, success):

@@ -3,6 +3,8 @@ launchpad-buildd (138) UNRELEASED; urgency=medium
   [ Colin Watson ]
   * slave-prep: Output current versions of git-build-recipe, git, and
     qemu-user-static.
+  * Always raise exception instances rather than using the two-argument form
+    of raise.
 
   [ Kit Randel ]
   * Add http/s proxy support for snap builds.
