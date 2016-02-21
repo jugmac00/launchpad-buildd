@@ -25,9 +25,13 @@ test_conffile = os.path.join(
 class MockBuildManager(object):
     """Mock BuildManager class.
 
-    Only implements 'is_archive_private' as False.
+    Only implements 'is_archive_private' and 'needs_sanitized_logs' as False.
     """
     is_archive_private = False
+
+    @property
+    def needs_sanitized_logs(self):
+        return self.is_archive_private
 
 
 class BuilddTestCase(unittest.TestCase):
