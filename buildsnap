@@ -134,7 +134,7 @@ class SnapBuilder:
         """Run all build, stage and snap phases."""
         print("Running build phase...")
         self.run_build_command(
-            ["snapcraft", "all"], path=os.path.join("/build", self.name))
+            ["snapcraft"], path=os.path.join("/build", self.name))
 
     def revoke_token(self):
         """Revoke builder proxy token."""

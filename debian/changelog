@@ -5,6 +5,8 @@ launchpad-buildd (138) UNRELEASED; urgency=medium
     qemu-user-static.
   * Always raise exception instances rather than using the two-argument form
     of raise.
+  * buildsnap: Run just "snapcraft" rather than "snapcraft all"; works with
+    snapcraft << 2.0 and >= 2.3.
 
   [ Kit Randel ]
   * Add http/s proxy support for snap builds.
