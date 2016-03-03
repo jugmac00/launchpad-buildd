@@ -1,4 +1,4 @@
-launchpad-buildd (138) UNRELEASED; urgency=medium
+launchpad-buildd (138) trusty; urgency=medium
 
   [ Colin Watson ]
   * slave-prep: Output current versions of git-build-recipe, git, and
@@ -14,7 +14,7 @@ launchpad-buildd (138) UNRELEASED; urgency=medium
   * Refactor buildsnap into distinct repo, pull, build and proxy token
     revocation phases.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 Jan 2016 14:05:44 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 03 Mar 2016 15:44:12 -0300
 
 launchpad-buildd (137) trusty; urgency=medium
 
