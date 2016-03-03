@@ -40,7 +40,7 @@ unset TERM
 
 # Force values for these, since otherwise sudo/pam_env may fill in unwanted
 # values from /etc/default/locale.
-export LANG=C LC_ALL=C LANGUAGE=
+export LANG=C.UTF-8 LC_ALL=C.UTF-8 LANGUAGE=
 
 # A number of build systems (e.g. automake, Linux) use this as an indication
 # that they should be more verbose.
