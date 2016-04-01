@@ -80,10 +80,14 @@ class SnapBuilder:
         """
         args = [shell_escape(arg) for arg in args]
         path = shell_escape(path)
+        full_env = {
+            "LANG": "C.UTF-8",
+            }
         if env:
-            args = ["env"] + [
-                "%s=%s" % (key, shell_escape(value))
-                for key, value in env.items()] + args
+            full_env.update(env)
+        args = ["env"] + [
+            "%s=%s" % (key, shell_escape(value))
+            for key, value in full_env.items()] + args
         command = "cd %s && %s" % (path, " ".join(args))
         self.chroot(["/bin/sh", "-c", command], echo=echo)
 

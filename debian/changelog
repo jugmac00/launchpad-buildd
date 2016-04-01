@@ -1,3 +1,9 @@
+launchpad-buildd (139) UNRELEASED; urgency=medium
+
+  * buildsnap: Set LANG=C.UTF-8 when running snapcraft.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 01 Apr 2016 14:35:20 +0100
+
 launchpad-buildd (138) trusty; urgency=medium
 
   [ Colin Watson ]
