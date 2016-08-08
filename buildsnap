@@ -17,8 +17,6 @@ import traceback
 import urllib2
 from urlparse import urlparse
 
-import apt_pkg
-
 from lpbuildd.util import (
     set_personality,
     shell_escape,
@@ -52,12 +50,11 @@ class SnapBuilder:
         # appropriate certificate for your codehosting system.
         self.ssl_verify = True
 
-    def chroot(self, args, echo=False, get_output=False):
+    def chroot(self, args, echo=False):
         """Run a command in the chroot.
 
         :param args: the command and arguments to run.
         :param echo: if True, print the command before executing it.
-        :param output: if True, return the output of the command.
         """
         args = set_personality(self.options.arch, args)
         if echo:
@@ -65,12 +62,8 @@ class SnapBuilder:
                 "Running in chroot: %s" % ' '.join(
                 "'%s'" % arg for arg in args))
             sys.stdout.flush()
-        command = ["/usr/bin/sudo", "/usr/sbin/chroot", self.chroot_path]
-        command.extend(args)
-        if get_output:
-            return subprocess.check_output(command, universal_newlines=True)
-        else:
-            subprocess.check_call(command)
+        subprocess.check_call([
+            "/usr/bin/sudo", "/usr/sbin/chroot", self.chroot_path] + args)
 
     def run_build_command(self, args, path="/build", env=None, echo=False):
         """Run a build command in the chroot.
@@ -128,34 +121,14 @@ class SnapBuilder:
                 self.options.git_repository, self.name],
                 env=env)
 
-    @property
-    def _proxy_env(self):
-        if self.options.proxy_url:
-            proxy_url = self.options.proxy_url
-            return {
-                "http_proxy": proxy_url,
-                "https_proxy": proxy_url.replace('http://', 'https://'),
-                }
-        else:
-            return {}
-
-    def update_parts(self):
-        """Run update phase, for remote parts."""
-        snapcraft_version = self.chroot(
-            ["dpkg-query", "-W", "-f", "${Version}", "snapcraft"],
-            get_output=True)
-        if apt_pkg.version_compare(snapcraft_version, "2.12") >= 0:
-            print("Running parts update phase...")
-            self.run_build_command(
-                ["snapcraft", "update"],
-                path=os.path.join("/build", self.name),
-                env=self._proxy_env)
-
     def pull(self):
         """Run pull phase."""
         print("Running pull phase...")
         env = {"SNAPCRAFT_LOCAL_SOURCES": "1"}
-        env.update(self._proxy_env)
+        if self.options.proxy_url:
+            env["http_proxy"] = self.options.proxy_url
+            https_url = self.options.proxy_url.replace('http://', 'https://')
+            env["https_proxy"] = https_url
         self.run_build_command(
             ["snapcraft", "pull"],
             path=os.path.join("/build", self.name),
@@ -184,8 +157,6 @@ class SnapBuilder:
 
 
 def main():
-    apt_pkg.init()
-
     parser = OptionParser("%prog [options] NAME")
     parser.add_option("--build-id", help="build identifier")
     parser.add_option(
@@ -220,7 +191,6 @@ def main():
         return RETCODE_FAILURE_INSTALL
     try:
         builder.repo()
-        builder.update_parts()
         builder.pull()
         builder.build()
     except Exception:

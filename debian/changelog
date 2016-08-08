@@ -1,7 +1,5 @@
 launchpad-buildd (140) UNRELEASED; urgency=medium
 
-  * buildsnap: If we have snapcraft >= 2.12, run "snapcraft update" before
-    the pull phase (LP: #1599786).
   * buildsnap: Catch urllib2.URLError as well as urllib2.HTTPError when
     trying to revoke the proxy token (LP: #1610916).
 
