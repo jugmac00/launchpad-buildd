@@ -179,8 +179,8 @@ class SnapBuilder:
         req.get_method = lambda: 'DELETE'
         try:
             urllib2.urlopen(req)
-        except urllib2.HTTPError:
-            print('Unable to revoke token for %s' % url.username)
+        except (urllib2.HTTPError, urllib2.URLError) as e:
+            print('Unable to revoke token for %s: %s' % (url.username, e))
 
 
 def main():
