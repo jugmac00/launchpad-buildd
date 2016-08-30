@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -101,5 +101,7 @@ class SnapBuildManager(DebianBuildManager):
             return
         for entry in sorted(os.listdir(output_path)):
             path = os.path.join(output_path, entry)
-            if entry.endswith(".snap") and not os.path.islink(path):
+            if os.path.islink(path):
+                continue
+            if entry.endswith(".snap") or entry.endswith(".manifest"):
                 self._slave.addWaitingFile(path)
