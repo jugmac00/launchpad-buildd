@@ -1,4 +1,4 @@
-launchpad-buildd (140) UNRELEASED; urgency=medium
+launchpad-buildd (140) trusty; urgency=medium
 
   * buildsnap: Catch urllib2.URLError as well as urllib2.HTTPError when
     trying to revoke the proxy token (LP: #1610916).
@@ -6,7 +6,7 @@ launchpad-buildd (140) UNRELEASED; urgency=medium
   * buildsnap: Set https_proxy to an http:// URL rather than https://; the
     former is more accurate anyway and the latter breaks npm (LP: #1588870).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 07 Jul 2016 11:07:49 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 16 Sep 2016 17:39:12 +0100
 
 launchpad-buildd (139) trusty; urgency=medium
 
