@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -109,6 +109,50 @@ class TestSnapBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
         self.assertEqual([((snap_path,), {})], self.slave.addWaitingFile.calls)
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/slavebin/umount-chroot", "umount-chroot", self.buildid]
+        self.assertEqual(SnapBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled("buildFail"))
+
+    def test_iterate_with_manifest(self):
+        # The build manager iterates a build that uploads a manifest from
+        # start to finish.
+        self.startBuild()
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        log = open(log_path, "w")
+        log.write("I am a build log.")
+        log.close()
+
+        output_dir = os.path.join(self.build_dir, "test-snap")
+        os.makedirs(output_dir)
+        snap_path = os.path.join(output_dir, "test-snap_0_all.snap")
+        with open(snap_path, "w") as snap:
+            snap.write("I am a snap package.")
+        manifest_path = os.path.join(output_dir, "test-snap_0_all.manifest")
+        with open(manifest_path, "w") as manifest:
+            manifest.write("I am a manifest.")
+
+        # After building the package, reap processes.
+        self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/slavebin/scan-for-processes", "scan-for-processes",
+            self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertEqual(
+            [((manifest_path,), {}), ((snap_path,), {})],
+            self.slave.addWaitingFile.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
