@@ -127,8 +127,7 @@ class SnapBuilder:
         env = {"SNAPCRAFT_LOCAL_SOURCES": "1"}
         if self.options.proxy_url:
             env["http_proxy"] = self.options.proxy_url
-            https_url = self.options.proxy_url.replace('http://', 'https://')
-            env["https_proxy"] = https_url
+            env["https_proxy"] = self.options.proxy_url
         self.run_build_command(
             ["snapcraft", "pull"],
             path=os.path.join("/build", self.name),
