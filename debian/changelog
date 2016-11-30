@@ -1,3 +1,10 @@
+launchpad-buildd (141) UNRELEASED; urgency=medium
+
+  * buildsnap: Grant access to the proxy during the build phase as well as
+    during the pull phase (LP: #1642281).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 04 Nov 2016 10:47:41 +0000
+
 launchpad-buildd (140) trusty; urgency=medium
 
   * buildsnap: Catch urllib2.URLError as well as urllib2.HTTPError when
