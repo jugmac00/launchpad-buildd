@@ -1,4 +1,4 @@
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -11,10 +11,12 @@ from textwrap import dedent
 from debian.deb822 import PkgRelation
 from testtools import TestCase
 from testtools.matchers import (
+    Contains,
     ContainsDict,
     Equals,
     Is,
     MatchesListwise,
+    Not,
     )
 from twisted.internet.task import Clock
 
@@ -48,8 +50,8 @@ class MockBuildManager(BinaryPackageBuildManager):
         self.iterators = []
         self.arch_indep = False
 
-    def runSubProcess(self, path, command, iterate=None):
-        self.commands.append([path]+command)
+    def runSubProcess(self, path, command, iterate=None, env=None):
+        self.commands.append(([path] + command, env))
         if iterate is None:
             iterate = self.iterate
         self.iterators.append(iterate)
@@ -111,12 +113,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
             '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
             'foo_1.dsc',
-            ], True)
+            ], final=True)
         self.assertFalse(self.slave.wasCalled('chrootFail'))
 
-    def assertState(self, state, command, final):
+    def assertState(self, state, command, env_matcher=None, final=False):
         self.assertEqual(state, self.getState())
-        self.assertEqual(command, self.buildmanager.commands[-1])
+        self.assertEqual(command, self.buildmanager.commands[-1][0])
+        if env_matcher is not None:
+            self.assertThat(self.buildmanager.commands[-1][1], env_matcher)
         if final:
             self.assertEqual(
                 self.buildmanager.iterate, self.buildmanager.iterators[-1])
@@ -130,14 +134,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
-             self.buildid], False)
+             self.buildid], final=False)
 
     def assertUnmountsSanely(self):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
             ['sharepath/slavebin/umount-chroot', 'umount-chroot',
-             self.buildid], True)
+             self.buildid], final=True)
 
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
@@ -161,6 +165,63 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
+    def test_with_debug_symbols(self):
+        # A build with debug symbols sets up /CurrentlyBuilding
+        # appropriately, and does not pass DEB_BUILD_OPTIONS.
+        self.buildmanager.initiate(
+            {'foo_1.dsc': ''}, 'chroot.tar.gz',
+            {'distribution': 'ubuntu', 'suite': 'warty',
+             'ogrecomponent': 'main', 'archive_purpose': 'PRIMARY',
+             'build_debug_symbols': True})
+        os.makedirs(self.chrootdir)
+        self.buildmanager._state = BinaryPackageBuildState.UPDATE
+        self.buildmanager.iterate(0)
+        self.assertState(
+            BinaryPackageBuildState.SBUILD,
+            ['sharepath/slavebin/sbuild-package', 'sbuild-package',
+             self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
+             '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
+             'foo_1.dsc'],
+            env_matcher=Not(Contains('DEB_BUILD_OPTIONS')), final=True)
+        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        with open(os.path.join(self.chrootdir, 'CurrentlyBuilding')) as cb:
+            self.assertEqual(dedent("""\
+                Package: foo
+                Component: main
+                Suite: warty
+                Purpose: PRIMARY
+                Build-Debug-Symbols: yes
+                """), cb.read())
+
+    def test_without_debug_symbols(self):
+        # A build with debug symbols sets up /CurrentlyBuilding
+        # appropriately, and passes DEB_BUILD_OPTIONS=noautodbgsym.
+        self.buildmanager.initiate(
+            {'foo_1.dsc': ''}, 'chroot.tar.gz',
+            {'distribution': 'ubuntu', 'suite': 'warty',
+             'ogrecomponent': 'main', 'archive_purpose': 'PRIMARY',
+             'build_debug_symbols': False})
+        os.makedirs(self.chrootdir)
+        self.buildmanager._state = BinaryPackageBuildState.UPDATE
+        self.buildmanager.iterate(0)
+        self.assertState(
+            BinaryPackageBuildState.SBUILD,
+            ['sharepath/slavebin/sbuild-package', 'sbuild-package',
+             self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
+             '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
+             'foo_1.dsc'],
+            env_matcher=ContainsDict(
+                {'DEB_BUILD_OPTIONS': Equals('noautodbgsym')}),
+            final=True)
+        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        with open(os.path.join(self.chrootdir, 'CurrentlyBuilding')) as cb:
+            self.assertEqual(dedent("""\
+                Package: foo
+                Component: main
+                Suite: warty
+                Purpose: PRIMARY
+                """), cb.read())
+
     def test_abort_sbuild(self):
         # Aborting sbuild kills processes in the chroot.
         self.startBuild()
@@ -170,7 +231,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
-             self.buildid], False)
+             self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
         # If reaping completes successfully, the build manager returns
@@ -189,7 +250,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
-             self.buildid], False)
+             self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('builderFail'))
         reap_subprocess = self.buildmanager._subprocess
 
@@ -213,7 +274,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
             ['sharepath/slavebin/umount-chroot', 'umount-chroot',
-             self.buildid], True)
+             self.buildid], final=True)
 
     def test_abort_between_subprocesses(self):
         # If a build is aborted between subprocesses, the build manager
@@ -227,13 +288,13 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.INIT,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
-             self.buildid], False)
+             self.buildid], final=False)
 
         self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.CLEANUP,
             ['sharepath/slavebin/remove-build', 'remove-build', self.buildid],
-            True)
+            final=True)
         self.assertFalse(self.slave.wasCalled('builderFail'))
 
     def test_missing_changes(self):

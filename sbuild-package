@@ -67,7 +67,7 @@ NR_PROCESSORS=$ACTUAL_NR_PROCESSORS
 echo "Initiating build $BUILDID with $NR_PROCESSORS jobs across $ACTUAL_NR_PROCESSORS processor cores."
 
 if [ $NR_PROCESSORS -gt 1 ]; then
-  export DEB_BUILD_OPTIONS=parallel=$NR_PROCESSORS
+  export DEB_BUILD_OPTIONS="${DEB_BUILD_OPTIONS:+$DEB_BUILD_OPTIONS }parallel=$NR_PROCESSORS"
 fi
 
 cd "$HOME/build-$BUILDID"
