@@ -14,6 +14,7 @@ LAYER_PATH = $(TMPDIR)/layer
 INTERFACE_PATH = $(TMPDIR)/interface
 EXTRA_CHARM_BUILD_ARGS ?=
 DEPLOY_ENV ?= devel
+CHARM_STORE_URL ?= cs:~launchpad/launchpad-buildd
 
 export INTERFACE_PATH
 export LAYER_PATH
@@ -32,6 +33,8 @@ $(BUILDDIR):
 $(CHARM): $(CHARM_SRC) | $(BUILDDIR)
 	rm -rf $(CHARMDIR)
 	charm build -o $(BUILDDIR) -s $(CHARM_SERIES) -n $(NAME) $(EXTRA_CHARM_BUILD_ARGS)
+	touch $(CHARMDIR)/dummy-launchpad-buildd.deb
+	touch $(CHARMDIR)/dummy-python-lpbuildd.deb
 	touch $@
 
 clean:
@@ -59,6 +62,12 @@ deploy-with-packages:
 		--resource=launchpad-buildd=$(RESOURCES)/launchpad-buildd.deb \
 		--resource=python-lpbuildd=$(RESOURCES)/python-lpbuildd.deb \
 		$(CHARMDIR)
+
+push:
+	charm push \
+		--resource=launchpad-buildd=$(CHARMDIR)/dummy-launchpad-buildd.deb \
+		--resource=python-lpbuildd=$(CHARMDIR)/dummy-python-lpbuildd.deb \
+		$(CHARMDIR) $(CHARM_STORE_URL)
 
 .PHONY: build packages build-with-packages clean
 .PHONY: create-privileged-model deploy deploy-with-packages
