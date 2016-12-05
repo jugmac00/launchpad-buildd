@@ -44,7 +44,7 @@ def install_packages():
     to_install = []
     packages = ["launchpad-buildd", "python-lpbuildd"]
     resource_paths = [hookenv.resource_get(package) for package in packages]
-    if all(resource_paths):
+    if all(path and os.path.getsize(path) for path in resource_paths):
         # Install from resources.
         for package, resource_path in zip(packages, resource_paths):
             local_path = os.path.join(cache_dir, "{}.deb".format(package))
