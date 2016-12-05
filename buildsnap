@@ -103,23 +103,25 @@ class SnapBuilder:
     def repo(self):
         """Collect git or bzr branch."""
         print("Running repo phase...")
+        env = {}
+        if self.options.proxy_url:
+            env["http_proxy"] = self.options.proxy_url
+            env["https_proxy"] = self.options.proxy_url
         if self.options.branch is not None:
             self.run_build_command(['ls', '/build'])
             cmd = ["bzr", "branch", self.options.branch, self.name]
             if not self.ssl_verify:
                 cmd.insert(1, "-Ossl.cert_reqs=none")
-            self.run_build_command(cmd)
         else:
             assert self.options.git_repository is not None
             assert self.options.git_path is not None
-            if not self.ssl_verify:
-                env = {"GIT_SSL_NO_VERIFY": "1"}
-            else:
-                env = None
-            self.run_build_command([
+            cmd = [
                 "git", "clone", "-b", self.options.git_path,
-                self.options.git_repository, self.name],
-                env=env)
+                self.options.git_repository, self.name,
+                ]
+            if not self.ssl_verify:
+                env["GIT_SSL_NO_VERIFY"] = "1"
+        self.run_build_command(cmd, env=env)
 
     def pull(self):
         """Run pull phase."""

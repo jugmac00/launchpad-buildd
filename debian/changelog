@@ -2,6 +2,8 @@ launchpad-buildd (141) UNRELEASED; urgency=medium
 
   * buildsnap: Grant access to the proxy during the build phase as well as
     during the pull phase (LP: #1642281).
+  * buildsnap: Grant access to the proxy during the repo phase, allowing the
+    base branch to be fetched from an external site.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 04 Nov 2016 10:47:41 +0000
 
