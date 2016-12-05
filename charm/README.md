@@ -55,5 +55,5 @@ snaps with builds you intend to dispatch to this builder have the "Require
 virtualized builders" option disabled.
 
 The Launchpad development wiki has [instructions on setting up the rest of
-Launchpad](https://dev.launchpad.net/Soyuz/HowToUseSoyuzLocally).  You can
-skip the parts about installing the builder.
+Launchpad](https://dev.launchpad.net/Soyuz/HowToUseSoyuzLocally).
+You can skip the parts about installing the builder.
