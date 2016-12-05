@@ -1,0 +1,3 @@
+options:
+    install_sources:
+        default: ppa:launchpad/buildd-staging

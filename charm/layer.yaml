@@ -1,0 +1,13 @@
+repo: lp:launchpad-buildd
+includes:
+    - layer:basic
+    - layer:apt
+options:
+    apt:
+        packages:
+            - bzr-builder
+            - git-build-recipe
+            - quilt
+ignore:
+    - dist
+    - tmp

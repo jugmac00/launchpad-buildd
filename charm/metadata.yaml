@@ -1,0 +1,21 @@
+name: launchpad-buildd
+summary: Launchpad builder
+description: |
+    A system that can build packages in response to requests from a
+    Launchpad instance.
+tags:
+    - application_development
+maintainer: Colin Watson <cjwatson@canonical.com>
+subordinate: false
+series:
+    - xenial
+resources:
+    launchpad-buildd:
+        type: file
+        filename: launchpad-buildd.deb
+        description: The main Launchpad builder package.
+    python-lpbuildd:
+        type: file
+        filename: python-lpbuildd.deb
+        description: Python libraries supporting the Launchpad builder.
+min-juju-version: 2.0.0
