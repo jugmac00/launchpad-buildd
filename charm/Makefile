@@ -64,6 +64,9 @@ deploy-with-packages:
 		$(CHARMDIR)
 
 push:
+	charm push $(CHARMDIR) $(CHARM_STORE_URL)
+
+push-with-packages:
 	charm push \
 		--resource=launchpad-buildd=$(CHARMDIR)/dummy-launchpad-buildd.deb \
 		--resource=python-lpbuildd=$(CHARMDIR)/dummy-python-lpbuildd.deb \
@@ -71,3 +74,4 @@ push:
 
 .PHONY: build packages build-with-packages clean
 .PHONY: create-privileged-model deploy deploy-with-packages
+.PHONY: push push-with-packages
