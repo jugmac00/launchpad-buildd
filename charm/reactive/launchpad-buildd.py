@@ -74,7 +74,7 @@ def install_packages():
             config_path = "/etc/launchpad-buildd/default"
             with open(config_path) as config_file:
                 config = config_file.read()
-            config = re.sub(r"^ntphost = .*\n", "", config, flags=re.M)
+            config = re.sub(r"^ntphost = .*", "ntphost = ", config, flags=re.M)
             with open(config_path + ".new", "w") as new_config_file:
                 new_config_file.write(config)
             os.rename(config_path + ".new", config_path)
