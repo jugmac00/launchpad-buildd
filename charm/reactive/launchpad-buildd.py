@@ -58,6 +58,7 @@ def install_packages():
         new_paths = [new_path for _, new_path in to_install]
         try:
             status_set(None, "Installing {}".format(",".join(packages)))
+            fetch.apt_unhold(packages)
             fetch.apt_install(new_paths)
             fetch.apt_hold(packages)
         except subprocess.CalledProcessError:
