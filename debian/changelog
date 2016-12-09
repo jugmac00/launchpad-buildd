@@ -2,8 +2,8 @@ launchpad-buildd (142) UNRELEASED; urgency=medium
 
   * lpbuildd.binarypackage: Pass DEB_BUILD_OPTIONS=noautodbgsym if we have
     not been told to build debug symbols (LP: #1623256).
-  * lpbuildd.slave: Drop compatibility with ancient pre-lucid versions of
-    python-apt.
+  * debian/upgrade-config, lpbuildd.slave: Drop compatibility with ancient
+    pre-lucid versions of python-apt.
   * lpbuildd.pottery.intltool: Remove unused and Python-3-unfriendly
     string/file conditional from ConfigFile.__init__.
   * Use Python-3-compatible forms of "print" and "except".
