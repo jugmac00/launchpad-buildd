@@ -49,13 +49,13 @@ def check_potfiles_in(path):
     :returns: False if the directory does not exist, if an error occurred
         when executing intltool-update or if files are missing from
         POTFILES.in. True if all went fine and all files in POTFILES.in
-        actually exist.  
+        actually exist.
     """
     current_path = os.getcwd()
 
     try:
         os.chdir(path)
-    except OSError, e:
+    except OSError as e:
         # Abort nicely if the directory does not exist.
         if e.errno == errno.ENOENT:
             return False
@@ -65,7 +65,7 @@ def check_potfiles_in(path):
         for unlink_name in ['missing', 'notexist']:
             try:
                 os.unlink(unlink_name)
-            except OSError, e:
+            except OSError as e:
                 # It's ok if the files are missing.
                 if e.errno != errno.ENOENT:
                     raise

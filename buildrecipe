@@ -4,8 +4,9 @@
 
 """A script that builds a package from a recipe and a chroot."""
 
-__metaclass__ = type
+from __future__ import print_function
 
+__metaclass__ = type
 
 from optparse import OptionParser
 import os
@@ -38,7 +39,7 @@ def call_report_rusage(args, env):
 
     :return: The process wait status.
     """
-    print 'RUN %r' % args
+    print('RUN %r' % args)
     proc = Popen(args, env=env)
     pid, status, rusage = os.wait4(proc.pid, 0)
     print(rusage)
@@ -112,18 +113,18 @@ class RecipeBuilder:
         assert lsb_release.returncode == 0
 
         if self.git:
-            print 'Git version:'
+            print('Git version:')
             check_call(['git', '--version'])
-            print check_output(
+            print(check_output(
                 ['dpkg-query', '-W', 'git-build-recipe']).rstrip(
-                    '\n').replace('\t', ' ')
+                    '\n').replace('\t', ' '))
         else:
-            print 'Bazaar versions:'
+            print('Bazaar versions:')
             check_call(['bzr', 'version'])
             check_call(['bzr', 'plugins'])
 
-        print 'Building recipe:'
-        print recipe
+        print('Building recipe:')
+        print(recipe)
         sys.stdout.flush()
         env = {
             'DEBEMAIL': self.author_email,
@@ -174,24 +175,25 @@ class RecipeBuilder:
         control = self.getSourceControl()
         with open(os.path.join(
                 self.apt_dir, "%s.dsc" % package), "w") as dummy_dsc:
-            print >>dummy_dsc, dedent("""\
+            print(dedent("""\
                 Format: 1.0
                 Source: %(package)s
                 Architecture: any
                 Version: 99:0
-                Maintainer: invalid@example.org""") % {"package": package}
+                Maintainer: invalid@example.org""") % {"package": package},
+                file=dummy_dsc)
             for field in (
                     "Build-Depends", "Build-Depends-Indep",
                     "Build-Conflicts", "Build-Conflicts-Indep",
                     ):
                 if field in control:
-                    print >>dummy_dsc, "%s: %s" % (field, control[field])
-            print >>dummy_dsc
+                    print("%s: %s" % (field, control[field]), file=dummy_dsc)
+            print(file=dummy_dsc)
 
     def runAptFtparchive(self):
         conf_path = os.path.join(self.apt_dir, "ftparchive.conf")
         with open(conf_path, "w") as conf:
-            print >>conf, dedent("""\
+            print(dedent("""\
                 Dir::ArchiveDir "%(apt_dir)s";
                 Default::Sources::Compress ". bzip2";
                 BinDirectory "%(apt_dir)s" { Sources "Sources"; };
@@ -201,7 +203,8 @@ class RecipeBuilder:
                     Suite "invalid";
                     Codename "invalid";
                     Description "buildrecipe temporary archive";
-                };""") % {"apt_dir": self.apt_dir}
+                };""") % {"apt_dir": self.apt_dir},
+                file=conf)
         ftparchive_env = dict(os.environ)
         ftparchive_env.pop("APT_CONFIG", None)
         ret = call(
@@ -228,7 +231,8 @@ class RecipeBuilder:
         tmp_list_path_relative = os.path.join(
             self.apt_dir_relative, "buildrecipe-archive.list")
         with open(tmp_list_path, "w") as tmp_list:
-            print >>tmp_list, "deb-src file://%s ./" % self.apt_dir_relative
+            print("deb-src file://%s ./" % self.apt_dir_relative,
+                  file=tmp_list)
         ret = self.chroot([
                 'apt-get',
                 '-o', 'Dir::Etc::sourcelist=%s' % tmp_list_path_relative,
@@ -279,8 +283,8 @@ class RecipeBuilder:
         :return: the status code.
         """
         if echo:
-            print "Running in chroot: %s" % ' '.join(
-                "'%s'" % arg for arg in args)
+            print("Running in chroot: %s" %
+                  ' '.join("'%s'" % arg for arg in args))
             sys.stdout.flush()
         return call([
             '/usr/bin/sudo', '/usr/sbin/chroot', self.chroot_path] + args)

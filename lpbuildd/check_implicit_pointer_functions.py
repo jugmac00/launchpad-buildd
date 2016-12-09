@@ -31,7 +31,9 @@
 # are any implicitly declared functions whose return values are later
 # interpreted as pointers.  Those are almost guaranteed to cause
 # crashes.
-#
+
+from __future__ import print_function
+
 import re
 import sys
 
@@ -90,14 +92,14 @@ def main():
                           "%s:%d" % (last_implicit_func, last_implicit_filename,
                                      last_implicit_linenum)
                     errlist += err+"\n"
-                    print err
+                    print(err)
                     if not warn_only:
                         rv = 2
 
     if len(errlist):
         if in_line:
-            print errlist
-            print """
+            print(errlist)
+            print("""
 
 Our automated build log filter detected the problem(s) above that will
 likely cause your package to segfault on architectures where the size of
@@ -111,7 +113,7 @@ on ia64, they are errors.  Please correct them for your next upload.
 More information can be found at:
 http://wiki.debian.org/ImplicitPointerConversions
 
-    """
+    """)
     sys.exit(rv)
 
 if __name__ == '__main__':

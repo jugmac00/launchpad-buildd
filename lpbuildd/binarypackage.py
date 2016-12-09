@@ -319,7 +319,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
             print("Returning build status: OK")
             try:
                 self.gatherResults()
-            except Exception, e:
+            except Exception as e:
                 self._slave.log("Failed to gather results: %s" % e)
                 self._slave.buildFail()
                 self.alreadyfailed = True

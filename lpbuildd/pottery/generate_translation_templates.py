@@ -2,6 +2,8 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import print_function
+
 __metaclass__ = type
 
 import os.path
@@ -100,10 +102,10 @@ class GenerateTranslationTemplates:
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print "Usage: %s branch resultname [workdir]" % sys.argv[0]
-        print "  'branch' is a branch URL or directory."
-        print "  'resultname' is the name of the result tarball."
-        print "  'workdir' is a directory, defaults to HOME."
+        print("Usage: %s branch resultname [workdir]" % sys.argv[0])
+        print("  'branch' is a branch URL or directory.")
+        print("  'resultname' is the name of the result tarball.")
+        print("  'workdir' is a directory, defaults to HOME.")
         sys.exit(1)
     if len(sys.argv) == 4:
         workdir = sys.argv[3]

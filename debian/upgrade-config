@@ -5,6 +5,8 @@
 
 """Upgrade a launchpad-buildd configuration file."""
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -24,7 +26,7 @@ else:
 (old_version, conf_file) = sys.argv[1:]
 
 def upgrade_to_12():
-    print "Upgrading %s to version 12" % conf_file
+    print("Upgrading %s to version 12" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev12~"])
     in_file = open(conf_file+"-prev12~", "r")
     out_file = open(conf_file, "w")
@@ -38,7 +40,7 @@ def upgrade_to_12():
     out_file.close()
 
 def upgrade_to_34():
-    print "Upgrading %s to version 34" % conf_file
+    print("Upgrading %s to version 34" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev34~"])
     in_file = open(conf_file+"-prev34~", "r")
     out_file = open(conf_file, "w")
@@ -50,7 +52,7 @@ def upgrade_to_34():
     out_file.close()
 
 def upgrade_to_39():
-    print "Upgrading %s to version 39" % conf_file
+    print("Upgrading %s to version 39" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev39~"])
     in_file = open(conf_file+"-prev39~", "r")
     out_file = open(conf_file, "w")
@@ -64,7 +66,7 @@ def upgrade_to_39():
     out_file.close()
 
 def upgrade_to_57():
-    print "Upgrading %s to version 57" % conf_file
+    print("Upgrading %s to version 57" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev57~"])
     in_file = open(conf_file+"-prev57~", "r")
     out_file = open(conf_file, "w")
@@ -83,7 +85,7 @@ def upgrade_to_57():
     out_file.close()
 
 def upgrade_to_58():
-    print "Upgrading %s to version 58" % conf_file
+    print("Upgrading %s to version 58" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev58~"])
     in_file = open(conf_file+"-prev58~", "r")
     out_file = open(conf_file, "w")
@@ -94,7 +96,7 @@ def upgrade_to_58():
         '/slavebin/buildrecipe\n')
 
 def upgrade_to_59():
-    print "Upgrading %s to version 59" % conf_file
+    print("Upgrading %s to version 59" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev59~"])
     in_file = open(conf_file+"-prev59~", "r")
     out_file = open(conf_file, "w")
@@ -105,7 +107,7 @@ def upgrade_to_59():
         'resultarchive = translation-templates.tar.gz\n')
 
 def upgrade_to_63():
-    print "Upgrading %s to version 63" % conf_file
+    print("Upgrading %s to version 63" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev63~"])
     in_file = open(conf_file+"-prev63~", "r")
     out_file = open(conf_file, "w")
@@ -114,7 +116,7 @@ def upgrade_to_63():
             out_file.write(line)
 
 def upgrade_to_110():
-    print "Upgrading %s to version 110" % conf_file
+    print("Upgrading %s to version 110" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev110~"])
     in_file = open(conf_file+"-prev110~", "r")
     out_file = open(conf_file, "w")
@@ -126,7 +128,7 @@ def upgrade_to_110():
     out_file.close()
 
 def upgrade_to_115():
-    print "Upgrading %s to version 115" % conf_file
+    print("Upgrading %s to version 115" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev115~"])
     in_allmanagers = False
     in_file = open(conf_file+"-prev115~", "r")
@@ -143,7 +145,7 @@ def upgrade_to_115():
     out_file.close()
 
 def upgrade_to_120():
-    print "Upgrading %s to version 120" % conf_file
+    print("Upgrading %s to version 120" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev120~"])
     in_file = open(conf_file+"-prev120~", "r")
     out_file = open(conf_file, "w")
@@ -155,7 +157,7 @@ def upgrade_to_120():
     out_file.close()
 
 def upgrade_to_126():
-    print "Upgrading %s to version 126" % conf_file
+    print("Upgrading %s to version 126" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev126~"])
     in_file = open(conf_file+"-prev126~", "r")
     out_file = open(conf_file, "w")
@@ -169,7 +171,7 @@ def upgrade_to_126():
     out_file.close()
 
 def upgrade_to_127():
-    print "Upgrading %s to version 127" % conf_file
+    print("Upgrading %s to version 127" % conf_file)
     os.rename(conf_file, conf_file + "-prev127~")
 
     in_file = open(conf_file + "-prev127~", "r")

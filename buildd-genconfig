@@ -3,6 +3,8 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import print_function
+
 import os
 
 archtag = os.popen("dpkg --print-architecture").read().strip()
@@ -50,5 +52,5 @@ for replacement_key in replacements:
     template = template.replace(replacement_key,
                                 replacements[replacement_key])
 
-print template.strip()
+print(template.strip())
 

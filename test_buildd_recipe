@@ -5,6 +5,11 @@
 # This is a script to do end-to-end testing of the buildd with a bzr-builder
 # recipe, without involving the BuilderBehaviour.
 
+from __future__ import print_function
+
+import sys
+from xmlrpclib import ServerProxy
+
 country_code = 'us'
 apt_cacher_ng_host = 'stumpy'
 distroseries_name = 'maverick'
@@ -17,18 +22,15 @@ def deb_line(host, suites):
         prefix += '%s:3142/' % apt_cacher_ng_host
     return '%s%s %s %s' % (prefix, host, distroseries_name, suites)
 
-import sys
-from xmlrpclib import ServerProxy
-
 proxy = ServerProxy('http://localhost:8221/rpc')
-print proxy.echo('Hello World')
-print proxy.info()
+print(proxy.echo('Hello World'))
+print(proxy.info())
 status = proxy.status()
-print status
+print(status)
 if status[0] != 'BuilderStatus.IDLE':
-    print "Aborting due to non-IDLE builder."
+    print("Aborting due to non-IDLE builder.")
     sys.exit(1)
-print proxy.build(
+print(proxy.build(
     '1-2', 'sourcepackagerecipe', '1ef177161c3cb073e66bf1550931c6fbaa0a94b0',
     {}, {'author_name': u'Steve\u1234',
          'author_email': 'stevea@example.org',
@@ -41,8 +43,8 @@ print proxy.build(
             deb_line('%s.archive.ubuntu.com/ubuntu' % country_code,
                      'main universe'),
             deb_line('ppa.launchpad.net/launchpad/bzr-builder-dev/ubuntu',
-                     'main'),]})
+                     'main'),]}))
 #status = proxy.status()
 #for filename, sha1 in status[3].iteritems():
-#    print filename
+#    print(filename)
 #proxy.clean()

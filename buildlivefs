@@ -4,6 +4,8 @@
 
 """A script that builds a live file system."""
 
+from __future__ import print_function
+
 __metaclass__ = type
 
 from optparse import OptionParser
@@ -48,8 +50,8 @@ class LiveFSBuilder:
         """
         args = set_personality(self.options.arch, args)
         if echo:
-            print "Running in chroot: %s" % ' '.join(
-                "'%s'" % arg for arg in args)
+            print("Running in chroot: %s" %
+                  ' '.join("'%s'" % arg for arg in args))
             sys.stdout.flush()
         subprocess.check_call([
             "/usr/bin/sudo", "/usr/sbin/chroot", self.chroot_path] + args)

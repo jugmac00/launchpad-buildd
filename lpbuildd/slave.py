@@ -363,7 +363,7 @@ class BuildDSlave(object):
                 # testing for regressions. For now, just suppress
                 # the PyLint warnings.
                 # pylint: disable-msg=W0703
-                except Exception, info:
+                except Exception as info:
                     extra_info = 'Error accessing Librarian: %s' % info
                     self.log(extra_info)
                 else:
