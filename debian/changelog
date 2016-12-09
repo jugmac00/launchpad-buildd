@@ -1,3 +1,10 @@
+launchpad-buildd (142) trusty; urgency=medium
+
+  * lpbuildd.binarypackage: Pass DEB_BUILD_OPTIONS=noautodbgsym if we have
+    not been told to build debug symbols (LP: #1623256).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 09 Dec 2016 16:15:49 +0000
+
 launchpad-buildd (141) trusty; urgency=medium
 
   * buildsnap: Grant access to the proxy during the build phase as well as

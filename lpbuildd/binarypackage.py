@@ -1,4 +1,4 @@
-# Copyright 2009, 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import
@@ -145,7 +145,10 @@ class BinaryPackageBuildManager(DebianBuildManager):
         if self.arch_indep:
             args.append("-A")
         args.append(self._dscfile)
-        self.runSubProcess(self._sbuildpath, args)
+        env = dict(os.environ)
+        if not self.build_debug_symbols:
+            env["DEB_BUILD_OPTIONS"] = "noautodbgsym"
+        self.runSubProcess(self._sbuildpath, args, env=env)
 
     def getAvailablePackages(self):
         """Return the available binary packages in the chroot.
