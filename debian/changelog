@@ -4,6 +4,8 @@ launchpad-buildd (142) UNRELEASED; urgency=medium
     not been told to build debug symbols (LP: #1623256).
   * lpbuildd.slave: Drop compatibility with ancient pre-lucid versions of
     python-apt.
+  * lpbuildd.pottery.intltool: Remove unused and Python-3-unfriendly
+    string/file conditional from ConfigFile.__init__.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 09 Dec 2016 16:15:49 +0000
 
