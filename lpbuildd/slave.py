@@ -13,7 +13,6 @@ import hashlib
 import os
 import re
 import urllib2
-import warnings
 import xmlrpclib
 
 import apt
@@ -22,11 +21,6 @@ from twisted.internet import reactor as default_reactor
 from twisted.internet import process
 from twisted.python import log
 from twisted.web import xmlrpc
-
-# XXX cjwatson 2013-10-07: Remove when all builders are on Ubuntu 10.04 LTS
-# or newer.
-warnings.filterwarnings(
-    "ignore", "apt API not stable yet", category=FutureWarning)
 
 devnull = open("/dev/null", "r")
 
@@ -639,12 +633,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         self._builders = {}
         cache = apt.Cache()
         try:
-            try:
-                self._version = cache["python-lpbuildd"].installed.version
-            except AttributeError:
-                # XXX cjwatson 2013-10-07: Remove when all builders are on
-                # Ubuntu 10.04 LTS or newer.
-                self._version = cache["python-lpbuildd"].installedVersion
+            self._version = cache["python-lpbuildd"].installed.version
         except KeyError:
             self._version = None
         log.msg("Initialized")

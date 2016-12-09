@@ -2,6 +2,8 @@ launchpad-buildd (142) UNRELEASED; urgency=medium
 
   * lpbuildd.binarypackage: Pass DEB_BUILD_OPTIONS=noautodbgsym if we have
     not been told to build debug symbols (LP: #1623256).
+  * lpbuildd.slave: Drop compatibility with ancient pre-lucid versions of
+    python-apt.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 09 Dec 2016 16:15:49 +0000
 
