@@ -126,7 +126,10 @@ class SnapBuilder:
     def pull(self):
         """Run pull phase."""
         print("Running pull phase...")
-        env = {"SNAPCRAFT_LOCAL_SOURCES": "1"}
+        env = {
+            "SNAPCRAFT_LOCAL_SOURCES": "1",
+            "SNAPCRAFT_SETUP_CORE": "1",
+            }
         if self.options.proxy_url:
             env["http_proxy"] = self.options.proxy_url
             env["https_proxy"] = self.options.proxy_url

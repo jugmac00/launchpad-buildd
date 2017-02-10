@@ -7,6 +7,9 @@ launchpad-buildd (142) UNRELEASED; urgency=medium
   * lpbuildd.pottery.intltool: Remove unused and Python-3-unfriendly
     string/file conditional from ConfigFile.__init__.
   * Use Python-3-compatible forms of "print" and "except".
+  * buildsnap: Set SNAPCRAFT_SETUP_CORE=1 during pull phase so that
+    snapcraft will fetch and unpack the core snap for classic confinement
+    when necessary (LP: #1650946).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 09 Dec 2016 16:15:49 +0000
 
