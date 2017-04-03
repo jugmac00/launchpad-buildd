@@ -199,6 +199,14 @@ class BuildManager(object):
 
         self.runSubProcess(self._preppath, ["slave-prep"])
 
+    def status(self):
+        """Return extra status for this build manager, as a dictionary.
+
+        This may be used to return manager-specific information from the
+        XML-RPC status call.
+        """
+        return {}
+
     def iterate(self, success):
         """Perform an iteration of the slave.
 
@@ -309,6 +317,7 @@ class BuildDSlave(object):
         self.waitingfiles = {}
         self.builddependencies = ""
         self._log = None
+        self.manager = None
 
         if not os.path.isdir(self._cachepath):
             raise ValueError("FileCache path is not a dir")
@@ -665,6 +674,8 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         if self._version is not None:
             ret["builder_version"] = self._version
         ret.update(func())
+        if self.slave.manager is not None:
+            ret.update(self.slave.manager.status())
         return ret
 
     def status_IDLE(self):
