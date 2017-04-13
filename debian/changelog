@@ -1,3 +1,12 @@
+launchpad-buildd (143) UNRELEASED; urgency=medium
+
+  * Add a local unauthenticated proxy on port 8222, which proxies through to
+    the remote authenticated proxy.  This should allow running a wider range
+    of network clients, since some of them apparently don't support
+    authenticated proxies very well.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 13 Apr 2017 18:02:20 +0100
+
 launchpad-buildd (142) trusty; urgency=medium
 
   * lpbuildd.binarypackage: Pass DEB_BUILD_OPTIONS=noautodbgsym if we have

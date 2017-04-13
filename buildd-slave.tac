@@ -48,6 +48,7 @@ application = service.Application('BuildDSlave')
 application.addComponent(
     RotatableFileLogObserver(options.get('logfile')), ignoreClass=1)
 builddslaveService = service.IServiceCollection(application)
+slave.slave.service = builddslaveService
 
 root = resource.Resource()
 root.putChild('rpc', slave)

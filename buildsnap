@@ -8,14 +8,11 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-import base64
 from optparse import OptionParser
 import os
 import subprocess
 import sys
 import traceback
-import urllib2
-from urlparse import urlparse
 
 from lpbuildd.util import (
     set_personality,
@@ -148,21 +145,6 @@ class SnapBuilder:
         self.run_build_command(
             ["snapcraft"], path=os.path.join("/build", self.name), env=env)
 
-    def revoke_token(self):
-        """Revoke builder proxy token."""
-        print("Revoking proxy token...")
-        url = urlparse(self.options.proxy_url)
-        auth = '{}:{}'.format(url.username, url.password)
-        headers = {
-            'Authorization': 'Basic {}'.format(base64.b64encode(auth))
-            }
-        req = urllib2.Request(self.options.revocation_endpoint, None, headers)
-        req.get_method = lambda: 'DELETE'
-        try:
-            urllib2.urlopen(req)
-        except (urllib2.HTTPError, urllib2.URLError) as e:
-            print('Unable to revoke token for %s: %s' % (url.username, e))
-
 
 def main():
     parser = OptionParser("%prog [options] NAME")
@@ -204,9 +186,6 @@ def main():
     except Exception:
         traceback.print_exc()
         return RETCODE_FAILURE_BUILD
-    finally:
-        if options.revocation_endpoint is not None:
-            builder.revoke_token()
     return RETCODE_SUCCESS
 
 

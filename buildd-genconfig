@@ -37,6 +37,11 @@ parser.add_option("-t", "--template", dest="TEMPLATE",
                   metavar="FILE",
                   default="/usr/share/launchpad-buildd/template-buildd-slave.conf")
 
+parser.add_option("--snap-proxy-port", dest="SNAPPROXYPORT",
+                  help="the port the local snap proxy binds to",
+                  metavar="PORT",
+                  default="8222")
+
 (options, args) = parser.parse_args()
 
 template = open(options.TEMPLATE, "r").read()
@@ -46,6 +51,7 @@ replacements = {
     "@BINDHOST@": options.BINDHOST,
     "@ARCHTAG@": options.ARCHTAG,
     "@BINDPORT@": options.BINDPORT,
+    "@SNAPPROXYPORT@": options.SNAPPROXYPORT,
     }
 
 for replacement_key in replacements:
@@ -53,4 +59,3 @@ for replacement_key in replacements:
                                 replacements[replacement_key])
 
 print(template.strip())
-
