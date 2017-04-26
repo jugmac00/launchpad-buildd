@@ -9,6 +9,9 @@ $maintainer_name="Launchpad Build Daemon <buildd\@$fqdn>";
 # launchpad-buildd does this before sbuild.
 $apt_update = 0;
 $apt_distupgrade = 0;
+# XXX cjwatson 2017-04-26: We should drop this (or at least make it
+# conditional so that it only applies in development setups) once the
+# trusted keys logic is robust.
 $apt_allow_unauthenticated = 1;
 
 $resolve_alternatives = 1;

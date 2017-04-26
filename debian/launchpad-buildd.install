@@ -3,6 +3,7 @@ buildd-genconfig		usr/share/launchpad-buildd
 debian/upgrade-config		usr/share/launchpad-buildd
 sbuildrc			usr/share/launchpad-buildd
 template-buildd-slave.conf	usr/share/launchpad-buildd
+add-trusted-keys		usr/share/launchpad-buildd/slavebin
 buildlivefs			usr/share/launchpad-buildd/slavebin
 buildrecipe			usr/share/launchpad-buildd/slavebin
 buildsnap			usr/share/launchpad-buildd/slavebin

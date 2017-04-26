@@ -8,6 +8,7 @@
 
 __metaclass__ = type
 
+import base64
 import os
 import re
 import signal
@@ -25,6 +26,7 @@ class DebianBuildState:
     UNPACK = "UNPACK"
     MOUNT = "MOUNT"
     SOURCES = "SOURCES"
+    KEYS = "KEYS"
     UPDATE = "UPDATE"
     UMOUNT = "UMOUNT"
     CLEANUP = "CLEANUP"
@@ -38,6 +40,7 @@ class DebianBuildManager(BuildManager):
         self._updatepath = os.path.join(self._slavebin, "update-debian-chroot")
         self._sourcespath = os.path.join(
             self._slavebin, "override-sources-list")
+        self._keyspath = os.path.join(self._slavebin, "add-trusted-keys")
         self._cachepath = slave._config.get("slave", "filecache")
         self._state = DebianBuildState.INIT
         slave.emptyLog()
@@ -52,6 +55,7 @@ class DebianBuildManager(BuildManager):
 
         self.arch_tag = extra_args.get('arch_tag', self._slave.getArch())
         self.sources_list = extra_args.get('archives')
+        self.trusted_keys = extra_args.get('trusted_keys')
 
         BuildManager.initiate(self, files, chroot, extra_args)
 
@@ -63,6 +67,14 @@ class DebianBuildManager(BuildManager):
         args = ["override-sources-list", self._buildid]
         args.extend(self.sources_list)
         self.runSubProcess(self._sourcespath, args)
+
+    def doTrustedKeys(self):
+        """Add trusted keys."""
+        trusted_keys = b"".join(
+            base64.b64decode(key) for key in self.trusted_keys)
+        self.runSubProcess(
+            self._keyspath, ["add-trusted-keys", self._buildid],
+            stdin=trusted_keys)
 
     def doUpdateChroot(self):
         """Perform the chroot upgrade."""
@@ -177,6 +189,9 @@ class DebianBuildManager(BuildManager):
             if self.sources_list is not None:
                 self._state = DebianBuildState.SOURCES
                 self.doSourcesList()
+            elif self.trusted_keys:
+                self._state = DebianBuildState.KEYS
+                self.doTrustedKeys()
             else:
                 self._state = DebianBuildState.UPDATE
                 self.doUpdateChroot()
@@ -229,12 +244,31 @@ class DebianBuildManager(BuildManager):
                 self._slave.chrootFail()
                 self.alreadyfailed = True
             self.doReapProcesses(self._state)
+        elif self.trusted_keys:
+            self._state = DebianBuildState.KEYS
+            self.doTrustedKeys()
         else:
             self._state = DebianBuildState.UPDATE
             self.doUpdateChroot()
 
     def iterateReap_SOURCES(self, success):
         """Just finished reaping after failure to overwrite sources.list."""
+        self._state = DebianBuildState.UMOUNT
+        self.doUnmounting()
+
+    def iterate_KEYS(self, success):
+        """Just finished adding trusted keys."""
+        if success != 0:
+            if not self.alreadyfailed:
+                self._slave.chrootFail()
+                self.alreadyfailed = True
+            self.doReapProcesses(self._state)
+        else:
+            self._state = DebianBuildState.UPDATE
+            self.doUpdateChroot()
+
+    def iterateReap_KEYS(self, success):
+        """Just finished reaping after failure to add trusted keys."""
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()
 

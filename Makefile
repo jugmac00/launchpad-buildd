@@ -31,6 +31,7 @@ check:
 		   lpbuildd.tests.test_buildd_slave \
 		   lpbuildd.tests.test_buildrecipe \
 		   lpbuildd.tests.test_check_implicit_pointer_functions \
+		   lpbuildd.tests.test_debian \
 		   lpbuildd.tests.test_harness \
 		   lpbuildd.tests.test_livefs \
 		   lpbuildd.tests.test_snap \
