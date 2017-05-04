@@ -114,11 +114,10 @@ class SnapBuilder:
                 cmd.insert(1, "-Ossl.cert_reqs=none")
         else:
             assert self.options.git_repository is not None
-            assert self.options.git_path is not None
-            cmd = [
-                "git", "clone", "-b", self.options.git_path,
-                self.options.git_repository, self.name,
-                ]
+            cmd = ["git", "clone"]
+            if self.options.git_path is not None:
+                cmd.extend(["-b", self.options.git_path])
+            cmd.extend([self.options.git_repository, self.name])
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"
         self.run_build_command(cmd, env=env)
@@ -181,9 +180,8 @@ def main():
     parser.add_option("--revocation-endpoint",
                       help="builder proxy token revocation endpoint")
     options, args = parser.parse_args()
-    if (options.git_repository is None) != (options.git_path is None):
-        parser.error(
-            "must provide both --git-repository and --git-path or neither")
+    if options.git_repository is None and options.git_path is not None:
+        parser.error("--git-path requires --git-repository")
     if (options.branch is None) == (options.git_repository is None):
         parser.error(
             "must provide exactly one of --branch and --git-repository")
