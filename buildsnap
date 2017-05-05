@@ -98,7 +98,16 @@ class SnapBuilder:
             deps.append("bzr")
         else:
             deps.append("git")
+        if self.options.proxy_url:
+            deps.extend(["python3", "socat"])
         self.chroot(["apt-get", "-y", "install"] + deps)
+        if self.options.proxy_url:
+            subprocess.check_call([
+                "sudo", "cp", "-a",
+                os.path.join(os.path.dirname(__file__), "snap-git-proxy"),
+                os.path.join(
+                    self.chroot_path, "usr", "local", "bin", "snap-git-proxy"),
+                ])
 
     def repo(self):
         """Collect git or bzr branch."""
@@ -107,6 +116,7 @@ class SnapBuilder:
         if self.options.proxy_url:
             env["http_proxy"] = self.options.proxy_url
             env["https_proxy"] = self.options.proxy_url
+            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
         if self.options.branch is not None:
             self.run_build_command(['ls', '/build'])
             cmd = ["bzr", "branch", self.options.branch, self.name]
@@ -133,6 +143,7 @@ class SnapBuilder:
         if self.options.proxy_url:
             env["http_proxy"] = self.options.proxy_url
             env["https_proxy"] = self.options.proxy_url
+            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
         self.run_build_command(
             ["snapcraft", "pull"],
             path=os.path.join("/build", self.name),
@@ -145,6 +156,7 @@ class SnapBuilder:
         if self.options.proxy_url:
             env["http_proxy"] = self.options.proxy_url
             env["https_proxy"] = self.options.proxy_url
+            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
         self.run_build_command(
             ["snapcraft"], path=os.path.join("/build", self.name), env=env)
 

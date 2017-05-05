@@ -1,0 +1,28 @@
+#! /usr/bin/python3
+# Copyright 2017 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Proxy the git protocol via http_proxy.
+
+Note that this is copied into the build chroot and run there.
+"""
+
+import os
+import sys
+from urllib.parse import urlparse
+
+
+def main():
+    proxy_url = urlparse(os.environ["http_proxy"])
+    proxy_arg = "PROXY:%s:%s:%s" % (
+        proxy_url.hostname, sys.argv[1], sys.argv[2])
+    if proxy_url.port:
+        proxy_arg += ",proxyport=%s" % proxy_url.port
+    if proxy_url.username:
+        proxy_arg += ",proxyauth=%s:%s" % (
+            proxy_url.username, proxy_url.password)
+    os.execvp("socat", ["socat", "STDIO", proxy_arg])
+
+
+if __name__ == "__main__":
+    main()

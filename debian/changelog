@@ -1,3 +1,9 @@
+launchpad-buildd (143) UNRELEASED; urgency=medium
+
+  * Configure a git:// proxy for snap builds (LP: #1663920).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 05 May 2017 17:12:37 +0100
+
 launchpad-buildd (142) trusty; urgency=medium
 
   * lpbuildd.binarypackage: Pass DEB_BUILD_OPTIONS=noautodbgsym if we have
