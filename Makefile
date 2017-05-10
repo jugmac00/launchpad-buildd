@@ -21,12 +21,14 @@ realclean:
 .PHONY: all clean deb
 
 PYTHON=python
-# NB: for this to pass, you must have txfixtures, lazr.restful, and lp on your pythonpath
-# already.  lp is not packaged so this is not enforced as a build time
-# dependency. In practice you probably just want to run this with PYTHON=bin/py from 
-# a Launchpad checkout.
+# NB: for this to pass, you must have txfixtures on your pythonpath already.
+# txfixtures is not packaged so this is not enforced as a build time
+# dependency.  In practice you probably just want to run this with
+# PYTHON=bin/py from a Launchpad checkout.
 check:
 	PYTHONPATH=$(PWD):$(PYTHONPATH) $(PYTHON) -m testtools.run -v \
+		   lpbuildd.pottery.tests.test_generate_translation_templates \
+		   lpbuildd.pottery.tests.test_intltool \
 		   lpbuildd.tests.test_binarypackage \
 		   lpbuildd.tests.test_buildd_slave \
 		   lpbuildd.tests.test_buildrecipe \
