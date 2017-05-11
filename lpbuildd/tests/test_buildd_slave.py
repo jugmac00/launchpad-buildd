@@ -3,7 +3,7 @@
 
 """Buildd Slave tests.
 
-This file contains the follwoing tests:
+This file contains the following tests:
 
  * Basic authentication handling (used to download private sources);
  * Build log sanitization (removal of passwords from private buildlog);

@@ -37,9 +37,12 @@ def _sanitizeURLs(text_seq):
     # This regular expression will be used to remove authentication
     # credentials from URLs.
     password_re = re.compile('://([^:]+:[^@]+@)(\S+)')
+    # Snap proxy passwords are UUIDs.
+    snap_proxy_auth_re = re.compile(',proxyauth=[^:]+:[A-Za-z0-9-]+')
 
     for line in text_seq:
         sanitized_line = password_re.sub(r'://\2', line)
+        sanitized_line = snap_proxy_auth_re.sub('', sanitized_line)
         yield sanitized_line
 
 
