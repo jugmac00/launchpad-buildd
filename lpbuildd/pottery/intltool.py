@@ -235,8 +235,11 @@ class ConfigFile(object):
     """Represent a config file and return variables defined in it."""
 
     def __init__(self, file_or_name):
-        with open(file_or_name) as conf_file:
-            self.content = conf_file.read()
+        if isinstance(file_or_name, str):
+            with open(file_or_name) as conf_file:
+                self.content = conf_file.read()
+        else:
+            self.content = file_or_name.read()
 
     def _stripQuotes(self, identifier):
         """Strip surrounding quotes from `identifier`, if present.
