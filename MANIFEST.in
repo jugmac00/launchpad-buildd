@@ -15,6 +15,7 @@ include sbuild-package
 include sbuildrc
 include scan-for-processes
 include slave-prep
+include snap-git-proxy
 include sudo-wrapper
 include template-buildd-slave.conf
 include test_buildd_generatetranslationtemplates

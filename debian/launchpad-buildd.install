@@ -14,6 +14,7 @@ remove-build			usr/share/launchpad-buildd/slavebin
 sbuild-package			usr/share/launchpad-buildd/slavebin
 scan-for-processes		usr/share/launchpad-buildd/slavebin
 slave-prep			usr/share/launchpad-buildd/slavebin
+snap-git-proxy			usr/share/launchpad-buildd/slavebin
 sudo-wrapper			usr/share/launchpad-buildd/slavebin
 umount-chroot			usr/share/launchpad-buildd/slavebin
 unpack-chroot			usr/share/launchpad-buildd/slavebin
