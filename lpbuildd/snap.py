@@ -1,10 +1,14 @@
 # Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import print_function
+
 __metaclass__ = type
 
+import json
 import os
 import shutil
+import sys
 
 from lpbuildd.debian import (
     DebianBuildManager,
@@ -50,6 +54,19 @@ class SnapBuildManager(DebianBuildManager):
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
 
         super(SnapBuildManager, self).initiate(files, chroot, extra_args)
+
+    def status(self):
+        status_path = get_build_path(self.home, self._buildid, "status")
+        try:
+            with open(status_path) as status_file:
+                return json.load(status_file)
+        except IOError:
+            pass
+        except Exception as e:
+            print(
+                "Error deserialising status from buildsnap: %s" % e,
+                file=sys.stderr)
+        return {}
 
     def doRunBuild(self):
         """Run the process to build the snap."""
