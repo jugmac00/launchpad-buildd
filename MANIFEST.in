@@ -1,5 +1,6 @@
 include LICENSE
 include Makefile
+include add-trusted-keys
 include buildd-genconfig
 include buildd-slave.tac
 include buildlivefs

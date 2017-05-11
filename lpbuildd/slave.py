@@ -52,11 +52,18 @@ def _sanitizeURLs(text_seq):
 class RunCapture(protocol.ProcessProtocol):
     """Run a command and capture its output to a slave's log"""
 
-    def __init__(self, slave, callback):
+    def __init__(self, slave, callback, stdin=None):
         self.slave = slave
         self.notify = callback
+        self.stdin = stdin
         self.builderFailCall = None
         self.ignore = False
+
+    def connectionMade(self):
+        """Write any stdin data."""
+        if self.stdin is not None:
+            self.transport.write(self.stdin)
+            self.transport.closeStdin()
 
     def outReceived(self, data):
         """Pass on stdout data to the log."""
@@ -121,13 +128,17 @@ class BuildManager(object):
     def needs_sanitized_logs(self):
         return self.is_archive_private
 
-    def runSubProcess(self, command, args, iterate=None, env=None):
+    def runSubProcess(self, command, args, iterate=None, stdin=None, env=None):
         """Run a sub process capturing the results in the log."""
         if iterate is None:
             iterate = self.iterate
-        self._subprocess = RunCapture(self._slave, iterate)
+        self._subprocess = RunCapture(self._slave, iterate, stdin=stdin)
         self._slave.log("RUN: %s %r\n" % (command, args))
-        childfds = {0: devnull.fileno(), 1: "r", 2: "r"}
+        childfds = {
+            0: devnull.fileno() if stdin is None else "w",
+            1: "r",
+            2: "r",
+            }
         self._reactor.spawnProcess(
             self._subprocess, command, args, env=env,
             path=self.home, childFDs=childfds)

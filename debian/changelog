@@ -2,6 +2,7 @@ launchpad-buildd (143) UNRELEASED; urgency=medium
 
   * Record the branch revision used to build a snap and return it along with
     other XML-RPC status information (LP: #1679157).
+  * Write out trusted keys sent by buildd-manager (LP: #1626739).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 31 Mar 2017 15:31:10 +0100
 

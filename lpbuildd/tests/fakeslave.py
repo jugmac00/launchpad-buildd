@@ -77,7 +77,8 @@ class FakeSlave:
         self.waitingfiles = {}
         for fake_method in (
             "storeFile", "addWaitingFile", "emptyLog", "log",
-            "chrootFail", "buildFail", "builderFail", "depFail",
+            "chrootFail", "buildFail", "builderFail", "depFail", "buildOK",
+            "buildComplete",
             ):
             setattr(self, fake_method, FakeMethod())
 
