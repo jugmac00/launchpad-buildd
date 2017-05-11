@@ -9,6 +9,7 @@ from __future__ import print_function
 __metaclass__ = type
 
 import base64
+import json
 from optparse import OptionParser
 import os
 import subprocess
@@ -50,11 +51,12 @@ class SnapBuilder:
         # appropriate certificate for your codehosting system.
         self.ssl_verify = True
 
-    def chroot(self, args, echo=False):
+    def chroot(self, args, echo=False, get_output=False):
         """Run a command in the chroot.
 
         :param args: the command and arguments to run.
         :param echo: if True, print the command before executing it.
+        :param get_output: if True, return the output from the command.
         """
         args = set_personality(self.options.arch, args)
         if echo:
@@ -62,10 +64,14 @@ class SnapBuilder:
                 "Running in chroot: %s" % ' '.join(
                 "'%s'" % arg for arg in args))
             sys.stdout.flush()
-        subprocess.check_call([
-            "/usr/bin/sudo", "/usr/sbin/chroot", self.chroot_path] + args)
+        cmd = ["/usr/bin/sudo", "/usr/sbin/chroot", self.chroot_path] + args
+        if get_output:
+            return subprocess.check_output(cmd, universal_newlines=True)
+        else:
+            subprocess.check_call(cmd)
 
-    def run_build_command(self, args, path="/build", env=None, echo=False):
+    def run_build_command(self, args, path="/build", env=None, echo=False,
+                          get_output=False):
         """Run a build command in the chroot.
 
         This is unpleasant because we need to run it in /build under sudo
@@ -77,6 +83,7 @@ class SnapBuilder:
         :param path: the working directory to use in the chroot.
         :param env: dictionary of additional environment variables to set.
         :param echo: if True, print the command before executing it.
+        :param get_output: if True, return the output from the command.
         """
         args = [shell_escape(arg) for arg in args]
         path = shell_escape(path)
@@ -89,7 +96,19 @@ class SnapBuilder:
             "%s=%s" % (key, shell_escape(value))
             for key, value in full_env.items()] + args
         command = "cd %s && %s" % (path, " ".join(args))
-        self.chroot(["/bin/sh", "-c", command], echo=echo)
+        return self.chroot(
+            ["/bin/sh", "-c", command], echo=echo, get_output=get_output)
+
+    def save_status(self, status):
+        """Save a dictionary of status information about this build.
+
+        This will be picked up by the build manager and included in XML-RPC
+        status responses.
+        """
+        status_path = get_build_path(self.options.build_id, "status")
+        with open("%s.tmp" % status_path, "w") as status_file:
+            json.dump(status, status_file)
+        os.rename("%s.tmp" % status_path, status_path)
 
     def install(self):
         print("Running install phase...")
@@ -122,6 +141,15 @@ class SnapBuilder:
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"
         self.run_build_command(cmd, env=env)
+        status = {}
+        if self.options.branch is not None:
+            status["revision_id"] = self.run_build_command(
+                ["bzr", "revno", self.name], get_output=True).rstrip("\n")
+        else:
+            status["revision_id"] = self.run_build_command(
+                ["git", "-C", self.name, "rev-parse", self.options.git_path],
+                get_output=True).rstrip("\n")
+        self.save_status(status)
 
     def pull(self):
         """Run pull phase."""
