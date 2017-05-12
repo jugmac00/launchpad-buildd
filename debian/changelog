@@ -5,6 +5,8 @@ launchpad-buildd (143) UNRELEASED; urgency=medium
   * Write out trusted keys sent by buildd-manager (LP: #1626739).
   * Add tests for lpbuildd.pottery, extracted from Launchpad.
   * Configure a git:// proxy for snap builds (LP: #1663920).
+  * buildsnap: If --git-repository is passed but --git-path is not, build
+    the default branch of the repository (LP: #1688224).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 31 Mar 2017 15:31:10 +0100
 
