@@ -1,4 +1,4 @@
-launchpad-buildd (143) UNRELEASED; urgency=medium
+launchpad-buildd (143) xenial; urgency=medium
 
   * Record the branch revision used to build a snap and return it along with
     other XML-RPC status information (LP: #1679157).
@@ -8,7 +8,7 @@ launchpad-buildd (143) UNRELEASED; urgency=medium
   * buildsnap: If --git-repository is passed but --git-path is not, build
     the default branch of the repository (LP: #1688224).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 31 Mar 2017 15:31:10 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 12 May 2017 16:47:57 +0100
 
 launchpad-buildd (142) trusty; urgency=medium
 
