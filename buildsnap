@@ -155,8 +155,11 @@ class SnapBuilder:
             status["revision_id"] = self.run_build_command(
                 ["bzr", "revno", self.name], get_output=True).rstrip("\n")
         else:
+            rev = (
+                self.options.git_path
+                if self.options.git_path is not None else "HEAD")
             status["revision_id"] = self.run_build_command(
-                ["git", "-C", self.name, "rev-parse", self.options.git_path],
+                ["git", "-C", self.name, "rev-parse", rev],
                 get_output=True).rstrip("\n")
         self.save_status(status)
 
