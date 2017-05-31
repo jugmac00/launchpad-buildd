@@ -1,3 +1,9 @@
+launchpad-buildd (145) UNRELEASED; urgency=medium
+
+  * buildsnap: Initialise git submodules (LP: #1694413).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 31 May 2017 11:19:36 +0100
+
 launchpad-buildd (144) xenial; urgency=medium
 
   * buildsnap: Fix revision_id computation to handle the case where

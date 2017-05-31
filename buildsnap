@@ -143,7 +143,7 @@ class SnapBuilder:
                 cmd.insert(1, "-Ossl.cert_reqs=none")
         else:
             assert self.options.git_repository is not None
-            cmd = ["git", "clone"]
+            cmd = ["git", "clone", "--recursive"]
             if self.options.git_path is not None:
                 cmd.extend(["-b", self.options.git_path])
             cmd.extend([self.options.git_repository, self.name])
