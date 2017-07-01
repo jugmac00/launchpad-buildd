@@ -231,7 +231,7 @@ class RecipeBuilder:
         tmp_list_path_relative = os.path.join(
             self.apt_dir_relative, "buildrecipe-archive.list")
         with open(tmp_list_path, "w") as tmp_list:
-            print("deb-src file://%s ./" % self.apt_dir_relative,
+            print("deb-src [trusted=yes] file://%s ./" % self.apt_dir_relative,
                   file=tmp_list)
         ret = self.chroot([
                 'apt-get',
