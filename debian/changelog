@@ -1,9 +1,9 @@
-launchpad-buildd (145) UNRELEASED; urgency=medium
+launchpad-buildd (145) xenial; urgency=medium
 
   * buildrecipe: Explicitly mark the local apt archive as trusted
     (LP: #1701826).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Sat, 01 Jul 2017 17:21:37 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 03 Jul 2017 15:03:51 +0100
 
 launchpad-buildd (144) xenial; urgency=medium
 
