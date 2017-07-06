@@ -1,3 +1,10 @@
+launchpad-buildd (146) UNRELEASED; urgency=medium
+
+  * Run snapcraft as non-root with passwordless sudo, since we run into
+    buggy corner cases in some plugins when running as root (LP: #1702656).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 06 Jul 2017 11:15:51 +0100
+
 launchpad-buildd (145) xenial; urgency=medium
 
   * buildrecipe: Explicitly mark the local apt archive as trusted
