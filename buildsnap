@@ -150,6 +150,16 @@ class SnapBuilder:
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"
         self.run_build_command(cmd, env=env)
+        if self.options.git_repository is not None:
+            try:
+                self.run_build_command(
+                    ["git", "-C", self.name,
+                     "submodule", "update", "--init", "--recursive"],
+                    env=env)
+            except subprocess.CalledProcessError as e:
+                print(
+                    "'git submodule update --init --recursive failed with "
+                    "exit code %s (build may fail later)" % e.returncode)
         status = {}
         if self.options.branch is not None:
             status["revision_id"] = self.run_build_command(
