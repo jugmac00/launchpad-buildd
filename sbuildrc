@@ -16,29 +16,30 @@ $apt_allow_unauthenticated = 1;
 
 $resolve_alternatives = 1;
 
-# Also let LANG through to subprocesses, or sudo will set it to
-# /etc/default/locale on the host, which probably doesn't exist in the
-# chroot. sbuild-package invokes sbuild with LANG=C, which is what we
-# want.
-$environment_filter = [
-    '^PATH$',
-    '^DEB(IAN|SIGN)?_[A-Z_]+$',
-    '^(C(PP|XX)?|LD|F)FLAGS(_APPEND)?$',
-    '^USER(NAME)?$',
-    '^LOGNAME$',
-    '^HOME$',
-    '^TERM$',
-    '^SHELL$',
-    '^LANG$'];
+$build_environment = {
+    # sbuild sets LC_ALL=C.UTF-8 by default, so setting LANG as well should
+    # be redundant, but do so anyway for compatibility.
+    'LANG' => 'C.UTF-8',
+    # It's not clear how much sense this makes, but sudo set this as a
+    # fallback default, so keep it for compatibility.
+    'TERM' => 'unknown',
+    # A number of build systems (e.g. automake, Linux) use this as an
+    # indication that they should be more verbose.
+    'V' => '1',
+};
 
-# We need to use "sudo -E" so that the above environment variables are
-# allowed through.
-$sudo = "/usr/share/launchpad-buildd/slavebin/sudo-wrapper";
+# We want to expose almost nothing from the buildd environment.
+# DEB_BUILD_OPTIONS is set by sbuild-package.
+$environment_filter = [
+    '^DEB_BUILD_OPTIONS$',
+    ];
+
+# We're just going to throw the chroot away anyway.
+$purge_build_deps = 'never';
 
 # After that time (in minutes) of inactivity a build is terminated.
 # Activity
 # is measured by output to the log file.
 $stalled_pkg_timeout = 150;
 
-$chroot_mode="sudo";
 $sbuild_mode="buildd";

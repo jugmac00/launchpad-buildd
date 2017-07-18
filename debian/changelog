@@ -3,6 +3,7 @@ launchpad-buildd (146) UNRELEASED; urgency=medium
   * buildsnap: Initialise git submodules (LP: #1694413).
   * Run snapcraft as non-root with passwordless sudo, since we run into
     buggy corner cases in some plugins when running as root (LP: #1702656).
+  * Configure sbuild to use schroot sessions rather than sudo.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 31 May 2017 11:19:36 +0100
 

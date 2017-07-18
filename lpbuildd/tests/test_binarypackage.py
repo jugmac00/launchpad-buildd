@@ -3,12 +3,15 @@
 
 __metaclass__ = type
 
+from functools import partial
 import os
 import shutil
+import subprocess
 import tempfile
 from textwrap import dedent
 
 from debian.deb822 import PkgRelation
+from fixtures import MonkeyPatch
 from testtools import TestCase
 from testtools.matchers import (
     Contains,
@@ -59,6 +62,19 @@ class MockBuildManager(BinaryPackageBuildManager):
         return 0
 
 
+class DisableSudo(MonkeyPatch):
+
+    def __init__(self):
+        super(DisableSudo, self).__init__(
+            'subprocess.call', partial(self.call_patch, subprocess.call))
+
+    def call_patch(self, old_call, cmd, *args, **kwargs):
+        if cmd[0] == 'sudo':
+            return 0
+        else:
+            return old_call(cmd, *args, **kwargs)
+
+
 def write_file(path, content):
     if not os.path.isdir(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
@@ -70,6 +86,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
     """Run BinaryPackageBuildManager through its iteration steps."""
     def setUp(self):
         super(TestBinaryPackageBuildManagerIteration, self).setUp()
+        self.useFixture(DisableSudo())
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
         slave_dir = os.path.join(self.working_dir, 'slave')
@@ -110,8 +127,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             BinaryPackageBuildState.SBUILD,
             [
             'sharepath/slavebin/sbuild-package', 'sbuild-package',
-            self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
-            '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
+            self.buildid, 'i386', 'warty',
+            '-c', 'chroot:build-' + self.buildid,
+            '--arch=i386', '--dist=warty', '--nolog',
             'foo_1.dsc',
             ], final=True)
         self.assertFalse(self.slave.wasCalled('chrootFail'))
@@ -179,8 +197,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/sbuild-package', 'sbuild-package',
-             self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
-             '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
+             self.buildid, 'i386', 'warty',
+             '-c', 'chroot:build-' + self.buildid,
+             '--arch=i386', '--dist=warty', '--nolog',
              'foo_1.dsc'],
             env_matcher=Not(Contains('DEB_BUILD_OPTIONS')), final=True)
         self.assertFalse(self.slave.wasCalled('chrootFail'))
@@ -207,8 +226,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/sbuild-package', 'sbuild-package',
-             self.buildid, 'i386', 'warty', '-c', 'chroot:autobuild',
-             '--arch=i386', '--dist=warty', '--purge=never', '--nolog',
+             self.buildid, 'i386', 'warty',
+             '-c', 'chroot:build-' + self.buildid,
+             '--arch=i386', '--dist=warty', '--nolog',
              'foo_1.dsc'],
             env_matcher=ContainsDict(
                 {'DEB_BUILD_OPTIONS': Equals('noautodbgsym')}),
