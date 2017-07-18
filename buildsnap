@@ -14,6 +14,7 @@ from optparse import OptionParser
 import os
 import subprocess
 import sys
+import tempfile
 import traceback
 import urllib2
 from urlparse import urlparse
@@ -116,7 +117,7 @@ class SnapBuilder:
 
     def install(self):
         print("Running install phase...")
-        deps = ["snapcraft", "sudo", "adduser"]
+        deps = ["snapcraft", "sudo"]
         if self.options.branch is not None:
             deps.append("bzr")
         else:
@@ -132,7 +133,16 @@ class SnapBuilder:
                     self.chroot_path, "usr", "local", "bin", "snap-git-proxy"),
                 ])
         self.chroot(["chown", "buildd:buildd", "/build"])
-        self.chroot(["adduser", "buildd", "sudo"])
+        with tempfile.NamedTemporaryFile(mode="w") as sudoers_file:
+            print("buildd ALL = (ALL) NOPASSWD: ALL", file=sudoers_file)
+            sudoers_file.flush()
+            chroot_sudoers = os.path.join(
+                self.chroot_path, "etc", "sudoers.d", "launchpad-buildd")
+            subprocess.check_call(
+                ["sudo", "cp", "-a", sudoers_file.name, chroot_sudoers])
+            subprocess.check_call(
+                ["sudo", "chown", "root:root", chroot_sudoers])
+            subprocess.check_call(["sudo", "chmod", "0440", chroot_sudoers])
 
     def repo(self):
         """Collect git or bzr branch."""
