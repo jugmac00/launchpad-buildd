@@ -1,3 +1,10 @@
+launchpad-buildd (148) UNRELEASED; urgency=medium
+
+  * Move the contents of /usr/share/launchpad-buildd/slavebin/ into bin/ in
+    the source package, to keep things a bit more organised.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
+
 launchpad-buildd (147) xenial; urgency=medium
 
   * Revert change to run snapcraft as non-root with passwordless sudo; this
