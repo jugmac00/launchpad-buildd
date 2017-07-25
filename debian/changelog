@@ -1,3 +1,11 @@
+launchpad-buildd (147) UNRELEASED; urgency=medium
+
+  * Revert change to run snapcraft as non-root with passwordless sudo; this
+    broke "type: os" and "type: kernel" snap builds, and requires more
+    thought.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 13:44:24 +0100
+
 launchpad-buildd (146) xenial; urgency=medium
 
   * buildsnap: Initialise git submodules (LP: #1694413).
