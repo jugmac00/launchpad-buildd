@@ -11,7 +11,6 @@ Architecture: all
 Depends: python-lpbuildd (=${source:Version}), python, debootstrap, dpkg-dev,
  file, bzip2, sudo, ntpdate, adduser, apt-transport-https, lsb-release,
  pristine-tar, python-apt, sbuild, ${misc:Depends}
-Recommends: qemu-user-static
 Description: Launchpad buildd slave
  This is the launchpad buildd slave package. It contains everything needed to
  get a launchpad buildd going apart from the database manipulation required to

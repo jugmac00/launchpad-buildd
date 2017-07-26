@@ -2,6 +2,8 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
 
   * Move the contents of /usr/share/launchpad-buildd/slavebin/ into bin/ in
     the source package, to keep things a bit more organised.
+  * Drop qemu emulation support.  It was quite unreliable, and we've had
+    real hardware for a while.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 

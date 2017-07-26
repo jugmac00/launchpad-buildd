@@ -23,8 +23,6 @@ exec 2>&1
 
 echo "Updating debian chroot for build $BUILDID"
 
-hostarch=$(dpkg --print-architecture)
-
 UNAME26=""
 case $SUITE in
   hardy*|lucid*|maverick*|natty*|oneiric*|precise*)
@@ -42,26 +40,6 @@ case $ARCHITECTURETAG in
     CHROOT="linux64 $UNAME26 $CHROOT"
     ;;
 esac
-
-# Anything more fancy than amd64->ia32 is done with qemu+syscall
-# emulation, handled via binfmt.misc hints to the kernel that require
-# the statically-compiled qemu binary to appear in the same place both
-# inside and outside the chroot.
-if [ "$hostarch" != "$ARCHITECTURETAG" ]
-then
-  case "$hostarch" in
-    i386|amd64|lpia)
-      case "$ARCHITECTURETAG" in
-        armel|armhf)
-          $SUDO /usr/bin/install /usr/bin/qemu-arm-static $ROOT/usr/bin/
-          ;;
-        arm64)
-          $SUDO /usr/bin/install /usr/bin/qemu-aarch64-static $ROOT/usr/bin/
-          ;;
-      esac
-      ;;
-  esac
-fi
 
 export LANG=C
 export DEBIAN_FRONTEND=noninteractive
