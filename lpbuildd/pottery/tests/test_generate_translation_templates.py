@@ -9,15 +9,6 @@ import subprocess
 import sys
 import tarfile
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.generate_ids import (
-    gen_file_id,
-    gen_root_id,
-    )
-from bzrlib.transform import (
-    ROOT_PARENT,
-    TransformPreview,
-    )
 from fixtures import (
     EnvironmentVariable,
     TempDir,
@@ -76,34 +67,25 @@ class TestGenerateTranslationTemplates(TestCase):
             written to the branch.  Currently only supports writing files at
             the root directory of the branch.
 
-        :return: a tuple of a fresh bzr branch and its URL.
+        :return: the URL of a fresh bzr branch.
         """
-        branch_url = 'file://' + self.useFixture(TempDir()).path
-        branch = BzrDir.create_branch_convenience(branch_url)
+        branch_path = self.useFixture(TempDir()).path
+        branch_url = 'file://' + branch_path
+        subprocess.check_call(['bzr', 'init', '-q'], cwd=branch_path)
 
         if content_map is not None:
-            branch.lock_write()
-            try:
-                revision_tree = branch.basis_tree()
-                transform_preview = TransformPreview(revision_tree)
-                try:
-                    root_id = transform_preview.new_directory(
-                        '', ROOT_PARENT, gen_root_id())
-                    for name, contents in content_map.iteritems():
-                        file_id = gen_file_id(name)
-                        transform_preview.new_file(
-                            name, root_id, [contents], file_id=file_id)
-                    committer_id = 'Committer <committer@example.com>'
-                    with EnvironmentVariable('BZR_EMAIL', committer_id):
-                        transform_preview.commit(
-                            branch, 'Populating branch.',
-                            committer=committer_id)
-                finally:
-                    transform_preview.finalize()
-            finally:
-                branch.unlock()
+            for name, contents in content_map.iteritems():
+                with open(os.path.join(branch_path, name), 'wb') as f:
+                    f.write(contents)
+            subprocess.check_call(
+                ['bzr', 'add', '-q'] + list(content_map), cwd=branch_path)
+            committer_id = 'Committer <committer@example.com>'
+            with EnvironmentVariable('BZR_EMAIL', committer_id):
+                subprocess.check_call(
+                    ['bzr', 'commit', '-q', '-m', 'Populating branch.'],
+                    cwd=branch_path)
 
-        return branch, branch_url
+        return branch_url
 
     def test_getBranch_bzr(self):
         # _getBranch can retrieve branch contents from a branch URL.
@@ -113,7 +95,7 @@ class TestGenerateTranslationTemplates(TestCase):
         self.useFixture(EnvironmentVariable('EMAIL'))
 
         marker_text = "Ceci n'est pas cet branch."
-        branch, branch_url = self._createBranch({'marker.txt': marker_text})
+        branch_url = self._createBranch({'marker.txt': marker_text})
 
         generator = GenerateTranslationTemplates(
             branch_url, self.result_name, self.useFixture(TempDir()).path,

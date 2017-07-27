@@ -1,5 +1,5 @@
 #! /usr/bin/python
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
@@ -7,13 +7,11 @@ from __future__ import print_function
 __metaclass__ = type
 
 import os.path
+import subprocess
 import sys
 import tarfile
 
 import logging
-
-from bzrlib.branch import Branch
-from bzrlib.export import export
 
 from lpbuildd.pottery import intltool
 
@@ -68,12 +66,10 @@ class GenerateTranslationTemplates:
         The branch is checked out to the location specified by
         `self.branch_dir`.
         """
-        self.logger.info("Opening branch %s..." % branch_url)
-        branch = Branch.open(branch_url)
-        self.logger.info("Getting branch revision tree...")
-        rev_tree = branch.basis_tree()
-        self.logger.info("Exporting branch to %s..." % self.branch_dir)
-        export(rev_tree, self.branch_dir)
+        self.logger.info(
+            "Exporting branch %s to %s..." % (branch_url, self.branch_dir))
+        subprocess.check_call(
+            ["bzr", "export", "-q", "-d", branch_url, self.branch_dir])
         self.logger.info("Exporting branch done.")
 
     def _makeTarball(self, files):

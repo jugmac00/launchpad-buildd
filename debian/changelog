@@ -5,6 +5,8 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
   * Run tests at build time, now that python-txfixtures is in
     ppa:launchpad/ubuntu/ppa (and >= zesty).
   * Add missing dependency on intltool.
+  * Use bzr's command-line interface rather than bzrlib, to ease porting to
+    Python 3.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 
