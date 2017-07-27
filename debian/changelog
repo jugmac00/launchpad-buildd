@@ -2,6 +2,9 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
 
   * Move the contents of /usr/share/launchpad-buildd/slavebin/ into bin/ in
     the source package, to keep things a bit more organised.
+  * Run tests at build time, now that python-txfixtures is in
+    ppa:launchpad/ubuntu/ppa (and >= zesty).
+  * Add missing dependency on intltool.
   * Drop qemu emulation support.  It was quite unreliable, and we've had
     real hardware for a while.
 
