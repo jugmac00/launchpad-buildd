@@ -21,10 +21,6 @@ realclean:
 .PHONY: all clean deb
 
 PYTHON=python
-# NB: for this to pass, you must have txfixtures on your pythonpath already.
-# txfixtures is not packaged so this is not enforced as a build time
-# dependency.  In practice you probably just want to run this with
-# PYTHON=bin/py from a Launchpad checkout.
 check:
 	PYTHONPATH=$(PWD):$(PYTHONPATH) $(PYTHON) -m testtools.run -v \
 		   lpbuildd.pottery.tests.test_generate_translation_templates \
