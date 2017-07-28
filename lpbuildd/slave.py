@@ -656,7 +656,8 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         self._builders = {}
         cache = apt.Cache()
         try:
-            self._version = cache["python-lpbuildd"].installed.version
+            installed = cache["python-lpbuildd"].installed
+            self._version = installed.version if installed else None
         except KeyError:
             self._version = None
         log.msg("Initialized")
