@@ -3,7 +3,7 @@ Section: admin
 Priority: extra
 Maintainer: Adam Conrad <adconrad@ubuntu.com>
 Standards-Version: 3.9.5
-Build-Depends: debhelper (>= 7.0.50~), bzr, intltool, python, python-apt, python-debian, python-fixtures, python-testtools, python-twisted, python-txfixtures, python-zope.interface
+Build-Depends: debhelper (>= 7.0.50~), apt-utils, bzr, intltool, python, python-apt, python-debian, python-fixtures, python-testtools, python-twisted, python-txfixtures, python-zope.interface
 
 Package: launchpad-buildd
 Section: misc
