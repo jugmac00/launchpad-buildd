@@ -1,4 +1,4 @@
-# Copyright 2009, 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # Authors: Daniel Silverstone <daniel.silverstone@canonical.com>
@@ -52,7 +52,7 @@ class DebianBuildManager(BuildManager):
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
-
+        self.series = extra_args['series']
         self.arch_tag = extra_args.get('arch_tag', self._slave.getArch())
         self.sources_list = extra_args.get('archives')
         self.trusted_keys = extra_args.get('trusted_keys')
@@ -80,7 +80,10 @@ class DebianBuildManager(BuildManager):
         """Perform the chroot upgrade."""
         self.runSubProcess(
             self._updatepath,
-            ["update-debian-chroot", self._buildid, self.arch_tag])
+            ["update-debian-chroot",
+             "--series", self.series,
+             "--arch", self.arch_tag,
+             self._buildid])
 
     def doRunBuild(self):
         """Run the main build process.

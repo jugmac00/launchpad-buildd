@@ -8,6 +8,8 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
     real hardware for a while.
   * Remove most architecture hardcoding from lpbuildd.util, relying on
     dpkg-architecture instead.
+  * Rewrite update-debian-chroot in Python, allowing it to use lpbuildd.util
+    and to have unit tests.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 

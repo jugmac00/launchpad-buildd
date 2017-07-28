@@ -1,4 +1,4 @@
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -41,7 +41,6 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.subarch = extra_args.get("subarch")
         self.project = extra_args["project"]
         self.subproject = extra_args.get("subproject")
-        self.series = extra_args["series"]
         self.pocket = extra_args["pocket"]
         self.datestamp = extra_args.get("datestamp")
         self.image_format = extra_args.get("image_format")
