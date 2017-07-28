@@ -146,7 +146,9 @@ class BinaryPackageBuildManager(DebianBuildManager):
             args.append("-A")
         args.append(self._dscfile)
         env = dict(os.environ)
-        if not self.build_debug_symbols:
+        if self.build_debug_symbols:
+            env.pop("DEB_BUILD_OPTIONS", None)
+        else:
             env["DEB_BUILD_OPTIONS"] = "noautodbgsym"
         self.runSubProcess(self._sbuildpath, args, env=env)
 
