@@ -1,31 +1,34 @@
-#!/bin/sh
+#! /usr/bin/python -u
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave tool to override sources.list in the chroot with a list of
-# archives
+"""Override sources.list in the chroot with a list of archives."""
 
-# Expects build id as arg 1
-# Expects sources.list lines as subsequent args
+from __future__ import print_function
 
-# Needs SUDO to be set to a sudo instance for passwordless access
+__metaclass__ = type
 
-set -e
-exec 2>&1
+from argparse import ArgumentParser
+import sys
 
-SUDO=/usr/bin/sudo
+from lpbuildd.target.chroot import ChrootSetup
 
-BUILDID="$1"
-shift
 
-cd $HOME
-cd "build-$BUILDID/chroot-autobuild/etc/apt"
+def main():
+    parser = ArgumentParser(
+        description="Override sources.list in the chroot.")
+    parser.add_argument(
+        "build_id", metavar="ID", help="update chroot for build ID")
+    parser.add_argument(
+        "archives", metavar="ARCHIVE", nargs="+", help="sources.list lines")
+    args = parser.parse_args()
 
-echo "Overriding sources.list in build-$BUILDID"
+    print("Overriding sources.list in build-%s" % args.build_id)
+    setup = ChrootSetup(args.build_id)
+    setup.override_sources_list(args.archives)
+    return 0
 
-$SUDO rm -f sources.list.new
-(for archive; do
-  echo "$archive"
-done) | $SUDO tee sources.list.new >/dev/null
-$SUDO mv sources.list.new sources.list
+
+if __name__ == "__main__":
+    sys.exit(main())

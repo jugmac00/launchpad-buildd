@@ -12,7 +12,7 @@ __metaclass__ = type
 from argparse import ArgumentParser
 import sys
 
-from lpbuildd.target.chroot import ChrootUpdater
+from lpbuildd.target.chroot import ChrootSetup
 
 
 def main():
@@ -26,8 +26,8 @@ def main():
     args = parser.parse_args()
 
     print("Updating debian chroot for build %s" % args.build_id)
-    updater = ChrootUpdater(args.build_id, args.series, args.arch)
-    updater.update()
+    setup = ChrootSetup(args.build_id, args.series, args.arch)
+    setup.update()
     return 0
 
 
