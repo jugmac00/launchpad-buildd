@@ -22,7 +22,7 @@ realclean:
 
 PYTHON=python
 check:
-	PYTHONPATH=$(PWD):$(PYTHONPATH) $(PYTHON) -m testtools.run -v \
+	PYTHONPATH=$(CURDIR):$(PYTHONPATH) $(PYTHON) -m testtools.run -v \
 		   lpbuildd.pottery.tests.test_generate_translation_templates \
 		   lpbuildd.pottery.tests.test_intltool \
 		   lpbuildd.tests.test_binarypackage \
