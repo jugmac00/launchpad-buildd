@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+import io
 import sys
 import time
 from textwrap import dedent
@@ -154,3 +155,19 @@ class TestChrootSetup(TestCase):
         self.assertEqual(
             ("/etc/apt/sources.list",),
             mock_insert_file.extract_args()[0][1:])
+
+    def test_add_trusted_keys(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        setup = ChrootSetup("1")
+        # XXX cjwatson 2017-07-29: With a newer version of fixtures we could
+        # mock this at the subprocess level instead, but at the moment doing
+        # that wouldn't allow us to test stdin.
+        mock_chroot = self.useFixture(MockPatchObject(setup, "chroot")).mock
+        input_file = io.BytesIO()
+        setup.add_trusted_keys(input_file)
+
+        self.assertEqual(2, len(mock_chroot.mock_calls))
+        mock_chroot.assert_has_calls([
+            ((["apt-key", "add", "-"],), {"stdin": input_file}),
+            ((["apt-key", "list"],), {}),
+            ])

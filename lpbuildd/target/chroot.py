@@ -39,6 +39,8 @@ class ChrootSetup:
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         cmd = ["/usr/bin/sudo", "/usr/sbin/chroot", self.chroot_path] + args
+        if "cwd" not in kwargs:
+            kwargs["cwd"] = self.chroot_path
         if input_text is None:
             subprocess.check_call(cmd, **kwargs)
         else:
@@ -91,3 +93,8 @@ class ChrootSetup:
                 print(archive, file=sources_list)
             sources_list.flush()
             self.insert_file(sources_list.name, "/etc/apt/sources.list")
+
+    def add_trusted_keys(self, input_file):
+        """Add trusted keys from an input file."""
+        self.chroot(["apt-key", "add", "-"], stdin=input_file)
+        self.chroot(["apt-key", "list"])
