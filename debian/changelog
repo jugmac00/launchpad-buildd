@@ -10,6 +10,8 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
     dpkg-architecture instead.
   * Use bzr's command-line interface rather than bzrlib, to ease porting to
     Python 3.
+  * Rewrite update-debian-chroot in Python, allowing it to use lpbuildd.util
+    and to have unit tests.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 

@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -56,6 +56,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         extra_args = {
+            "series": "xenial",
             "arch_tag": "i386",
             "name": "test-snap",
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",

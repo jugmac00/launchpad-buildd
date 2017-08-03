@@ -1,4 +1,4 @@
-# Copyright 2013-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -95,7 +95,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # after INIT.
         self.buildmanager.initiate(
             {'foo_1.dsc': dscname}, 'chroot.tar.gz',
-            {'distribution': 'ubuntu', 'suite': 'warty',
+            {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
              'ogrecomponent': 'main'})
 
         os.makedirs(self.chrootdir)
@@ -170,7 +170,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # appropriately, and does not pass DEB_BUILD_OPTIONS.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'distribution': 'ubuntu', 'suite': 'warty',
+            {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
              'ogrecomponent': 'main', 'archive_purpose': 'PRIMARY',
              'build_debug_symbols': True})
         os.makedirs(self.chrootdir)
@@ -198,7 +198,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # appropriately, and passes DEB_BUILD_OPTIONS=noautodbgsym.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'distribution': 'ubuntu', 'suite': 'warty',
+            {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
              'ogrecomponent': 'main', 'archive_purpose': 'PRIMARY',
              'build_debug_symbols': False})
         os.makedirs(self.chrootdir)
@@ -281,7 +281,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # pretends that it was terminated by a signal.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'distribution': 'ubuntu', 'suite': 'warty',
+            {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
              'ogrecomponent': 'main'})
 
         self.buildmanager.abort()
@@ -493,7 +493,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # returns those relevant to the current architecture.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'distribution': 'ubuntu', 'suite': 'warty',
+            {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
              'ogrecomponent': 'main', 'arch_tag': 'i386'})
         self.assertEqual(
             "foo (>= 1)",
@@ -507,7 +507,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # from the unsatisfied build-dependencies it returns.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'distribution': 'ubuntu', 'suite': 'warty',
+            {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
              'ogrecomponent': 'main', 'arch_tag': 'i386'})
         self.assertEqual(
             "foo",
@@ -521,7 +521,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # that evaluate to true when no build profiles are active.
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
-            {'distribution': 'ubuntu', 'suite': 'warty',
+            {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
              'ogrecomponent': 'main', 'arch_tag': 'i386'})
         self.assertEqual(
             "foo",

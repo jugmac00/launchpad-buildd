@@ -1,54 +1,35 @@
-#!/bin/sh
+#! /usr/bin/python -u
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave tool to update a debian chroot
+"""Update a Debian-style chroot."""
 
-# Expects build id as arg 1, makes build-id to contain the build
+from __future__ import print_function
 
-# Needs SUDO to be set to a sudo instance for passwordless access
+__metaclass__ = type
 
-SUDO=/usr/bin/sudo
-CHROOT=/usr/sbin/chroot
-APTGET=/usr/bin/apt-get
-BUILDID="$1"
-ARCHITECTURETAG="$2"
-ROOT=$HOME/build-$BUILDID/chroot-autobuild
-OPTIONS="-o DPkg::Options::=--force-confold"
+from argparse import ArgumentParser
+import sys
 
-set -e
+from lpbuildd.target.chroot import ChrootUpdater
 
-exec 2>&1
 
-echo "Updating debian chroot for build $BUILDID"
+def main():
+    parser = ArgumentParser(description="Update a Debian-style chroot.")
+    parser.add_argument(
+        "--series", metavar="SERIES", help="update chroot for series SERIES")
+    parser.add_argument(
+        "--arch", metavar="ARCH", help="update chroot for architecture ARCH")
+    parser.add_argument(
+        "build_id", metavar="ID", help="update chroot for build ID")
+    args = parser.parse_args()
 
-UNAME26=""
-case $SUITE in
-  hardy*|lucid*|maverick*|natty*|oneiric*|precise*)
-    if setarch --help | grep -q uname-2.6; then
-      UNAME26="--uname-2.6"
-    fi
-    ;;
-esac
+    print("Updating debian chroot for build %s" % args.build_id)
+    updater = ChrootUpdater(args.build_id, args.series, args.arch)
+    updater.update()
+    return 0
 
-case $ARCHITECTURETAG in
-  armel|armhf|hppa|i386|lpia|mips|mipsel|powerpc|s390|sparc)
-    CHROOT="linux32 $UNAME26 $CHROOT"
-    ;;
-  alpha|amd64|arm64|hppa64|ia64|ppc64|ppc64el|s390x|sparc64|x32)
-    CHROOT="linux64 $UNAME26 $CHROOT"
-    ;;
-esac
 
-export LANG=C
-export DEBIAN_FRONTEND=noninteractive
-export TTY=unknown
-
-if ! $SUDO $CHROOT $ROOT $APTGET -uy update < /dev/null; then
-	echo "Waiting 15 seconds and trying again ..." >&2
-	sleep 15
-	$SUDO $CHROOT $ROOT $APTGET -uy update < /dev/null
-fi
-$SUDO $CHROOT $ROOT $APTGET $OPTIONS -uy --purge dist-upgrade < /dev/null
-
+if __name__ == "__main__":
+    sys.exit(main())

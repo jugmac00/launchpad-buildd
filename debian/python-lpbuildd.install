@@ -1,4 +1,5 @@
 buildd-slave.tac 		usr/lib/launchpad-buildd
 lpbuildd/*py			usr/lib/launchpad-buildd/lpbuildd
 lpbuildd/pottery/*py		usr/lib/launchpad-buildd/lpbuildd/pottery
+lpbuildd/target/*py		usr/lib/launchpad-buildd/lpbuildd/target
 lpbuildd/tests/*		usr/lib/launchpad-buildd/lpbuildd/tests

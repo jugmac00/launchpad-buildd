@@ -1,4 +1,4 @@
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -61,6 +61,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             'recipe_text': dedent("""\
                 # bzr-builder format 0.2 deb-version {debupstream}-0~{revno}
                 http://bazaar.launchpad.dev/~ppa-user/+junk/wakeonlan"""),
+            'series': 'maverick',
             'suite': 'maverick',
             'ogrecomponent': 'universe',
             'author_name': 'Steve\u1234',
