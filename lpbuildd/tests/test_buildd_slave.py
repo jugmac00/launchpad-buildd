@@ -32,11 +32,8 @@ from lpbuildd.tests.harness import (
 
 def read_file(path):
     """Helper for reading the contents of a file."""
-    file_object = open(path)
-    try:
+    with open(path) as file_object:
         return file_object.read()
-    finally:
-        file_object.close()
 
 
 class LaunchpadBuilddSlaveTests(BuilddTestCase):
@@ -96,7 +93,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         differences = differences.replace(
             '--- \n\n+++ \n\n',
             '---  \n\n+++  \n\n')
-        
+
         # Make sure they match.
         self.assertEqual(differences, expected)
 
@@ -132,7 +129,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         differences = differences.replace(
             '--- \n\n+++ \n\n',
             '---  \n\n+++  \n\n')
-        
+
         # Finally make sure what we got is what we expected.
         self.assertEqual(differences, expected)
 
@@ -196,9 +193,8 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         self.slave.buildComplete()
         paths = [os.path.join(workdir, name) for name in ('a', 'b')]
         for path in paths:
-            f = open(path, 'w')
-            f.write('data')
-            f.close()
+            with open(path, 'w') as f:
+                f.write('data')
             self.slave.addWaitingFile(path)
         self.slave.clean()
         self.assertEqual([], os.listdir(self.slave._cachepath))
@@ -223,8 +219,7 @@ class XMLRPCBuildDSlaveTests(unittest.TestCase):
         status, info = self.server.build('foo', buildername, 'sha1', {}, {})
 
         self.assertEqual('BuilderStatus.UNKNOWNBUILDER', status)
-        self.assertTrue(
-            info is not None, "UNKNOWNBUILDER returns 'None' info.")
+        self.assertIsNotNone(info, "UNKNOWNBUILDER returns 'None' info.")
         self.assertTrue(
             info.startswith("%s not in [" % buildername),
             'UNKNOWNBUILDER info is "%s"' % info)
