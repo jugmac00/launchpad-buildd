@@ -48,8 +48,7 @@ class ChrootSetup:
             if proc.returncode:
                 raise subprocess.CalledProcessError(proc.returncode, cmd)
 
-    def insert_file(self, source_path, target_path,
-                    owner="root", group="root", mode=0o644):
+    def insert_file(self, source_path, target_path, mode=0o644):
         """Insert a file into the chroot.
 
         :param source_path: the path to the file outside the chroot.
@@ -60,7 +59,7 @@ class ChrootSetup:
             self.chroot_path, target_path.lstrip("/"))
         subprocess.check_call(
             ["/usr/bin/sudo", "install",
-             "-o", owner, "-g", group, "-m", "%o" % mode,
+             "-o", "root", "-g", "root", "-m", "%o" % mode,
              source_path, full_target_path])
 
     def update(self):
