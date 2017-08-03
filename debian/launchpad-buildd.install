@@ -15,7 +15,6 @@ bin/sbuild-package			usr/share/launchpad-buildd/slavebin
 bin/scan-for-processes			usr/share/launchpad-buildd/slavebin
 bin/slave-prep				usr/share/launchpad-buildd/slavebin
 bin/snap-git-proxy			usr/share/launchpad-buildd/slavebin
-bin/sudo-wrapper			usr/share/launchpad-buildd/slavebin
 bin/umount-chroot			usr/share/launchpad-buildd/slavebin
 bin/unpack-chroot			usr/share/launchpad-buildd/slavebin
 bin/update-debian-chroot		usr/share/launchpad-buildd/slavebin

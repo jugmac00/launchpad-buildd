@@ -1,12 +1,14 @@
 # Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 from collections import defaultdict
 import os
 import re
 import subprocess
+import tempfile
+from textwrap import dedent
 import traceback
 
 import apt_pkg
@@ -99,6 +101,10 @@ class BinaryPackageBuildManager(DebianBuildManager):
         return os.path.join(
             self.home, "build-" + self._buildid, 'chroot-autobuild')
 
+    @property
+    def schroot_config_path(self):
+        return os.path.join('/etc/schroot/chroot.d', 'build-' + self._buildid)
+
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
 
@@ -121,6 +127,25 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def doRunBuild(self):
         """Run the sbuild process to build the package."""
+        with tempfile.NamedTemporaryFile(mode="w") as schroot_file:
+            # Use the "plain" chroot type because we do the necessary setup
+            # and teardown ourselves: it's easier to do this the same way
+            # for all build types.
+            print(dedent('''\
+                [build-{buildid}]
+                description=build-{buildid}
+                groups=sbuild,root
+                root-groups=sbuild,root
+                type=plain
+                directory={chroot_path}
+                ''').format(
+                    buildid=self._buildid, chroot_path=self.chroot_path),
+                file=schroot_file, end='')
+            schroot_file.flush()
+            subprocess.check_call(
+                ['sudo', 'install', '-o', 'root', '-g', 'root', '-m', '0644',
+                 schroot_file.name, self.schroot_config_path])
+
         currently_building_path = os.path.join(
             self.chroot_path, 'CurrentlyBuilding')
         currently_building_contents = (
@@ -137,10 +162,9 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
         args = ["sbuild-package", self._buildid, self.arch_tag]
         args.append(self.suite)
-        args.extend(["-c", "chroot:autobuild"])
+        args.extend(["-c", "chroot:build-%s" % self._buildid])
         args.append("--arch=" + self.arch_tag)
         args.append("--dist=" + self.suite)
-        args.append("--purge=never")
         args.append("--nolog")
         if self.arch_indep:
             args.append("-A")
@@ -399,5 +423,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def iterateReap_SBUILD(self, success):
         """Finished reaping after sbuild run."""
+        # Ignore errors from tearing down schroot configuration.
+        subprocess.call(['sudo', 'rm', '-f', self.schroot_config_path])
+
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()

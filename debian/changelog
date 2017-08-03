@@ -14,6 +14,7 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
     and to have unit tests.
   * Rewrite override-sources-list in Python, allowing it to have unit tests.
   * Rewrite add-trusted-keys in Python, allowing it to have unit tests.
+  * Configure sbuild to use schroot sessions rather than sudo.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 

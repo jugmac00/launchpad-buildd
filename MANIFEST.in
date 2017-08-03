@@ -12,7 +12,6 @@ include bin/sbuild-package
 include bin/scan-for-processes
 include bin/slave-prep
 include bin/snap-git-proxy
-include bin/sudo-wrapper
 include bin/test_buildd_generatetranslationtemplates
 include bin/test_buildd_recipe
 include bin/umount-chroot
