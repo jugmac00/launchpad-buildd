@@ -1,4 +1,2 @@
 etc/launchpad-buildd
-usr/share/doc/launchpad-buildd
-usr/share/launchpad-buildd/slavebin
 var/log/launchpad-buildd

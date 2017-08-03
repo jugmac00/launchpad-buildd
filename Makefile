@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 all: deb
@@ -21,21 +21,6 @@ realclean:
 .PHONY: all clean deb
 
 PYTHON=python
-# NB: for this to pass, you must have txfixtures on your pythonpath already.
-# txfixtures is not packaged so this is not enforced as a build time
-# dependency.  In practice you probably just want to run this with
-# PYTHON=bin/py from a Launchpad checkout.
 check:
-	PYTHONPATH=$(PWD):$(PYTHONPATH) $(PYTHON) -m testtools.run -v \
-		   lpbuildd.pottery.tests.test_generate_translation_templates \
-		   lpbuildd.pottery.tests.test_intltool \
-		   lpbuildd.tests.test_binarypackage \
-		   lpbuildd.tests.test_buildd_slave \
-		   lpbuildd.tests.test_buildrecipe \
-		   lpbuildd.tests.test_check_implicit_pointer_functions \
-		   lpbuildd.tests.test_debian \
-		   lpbuildd.tests.test_harness \
-		   lpbuildd.tests.test_livefs \
-		   lpbuildd.tests.test_snap \
-		   lpbuildd.tests.test_sourcepackagerecipe \
-		   lpbuildd.tests.test_translationtemplatesbuildmanager
+	PYTHONPATH=$(CURDIR):$(PYTHONPATH) $(PYTHON) -m testtools.run \
+		discover -v

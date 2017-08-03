@@ -3,7 +3,7 @@ Section: admin
 Priority: extra
 Maintainer: Adam Conrad <adconrad@ubuntu.com>
 Standards-Version: 3.9.5
-Build-Depends: debhelper (>= 7.0.50~), python
+Build-Depends: debhelper (>= 7.0.50~), apt-utils, bzr, intltool, python, python-apt, python-debian, python-fixtures, python-mock, python-systemfixtures, python-testtools, python-twisted, python-txfixtures, python-zope.interface
 
 Package: launchpad-buildd
 Section: misc
@@ -11,7 +11,6 @@ Architecture: all
 Depends: python-lpbuildd (=${source:Version}), python, debootstrap, dpkg-dev,
  file, bzip2, sudo, ntpdate, adduser, apt-transport-https, lsb-release,
  pristine-tar, python-apt, sbuild, schroot, ${misc:Depends}
-Recommends: qemu-user-static
 Description: Launchpad buildd slave
  This is the launchpad buildd slave package. It contains everything needed to
  get a launchpad buildd going apart from the database manipulation required to

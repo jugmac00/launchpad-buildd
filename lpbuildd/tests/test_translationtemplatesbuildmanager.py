@@ -1,4 +1,4 @@
-# Copyright 2010, 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -56,7 +56,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         url = 'lp:~my/branch'
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
-        self.buildmanager.initiate({}, 'chroot.tar.gz', {'branch_url': url})
+        self.buildmanager.initiate(
+            {}, 'chroot.tar.gz', {'series': 'xenial', 'branch_url': url})
 
         # Skip states that are done in DebianBuildManager to the state
         # directly before INSTALL.
@@ -132,7 +133,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         url = 'lp:~my/branch'
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
-        self.buildmanager.initiate({}, 'chroot.tar.gz', {'branch_url': url})
+        self.buildmanager.initiate(
+            {}, 'chroot.tar.gz', {'series': 'xenial', 'branch_url': url})
 
         # Skip states to the INSTALL state.
         self.buildmanager._state = TranslationTemplatesBuildState.INSTALL
@@ -154,7 +156,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         url = 'lp:~my/branch'
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
-        self.buildmanager.initiate({}, 'chroot.tar.gz', {'branch_url': url})
+        self.buildmanager.initiate(
+            {}, 'chroot.tar.gz', {'series': 'xenial', 'branch_url': url})
 
         # Skip states to the INSTALL state.
         self.buildmanager._state = TranslationTemplatesBuildState.GENERATE

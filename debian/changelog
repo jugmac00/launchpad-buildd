@@ -1,11 +1,38 @@
-launchpad-buildd (146) UNRELEASED; urgency=medium
+launchpad-buildd (148) UNRELEASED; urgency=medium
+
+  * Move the contents of /usr/share/launchpad-buildd/slavebin/ into bin/ in
+    the source package, to keep things a bit more organised.
+  * Run tests at build time, now that python-txfixtures is in
+    ppa:launchpad/ubuntu/ppa (and >= zesty).
+  * Drop qemu emulation support.  It was quite unreliable, and we've had
+    real hardware for a while.
+  * Remove most architecture hardcoding from lpbuildd.util, relying on
+    dpkg-architecture instead.
+  * Use bzr's command-line interface rather than bzrlib, to ease porting to
+    Python 3.
+  * Rewrite update-debian-chroot in Python, allowing it to use lpbuildd.util
+    and to have unit tests.
+  * Rewrite override-sources-list in Python, allowing it to have unit tests.
+  * Rewrite add-trusted-keys in Python, allowing it to have unit tests.
+  * Configure sbuild to use schroot sessions rather than sudo.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
+
+launchpad-buildd (147) xenial; urgency=medium
+
+  * Revert change to run snapcraft as non-root with passwordless sudo; this
+    broke "type: os" and "type: kernel" snap builds, and requires more
+    thought.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 13:48:10 +0100
+
+launchpad-buildd (146) xenial; urgency=medium
 
   * buildsnap: Initialise git submodules (LP: #1694413).
   * Run snapcraft as non-root with passwordless sudo, since we run into
     buggy corner cases in some plugins when running as root (LP: #1702656).
-  * Configure sbuild to use schroot sessions rather than sudo.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 31 May 2017 11:19:36 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 18 Jul 2017 17:03:36 +0100
 
 launchpad-buildd (145) xenial; urgency=medium
 

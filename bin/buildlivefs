@@ -1,5 +1,5 @@
 #! /usr/bin/python -u
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A script that builds a live file system."""
@@ -48,7 +48,8 @@ class LiveFSBuilder:
 
         :param args: the command and arguments to run.
         """
-        args = set_personality(self.options.arch, args)
+        args = set_personality(
+            args, self.options.arch, series=self.options.series)
         if echo:
             print("Running in chroot: %s" %
                   ' '.join("'%s'" % arg for arg in args))

@@ -98,6 +98,7 @@ class TestDebianBuildManagerIteration(TestCase):
             'archives': [
                 'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
                 ],
+            'series': 'xenial',
             }
         self.startBuild(extra_args)
 
@@ -136,7 +137,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
             (['sharepath/slavebin/update-debian-chroot',
-              'update-debian-chroot', self.buildid, 'amd64'],
+              'update-debian-chroot', '--series', 'xenial', '--arch', 'amd64',
+              self.buildid],
              None),
             self.buildmanager.commands[-1])
         self.assertEqual(
@@ -194,6 +196,7 @@ class TestDebianBuildManagerIteration(TestCase):
             'archives': [
                 'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
                 ],
+            'series': 'xenial',
             'trusted_keys': [base64.b64encode(b'key material')],
             }
         self.startBuild(extra_args)
@@ -243,7 +246,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
             (['sharepath/slavebin/update-debian-chroot',
-              'update-debian-chroot', self.buildid, 'amd64'],
+              'update-debian-chroot', '--series', 'xenial', '--arch', 'amd64',
+              self.buildid],
              None),
             self.buildmanager.commands[-1])
         self.assertEqual(
