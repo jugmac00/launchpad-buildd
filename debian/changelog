@@ -12,6 +12,7 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
     Python 3.
   * Rewrite update-debian-chroot in Python, allowing it to use lpbuildd.util
     and to have unit tests.
+  * Rewrite override-sources-list in Python, allowing it to have unit tests.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 
