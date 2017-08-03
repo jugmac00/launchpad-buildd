@@ -6,6 +6,8 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
     ppa:launchpad/ubuntu/ppa (and >= zesty).
   * Drop qemu emulation support.  It was quite unreliable, and we've had
     real hardware for a while.
+  * Remove most architecture hardcoding from lpbuildd.util, relying on
+    dpkg-architecture instead.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 
