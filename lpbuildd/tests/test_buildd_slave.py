@@ -210,7 +210,7 @@ class XMLRPCBuildDSlaveTests(unittest.TestCase):
         super(XMLRPCBuildDSlaveTests, self).setUp()
         self.slave = BuilddSlaveTestSetup()
         self.slave.setUp()
-        self.server = xmlrpclib.Server('http://localhost:8221/rpc/')
+        self.server = xmlrpclib.Server('http://localhost:8321/rpc/')
 
     def tearDown(self):
         self.slave.tearDown()

@@ -69,7 +69,7 @@ class BuilddSlaveTestSetup(TacTestFixture):
     Make sure the server is running
 
     >>> import xmlrpclib
-    >>> s = xmlrpclib.Server('http://localhost:8221/rpc/')
+    >>> s = xmlrpclib.Server('http://localhost:8321/rpc/')
     >>> s.echo('Hello World')
     ['Hello World']
     >>> fixture.tearDown()
@@ -77,7 +77,7 @@ class BuilddSlaveTestSetup(TacTestFixture):
     Again for luck !
 
     >>> fixture.setUp()
-    >>> s = xmlrpclib.Server('http://localhost:8221/rpc/')
+    >>> s = xmlrpclib.Server('http://localhost:8321/rpc/')
 
     >>> s.echo('Hello World')
     ['Hello World']
@@ -140,4 +140,4 @@ class BuilddSlaveTestSetup(TacTestFixture):
     @property
     def daemon_port(self):
         # This must match buildd-slave-test.conf.
-        return 8221
+        return 8321
