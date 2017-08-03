@@ -143,12 +143,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 file=schroot_file, end='')
             schroot_file.flush()
             subprocess.check_call(
-                ['sudo', 'cp', '-a', schroot_file.name,
-                 self.schroot_config_path])
-            subprocess.check_call(
-                ['sudo', 'chown', 'root:root', self.schroot_config_path])
-            subprocess.check_call(
-                ['sudo', 'chmod', '0644', self.schroot_config_path])
+                ['sudo', 'install', '-o', 'root', '-g', 'root', '-m', '0644',
+                 schroot_file.name, self.schroot_config_path])
 
         currently_building_path = os.path.join(
             self.chroot_path, 'CurrentlyBuilding')
