@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+import os
 import re
 import subprocess
 
@@ -22,9 +23,11 @@ def get_arch_bits(arch):
         # running on a 64-bit kernel.
         return 64
     else:
+        env = dict(os.environ)
+        env.pop("DEB_HOST_ARCH_BITS", None)
         bits = subprocess.check_output(
-            ["dpkg-architecture", "-a%s" % arch,
-             "-qDEB_HOST_ARCH_BITS"]).rstrip("\n")
+            ["dpkg-architecture", "-a%s" % arch, "-qDEB_HOST_ARCH_BITS"],
+            env=env).rstrip("\n")
         if bits == "32":
             return 32
         elif bits == "64":
