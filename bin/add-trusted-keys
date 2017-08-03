@@ -1,24 +1,35 @@
-#!/bin/sh
+#! /usr/bin/python -u
 #
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Write out new trusted keys in the chroot.
+"""Write out new trusted keys in the chroot.
 
-# Expects the build id as the first argument, and key material on stdin.
+Expects key material on stdin.
+"""
 
-set -e
+from __future__ import print_function
 
-SUDO=/usr/bin/sudo
-CHROOT=/usr/sbin/chroot
+__metaclass__ = type
 
-BUILDID="$1"
-ROOT="$HOME/build-$BUILDID/chroot-autobuild"
+from argparse import ArgumentParser
+import sys
 
-cd $HOME
-cd "$ROOT/etc/apt"
+from lpbuildd.target.chroot import ChrootSetup
 
-echo "Adding trusted keys to build-$BUILDID"
 
-$SUDO $CHROOT $ROOT apt-key add -
-$SUDO $CHROOT $ROOT apt-key list
+def main():
+    parser = ArgumentParser(
+        description="Write out new trusted keys in the chroot.")
+    parser.add_argument(
+        "build_id", metavar="ID", help="write trusted keys for build ID")
+    args = parser.parse_args()
+
+    print("Adding trusted keys to build-%s" % args.build_id)
+    setup = ChrootSetup(args.build_id)
+    setup.add_trusted_keys(sys.stdin)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
