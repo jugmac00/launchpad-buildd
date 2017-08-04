@@ -14,6 +14,7 @@ from lpbuildd.livefs import (
     LiveFilesystemBuildState,
     )
 from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.matchers import HasWaitingFiles
 
 
 class MockBuildManager(LiveFilesystemBuildManager):
@@ -86,15 +87,13 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
-        log = open(log_path, "w")
-        log.write("I am a build log.")
-        log.close()
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
 
         os.makedirs(self.build_dir)
         manifest_path = os.path.join(self.build_dir, "livecd.ubuntu.manifest")
-        manifest = open(manifest_path, "w")
-        manifest.write("I am a manifest file.")
-        manifest.close()
+        with open(manifest_path, "w") as manifest:
+            manifest.write("I am a manifest file.")
 
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
@@ -109,8 +108,9 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertEqual(
-            [((manifest_path,), {})], self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "livecd.ubuntu.manifest": b"I am a manifest file.",
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
@@ -130,19 +130,18 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
-        log = open(log_path, "w")
-        log.write("I am a build log.")
-        log.close()
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
 
         os.makedirs(self.build_dir)
         target_path = os.path.join(
             self.build_dir, "livecd.ubuntu.kernel-generic")
-        target = open(target_path, "w")
-        target.write("I am a kernel.")
-        target.close()
+        with open(target_path, "w") as target:
+            target.write("I am a kernel.")
         link_path = os.path.join(self.build_dir, "livecd.ubuntu.kernel")
         os.symlink("livecd.ubuntu.kernel-generic", link_path)
 
         self.buildmanager.iterate(0)
-        self.assertEqual(
-            [((target_path,), {})], self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "livecd.ubuntu.kernel-generic": b"I am a kernel.",
+            }))

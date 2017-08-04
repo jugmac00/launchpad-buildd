@@ -32,6 +32,7 @@ from lpbuildd.tests.fakeslave import (
     FakeMethod,
     FakeSlave,
     )
+from lpbuildd.tests.matchers import HasWaitingFiles
 
 
 class MockTransport:
@@ -178,8 +179,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         self.assertScansSanely(SBuildExitCodes.OK)
         self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual(
-            [((changes_path,), {})], self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            'foo_1_i386.changes': b'I am a changes file.',
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()
@@ -341,9 +343,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         self.assertScansSanely(SBuildExitCodes.OK)
         self.assertTrue(self.slave.wasCalled('buildFail'))
-        self.assertEqual(
-            [((os.path.join(build_dir, 'foo_1_i386.changes'),), {})],
-            self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles({}))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()

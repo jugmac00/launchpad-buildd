@@ -10,6 +10,7 @@ import tempfile
 from testtools import TestCase
 
 from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.matchers import HasWaitingFiles
 from lpbuildd.translationtemplates import (
     TranslationTemplatesBuildManager,
     TranslationTemplatesBuildState,
@@ -97,9 +98,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             self.buildmanager._resultname)
         os.makedirs(os.path.dirname(outfile_path))
 
-        outfile = open(outfile_path, 'w')
-        outfile.write("I am a template tarball. Seriously.")
-        outfile.close()
+        with open(outfile_path, 'w') as outfile:
+            outfile.write("I am a template tarball. Seriously.")
 
         # After generating templates, reap processes.
         self.buildmanager.iterate(0)
@@ -114,8 +114,10 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual(
-            [((outfile_path,), {})], self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            self.buildmanager._resultname: (
+                b'I am a template tarball. Seriously.'),
+            }))
 
         # The control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)

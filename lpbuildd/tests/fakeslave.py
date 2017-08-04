@@ -7,7 +7,9 @@ __all__ = [
     'FakeSlave',
     ]
 
+import hashlib
 import os
+import shutil
 
 
 class FakeMethod:
@@ -76,7 +78,7 @@ class FakeSlave:
         self._config = FakeConfig()
         self.waitingfiles = {}
         for fake_method in (
-            "storeFile", "addWaitingFile", "emptyLog", "log",
+            "emptyLog", "log",
             "chrootFail", "buildFail", "builderFail", "depFail", "buildOK",
             "buildComplete",
             ):
@@ -84,6 +86,13 @@ class FakeSlave:
 
     def cachePath(self, file):
         return os.path.join(self._cachepath, file)
+
+    def addWaitingFile(self, path):
+        with open(path, "rb") as f:
+            contents = f.read()
+        sha1sum = hashlib.sha1(contents).hexdigest()
+        shutil.copy(path, self.cachePath(sha1sum))
+        self.waitingfiles[os.path.basename(path)] = sha1sum
 
     def anyMethod(self, *args, **kwargs):
         pass
