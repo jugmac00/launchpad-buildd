@@ -16,7 +16,7 @@ class Operation:
     """An operation to perform on the target environment."""
 
     def __init__(self, args=None):
-        self.parse_args(args=args)
+        self.args = self.parse_args(args=args)
         self.backend = Backend.get(
             self.args.backend, self.args.build_id,
             series=self.args.series, arch=self.args.arch)
@@ -40,7 +40,7 @@ class Operation:
         return parser
 
     def parse_args(self, args=None):
-        self.args = self.make_parser().parse_args(args=args)
+        return self.make_parser().parse_args(args=args)
 
     def run(self):
         raise NotImplementedError
