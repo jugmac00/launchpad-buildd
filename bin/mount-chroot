@@ -1,25 +1,24 @@
-#!/bin/sh
+#! /usr/bin/python -u
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave tool to mount a chroot
+"""Mount a chroot."""
 
-# Expects build id as arg 1, makes build-id to contain the build
+from __future__ import print_function
 
-# Needs SUDO to be set to a sudo instance for passwordless access
+__metaclass__ = type
 
-SUDO=/usr/bin/sudo
-BUILDID="$1"
+import sys
 
-set -e
+from lpbuildd.target.operation import configure_logging
+from lpbuildd.target.start import Start
 
-exec 2>&1
 
-echo "Mounting chroot for build $BUILDID"
+def main():
+    configure_logging()
+    return Start().run()
 
-$SUDO mount -t proc none "$HOME/build-$BUILDID/chroot-autobuild/proc"
-$SUDO mount -t devpts -o gid=5,mode=620 none "$HOME/build-$BUILDID/chroot-autobuild/dev/pts"
-$SUDO mount -t sysfs none "$HOME/build-$BUILDID/chroot-autobuild/sys"
-$SUDO mount -t tmpfs none "$HOME/build-$BUILDID/chroot-autobuild/dev/shm"
-$SUDO cp /etc/hosts /etc/hostname /etc/resolv.conf $HOME/build-$BUILDID/chroot-autobuild/etc/
+
+if __name__ == "__main__":
+    sys.exit(main())

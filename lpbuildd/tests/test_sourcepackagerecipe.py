@@ -141,7 +141,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid
+            'sharepath/slavebin/umount-chroot', 'umount-chroot',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
+            self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -179,7 +181,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
+            'sharepath/slavebin/umount-chroot', 'umount-chroot',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
+            self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -214,7 +218,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
+            'sharepath/slavebin/umount-chroot', 'umount-chroot',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
+            self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])

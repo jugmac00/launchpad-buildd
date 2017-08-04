@@ -159,6 +159,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
             ['sharepath/slavebin/umount-chroot', 'umount-chroot',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
     def test_iterate(self):
@@ -294,6 +295,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
             ['sharepath/slavebin/umount-chroot', 'umount-chroot',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
     def test_abort_between_subprocesses(self):

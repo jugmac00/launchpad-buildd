@@ -38,6 +38,13 @@ class Backend:
         """
         raise NotImplementedError
 
+    def start(self):
+        """Start the backend.
+
+        This puts the backend into a state where it can run commands.
+        """
+        raise NotImplementedError
+
     def run(self, args, env=None, input_text=None, **kwargs):
         """Run a command in the target environment.
 
@@ -60,6 +67,10 @@ class Backend:
             inside the target environment, relative to the target
             environment's root.
         """
+        raise NotImplementedError
+
+    def stop(self):
+        """Stop the backend."""
         raise NotImplementedError
 
     def remove(self):

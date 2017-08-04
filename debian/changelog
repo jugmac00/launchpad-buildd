@@ -17,6 +17,8 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
   * Configure sbuild to use schroot sessions rather than sudo.
   * Rewrite unpack-chroot and remove-build in Python, allowing them to have
     unit tests.
+  * Rewrite mount-chroot and umount-chroot in Python, allowing them to have
+    unit tests.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 

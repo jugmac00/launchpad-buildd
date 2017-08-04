@@ -196,13 +196,11 @@ class BuildManager(object):
 
     def doMounting(self):
         """Mount things in the chroot, e.g. proc."""
-        self.runSubProcess( self._mountpath,
-                            ["mount-chroot", self._buildid])
+        self.runTargetSubProcess(self._mountpath, ["mount-chroot"])
 
     def doUnmounting(self):
         """Unmount the chroot."""
-        self.runSubProcess( self._umountpath,
-                            ["umount-chroot", self._buildid])
+        self.runTargetSubProcess(self._umountpath, ["umount-chroot"])
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build given the input files.

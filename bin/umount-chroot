@@ -1,40 +1,24 @@
-#!/bin/sh
+#! /usr/bin/python -u
 #
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave tool to mount a chroot
+"""Unmount a chroot."""
 
-# Expects build id as arg 1, makes build-id to contain the build
+from __future__ import print_function
 
-# Needs SUDO to be set to a sudo instance for passwordless access
+__metaclass__ = type
 
-SUDO=/usr/bin/sudo
-BUILDID="$1"
-GREP=/bin/grep
-CUT=/usr/bin/cut
-XARGS=/usr/bin/xargs
-SORT=/usr/bin/sort
+import sys
 
-set -e
+from lpbuildd.target.operation import configure_logging
+from lpbuildd.target.stop import Stop
 
-exec 2>&1
 
-echo "Unmounting chroot for build $BUILDID..."
+def main():
+    configure_logging()
+    return Stop().run()
 
-# binfmt-support adds a mount under /proc, which means that our first
-# pass at umounting fails unless we reverse the list.  Leave the while
-# loop in just to handle pathological cases, too.
-COUNT=0
-while $GREP -q "$HOME/build-$BUILDID/chroot-autobuild" /proc/mounts; do
-    COUNT=$(($COUNT+1))
-    if [ $COUNT -ge 20 ]; then
-    	echo "failed to umount $HOME/build-$BUILDID/chroot-autobuild"
-	if [ -x /usr/bin/lsof ]; then
-	    /usr/bin/lsof "$HOME/build-$BUILDID/chroot-autobuild"
-	fi
-	exit 1
-    fi
-    $GREP "$HOME/build-$BUILDID/chroot-autobuild" /proc/mounts | \
-	  $CUT -d\  -f2 | LANG=C $SORT -r | $XARGS -r -n 1 $SUDO umount || sleep 1
-done
+
+if __name__ == "__main__":
+    sys.exit(main())
