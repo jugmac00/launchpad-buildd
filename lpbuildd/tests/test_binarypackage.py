@@ -313,7 +313,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.CLEANUP,
-            ['sharepath/slavebin/remove-build', 'remove-build', self.buildid],
+            ['sharepath/slavebin/remove-build', 'remove-build',
+             '--backend=chroot', '--series=warty', '--arch=i386',
+             self.buildid],
             final=True)
         self.assertFalse(self.slave.wasCalled('builderFail'))
 

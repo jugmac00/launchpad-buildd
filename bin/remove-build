@@ -1,25 +1,24 @@
-#!/bin/sh
+#! /usr/bin/python -u
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave tool to remove an unmounted chroot
+"""Remove an unmounted chroot."""
 
-# Expects build id as arg 1, makes build-id to contain the build
+from __future__ import print_function
 
-# Needs RM to be set to a gnu rm instance
-# Needs SUDO to be set to a sudo instance for passwordless access
+__metaclass__ = type
 
-RM=/bin/rm
-SUDO=/usr/bin/sudo
-BUILDID="$1"
+import sys
 
-set -e
+from lpbuildd.target.operation import configure_logging
+from lpbuildd.target.remove import Remove
 
-exec 2>&1
 
-echo "Removing build $BUILDID"
+def main():
+    configure_logging()
+    return Remove().run()
 
-cd $HOME
 
-$SUDO $RM -rf "build-$BUILDID"
+if __name__ == "__main__":
+    sys.exit(main())

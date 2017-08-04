@@ -17,6 +17,20 @@ from lpbuildd.target.chroot import Chroot
 
 class TestChroot(TestCase):
 
+    def test_create(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        Chroot("1", "xenial", "amd64").create("/path/to/tarball")
+
+        expected_args = [
+            ["sudo", "tar", "-C", "/expected/home/build-1",
+             "-xf", "/path/to/tarball"],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
     def test_run(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
@@ -51,6 +65,17 @@ class TestChroot(TestCase):
             ["sudo", "install", "-o", "root", "-g", "root", "-m", "644",
              source_path, expected_target_path],
             ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_remove(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        Chroot("1", "xenial", "amd64").remove()
+
+        expected_args = [["sudo", "rm", "-rf", "/expected/home/build-1"]]
         self.assertEqual(
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])

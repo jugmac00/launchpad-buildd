@@ -163,9 +163,8 @@ class BuildManager(object):
 
     def doUnpack(self):
         """Unpack the build chroot."""
-        self.runSubProcess(
-            self._unpackpath,
-            ["unpack-chroot", self._buildid, self._chroottarfile])
+        self.runTargetSubProcess(
+            self._unpackpath, ["unpack-chroot", self._chroottarfile])
 
     def doReapProcesses(self, state, notify=True):
         """Reap any processes left lying around in the chroot."""
@@ -188,7 +187,7 @@ class BuildManager(object):
 
     def doCleanup(self):
         """Remove the build tree etc."""
-        self.runSubProcess(self._cleanpath, ["remove-build", self._buildid])
+        self.runTargetSubProcess(self._cleanpath, ["remove-build"])
 
         # Sanitize the URLs in the buildlog file if this is a build
         # in a private archive.

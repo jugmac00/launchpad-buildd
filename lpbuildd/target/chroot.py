@@ -23,6 +23,11 @@ class Chroot(Backend):
         super(Chroot, self).__init__(build_id, series=series, arch=arch)
         self.chroot_path = os.path.join(self.build_path, "chroot-autobuild")
 
+    def create(self, tarball_path):
+        """See `Backend`."""
+        subprocess.check_call(
+            ["sudo", "tar", "-C", self.build_path, "-xf", tarball_path])
+
     def run(self, args, env=None, input_text=None, **kwargs):
         """See `Backend`."""
         if env:
