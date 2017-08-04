@@ -12,23 +12,15 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-from argparse import ArgumentParser
 import sys
 
-from lpbuildd.target.chroot import ChrootSetup
+from lpbuildd.target.operation import configure_logging
+from lpbuildd.target.add_trusted_keys import AddTrustedKeys
 
 
 def main():
-    parser = ArgumentParser(
-        description="Write out new trusted keys in the chroot.")
-    parser.add_argument(
-        "build_id", metavar="ID", help="write trusted keys for build ID")
-    args = parser.parse_args()
-
-    print("Adding trusted keys to build-%s" % args.build_id)
-    setup = ChrootSetup(args.build_id)
-    setup.add_trusted_keys(sys.stdin)
-    return 0
+    configure_logging()
+    return AddTrustedKeys().run()
 
 
 if __name__ == "__main__":
