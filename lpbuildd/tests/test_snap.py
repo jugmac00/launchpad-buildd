@@ -112,6 +112,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/slavebin/scan-for-processes", "scan-for-processes",
+            "--backend=chroot", "--series=xenial", "--arch=i386",
             self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
@@ -157,6 +158,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/slavebin/scan-for-processes", "scan-for-processes",
+            "--backend=chroot", "--series=xenial", "--arch=i386",
             self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())

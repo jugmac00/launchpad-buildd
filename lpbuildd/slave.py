@@ -181,9 +181,8 @@ class BuildManager(object):
                 iterate = partial(self.iterateReap, state)
             else:
                 iterate = lambda success: None
-            self.runSubProcess(
-                self._scanpath, ["scan-for-processes", self._buildid],
-                iterate=iterate)
+            self.runTargetSubProcess(
+                self._scanpath, ["scan-for-processes"], iterate=iterate)
 
     def doCleanup(self):
         """Remove the build tree etc."""

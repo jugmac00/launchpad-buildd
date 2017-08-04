@@ -100,6 +100,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/slavebin/scan-for-processes", "scan-for-processes",
+            "--backend=chroot", "--series=saucy", "--arch=i386",
             self.buildid,
             ]
         self.assertEqual(

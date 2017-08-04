@@ -126,6 +126,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         expected_command = [
             'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -167,6 +168,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
             'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -205,6 +207,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
             'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(

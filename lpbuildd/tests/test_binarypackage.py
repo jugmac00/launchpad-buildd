@@ -152,6 +152,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
     def assertUnmountsSanely(self):
@@ -252,6 +253,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
@@ -271,6 +273,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('builderFail'))
         reap_subprocess = self.buildmanager._subprocess
@@ -310,6 +313,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.INIT,
             ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
         self.buildmanager.iterate(0)

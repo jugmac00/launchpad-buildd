@@ -105,6 +105,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         expected_command = [
             'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -170,6 +171,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.buildmanager.iterate(-1)
         expected_command = [
             'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(

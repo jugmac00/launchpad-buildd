@@ -1,43 +1,32 @@
-#!/bin/bash
+#! /usr/bin/python -u
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave tool to scan a chroot in case any processes are underneath it
+"""Kill any processes running in a chroot."""
 
-## This script uses bashisms, must be run under bash
+from __future__ import print_function
 
-# Expects build id as arg 1, makes build-id to contain the build
+__metaclass__ = type
 
-# Needs SUDO to be set to a sudo instance for passwordless access
+import os
+import sys
 
-SUDO=/usr/bin/sudo
-BUILDID="$1"
-REALHOME=$(cd $HOME && pwd -P)
+from lpbuildd.target.kill_processes import KillProcesses
 
-set -e
 
-exec 2>&1
+def main():
+    # This whole script must run as root, since we want to iterate over
+    # other users' processes in Python.
+    if os.geteuid() != 0:
+        cmd = ["sudo"]
+        if "PYTHONPATH" in os.environ:
+            cmd.append("PYTHONPATH=%s" % os.environ["PYTHONPATH"])
+        cmd.append("--")
+        cmd.extend(sys.argv)
+        os.execv("/usr/bin/sudo", cmd)
+    return KillProcesses().run()
 
-[ $(id -u) = "0" ] || exec $SUDO $0 "$REALHOME/build-$BUILDID/chroot-autobuild"
 
-echo "Scanning for processes to kill in build $BUILDID..."
-
-PREFIX="$BUILDID"
-FOUND=0
-
-for ROOT in /proc/*/root; do
-    LINK=$(readlink $ROOT || true)
-    if [ "x$LINK" != "x" ]; then
-	if [ "x${LINK:0:${#PREFIX}}" = "x$PREFIX" ]; then
-	    # this process is in the chroot...
-	    PID=$(basename $(dirname "$ROOT"))
-	    kill -9 "$PID" || true
-	    FOUND=1
-	fi
-    fi
-done
-
-if [ "x$FOUND" = "x1" ]; then
-  exec $0 $1
-fi
+if __name__ == "__main__":
+    sys.exit(main())

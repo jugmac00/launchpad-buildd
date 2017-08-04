@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 import os.path
+import signal
 from textwrap import dedent
 import time
 
@@ -17,10 +18,14 @@ from systemfixtures import (
     FakeTime,
     )
 from testtools import TestCase
+from testtools.matchers import DirContains
 
 from lpbuildd.target.backend import BackendException
 from lpbuildd.target.chroot import Chroot
-from lpbuildd.target.tests.testfixtures import SudoUmount
+from lpbuildd.target.tests.testfixtures import (
+    KillFixture,
+    SudoUmount,
+    )
 
 
 class TestChroot(TestCase):
@@ -113,6 +118,37 @@ class TestChroot(TestCase):
         self.assertEqual(
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_kill_processes(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        fs_fixture = self.useFixture(FakeFilesystem())
+        fs_fixture.add("/expected")
+        os.makedirs("/expected/home/build-1/chroot-autobuild")
+        fs_fixture.add("/proc")
+        os.mkdir("/proc")
+        os.mkdir("/proc/1")
+        os.symlink("/", "/proc/1/root")
+        os.mkdir("/proc/10")
+        os.symlink("/expected/home/build-1/chroot-autobuild", "/proc/10/root")
+        os.mkdir("/proc/11")
+        os.symlink("/expected/home/build-1/chroot-autobuild", "/proc/11/root")
+        os.mkdir("/proc/12")
+        os.symlink(
+            "/expected/home/build-1/chroot-autobuild/submount",
+            "/proc/12/root")
+        os.mkdir("/proc/13")
+        os.symlink(
+            "/expected/home/build-1/chroot-autobuildsomething",
+            "/proc/13/root")
+        with open("/proc/version", "w"):
+            pass
+        kill_fixture = self.useFixture(KillFixture(delays={10: 1}))
+        Chroot("1", "xenial", "amd64").kill_processes()
+
+        self.assertEqual(
+            [(pid, signal.SIGKILL) for pid in (11, 12, 10)],
+            kill_fixture.kills)
+        self.assertThat("/proc", DirContains(["1", "13", "version"]))
 
     def _make_initial_proc_mounts(self):
         fs_fixture = self.useFixture(FakeFilesystem())
