@@ -183,10 +183,6 @@ class SnapProxy(http.HTTPChannel):
     def checkPersistence(self, request, version):
         # ProxyClient.__init__ forces "Connection: close".
         return False
-        if self._command == b"CONNECT":
-            return False
-        else:
-            return http.HTTPChannel.checkPersistence(self, request, version)
 
     def allHeadersReceived(self):
         http.HTTPChannel.allHeadersReceived(self)
