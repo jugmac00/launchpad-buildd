@@ -64,12 +64,9 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
         """Gather the results of the build and add them to the file cache."""
         # The file is inside the chroot, in the home directory of the buildd
         # user. Should be safe to assume the home dirs are named identically.
-        assert self.home.startswith('/'), "home directory must be absolute."
-
-        path = os.path.join(
-            self._chroot_path, self.home[1:], self._resultname)
-        if os.access(path, os.F_OK):
-            self._slave.addWaitingFile(path)
+        path = os.path.join(self.home, self._resultname)
+        if self.backend.path_exists(path):
+            self.addWaitingFileFromBackend(path)
 
     def iterate_INSTALL(self, success):
         """Installation was done."""

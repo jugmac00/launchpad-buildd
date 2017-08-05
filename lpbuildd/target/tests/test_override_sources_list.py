@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+import stat
 from textwrap import dedent
 
 from testtools import TestCase
@@ -20,9 +21,9 @@ class TestOverrideSourcesList(TestCase):
             ]
         override_sources_list = OverrideSourcesList(args=args)
         self.assertEqual(0, override_sources_list.run())
-        self.assertEqual({
-            "/etc/apt/sources.list": dedent("""\
+        self.assertEqual(
+            (dedent("""\
                 deb http://archive.ubuntu.com/ubuntu xenial main
                 deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
-                """).encode("UTF-8"),
-            }, override_sources_list.backend.copied_in)
+                """).encode("UTF-8"), stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs["/etc/apt/sources.list"])

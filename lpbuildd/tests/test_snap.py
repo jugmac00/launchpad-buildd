@@ -4,9 +4,11 @@
 __metaclass__ = type
 
 import os
-import shutil
-import tempfile
 
+from fixtures import (
+    EnvironmentVariable,
+    TempDir,
+    )
 from testtools import TestCase
 
 from lpbuildd.snap import (
@@ -35,19 +37,16 @@ class TestSnapBuildManagerIteration(TestCase):
     """Run SnapBuildManager through its iteration steps."""
     def setUp(self):
         super(TestSnapBuildManagerIteration, self).setUp()
-        self.working_dir = tempfile.mkdtemp()
-        self.addCleanup(lambda: shutil.rmtree(self.working_dir))
+        self.working_dir = self.useFixture(TempDir()).path
         slave_dir = os.path.join(self.working_dir, "slave")
         home_dir = os.path.join(self.working_dir, "home")
         for dir in (slave_dir, home_dir):
             os.mkdir(dir)
+        self.useFixture(EnvironmentVariable("HOME", home_dir))
         self.slave = FakeSlave(slave_dir)
         self.buildid = "123"
         self.buildmanager = MockBuildManager(self.slave, self.buildid)
-        self.buildmanager.home = home_dir
         self.buildmanager._cachepath = self.slave._cachepath
-        self.build_dir = os.path.join(
-            home_dir, "build-%s" % self.buildid, "chroot-autobuild", "build")
 
     def getState(self):
         """Retrieve build manager's state."""
@@ -63,7 +62,10 @@ class TestSnapBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
             "git_path": "master",
             }
+        original_backend_name = self.buildmanager.backend_name
+        self.buildmanager.backend_name = "fake"
         self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
+        self.buildmanager.backend_name = original_backend_name
 
         # Skip states that are done in DebianBuildManager to the state
         # directly before BUILD_SNAP.
@@ -102,11 +104,8 @@ class TestSnapBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        output_dir = os.path.join(self.build_dir, "test-snap")
-        os.makedirs(output_dir)
-        snap_path = os.path.join(output_dir, "test-snap_0_all.snap")
-        with open(snap_path, "w") as snap:
-            snap.write("I am a snap package.")
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
 
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
@@ -146,14 +145,10 @@ class TestSnapBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        output_dir = os.path.join(self.build_dir, "test-snap")
-        os.makedirs(output_dir)
-        snap_path = os.path.join(output_dir, "test-snap_0_all.snap")
-        with open(snap_path, "w") as snap:
-            snap.write("I am a snap package.")
-        manifest_path = os.path.join(output_dir, "test-snap_0_all.manifest")
-        with open(manifest_path, "w") as manifest:
-            manifest.write("I am a manifest.")
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.manifest", b"I am a manifest.")
 
         # After building the package, reap processes.
         self.buildmanager.iterate(0)

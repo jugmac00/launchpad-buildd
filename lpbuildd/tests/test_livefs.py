@@ -4,9 +4,11 @@
 __metaclass__ = type
 
 import os
-import shutil
-import tempfile
 
+from fixtures import (
+    EnvironmentVariable,
+    TempDir,
+    )
 from testtools import TestCase
 
 from lpbuildd.livefs import (
@@ -35,19 +37,16 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
     """Run LiveFilesystemBuildManager through its iteration steps."""
     def setUp(self):
         super(TestLiveFilesystemBuildManagerIteration, self).setUp()
-        self.working_dir = tempfile.mkdtemp()
-        self.addCleanup(lambda: shutil.rmtree(self.working_dir))
+        self.working_dir = self.useFixture(TempDir()).path
         slave_dir = os.path.join(self.working_dir, "slave")
         home_dir = os.path.join(self.working_dir, "home")
         for dir in (slave_dir, home_dir):
             os.mkdir(dir)
+        self.useFixture(EnvironmentVariable("HOME", home_dir))
         self.slave = FakeSlave(slave_dir)
         self.buildid = "123"
         self.buildmanager = MockBuildManager(self.slave, self.buildid)
-        self.buildmanager.home = home_dir
         self.buildmanager._cachepath = self.slave._cachepath
-        self.build_dir = os.path.join(
-            home_dir, "build-%s" % self.buildid, "chroot-autobuild", "build")
 
     def getState(self):
         """Retrieve build manager's state."""
@@ -62,7 +61,10 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             "pocket": "release",
             "arch_tag": "i386",
             }
+        original_backend_name = self.buildmanager.backend_name
+        self.buildmanager.backend_name = "fake"
         self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
+        self.buildmanager.backend_name = original_backend_name
 
         # Skip states that are done in DebianBuildManager to the state
         # directly before BUILD_LIVEFS.
@@ -90,10 +92,8 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        os.makedirs(self.build_dir)
-        manifest_path = os.path.join(self.build_dir, "livecd.ubuntu.manifest")
-        with open(manifest_path, "w") as manifest:
-            manifest.write("I am a manifest file.")
+        self.buildmanager.backend.add_file(
+            "/build/livecd.ubuntu.manifest", b"I am a manifest file.")
 
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
@@ -133,13 +133,10 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        os.makedirs(self.build_dir)
-        target_path = os.path.join(
-            self.build_dir, "livecd.ubuntu.kernel-generic")
-        with open(target_path, "w") as target:
-            target.write("I am a kernel.")
-        link_path = os.path.join(self.build_dir, "livecd.ubuntu.kernel")
-        os.symlink("livecd.ubuntu.kernel-generic", link_path)
+        self.buildmanager.backend.add_file(
+            "/build/livecd.ubuntu.kernel-generic", b"I am a kernel.")
+        self.buildmanager.backend.add_link(
+            "/build/livecd.ubuntu.kernel", "livefs.ubuntu.kernel-generic")
 
         self.buildmanager.iterate(0)
         self.assertThat(self.slave, HasWaitingFiles.byEquality({

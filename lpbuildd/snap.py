@@ -7,7 +7,6 @@ __metaclass__ = type
 
 import json
 import os
-import shutil
 import sys
 
 from lpbuildd.debian import (
@@ -41,11 +40,6 @@ class SnapBuildManager(DebianBuildManager):
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
-        self.build_path = get_build_path(
-            self.home, self._buildid, "chroot-autobuild", "build")
-        if os.path.isdir(self.build_path):
-            shutil.rmtree(self.build_path)
-
         self.name = extra_args["name"]
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
@@ -113,12 +107,12 @@ class SnapBuildManager(DebianBuildManager):
 
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
-        output_path = os.path.join(self.build_path, self.name)
-        if not os.path.exists(output_path):
+        output_path = os.path.join("/build", self.name)
+        if not self.backend.path_exists(output_path):
             return
-        for entry in sorted(os.listdir(output_path)):
+        for entry in sorted(self.backend.listdir(output_path)):
             path = os.path.join(output_path, entry)
-            if os.path.islink(path):
+            if self.backend.islink(path):
                 continue
             if entry.endswith(".snap") or entry.endswith(".manifest"):
-                self._slave.addWaitingFile(path)
+                self.addWaitingFileFromBackend(path)

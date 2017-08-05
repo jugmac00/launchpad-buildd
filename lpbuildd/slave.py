@@ -12,6 +12,8 @@ from functools import partial
 import hashlib
 import os
 import re
+import shutil
+import tempfile
 import urllib2
 import xmlrpclib
 
@@ -309,6 +311,15 @@ class BuildManager(object):
         # kill it.
         self._subprocess.ignore = True
         self._subprocess.transport.loseConnection()
+
+    def addWaitingFileFromBackend(self, path):
+        fetched_dir = tempfile.mkdtemp()
+        try:
+            fetched_path = os.path.join(fetched_dir, os.path.basename(path))
+            self.backend.copy_out(path, fetched_path)
+            self._slave.addWaitingFile(fetched_path)
+        finally:
+            shutil.rmtree(fetched_dir)
 
 
 class BuilderStatus:

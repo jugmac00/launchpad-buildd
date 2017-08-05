@@ -6,6 +6,7 @@ from __future__ import print_function
 __metaclass__ = type
 
 import logging
+import os
 import tempfile
 
 from lpbuildd.target.operation import Operation
@@ -31,5 +32,6 @@ class OverrideSourcesList(Operation):
             for archive in self.args.archives:
                 print(archive, file=sources_list)
             sources_list.flush()
+            os.fchmod(sources_list.fileno(), 0o644)
             self.backend.copy_in(sources_list.name, "/etc/apt/sources.list")
         return 0

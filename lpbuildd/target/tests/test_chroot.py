@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+import io
 import os.path
 import signal
 from textwrap import dedent
@@ -97,6 +98,25 @@ class TestChroot(TestCase):
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])
 
+    def test_run_get_output(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(
+            lambda _: {"stdout": io.BytesIO(b"hello\n")}, name="sudo")
+        self.assertEqual(
+            "hello\n",
+            Chroot("1", "xenial", "amd64").run(
+                ["echo", "hello"], get_output=True))
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "echo", "hello"],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
     def test_copy_in(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         source_dir = self.useFixture(TempDir()).path
@@ -114,6 +134,77 @@ class TestChroot(TestCase):
         expected_args = [
             ["sudo", "install", "-o", "root", "-g", "root", "-m", "644",
              source_path, expected_target_path],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_copy_out(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        Chroot("1", "xenial", "amd64").copy_out(
+            "/path/to/source", "/path/to/target")
+
+        expected_args = [
+            ["sudo", "cp", "-p",
+             "/expected/home/build-1/chroot-autobuild/path/to/source",
+             "/path/to/target"],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_path_exists(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        test_proc_infos = iter([{}, {"returncode": 1}])
+        processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
+        self.assertTrue(Chroot("1", "xenial", "amd64").path_exists("/present"))
+        self.assertFalse(Chroot("1", "xenial", "amd64").path_exists("/absent"))
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "test", "-e", path]
+            for path in ("/present", "/absent")
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_islink(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        test_proc_infos = iter([{}, {"returncode": 1}])
+        processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
+        self.assertTrue(Chroot("1", "xenial", "amd64").islink("/link"))
+        self.assertFalse(Chroot("1", "xenial", "amd64").islink("/file"))
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "test", "-h", path]
+            for path in ("/link", "/file")
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_listdir(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(
+            lambda _: {"stdout": io.BytesIO(b"foo\0bar\0baz\0")}, name="sudo")
+        self.assertEqual(
+            ["foo", "bar", "baz"],
+            Chroot("1", "xenial", "amd64").listdir("/path"))
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "find", "/path", "-mindepth", "1", "-maxdepth", "1",
+             "-printf", "%P\\0"],
             ]
         self.assertEqual(
             expected_args,
