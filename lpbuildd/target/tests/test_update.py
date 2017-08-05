@@ -3,84 +3,79 @@
 
 __metaclass__ = type
 
+import subprocess
 import time
 
-from fixtures import (
-    EnvironmentVariable,
-    FakeLogger,
-    )
-from systemfixtures import (
-    FakeProcesses,
-    FakeTime,
-    )
+from fixtures import FakeLogger
+from systemfixtures import FakeTime
 from testtools import TestCase
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    MatchesDict,
+    MatchesListwise,
+    )
 
 from lpbuildd.target.update import Update
+from lpbuildd.tests.fakeslave import FakeMethod
+
+
+class RanAptGet(MatchesListwise):
+
+    def __init__(self, args_list):
+        super(RanAptGet, self).__init__([
+            MatchesListwise([
+                Equals((["/usr/bin/apt-get"] + args,)),
+                ContainsDict({
+                    "env": MatchesDict({
+                        "LANG": Equals("C"),
+                        "DEBIAN_FRONTEND": Equals("noninteractive"),
+                        "TTY": Equals("unknown"),
+                        }),
+                    }),
+                ]) for args in args_list
+            ])
 
 
 class TestUpdate(TestCase):
 
     def test_succeeds(self):
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
-        processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="sudo")
         self.useFixture(FakeTime())
         start_time = time.time()
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Update(args=args).run()
+        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
+        update = Update(args=args)
+        self.assertEqual(0, update.run())
 
-        apt_get_args = [
-            "sudo", "/usr/sbin/chroot",
-            "/expected/home/build-1/chroot-autobuild",
-            "linux64", "env",
-            "LANG=C",
-            "DEBIAN_FRONTEND=noninteractive",
-            "TTY=unknown",
-            "/usr/bin/apt-get",
-            ]
         expected_args = [
-            apt_get_args + ["-uy", "update"],
-            apt_get_args + [
-                "-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
-                "dist-upgrade",
-                ],
+            ["-uy", "update"],
+            ["-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
+             "dist-upgrade"],
             ]
-        self.assertEqual(
-            expected_args,
-            [proc._args["args"] for proc in processes_fixture.procs])
+        self.assertThat(update.backend.run.calls, RanAptGet(expected_args))
         self.assertEqual(start_time, time.time())
 
     def test_first_run_fails(self):
+        class FailFirstTime(FakeMethod):
+            def __call__(self, run_args, *args, **kwargs):
+                super(FailFirstTime, self).__call__(run_args, *args, **kwargs)
+                if len(self.calls) == 1:
+                    raise subprocess.CalledProcessError(1, run_args)
+
         logger = self.useFixture(FakeLogger())
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
-        processes_fixture = self.useFixture(FakeProcesses())
-        apt_get_proc_infos = iter([{"returncode": 1}, {}, {}])
-        processes_fixture.add(lambda _: next(apt_get_proc_infos), name="sudo")
         self.useFixture(FakeTime())
         start_time = time.time()
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Update(args=args).run()
+        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
+        update = Update(args=args)
+        update.backend.run = FailFirstTime()
+        self.assertEqual(0, update.run())
 
-        apt_get_args = [
-            "sudo", "/usr/sbin/chroot",
-            "/expected/home/build-1/chroot-autobuild",
-            "linux64", "env",
-            "LANG=C",
-            "DEBIAN_FRONTEND=noninteractive",
-            "TTY=unknown",
-            "/usr/bin/apt-get",
-            ]
         expected_args = [
-            apt_get_args + ["-uy", "update"],
-            apt_get_args + ["-uy", "update"],
-            apt_get_args + [
-                "-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
-                "dist-upgrade",
-                ],
+            ["-uy", "update"],
+            ["-uy", "update"],
+            ["-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
+             "dist-upgrade"],
             ]
-        self.assertEqual(
-            expected_args,
-            [proc._args["args"] for proc in processes_fixture.procs])
+        self.assertThat(update.backend.run.calls, RanAptGet(expected_args))
         self.assertEqual(
             "Updating target for build 1\n"
             "Waiting 15 seconds and trying again ...\n",

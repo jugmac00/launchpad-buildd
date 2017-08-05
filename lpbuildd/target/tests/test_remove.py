@@ -3,8 +3,6 @@
 
 __metaclass__ = type
 
-from fixtures import EnvironmentVariable
-from systemfixtures import FakeProcesses
 from testtools import TestCase
 
 from lpbuildd.target.remove import Remove
@@ -13,13 +11,7 @@ from lpbuildd.target.remove import Remove
 class TestRemove(TestCase):
 
     def test_succeeds(self):
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
-        processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="sudo")
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Remove(args=args).run()
-
-        expected_args = [["sudo", "rm", "-rf", "/expected/home/build-1"]]
-        self.assertEqual(
-            expected_args,
-            [proc._args["args"] for proc in processes_fixture.procs])
+        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
+        remove = Remove(args=args)
+        self.assertEqual(0, remove.run())
+        self.assertEqual([((), {})], remove.backend.remove.calls)

@@ -11,6 +11,8 @@ import hashlib
 import os
 import shutil
 
+from lpbuildd.target.backend import Backend
+
 
 class FakeMethod:
     """Catch any function or method call, and record the fact.
@@ -102,3 +104,21 @@ class FakeSlave:
 
     def getArch(self):
         return 'i386'
+
+
+class FakeBackend(Backend):
+
+    def __init__(self, *args, **kwargs):
+        super(FakeBackend, self).__init__(*args, **kwargs)
+        fake_methods = (
+            "create", "start",
+            "run",
+            "kill_processes", "stop", "remove",
+            )
+        for fake_method in fake_methods:
+            setattr(self, fake_method, FakeMethod())
+        self.copied_in = {}
+
+    def copy_in(self, source_path, target_path):
+        with open(source_path, "rb") as source:
+            self.copied_in[target_path] = source.read()

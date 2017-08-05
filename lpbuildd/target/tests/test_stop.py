@@ -3,36 +3,33 @@
 
 __metaclass__ = type
 
-import os.path
+from textwrap import dedent
 
-from fixtures import EnvironmentVariable
-from systemfixtures import (
-    FakeFilesystem,
-    FakeProcesses,
-    )
+from fixtures import FakeLogger
 from testtools import TestCase
+from testtools.matchers import StartsWith
 
+from lpbuildd.target.backend import BackendException
 from lpbuildd.target.stop import Stop
-from lpbuildd.target.tests.testfixtures import SudoUmount
 
 
 class TestStop(TestCase):
 
     def test_succeeds(self):
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
-        processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(SudoUmount(), name="sudo")
-        fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/proc")
-        os.mkdir("/proc")
-        with open("/proc/mounts", "w") as mounts_file:
-            mounts_file.write(
-                "none {chroot}/proc proc rw,relatime 0 0".format(
-                    chroot="/expected/home/build-1/chroot-autobuild"))
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Stop(args=args).run()
+        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
+        stop = Stop(args=args)
+        self.assertEqual(0, stop.run())
+        self.assertEqual([((), {})], stop.backend.stop.calls)
 
-        # Tested in more detail in lpbuildd.target.tests.test_chroot.
-        self.assertIn(
-            ["sudo", "umount", "/expected/home/build-1/chroot-autobuild/proc"],
-            [proc._args["args"] for proc in processes_fixture.procs])
+    def test_fails(self):
+        logger = self.useFixture(FakeLogger())
+        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
+        stop = Stop(args=args)
+        stop.backend.stop.failure = BackendException
+        self.assertEqual(1, stop.run())
+        self.assertEqual([((), {})], stop.backend.stop.calls)
+        self.assertThat(logger.output, StartsWith(dedent("""\
+            Stopping target for build 1
+            Failed to stop target
+            Traceback (most recent call last):
+            """)))

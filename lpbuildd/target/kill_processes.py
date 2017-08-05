@@ -21,3 +21,4 @@ class KillProcesses(Operation):
         logger.info(
             "Scanning for processes to kill in build %s", self.args.build_id)
         self.backend.kill_processes()
+        return 0

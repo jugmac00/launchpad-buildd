@@ -29,7 +29,7 @@ class Operation:
     def make_parser(self):
         parser = ArgumentParser(description=self.description)
         parser.add_argument(
-            "--backend", choices=["chroot", "lxd"],
+            "--backend", choices=["chroot", "lxd", "fake"],
             help="use this type of backend")
         parser.add_argument(
             "--series", metavar="SERIES", help="operate on series SERIES")
