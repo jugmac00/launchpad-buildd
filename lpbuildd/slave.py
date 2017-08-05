@@ -22,6 +22,9 @@ from twisted.internet import process
 from twisted.python import log
 from twisted.web import xmlrpc
 
+from lpbuildd.util import shell_escape
+
+
 devnull = open("/dev/null", "r")
 
 
@@ -136,7 +139,8 @@ class BuildManager(object):
         if iterate is None:
             iterate = self.iterate
         self._subprocess = RunCapture(self._slave, iterate, stdin=stdin)
-        self._slave.log("RUN: %s %r\n" % (command, args))
+        self._slave.log("RUN: %s %s\n" % (
+            command, " ".join(shell_escape(arg) for arg in args[1:])))
         childfds = {
             0: devnull.fileno() if stdin is None else "w",
             1: "r",

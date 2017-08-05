@@ -1,10 +1,10 @@
-RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot ['unpack-chroot', '370614-896976', '/home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774']
+RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot 370614-896976 /home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774
 Unpacking chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot ['mount-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot 370614-896976
 Mounting chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model ['apply-ogre-model', '370614-896976', 'universe']
+RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model 370614-896976 universe
 Attempting OGRE for universe in build-370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
 Updating debian chroot for build 370614-896976
 Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://ftpmaster.internal gutsy Release [65.9kB]
@@ -22,13 +22,13 @@ Need to get 0B/2832kB of archives.
 After unpacking 94.2kB of additional disk space will be used.
 (Reading database ... 8942 files and directories currently installed.)
 socat STDIO PROXY:snap-proxy.launchpad.dev:github.com:443,proxyport=3128,proxyauth=user:blah
-RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot ['unpack-chroot', '370614-896976', '/home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774']
+RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot 370614-896976 /home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774
 Unpacking chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot ['mount-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot 370614-896976
 Mounting chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model ['apply-ogre-model', '370614-896976', 'universe']
+RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model 370614-896976 universe
 Attempting OGRE for universe in build-370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
 Updating debian chroot for build 370614-896976
 Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://ftpmaster.internal gutsy Release [65.9kB]
@@ -45,13 +45,13 @@ The following packages will be upgraded:
 Need to get 0B/2832kB of archives.
 After unpacking 94.2kB of additional disk space will be used.
 (Reading database ... 8942 files and directories currently installed.)
-RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot ['unpack-chroot', '370614-896976', '/home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774']
+RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot 370614-896976 /home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774
 Unpacking chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot ['mount-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot 370614-896976
 Mounting chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model ['apply-ogre-model', '370614-896976', 'universe']
+RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model 370614-896976 universe
 Attempting OGRE for universe in build-370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
 Updating debian chroot for build 370614-896976
 Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://ftpmaster.internal gutsy Release [65.9kB]
@@ -68,13 +68,13 @@ The following packages will be upgraded:
 Need to get 0B/2832kB of archives.
 After unpacking 94.2kB of additional disk space will be used.
 (Reading database ... 8942 files and directories currently installed.)
-RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot ['unpack-chroot', '370614-896976', '/home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774']
+RUN: /usr/share/launchpad-buildd/slavebin/unpack-chroot 370614-896976 /home/buildd/filecache-default/a40e3c410938399b35051833fe5244f9ac6f3774
 Unpacking chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot ['mount-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/mount-chroot 370614-896976
 Mounting chroot for build 370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model ['apply-ogre-model', '370614-896976', 'universe']
+RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model 370614-896976 universe
 Attempting OGRE for universe in build-370614-896976
-RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
 Updating debian chroot for build 370614-896976
 Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://must:go@ftpmaster.internal gutsy Release [65.9kB]
