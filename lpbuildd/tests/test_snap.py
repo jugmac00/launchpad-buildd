@@ -76,7 +76,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         expected_command = [
             "sharepath/slavebin/buildsnap", "buildsnap",
-            "--build-id", self.buildid, "--arch", "i386",
+            "--backend=chroot", "--series=xenial", "--arch=i386", self.buildid,
             "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
             "--git-path", "master",
             "test-snap",

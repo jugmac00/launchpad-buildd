@@ -64,11 +64,7 @@ class SnapBuildManager(DebianBuildManager):
 
     def doRunBuild(self):
         """Run the process to build the snap."""
-        args = [
-            "buildsnap",
-            "--build-id", self._buildid,
-            "--arch", self.arch_tag,
-            ]
+        args = ["buildsnap"]
         if self.proxy_url:
             args.extend(["--proxy-url", self.proxy_url])
         if self.revocation_endpoint:
@@ -80,7 +76,7 @@ class SnapBuildManager(DebianBuildManager):
         if self.git_path is not None:
             args.extend(["--git-path", self.git_path])
         args.append(self.name)
-        self.runSubProcess(self.build_snap_path, args)
+        self.runTargetSubProcess(self.build_snap_path, args)
 
     def iterate_BUILD_SNAP(self, retcode):
         """Finished building the snap."""
