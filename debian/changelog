@@ -20,6 +20,7 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
   * Rewrite mount-chroot and umount-chroot in Python, allowing them to have
     unit tests.
   * Rewrite scan-for-processes in Python, allowing it to have unit tests.
+  * Convert buildlivefs to the new Operation framework and add unit tests.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 

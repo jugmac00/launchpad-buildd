@@ -53,7 +53,7 @@ class Chroot(Backend):
             self.copy_in(path, path)
 
     def run(self, args, env=None, input_text=None, get_output=False,
-            **kwargs):
+            echo=False, **kwargs):
         """See `Backend`."""
         if env:
             args = ["env"] + [
@@ -61,6 +61,9 @@ class Chroot(Backend):
                 for key, value in env.items()] + args
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
+        if echo:
+            print("Running in chroot: %s" % ' '.join(
+                shell_escape(arg) for arg in args))
         cmd = ["sudo", "/usr/sbin/chroot", self.chroot_path] + args
         if input_text is None and not get_output:
             subprocess.check_call(cmd, cwd=self.chroot_path, **kwargs)
