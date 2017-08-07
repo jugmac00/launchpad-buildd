@@ -22,6 +22,7 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
   * Rewrite scan-for-processes in Python, allowing it to have unit tests.
   * Convert buildlivefs to the new Operation framework and add unit tests.
   * Convert buildsnap to the new Operation framework and add unit tests.
+  * Add a LXD backend.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 

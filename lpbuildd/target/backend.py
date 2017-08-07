@@ -27,6 +27,9 @@ class Backend:
         if name == "chroot":
             from lpbuildd.target.chroot import Chroot
             backend_factory = Chroot
+        elif name == "lxd":
+            from lpbuildd.target.lxd import LXD
+            backend_factory = LXD
         elif name == "fake":
             # Only for use in tests.
             from lpbuildd.tests.fakeslave import FakeBackend
