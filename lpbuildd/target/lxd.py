@@ -135,8 +135,8 @@ class LXD(Backend):
                             #! /bin/sh
                             while :; do
                                 case "$1" in
-                                    -*)     shift ;;
-                                    snapd)  exit 0 ;;
+                                    -*)             shift ;;
+                                    snapd.service)  exit 0 ;;
                                     *)
                                         echo "Not running services in chroot."
                                         exit 101
