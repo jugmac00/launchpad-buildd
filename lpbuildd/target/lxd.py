@@ -293,6 +293,7 @@ class LXD(Backend):
                  key, value])
 
         set_key("security.privileged", "true")
+        set_key("security.nesting", "true")
         set_key("raw.lxc", dedent("""\
             lxc.aa_profile=unconfined
             lxc.cgroup.devices.deny=

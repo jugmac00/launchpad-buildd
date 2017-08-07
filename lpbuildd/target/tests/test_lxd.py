@@ -209,6 +209,8 @@ class TestLXD(TestCase):
                 Equals(lxc + ["profile", "set", "lpbuildd",
                               "security.privileged", "true"]),
                 Equals(lxc + ["profile", "set", "lpbuildd",
+                              "security.nesting", "true"]),
+                Equals(lxc + ["profile", "set", "lpbuildd",
                               "raw.lxc", raw_lxc]),
                 Equals(ip + ["link", "add", "dev", "lpbr0", "type", "bridge"]),
                 Equals(ip + ["addr", "add", "10.10.10.1/24", "dev", "lpbr0"]),
