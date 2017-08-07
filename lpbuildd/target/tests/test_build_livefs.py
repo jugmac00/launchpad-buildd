@@ -5,6 +5,7 @@ __metaclass__ = type
 
 import subprocess
 
+from fixtures import FakeLogger
 from testtools import TestCase
 from testtools.matchers import (
     AnyMatch,
@@ -151,6 +152,7 @@ class TestBuildLiveFS(TestCase):
                 if run_args[0] == "apt-get":
                     raise subprocess.CalledProcessError(1, run_args)
 
+        self.useFixture(FakeLogger())
         args = [
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--project=ubuntu",
@@ -166,6 +168,7 @@ class TestBuildLiveFS(TestCase):
                 if run_args[0] == "/bin/sh":
                     raise subprocess.CalledProcessError(1, run_args)
 
+        self.useFixture(FakeLogger())
         args = [
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--project=ubuntu",
