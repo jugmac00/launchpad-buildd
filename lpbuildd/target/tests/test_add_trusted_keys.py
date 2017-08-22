@@ -11,16 +11,20 @@ from fixtures import (
     )
 from testtools import TestCase
 
-from lpbuildd.target.add_trusted_keys import AddTrustedKeys
+from lpbuildd.target.cli import parse_args
 
 
 class TestAddTrustedKeys(TestCase):
 
     def test_add_trusted_keys(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
+        args = [
+            "add-trusted-keys",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
         input_file = io.BytesIO()
-        add_trusted_keys = AddTrustedKeys(args=args, input_file=input_file)
+        add_trusted_keys = parse_args(args=args).operation
+        add_trusted_keys.input_file = input_file
         # XXX cjwatson 2017-07-29: With a newer version of fixtures we could
         # mock this at the subprocess level instead, but at the moment doing
         # that wouldn't allow us to test stdin.

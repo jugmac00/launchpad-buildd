@@ -7,7 +7,7 @@ from fixtures import EnvironmentVariable
 from systemfixtures import FakeProcesses
 from testtools import TestCase
 
-from lpbuildd.target.remove import Remove
+from lpbuildd.target.cli import parse_args
 
 
 class TestRemove(TestCase):
@@ -16,8 +16,11 @@ class TestRemove(TestCase):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Remove(args=args).run()
+        args = [
+            "remove-build",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
+        parse_args(args=args).operation.run()
 
         expected_args = [["sudo", "rm", "-rf", "/expected/home/build-1"]]
         self.assertEqual(

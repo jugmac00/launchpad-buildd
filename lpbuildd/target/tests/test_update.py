@@ -15,7 +15,7 @@ from systemfixtures import (
     )
 from testtools import TestCase
 
-from lpbuildd.target.update import Update
+from lpbuildd.target.cli import parse_args
 
 
 class TestUpdate(TestCase):
@@ -26,8 +26,11 @@ class TestUpdate(TestCase):
         processes_fixture.add(lambda _: {}, name="sudo")
         self.useFixture(FakeTime())
         start_time = time.time()
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Update(args=args).run()
+        args = [
+            "update-debian-chroot",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
+        parse_args(args=args).operation.run()
 
         apt_get_args = [
             "sudo", "/usr/sbin/chroot",
@@ -58,8 +61,11 @@ class TestUpdate(TestCase):
         processes_fixture.add(lambda _: next(apt_get_proc_infos), name="sudo")
         self.useFixture(FakeTime())
         start_time = time.time()
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Update(args=args).run()
+        args = [
+            "update-debian-chroot",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
+        parse_args(args=args).operation.run()
 
         apt_get_args = [
             "sudo", "/usr/sbin/chroot",

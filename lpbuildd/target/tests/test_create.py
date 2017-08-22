@@ -7,7 +7,7 @@ from fixtures import EnvironmentVariable
 from systemfixtures import FakeProcesses
 from testtools import TestCase
 
-from lpbuildd.target.create import Create
+from lpbuildd.target.cli import parse_args
 
 
 class TestCreate(TestCase):
@@ -17,9 +17,11 @@ class TestCreate(TestCase):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         args = [
+            "unpack-chroot",
             "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
-            "/path/to/tarball"]
-        Create(args=args).run()
+            "/path/to/tarball",
+            ]
+        parse_args(args=args).operation.run()
 
         expected_args = [
             ["sudo", "tar", "-C", "/expected/home/build-1",
