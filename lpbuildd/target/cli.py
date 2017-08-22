@@ -9,9 +9,11 @@ from argparse import ArgumentParser
 import logging
 import sys
 
-from lpbuildd.target.add_trusted_keys import AddTrustedKeys
-from lpbuildd.target.override_sources_list import OverrideSourcesList
-from lpbuildd.target.update import Update
+from lpbuildd.target.apt import (
+    AddTrustedKeys,
+    OverrideSourcesList,
+    Update,
+    )
 
 
 def configure_logging():
