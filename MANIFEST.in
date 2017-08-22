@@ -6,7 +6,6 @@ include bin/buildsnap
 include bin/generate-translation-templates
 include bin/in-target
 include bin/sbuild-package
-include bin/scan-for-processes
 include bin/slave-prep
 include bin/snap-git-proxy
 include bin/test_buildd_generatetranslationtemplates

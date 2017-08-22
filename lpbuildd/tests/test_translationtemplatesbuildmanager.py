@@ -104,7 +104,9 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # After generating templates, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -171,7 +173,9 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The buildmanager fails and reaps processes.
         self.buildmanager.iterate(-1)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(

@@ -151,7 +151,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterate(exit_code)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            ['sharepath/slavebin/in-target', 'in-target',
+             'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
     def assertUnmountsSanely(self):
@@ -252,7 +254,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            ['sharepath/slavebin/in-target', 'in-target',
+             'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
@@ -271,7 +275,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            ['sharepath/slavebin/in-target', 'in-target',
+             'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('builderFail'))
         reap_subprocess = self.buildmanager._subprocess
@@ -311,7 +317,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.INIT,
-            ['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            ['sharepath/slavebin/in-target', 'in-target',
+             'scan-for-processes',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
         self.buildmanager.iterate(0)

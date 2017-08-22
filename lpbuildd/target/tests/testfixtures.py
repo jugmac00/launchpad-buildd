@@ -4,6 +4,9 @@
 __metaclass__ = type
 
 import argparse
+import shutil
+
+from fixtures import MonkeyPatch
 
 
 class SudoUmount:
@@ -36,3 +39,32 @@ class SudoUmount:
                 for mount in mounts:
                     mounts_file.write(mount)
             return {}
+
+
+class Kill:
+    """A substitute for `os.kill` that may fail sometimes.
+
+    This must run with a fake `/proc` (e.g. using
+    `systemfixtures.FakeFilesystem`).
+    """
+
+    def __init__(self, delays=None):
+        self.delays = delays or {}
+        self.kills = []
+
+    def __call__(self, pid, sig):
+        if self.delays.get(pid, 0) > 0:
+            self.delays[pid] -= 1
+            raise OSError
+        self.kills.append((pid, sig))
+        shutil.rmtree("/proc/%d" % pid)
+
+
+class KillFixture(MonkeyPatch):
+
+    def __init__(self, delays=None):
+        super(KillFixture, self).__init__("os.kill", Kill(delays=delays))
+
+    @property
+    def kills(self):
+        return self.new_value.kills

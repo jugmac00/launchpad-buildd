@@ -60,6 +60,16 @@ class Backend:
         """
         raise NotImplementedError
 
+    def kill_processes(self):
+        """Kill any processes left running in the target.
+
+        This is allowed to do nothing if stopping the target will reliably
+        kill all processes running in it.
+        """
+        # XXX cjwatson 2017-08-22: It might make sense to merge this into
+        # `stop` later.
+        pass
+
     def stop(self):
         """Stop the backend."""
         raise NotImplementedError

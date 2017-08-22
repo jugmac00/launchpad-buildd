@@ -99,7 +99,9 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/scan-for-processes", "scan-for-processes",
+            "sharepath/slavebin/in-target", "in-target",
+            "scan-for-processes",
+            "--backend=chroot", "--series=saucy", "--arch=i386",
             self.buildid,
             ]
         self.assertEqual(

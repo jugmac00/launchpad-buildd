@@ -125,7 +125,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -167,7 +169,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls depFail correctly and reaps processes.
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -206,7 +210,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls buildFail correctly and reaps processes.
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(

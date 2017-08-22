@@ -162,7 +162,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'scan-for-processes',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
             self.buildmanager.commands[-1])
@@ -286,7 +288,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'scan-for-processes',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
             self.buildmanager.commands[-1])

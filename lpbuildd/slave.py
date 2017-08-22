@@ -122,7 +122,6 @@ class BuildManager(object):
         self._slavebin = os.path.join(self._sharepath, "slavebin")
         self._preppath = os.path.join(self._slavebin, "slave-prep")
         self._intargetpath = os.path.join(self._slavebin, "in-target")
-        self._scanpath = os.path.join(self._slavebin, "scan-for-processes")
         self._subprocess = None
         self._reaped_states = set()
         self.is_archive_private = False
@@ -180,9 +179,7 @@ class BuildManager(object):
                 iterate = partial(self.iterateReap, state)
             else:
                 iterate = lambda success: None
-            self.runSubProcess(
-                self._scanpath, ["scan-for-processes", self._buildid],
-                iterate=iterate)
+            self.runTargetSubProcess("scan-for-processes", iterate=iterate)
 
     def doCleanup(self):
         """Remove the build tree etc."""

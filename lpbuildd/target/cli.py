@@ -14,6 +14,7 @@ from lpbuildd.target.apt import (
     OverrideSourcesList,
     Update,
     )
+from lpbuildd.target.kill_processes import KillProcesses
 from lpbuildd.target.lifecycle import (
     Create,
     Remove,
@@ -46,6 +47,7 @@ operations = {
     "override-sources-list": OverrideSourcesList,
     "mount-chroot": Start,
     "remove-build": Remove,
+    "scan-for-processes": KillProcesses,
     "umount-chroot": Stop,
     "unpack-chroot": Create,
     "update-debian-chroot": Update,

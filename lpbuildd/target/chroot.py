@@ -6,6 +6,7 @@ from __future__ import print_function
 __metaclass__ = type
 
 import os.path
+import signal
 import stat
 import subprocess
 import time
@@ -80,6 +81,26 @@ class Chroot(Backend):
         subprocess.check_call(
             ["sudo", "install", "-o", "root", "-g", "root", "-m", "%o" % mode,
              source_path, full_target_path])
+
+    def kill_processes(self):
+        """See `Backend`."""
+        prefix = os.path.realpath(self.chroot_path)
+        while True:
+            found = False
+            pids = [int(pid) for pid in os.listdir("/proc") if pid.isdigit()]
+            for pid in sorted(pids):
+                try:
+                    link = os.readlink(os.path.join("/proc", str(pid), "root"))
+                except OSError:
+                    continue
+                if link and (link == prefix or link.startswith(prefix + "/")):
+                    try:
+                        os.kill(pid, signal.SIGKILL)
+                    except OSError:
+                        pass
+                    found = True
+            if not found:
+                break
 
     def _get_chroot_mounts(self):
         with open("/proc/mounts") as mounts_file:
