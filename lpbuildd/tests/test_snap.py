@@ -14,6 +14,7 @@ from lpbuildd.snap import (
     SnapBuildState,
     )
 from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.matchers import HasWaitingFiles
 
 
 class MockBuildManager(SnapBuildManager):
@@ -98,9 +99,8 @@ class TestSnapBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
-        log = open(log_path, "w")
-        log.write("I am a build log.")
-        log.close()
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
 
         output_dir = os.path.join(self.build_dir, "test-snap")
         os.makedirs(output_dir)
@@ -121,7 +121,9 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertEqual([((snap_path,), {})], self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "test-snap_0_all.snap": b"I am a snap package.",
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
@@ -143,9 +145,8 @@ class TestSnapBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
-        log = open(log_path, "w")
-        log.write("I am a build log.")
-        log.close()
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
 
         output_dir = os.path.join(self.build_dir, "test-snap")
         os.makedirs(output_dir)
@@ -169,9 +170,10 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertEqual(
-            [((manifest_path,), {}), ((snap_path,), {})],
-            self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "test-snap_0_all.manifest": b"I am a manifest.",
+            "test-snap_0_all.snap": b"I am a snap package.",
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
