@@ -3,11 +3,14 @@
 
 __metaclass__ = type
 
+import io
+from textwrap import dedent
 import time
 
 from fixtures import (
     EnvironmentVariable,
     FakeLogger,
+    MockPatchObject,
     )
 from systemfixtures import (
     FakeProcesses,
@@ -16,6 +19,67 @@ from systemfixtures import (
 from testtools import TestCase
 
 from lpbuildd.target.cli import parse_args
+from lpbuildd.tests.fakeslave import FakeMethod
+
+
+class MockCopyIn(FakeMethod):
+
+    def __init__(self, *args, **kwargs):
+        super(MockCopyIn, self).__init__(*args, **kwargs)
+        self.source_bytes = None
+
+    def __call__(self, source_path, *args, **kwargs):
+        with open(source_path, "rb") as source:
+            self.source_bytes = source.read()
+        return super(MockCopyIn, self).__call__(source_path, *args, **kwargs)
+
+
+class TestOverrideSourcesList(TestCase):
+
+    def test_succeeds(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        args = [
+            "override-sources-list",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            "deb http://archive.ubuntu.com/ubuntu xenial main",
+            "deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main",
+            ]
+        override_sources_list = parse_args(args=args).operation
+        mock_copy_in = self.useFixture(MockPatchObject(
+            override_sources_list.backend, "copy_in", new=MockCopyIn())).mock
+        override_sources_list.run()
+
+        self.assertEqual(dedent("""\
+            deb http://archive.ubuntu.com/ubuntu xenial main
+            deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
+            """).encode("UTF-8"), mock_copy_in.source_bytes)
+        self.assertEqual(
+            ("/etc/apt/sources.list",), mock_copy_in.extract_args()[0][1:])
+
+
+class TestAddTrustedKeys(TestCase):
+
+    def test_add_trusted_keys(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        args = [
+            "add-trusted-keys",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
+        input_file = io.BytesIO()
+        add_trusted_keys = parse_args(args=args).operation
+        add_trusted_keys.input_file = input_file
+        # XXX cjwatson 2017-07-29: With a newer version of fixtures we could
+        # mock this at the subprocess level instead, but at the moment doing
+        # that wouldn't allow us to test stdin.
+        mock_backend_run = self.useFixture(
+            MockPatchObject(add_trusted_keys.backend, "run")).mock
+        add_trusted_keys.run()
+
+        self.assertEqual(2, len(mock_backend_run.mock_calls))
+        mock_backend_run.assert_has_calls([
+            ((["apt-key", "add", "-"],), {"stdin": input_file}),
+            ((["apt-key", "list"],), {}),
+            ])
 
 
 class TestUpdate(TestCase):
