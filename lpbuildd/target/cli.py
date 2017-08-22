@@ -14,9 +14,9 @@ from lpbuildd.target.apt import (
     OverrideSourcesList,
     Update,
     )
-from lpbuildd.target.kill_processes import KillProcesses
 from lpbuildd.target.lifecycle import (
     Create,
+    KillProcesses,
     Remove,
     Start,
     Stop,
