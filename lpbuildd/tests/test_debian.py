@@ -125,8 +125,10 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/override-sources-list',
-              'override-sources-list', self.buildid,
+            (['sharepath/slavebin/in-target', 'in-target',
+              'override-sources-list',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid,
               'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
              None),
             self.buildmanager.commands[-1])
@@ -136,8 +138,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/update-debian-chroot',
-              'update-debian-chroot', '--series', 'xenial', '--arch', 'amd64',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'update-debian-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
             self.buildmanager.commands[-1])
@@ -224,8 +227,10 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/override-sources-list',
-              'override-sources-list', self.buildid,
+            (['sharepath/slavebin/in-target', 'in-target',
+              'override-sources-list',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid,
               'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
              None),
             self.buildmanager.commands[-1])
@@ -235,7 +240,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.KEYS, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/add-trusted-keys', 'add-trusted-keys',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'add-trusted-keys',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              b'key material'),
             self.buildmanager.commands[-1])
@@ -245,8 +252,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/update-debian-chroot',
-              'update-debian-chroot', '--series', 'xenial', '--arch', 'amd64',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'update-debian-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
             self.buildmanager.commands[-1])

@@ -37,10 +37,6 @@ class DebianBuildManager(BuildManager):
 
     def __init__(self, slave, buildid, **kwargs):
         BuildManager.__init__(self, slave, buildid, **kwargs)
-        self._updatepath = os.path.join(self._slavebin, "update-debian-chroot")
-        self._sourcespath = os.path.join(
-            self._slavebin, "override-sources-list")
-        self._keyspath = os.path.join(self._slavebin, "add-trusted-keys")
         self._cachepath = slave._config.get("slave", "filecache")
         self._state = DebianBuildState.INIT
         slave.emptyLog()
@@ -52,8 +48,6 @@ class DebianBuildManager(BuildManager):
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
-        self.series = extra_args['series']
-        self.arch_tag = extra_args.get('arch_tag', self._slave.getArch())
         self.sources_list = extra_args.get('archives')
         self.trusted_keys = extra_args.get('trusted_keys')
 
@@ -64,26 +58,17 @@ class DebianBuildManager(BuildManager):
 
         Mainly used for PPA builds.
         """
-        args = ["override-sources-list", self._buildid]
-        args.extend(self.sources_list)
-        self.runSubProcess(self._sourcespath, args)
+        self.runTargetSubProcess("override-sources-list", *self.sources_list)
 
     def doTrustedKeys(self):
         """Add trusted keys."""
         trusted_keys = b"".join(
             base64.b64decode(key) for key in self.trusted_keys)
-        self.runSubProcess(
-            self._keyspath, ["add-trusted-keys", self._buildid],
-            stdin=trusted_keys)
+        self.runTargetSubProcess("add-trusted-keys", stdin=trusted_keys)
 
     def doUpdateChroot(self):
         """Perform the chroot upgrade."""
-        self.runSubProcess(
-            self._updatepath,
-            ["update-debian-chroot",
-             "--series", self.series,
-             "--arch", self.arch_tag,
-             self._buildid])
+        self.runTargetSubProcess("update-debian-chroot")
 
     def doRunBuild(self):
         """Run the main build process.

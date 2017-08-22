@@ -22,6 +22,9 @@ from twisted.internet import process
 from twisted.python import log
 from twisted.web import xmlrpc
 
+from lpbuildd.target.backend import make_backend
+
+
 devnull = open("/dev/null", "r")
 
 
@@ -101,6 +104,8 @@ class RunCapture(protocol.ProcessProtocol):
 class BuildManager(object):
     """Build Daemon slave build manager abstract parent"""
 
+    backend_name = "chroot"
+
     def __init__(self, slave, buildid, reactor=None):
         """Create a BuildManager.
 
@@ -116,6 +121,7 @@ class BuildManager(object):
         self._sharepath = slave._config.get("slave", "sharepath")
         self._slavebin = os.path.join(self._sharepath, "slavebin")
         self._preppath = os.path.join(self._slavebin, "slave-prep")
+        self._intargetpath = os.path.join(self._slavebin, "in-target")
         self._unpackpath = os.path.join(self._slavebin, "unpack-chroot")
         self._cleanpath = os.path.join(self._slavebin, "remove-build")
         self._mountpath = os.path.join(self._slavebin, "mount-chroot")
@@ -132,7 +138,7 @@ class BuildManager(object):
         return self.is_archive_private
 
     def runSubProcess(self, command, args, iterate=None, stdin=None, env=None):
-        """Run a sub process capturing the results in the log."""
+        """Run a subprocess capturing the results in the log."""
         if iterate is None:
             iterate = self.iterate
         self._subprocess = RunCapture(self._slave, iterate, stdin=stdin)
@@ -145,6 +151,19 @@ class BuildManager(object):
         self._reactor.spawnProcess(
             self._subprocess, command, args, env=env,
             path=self.home, childFDs=childfds)
+
+    def runTargetSubProcess(self, command, *args, **kwargs):
+        """Run a subprocess that operates on the target environment."""
+        base_args = [
+            "in-target",
+            command,
+            "--backend=%s" % self.backend_name,
+            "--series=%s" % self.series,
+            "--arch=%s" % self.arch_tag,
+            self._buildid,
+            ]
+        self.runSubProcess(
+            self._intargetpath, base_args + list(args), **kwargs)
 
     def doUnpack(self):
         """Unpack the build chroot."""
@@ -204,12 +223,19 @@ class BuildManager(object):
                                             self._buildid, f))
         self._chroottarfile = self._slave.cachePath(chroot)
 
+        self.series = extra_args['series']
+        self.arch_tag = extra_args.get('arch_tag', self._slave.getArch())
+
         # Check whether this is a build in a private archive and
         # whether the URLs in the buildlog file should be sanitized
         # so that they do not contain any embedded authentication
         # credentials.
         if extra_args.get('archive_private'):
             self.is_archive_private = True
+
+        self.backend = make_backend(
+            self.backend_name, self._buildid,
+            series=self.series, arch=self.arch_tag)
 
         self.runSubProcess(self._preppath, ["slave-prep"])
 
