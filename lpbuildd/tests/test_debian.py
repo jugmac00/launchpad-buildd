@@ -105,7 +105,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/unpack-chroot', 'unpack-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'unpack-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
               os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
@@ -117,7 +118,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.MOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/mount-chroot', 'mount-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'mount-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
@@ -128,7 +130,7 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/override-sources-list',
+            (['sharepath/slavebin/in-target', 'in-target',
               'override-sources-list',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
@@ -141,7 +143,7 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/update-debian-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
               'update-debian-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
@@ -170,7 +172,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(DebianBuildState.UMOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/umount-chroot', 'umount-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'umount-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
@@ -181,7 +184,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.CLEANUP, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/remove-build', 'remove-build',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'remove-build',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
@@ -213,7 +217,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/unpack-chroot', 'unpack-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'unpack-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
               os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
@@ -225,7 +230,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.MOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/mount-chroot', 'mount-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'mount-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
@@ -236,7 +242,7 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/override-sources-list',
+            (['sharepath/slavebin/in-target', 'in-target',
               'override-sources-list',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
@@ -249,7 +255,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.KEYS, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/add-trusted-keys', 'add-trusted-keys',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'add-trusted-keys',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              b'key material'),
@@ -260,7 +267,7 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/update-debian-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
               'update-debian-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
@@ -289,7 +296,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(DebianBuildState.UMOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/umount-chroot', 'umount-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'umount-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
@@ -300,7 +308,8 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.CLEANUP, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/remove-build', 'remove-build',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'remove-build',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),

@@ -17,12 +17,22 @@ class Create(Operation):
 
     description = "Create the target environment."
 
-    def make_parser(self):
-        parser = super(Create, self).make_parser()
+    @classmethod
+    def add_arguments(cls, parser):
+        super(Create, cls).add_arguments(parser)
         parser.add_argument("tarball_path", help="path to chroot tarball")
-        return parser
 
     def run(self):
         logger.info("Creating target for build %s", self.args.build_id)
         self.backend.create(self.args.tarball_path)
+        return 0
+
+
+class Remove(Operation):
+
+    description = "Remove the target environment."
+
+    def run(self):
+        logger.info("Removing build %s", self.args.build_id)
+        self.backend.remove()
         return 0

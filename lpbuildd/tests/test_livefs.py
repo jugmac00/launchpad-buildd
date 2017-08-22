@@ -114,7 +114,8 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/umount-chroot", "umount-chroot",
+            "sharepath/slavebin/in-target", "in-target",
+            "umount-chroot",
             "--backend=chroot", "--series=saucy", "--arch=i386",
             self.buildid,
             ]

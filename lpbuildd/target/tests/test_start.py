@@ -12,7 +12,7 @@ from systemfixtures import (
     )
 from testtools import TestCase
 
-from lpbuildd.target.start import Start
+from lpbuildd.target.cli import parse_args
 
 
 class TestStart(TestCase):
@@ -29,8 +29,11 @@ class TestStart(TestCase):
                 etc_file.write("%s\n" % etc_name)
             os.chmod(os.path.join("/etc", etc_name), 0o644)
         os.symlink("resolv.conf.real", "/etc/resolv.conf")
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Start(args=args).run()
+        args = [
+            "mount-chroot",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
+        parse_args(args=args).operation.run()
 
         # Tested in more detail in lpbuildd.target.tests.test_chroot.
         self.assertIn(

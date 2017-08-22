@@ -5,31 +5,18 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-from argparse import ArgumentParser
-import logging
-import sys
-
-from lpbuildd.target.backend import Backend
+from lpbuildd.target.backend import make_backend
 
 
 class Operation:
     """An operation to perform on the target environment."""
 
-    def __init__(self, args=None):
-        self.parse_args(args=args)
-        self.backend = Backend.get(
-            self.args.backend, self.args.build_id,
-            series=self.args.series, arch=self.args.arch)
+    description = "An unidentified operation."
 
-    @property
-    def description(self):
-        """A description of this operation, passed to the argument parser."""
-        raise NotImplementedError
-
-    def make_parser(self):
-        parser = ArgumentParser(description=self.description)
+    @classmethod
+    def add_arguments(cls, parser):
         parser.add_argument(
-            "--backend", choices=["chroot", "lxd"],
+            "--backend", choices=["chroot"],
             help="use this type of backend")
         parser.add_argument(
             "--series", metavar="SERIES", help="operate on series SERIES")
@@ -37,29 +24,12 @@ class Operation:
             "--arch", metavar="ARCH", help="operate on architecture ARCH")
         parser.add_argument(
             "build_id", metavar="ID", help="operate on build ID")
-        return parser
 
-    def parse_args(self, args=None):
-        self.args = self.make_parser().parse_args(args=args)
+    def __init__(self, args, parser):
+        self.args = args
+        self.backend = make_backend(
+            self.args.backend, self.args.build_id,
+            series=self.args.series, arch=self.args.arch)
 
     def run(self):
         raise NotImplementedError
-
-
-def configure_logging():
-    class StdoutFilter(logging.Filter):
-        def filter(self, record):
-            return record.levelno <= logging.WARNING
-
-    class StderrFilter(logging.Filter):
-        def filter(self, record):
-            return record.levelno >= logging.ERROR
-
-    logger = logging.getLogger()
-    stdout_handler = logging.StreamHandler(stream=sys.stdout)
-    stdout_handler.addFilter(StdoutFilter())
-    stderr_handler = logging.StreamHandler(stream=sys.stderr)
-    stderr_handler.addFilter(StderrFilter())
-    for handler in (stdout_handler, stderr_handler):
-        logger.addHandler(handler)
-    logger.setLevel(logging.INFO)

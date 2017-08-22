@@ -12,7 +12,7 @@ from systemfixtures import (
     )
 from testtools import TestCase
 
-from lpbuildd.target.stop import Stop
+from lpbuildd.target.cli import parse_args
 from lpbuildd.target.tests.testfixtures import SudoUmount
 
 
@@ -29,8 +29,11 @@ class TestStop(TestCase):
             mounts_file.write(
                 "none {chroot}/proc proc rw,relatime 0 0".format(
                     chroot="/expected/home/build-1/chroot-autobuild"))
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        Stop(args=args).run()
+        args = [
+            "umount-chroot",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
+        parse_args(args=args).operation.run()
 
         # Tested in more detail in lpbuildd.target.tests.test_chroot.
         self.assertIn(

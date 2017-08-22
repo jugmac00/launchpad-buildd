@@ -1,9 +1,9 @@
 #! /usr/bin/python -u
 #
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Unmount a chroot."""
+"""Run an operation in the target."""
 
 from __future__ import print_function
 
@@ -11,13 +11,16 @@ __metaclass__ = type
 
 import sys
 
-from lpbuildd.target.operation import configure_logging
-from lpbuildd.target.stop import Stop
+from lpbuildd.target.cli import (
+    configure_logging,
+    parse_args,
+    )
 
 
 def main():
     configure_logging()
-    return Stop().run()
+    args = parse_args()
+    args.operation.run()
 
 
 if __name__ == "__main__":
