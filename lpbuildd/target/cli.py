@@ -19,7 +19,7 @@ from lpbuildd.target.apt import (
 def configure_logging():
     class StdoutFilter(logging.Filter):
         def filter(self, record):
-            return record.levelno <= logging.WARNING
+            return record.levelno < logging.ERROR
 
     class StderrFilter(logging.Filter):
         def filter(self, record):
