@@ -26,3 +26,13 @@ class Create(Operation):
         logger.info("Creating target for build %s", self.args.build_id)
         self.backend.create(self.args.tarball_path)
         return 0
+
+
+class Remove(Operation):
+
+    description = "Remove the target environment."
+
+    def run(self):
+        logger.info("Removing build %s", self.args.build_id)
+        self.backend.remove()
+        return 0

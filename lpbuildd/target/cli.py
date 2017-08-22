@@ -14,8 +14,10 @@ from lpbuildd.target.apt import (
     OverrideSourcesList,
     Update,
     )
-from lpbuildd.target.create import Create
-from lpbuildd.target.remove import Remove
+from lpbuildd.target.lifecycle import (
+    Create,
+    Remove,
+    )
 
 
 def configure_logging():
