@@ -7,6 +7,7 @@ __metaclass__ = type
 
 import logging
 
+from lpbuildd.target.backend import BackendException
 from lpbuildd.target.operation import Operation
 
 
@@ -25,6 +26,30 @@ class Create(Operation):
     def run(self):
         logger.info("Creating target for build %s", self.args.build_id)
         self.backend.create(self.args.tarball_path)
+        return 0
+
+
+class Start(Operation):
+
+    description = "Start the target environment."
+
+    def run(self):
+        logger.info("Starting target for build %s", self.args.build_id)
+        self.backend.start()
+        return 0
+
+
+class Stop(Operation):
+
+    description = "Stop the target environment."
+
+    def run(self):
+        logger.info("Stopping target for build %s", self.args.build_id)
+        try:
+            self.backend.stop()
+        except BackendException:
+            logger.exception('Failed to stop target')
+            return 1
         return 0
 
 

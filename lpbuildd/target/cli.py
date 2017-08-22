@@ -17,9 +17,9 @@ from lpbuildd.target.apt import (
 from lpbuildd.target.lifecycle import (
     Create,
     Remove,
+    Start,
+    Stop,
     )
-from lpbuildd.target.start import Start
-from lpbuildd.target.stop import Stop
 
 
 def configure_logging():
