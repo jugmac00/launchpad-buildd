@@ -24,7 +24,7 @@ from twisted.internet import process
 from twisted.python import log
 from twisted.web import xmlrpc
 
-from lpbuildd.target.backend import Backend
+from lpbuildd.target.backend import make_backend
 
 
 devnull = open("/dev/null", "r")
@@ -123,11 +123,7 @@ class BuildManager(object):
         self._sharepath = slave._config.get("slave", "sharepath")
         self._slavebin = os.path.join(self._sharepath, "slavebin")
         self._preppath = os.path.join(self._slavebin, "slave-prep")
-        self._unpackpath = os.path.join(self._slavebin, "unpack-chroot")
-        self._cleanpath = os.path.join(self._slavebin, "remove-build")
-        self._mountpath = os.path.join(self._slavebin, "mount-chroot")
-        self._umountpath = os.path.join(self._slavebin, "umount-chroot")
-        self._scanpath = os.path.join(self._slavebin, "scan-for-processes")
+        self._intargetpath = os.path.join(self._slavebin, "in-target")
         self._subprocess = None
         self._reaped_states = set()
         self.is_archive_private = False
@@ -153,20 +149,22 @@ class BuildManager(object):
             self._subprocess, command, args, env=env,
             path=self.home, childFDs=childfds)
 
-    def runTargetSubProcess(self, command, args, **kwargs):
+    def runTargetSubProcess(self, command, *args, **kwargs):
         """Run a subprocess that operates on the target environment."""
         base_args = [
+            "in-target",
+            command,
             "--backend=%s" % self.backend_name,
             "--series=%s" % self.series,
             "--arch=%s" % self.arch_tag,
             self._buildid,
             ]
-        self.runSubProcess(command, [args[0]] + base_args + args[1:], **kwargs)
+        self.runSubProcess(
+            self._intargetpath, base_args + list(args), **kwargs)
 
     def doUnpack(self):
         """Unpack the build chroot."""
-        self.runTargetSubProcess(
-            self._unpackpath, ["unpack-chroot", self._chroottarfile])
+        self.runTargetSubProcess("unpack-chroot", self._chroottarfile)
 
     def doReapProcesses(self, state, notify=True):
         """Reap any processes left lying around in the chroot."""
@@ -183,12 +181,11 @@ class BuildManager(object):
                 iterate = partial(self.iterateReap, state)
             else:
                 iterate = lambda success: None
-            self.runTargetSubProcess(
-                self._scanpath, ["scan-for-processes"], iterate=iterate)
+            self.runTargetSubProcess("scan-for-processes", iterate=iterate)
 
     def doCleanup(self):
         """Remove the build tree etc."""
-        self.runTargetSubProcess(self._cleanpath, ["remove-build"])
+        self.runTargetSubProcess("remove-build")
 
         # Sanitize the URLs in the buildlog file if this is a build
         # in a private archive.
@@ -197,11 +194,11 @@ class BuildManager(object):
 
     def doMounting(self):
         """Mount things in the chroot, e.g. proc."""
-        self.runTargetSubProcess(self._mountpath, ["mount-chroot"])
+        self.runTargetSubProcess("mount-chroot")
 
     def doUnmounting(self):
         """Unmount the chroot."""
-        self.runTargetSubProcess(self._umountpath, ["umount-chroot"])
+        self.runTargetSubProcess("umount-chroot")
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build given the input files.
@@ -227,7 +224,7 @@ class BuildManager(object):
         if extra_args.get('archive_private'):
             self.is_archive_private = True
 
-        self.backend = Backend.get(
+        self.backend = make_backend(
             self.backend_name, self._buildid,
             series=self.series, arch=self.arch_tag)
 
