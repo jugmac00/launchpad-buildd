@@ -10,6 +10,7 @@ __all__ = [
 import hashlib
 import os
 import shutil
+import stat
 
 from lpbuildd.target.backend import Backend
 
@@ -117,8 +118,55 @@ class FakeBackend(Backend):
             )
         for fake_method in fake_methods:
             setattr(self, fake_method, FakeMethod())
-        self.copied_in = {}
+        self.backend_fs = {}
+
+    def _add_inode(self, path, contents, full_mode):
+        path = os.path.normpath(path)
+        parent = os.path.dirname(path)
+        if parent != path and parent not in self.backend_fs:
+            self.add_dir(parent)
+        self.backend_fs[path] = (contents, full_mode)
+
+    def add_dir(self, path, mode=0o755):
+        self._add_inode(path, None, stat.S_IFDIR | mode)
+
+    def add_file(self, path, contents, mode=0o644):
+        self._add_inode(path, contents, stat.S_IFREG | mode)
+
+    def add_link(self, path, target):
+        self._add_inode(path, target, stat.S_IFLNK | 0o777)
 
     def copy_in(self, source_path, target_path):
         with open(source_path, "rb") as source:
-            self.copied_in[target_path] = source.read()
+            self.add_file(
+                target_path, source.read(), os.fstat(source.fileno()).st_mode)
+
+    def _get_inode(self, path):
+        while True:
+            contents, mode = self.backend_fs[path]
+            if not stat.S_ISLNK(mode):
+                return contents, mode
+            path = os.path.normpath(
+                os.path.join(os.path.dirname(path), contents))
+
+    def copy_out(self, source_path, target_path):
+        contents, mode = self._get_inode(source_path)
+        with open(target_path, "wb") as target:
+            target.write(contents)
+            os.fchmod(target.fileno(), stat.S_IMODE(mode))
+
+    def path_exists(self, path):
+        try:
+            self._get_inode(path)
+            return True
+        except KeyError:
+            return False
+
+    def islink(self, path):
+        _, mode = self.backend_fs.get(path, (b"", 0))
+        return stat.S_ISLNK(mode)
+
+    def listdir(self, path):
+        return [
+            os.path.basename(p) for p in self.backend_fs
+            if os.path.dirname(p) == path]

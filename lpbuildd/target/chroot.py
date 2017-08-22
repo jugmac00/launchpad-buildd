@@ -52,7 +52,8 @@ class Chroot(Backend):
         for path in ("/etc/hosts", "/etc/hostname", "/etc/resolv.conf"):
             self.copy_in(path, path)
 
-    def run(self, args, env=None, input_text=None, **kwargs):
+    def run(self, args, env=None, input_text=None, get_output=False,
+            **kwargs):
         """See `Backend`."""
         if env:
             args = ["env"] + [
@@ -61,14 +62,17 @@ class Chroot(Backend):
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         cmd = ["sudo", "/usr/sbin/chroot", self.chroot_path] + args
-        if input_text is None:
+        if input_text is None and not get_output:
             subprocess.check_call(cmd, cwd=self.chroot_path, **kwargs)
         else:
-            proc = subprocess.Popen(
-                cmd, stdin=subprocess.PIPE, universal_newlines=True, **kwargs)
-            proc.communicate(input_text)
+            if get_output:
+                kwargs["stdout"] = subprocess.PIPE
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, **kwargs)
+            output, _ = proc.communicate(input_text)
             if proc.returncode:
                 raise subprocess.CalledProcessError(proc.returncode, cmd)
+            if get_output:
+                return output
 
     def copy_in(self, source_path, target_path):
         """See `Backend`."""
@@ -81,6 +85,15 @@ class Chroot(Backend):
         subprocess.check_call(
             ["sudo", "install", "-o", "root", "-g", "root", "-m", "%o" % mode,
              source_path, full_target_path])
+
+    def copy_out(self, source_path, target_path):
+        # We can just use a plain copy here, since the file ownership in the
+        # host system isn't important.
+        full_source_path = os.path.join(
+            self.chroot_path, source_path.lstrip("/"))
+        subprocess.check_call(
+            ["sudo", "cp", "--preserve=timestamps",
+             full_source_path, target_path])
 
     def kill_processes(self):
         """See `Backend`."""

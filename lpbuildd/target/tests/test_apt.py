@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 import io
+import stat
 import subprocess
 from textwrap import dedent
 import time
@@ -45,12 +46,12 @@ class TestOverrideSourcesList(TestCase):
             ]
         override_sources_list = parse_args(args=args).operation
         self.assertEqual(0, override_sources_list.run())
-        self.assertEqual({
-            "/etc/apt/sources.list": dedent("""\
+        self.assertEqual(
+            (dedent("""\
                 deb http://archive.ubuntu.com/ubuntu xenial main
                 deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
-                """).encode("UTF-8"),
-            }, override_sources_list.backend.copied_in)
+                """).encode("UTF-8"), stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs["/etc/apt/sources.list"])
 
 
 class TestAddTrustedKeys(TestCase):

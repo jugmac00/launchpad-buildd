@@ -36,12 +36,14 @@ class Backend:
         """
         raise NotImplementedError
 
-    def run(self, args, env=None, input_text=None, **kwargs):
+    def run(self, args, env=None, input_text=None, get_output=False,
+            **kwargs):
         """Run a command in the target environment.
 
         :param args: the command and arguments to run.
         :param env: additional environment variables to set.
         :param input_text: input text to pass on the command's stdin.
+        :param get_output: if True, return the output from the command.
         :param kwargs: additional keyword arguments for `subprocess.Popen`.
         """
         raise NotImplementedError
@@ -59,6 +61,57 @@ class Backend:
             environment's root.
         """
         raise NotImplementedError
+
+    def copy_out(self, source_path, target_path):
+        """Copy a file out of the target environment.
+
+        The target file will have the same permission mode as the source
+        file.
+
+        :param source_path: the path to the file that should be copied,
+            relative to the target environment's root.
+        :param target_path: the path where the file should be installed in
+            the host system.
+        """
+        raise NotImplementedError
+
+    def path_exists(self, path):
+        """Test whether a path exists in the target environment.
+
+        :param path: the path to the file to test, relative to the target
+            environment's root.
+        """
+        try:
+            self.run(["test", "-e", path])
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def islink(self, path):
+        """Test whether a file is a symbolic link in the target environment.
+
+        :param path: the path to the file to test, relative to the target
+            environment's root.
+        """
+        try:
+            self.run(["test", "-h", path])
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def listdir(self, path):
+        """List a directory in the target environment.
+
+        :param path: the path to the directory to list, relative to the
+            target environment's root.
+        """
+        paths = self.run(
+            ["find", path, "-mindepth", "1", "-maxdepth", "1",
+             "-printf", "%P\\0"],
+            get_output=True).rstrip(b"\0").split(b"\0")
+        # XXX cjwatson 2017-08-04: Use `os.fsdecode` instead once we're on
+        # Python 3.
+        return [path.decode("UTF-8") for path in paths]
 
     def kill_processes(self):
         """Kill any processes left running in the target.

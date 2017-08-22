@@ -4,12 +4,10 @@
 __metaclass__ = type
 
 import os
-import shutil
 
 from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
-    get_build_path,
     )
 
 
@@ -33,11 +31,6 @@ class LiveFilesystemBuildManager(DebianBuildManager):
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
-        self.build_path = get_build_path(
-            self.home, self._buildid, "chroot-autobuild", "build")
-        if os.path.isdir(self.build_path):
-            shutil.rmtree(self.build_path)
-
         self.subarch = extra_args.get("subarch")
         self.project = extra_args["project"]
         self.subproject = extra_args.get("subproject")
@@ -100,7 +93,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
 
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
-        for entry in sorted(os.listdir(self.build_path)):
-            path = os.path.join(self.build_path, entry)
-            if entry.startswith("livecd.") and not os.path.islink(path):
-                self._slave.addWaitingFile(path)
+        for entry in sorted(self.backend.listdir("/build")):
+            path = os.path.join("/build", entry)
+            if (entry.startswith("livecd.") and
+                    not self.backend.islink(path)):
+                self.addWaitingFileFromBackend(path)
