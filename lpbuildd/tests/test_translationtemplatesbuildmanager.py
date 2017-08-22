@@ -104,7 +104,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # After generating templates, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -120,7 +121,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot',
+            'sharepath/slavebin/in-target', 'in-target',
+            'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -147,7 +149,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot',
+            'sharepath/slavebin/in-target', 'in-target',
+            'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -170,7 +173,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The buildmanager fails and reaps processes.
         self.buildmanager.iterate(-1)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -186,7 +190,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot',
+            'sharepath/slavebin/in-target', 'in-target',
+            'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]

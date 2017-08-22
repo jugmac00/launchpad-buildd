@@ -11,7 +11,7 @@ from systemfixtures import FakeFilesystem
 from testtools import TestCase
 from testtools.matchers import DirContains
 
-from lpbuildd.target.kill_processes import KillProcesses
+from lpbuildd.target.cli import parse_args
 from lpbuildd.target.tests.testfixtures import KillFixture
 
 
@@ -27,8 +27,11 @@ class TestKillProcesses(TestCase):
         os.mkdir("/proc/10")
         os.symlink("/expected/home/build-1/chroot-autobuild", "/proc/10/root")
         kill_fixture = self.useFixture(KillFixture())
-        args = ["--backend=chroot", "--series=xenial", "--arch=amd64", "1"]
-        KillProcesses(args=args).run()
+        args = [
+            "scan-for-processes",
+            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            ]
+        parse_args(args=args).operation._run()
 
         self.assertEqual([(10, signal.SIGKILL)], kill_fixture.kills)
         self.assertThat("/proc", DirContains([]))
