@@ -118,7 +118,10 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.MOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/mount-chroot', 'mount-chroot', self.buildid],
+            (['sharepath/slavebin/in-target', 'in-target',
+              'mount-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid],
              None),
             self.buildmanager.commands[-1])
         self.assertEqual(
@@ -169,7 +172,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(DebianBuildState.UMOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/umount-chroot', 'umount-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'umount-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
             self.buildmanager.commands[-1])
@@ -225,7 +230,10 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.MOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/mount-chroot', 'mount-chroot', self.buildid],
+            (['sharepath/slavebin/in-target', 'in-target',
+              'mount-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid],
              None),
             self.buildmanager.commands[-1])
         self.assertEqual(
@@ -288,7 +296,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(DebianBuildState.UMOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/umount-chroot', 'umount-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'umount-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid],
              None),
             self.buildmanager.commands[-1])

@@ -124,7 +124,11 @@ class TestSnapBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/umount-chroot", "umount-chroot", self.buildid]
+            "sharepath/slavebin/in-target", "in-target",
+            "umount-chroot",
+            "--backend=chroot", "--series=xenial", "--arch=i386",
+            self.buildid,
+            ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
@@ -168,7 +172,11 @@ class TestSnapBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/umount-chroot", "umount-chroot", self.buildid]
+            "sharepath/slavebin/in-target", "in-target",
+            "umount-chroot",
+            "--backend=chroot", "--series=xenial", "--arch=i386",
+            self.buildid,
+            ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(

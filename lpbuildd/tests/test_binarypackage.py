@@ -158,7 +158,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['sharepath/slavebin/umount-chroot', 'umount-chroot',
+            ['sharepath/slavebin/in-target', 'in-target',
+             'umount-chroot',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
     def test_iterate(self):
@@ -293,7 +295,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterate(128 + 9)  # SIGKILL
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['sharepath/slavebin/umount-chroot', 'umount-chroot',
+            ['sharepath/slavebin/in-target', 'in-target',
+             'umount-chroot',
+             '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
     def test_abort_between_subprocesses(self):
