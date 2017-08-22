@@ -34,8 +34,9 @@ class BuildLiveFS(Operation):
 
     description = "Build a live file system."
 
-    def make_parser(self):
-        parser = super(BuildLiveFS, self).make_parser()
+    @classmethod
+    def add_arguments(cls, parser):
+        super(BuildLiveFS, cls).add_arguments(parser)
         parser.add_argument(
             "--subarch", metavar="SUBARCH",
             help="build for subarchitecture SUBARCH")
@@ -57,7 +58,6 @@ class BuildLiveFS(Operation):
         parser.add_argument(
             "--extra-ppa", dest="extra_ppas", default=[], action="append",
             help="use this additional PPA")
-        return parser
 
     def run_build_command(self, args, env=None, echo=False):
         """Run a build command in the chroot.

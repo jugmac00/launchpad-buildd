@@ -37,10 +37,6 @@ class DebianBuildManager(BuildManager):
 
     def __init__(self, slave, buildid, **kwargs):
         BuildManager.__init__(self, slave, buildid, **kwargs)
-        self._updatepath = os.path.join(self._slavebin, "update-debian-chroot")
-        self._sourcespath = os.path.join(
-            self._slavebin, "override-sources-list")
-        self._keyspath = os.path.join(self._slavebin, "add-trusted-keys")
         self._cachepath = slave._config.get("slave", "filecache")
         self._state = DebianBuildState.INIT
         slave.emptyLog()
@@ -62,20 +58,17 @@ class DebianBuildManager(BuildManager):
 
         Mainly used for PPA builds.
         """
-        args = ["override-sources-list"]
-        args.extend(self.sources_list)
-        self.runTargetSubProcess(self._sourcespath, args)
+        self.runTargetSubProcess("override-sources-list", *self.sources_list)
 
     def doTrustedKeys(self):
         """Add trusted keys."""
         trusted_keys = b"".join(
             base64.b64decode(key) for key in self.trusted_keys)
-        self.runTargetSubProcess(
-            self._keyspath, ["add-trusted-keys"], stdin=trusted_keys)
+        self.runTargetSubProcess("add-trusted-keys", stdin=trusted_keys)
 
     def doUpdateChroot(self):
         """Perform the chroot upgrade."""
-        self.runTargetSubProcess(self._updatepath, ["update-debian-chroot"])
+        self.runTargetSubProcess("update-debian-chroot")
 
     def doRunBuild(self):
         """Run the main build process.
