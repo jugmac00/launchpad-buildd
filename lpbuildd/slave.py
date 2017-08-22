@@ -121,6 +121,7 @@ class BuildManager(object):
         self._sharepath = slave._config.get("slave", "sharepath")
         self._slavebin = os.path.join(self._sharepath, "slavebin")
         self._preppath = os.path.join(self._slavebin, "slave-prep")
+        self._intargetpath = os.path.join(self._slavebin, "in-target")
         self._unpackpath = os.path.join(self._slavebin, "unpack-chroot")
         self._cleanpath = os.path.join(self._slavebin, "remove-build")
         self._mountpath = os.path.join(self._slavebin, "mount-chroot")
@@ -151,15 +152,18 @@ class BuildManager(object):
             self._subprocess, command, args, env=env,
             path=self.home, childFDs=childfds)
 
-    def runTargetSubProcess(self, command, args, **kwargs):
+    def runTargetSubProcess(self, command, *args, **kwargs):
         """Run a subprocess that operates on the target environment."""
         base_args = [
+            "in-target",
+            command,
             "--backend=%s" % self.backend_name,
             "--series=%s" % self.series,
             "--arch=%s" % self.arch_tag,
             self._buildid,
             ]
-        self.runSubProcess(command, [args[0]] + base_args + args[1:], **kwargs)
+        self.runSubProcess(
+            self._intargetpath, base_args + list(args), **kwargs)
 
     def doUnpack(self):
         """Unpack the build chroot."""

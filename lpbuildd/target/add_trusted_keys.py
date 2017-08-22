@@ -18,9 +18,9 @@ class AddTrustedKeys(Operation):
 
     description = "Write out new trusted keys."
 
-    def __init__(self, args=None, input_file=None):
-        super(AddTrustedKeys, self).__init__(args=args)
-        self.input_file = input_file or sys.stdin
+    def __init__(self, args, parser):
+        super(AddTrustedKeys, self).__init__(args, parser)
+        self.input_file = sys.stdin
 
     def run(self):
         """Add trusted keys from an input file."""

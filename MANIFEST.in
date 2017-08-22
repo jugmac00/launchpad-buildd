@@ -1,12 +1,11 @@
 include LICENSE
 include Makefile
-include bin/add-trusted-keys
 include bin/buildlivefs
 include bin/buildrecipe
 include bin/buildsnap
 include bin/generate-translation-templates
+include bin/in-target
 include bin/mount-chroot
-include bin/override-sources-list
 include bin/remove-build
 include bin/sbuild-package
 include bin/scan-for-processes
@@ -16,7 +15,6 @@ include bin/test_buildd_generatetranslationtemplates
 include bin/test_buildd_recipe
 include bin/umount-chroot
 include bin/unpack-chroot
-include bin/update-debian-chroot
 include buildd-genconfig
 include buildd-slave.tac
 include debian/changelog

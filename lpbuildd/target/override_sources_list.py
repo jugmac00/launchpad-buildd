@@ -18,12 +18,12 @@ class OverrideSourcesList(Operation):
 
     description = "Override sources.list in the target environment."
 
-    def make_parser(self):
-        parser = super(OverrideSourcesList, self).make_parser()
+    @classmethod
+    def add_arguments(cls, parser):
+        super(OverrideSourcesList, cls).add_arguments(parser)
         parser.add_argument(
             "archives", metavar="ARCHIVE", nargs="+",
             help="sources.list lines")
-        return parser
 
     def run(self):
         logger.info("Overriding sources.list in build-%s", self.args.build_id)

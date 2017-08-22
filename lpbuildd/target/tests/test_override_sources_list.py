@@ -11,7 +11,7 @@ from fixtures import (
     )
 from testtools import TestCase
 
-from lpbuildd.target.override_sources_list import OverrideSourcesList
+from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakeslave import FakeMethod
 
 
@@ -32,11 +32,12 @@ class TestOverrideSourcesList(TestCase):
     def test_succeeds(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         args = [
+            "override-sources-list",
             "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
             "deb http://archive.ubuntu.com/ubuntu xenial main",
             "deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main",
             ]
-        override_sources_list = OverrideSourcesList(args=args)
+        override_sources_list = parse_args(args=args).operation
         mock_copy_in = self.useFixture(MockPatchObject(
             override_sources_list.backend, "copy_in", new=MockCopyIn())).mock
         override_sources_list.run()
