@@ -6,6 +6,7 @@ from __future__ import print_function
 __metaclass__ = type
 
 import os.path
+import subprocess
 
 
 class BackendException(Exception):
@@ -20,6 +21,13 @@ class Backend:
         self.series = series
         self.arch = arch
         self.build_path = os.path.join(os.environ["HOME"], "build-" + build_id)
+
+    def create(self, tarball_path):
+        """Create the backend based on a chroot tarball.
+
+        This puts the backend into a state where it is ready to be started.
+        """
+        raise NotImplementedError
 
     def run(self, args, env=None, input_text=None, **kwargs):
         """Run a command in the target environment.
@@ -44,6 +52,10 @@ class Backend:
             environment's root.
         """
         raise NotImplementedError
+
+    def remove(self):
+        """Remove the backend."""
+        subprocess.check_call(["sudo", "rm", "-rf", self.build_path])
 
 
 def make_backend(name, build_id, series=None, arch=None):

@@ -122,8 +122,6 @@ class BuildManager(object):
         self._slavebin = os.path.join(self._sharepath, "slavebin")
         self._preppath = os.path.join(self._slavebin, "slave-prep")
         self._intargetpath = os.path.join(self._slavebin, "in-target")
-        self._unpackpath = os.path.join(self._slavebin, "unpack-chroot")
-        self._cleanpath = os.path.join(self._slavebin, "remove-build")
         self._mountpath = os.path.join(self._slavebin, "mount-chroot")
         self._umountpath = os.path.join(self._slavebin, "umount-chroot")
         self._scanpath = os.path.join(self._slavebin, "scan-for-processes")
@@ -167,9 +165,7 @@ class BuildManager(object):
 
     def doUnpack(self):
         """Unpack the build chroot."""
-        self.runSubProcess(
-            self._unpackpath,
-            ["unpack-chroot", self._buildid, self._chroottarfile])
+        self.runTargetSubProcess("unpack-chroot", self._chroottarfile)
 
     def doReapProcesses(self, state, notify=True):
         """Reap any processes left lying around in the chroot."""
@@ -192,7 +188,7 @@ class BuildManager(object):
 
     def doCleanup(self):
         """Remove the build tree etc."""
-        self.runSubProcess(self._cleanpath, ["remove-build", self._buildid])
+        self.runTargetSubProcess("remove-build")
 
         # Sanitize the URLs in the buildlog file if this is a build
         # in a private archive.

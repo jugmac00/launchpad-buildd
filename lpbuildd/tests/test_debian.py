@@ -105,7 +105,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/unpack-chroot', 'unpack-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'unpack-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
               os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
              None),
@@ -177,7 +179,10 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.CLEANUP, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/remove-build', 'remove-build', self.buildid],
+            (['sharepath/slavebin/in-target', 'in-target',
+              'remove-build',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid],
              None),
             self.buildmanager.commands[-1])
         self.assertEqual(
@@ -207,7 +212,9 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/unpack-chroot', 'unpack-chroot',
+            (['sharepath/slavebin/in-target', 'in-target',
+              'unpack-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
               os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
              None),
@@ -291,7 +298,10 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.CLEANUP, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/remove-build', 'remove-build', self.buildid],
+            (['sharepath/slavebin/in-target', 'in-target',
+              'remove-build',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid],
              None),
             self.buildmanager.commands[-1])
         self.assertEqual(

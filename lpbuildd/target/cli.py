@@ -14,6 +14,10 @@ from lpbuildd.target.apt import (
     OverrideSourcesList,
     Update,
     )
+from lpbuildd.target.lifecycle import (
+    Create,
+    Remove,
+    )
 
 
 def configure_logging():
@@ -38,6 +42,8 @@ def configure_logging():
 operations = {
     "add-trusted-keys": AddTrustedKeys,
     "override-sources-list": OverrideSourcesList,
+    "remove-build": Remove,
+    "unpack-chroot": Create,
     "update-debian-chroot": Update,
     }
 
