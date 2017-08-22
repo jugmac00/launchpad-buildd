@@ -22,7 +22,7 @@ from twisted.internet import process
 from twisted.python import log
 from twisted.web import xmlrpc
 
-from lpbuildd.target.backend import Backend
+from lpbuildd.target.backend import make_backend
 
 
 devnull = open("/dev/null", "r")
@@ -233,7 +233,7 @@ class BuildManager(object):
         if extra_args.get('archive_private'):
             self.is_archive_private = True
 
-        self.backend = Backend.get(
+        self.backend = make_backend(
             self.backend_name, self._buildid,
             series=self.series, arch=self.arch_tag)
 

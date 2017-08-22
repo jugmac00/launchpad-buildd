@@ -5,7 +5,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-from lpbuildd.target.backend import Backend
+from lpbuildd.target.backend import make_backend
 
 
 class Operation:
@@ -27,7 +27,7 @@ class Operation:
 
     def __init__(self, args, parser):
         self.args = args
-        self.backend = Backend.get(
+        self.backend = make_backend(
             self.args.backend, self.args.build_id,
             series=self.args.series, arch=self.args.arch)
 

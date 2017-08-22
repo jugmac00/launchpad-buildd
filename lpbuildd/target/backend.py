@@ -21,15 +21,6 @@ class Backend:
         self.arch = arch
         self.build_path = os.path.join(os.environ["HOME"], "build-" + build_id)
 
-    @staticmethod
-    def get(name, build_id, series=None, arch=None):
-        if name == "chroot":
-            from lpbuildd.target.chroot import Chroot
-            backend_factory = Chroot
-        else:
-            raise KeyError("Unknown backend: %s" % name)
-        return backend_factory(build_id, series=series, arch=arch)
-
     def run(self, args, env=None, input_text=None, **kwargs):
         """Run a command in the target environment.
 
@@ -53,3 +44,12 @@ class Backend:
             environment's root.
         """
         raise NotImplementedError
+
+
+def make_backend(name, build_id, series=None, arch=None):
+    if name == "chroot":
+        from lpbuildd.target.chroot import Chroot
+        backend_factory = Chroot
+    else:
+        raise KeyError("Unknown backend: %s" % name)
+    return backend_factory(build_id, series=series, arch=arch)
