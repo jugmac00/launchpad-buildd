@@ -83,6 +83,10 @@ def make_backend(name, build_id, series=None, arch=None):
     if name == "chroot":
         from lpbuildd.target.chroot import Chroot
         backend_factory = Chroot
+    elif name == "fake":
+        # Only for use in tests.
+        from lpbuildd.tests.fakeslave import FakeBackend
+        backend_factory = FakeBackend
     else:
         raise KeyError("Unknown backend: %s" % name)
     return backend_factory(build_id, series=series, arch=arch)

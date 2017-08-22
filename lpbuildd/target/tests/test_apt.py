@@ -4,19 +4,19 @@
 __metaclass__ = type
 
 import io
+import subprocess
 from textwrap import dedent
 import time
 
-from fixtures import (
-    EnvironmentVariable,
-    FakeLogger,
-    MockPatchObject,
-    )
-from systemfixtures import (
-    FakeProcesses,
-    FakeTime,
-    )
+from fixtures import FakeLogger
+from systemfixtures import FakeTime
 from testtools import TestCase
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    MatchesDict,
+    MatchesListwise,
+    )
 
 from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakeslave import FakeMethod
@@ -37,120 +37,102 @@ class MockCopyIn(FakeMethod):
 class TestOverrideSourcesList(TestCase):
 
     def test_succeeds(self):
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         args = [
             "override-sources-list",
-            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "deb http://archive.ubuntu.com/ubuntu xenial main",
             "deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main",
             ]
         override_sources_list = parse_args(args=args).operation
-        mock_copy_in = self.useFixture(MockPatchObject(
-            override_sources_list.backend, "copy_in", new=MockCopyIn())).mock
-        override_sources_list.run()
-
-        self.assertEqual(dedent("""\
-            deb http://archive.ubuntu.com/ubuntu xenial main
-            deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
-            """).encode("UTF-8"), mock_copy_in.source_bytes)
-        self.assertEqual(
-            ("/etc/apt/sources.list",), mock_copy_in.extract_args()[0][1:])
+        self.assertEqual(0, override_sources_list.run())
+        self.assertEqual({
+            "/etc/apt/sources.list": dedent("""\
+                deb http://archive.ubuntu.com/ubuntu xenial main
+                deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
+                """).encode("UTF-8"),
+            }, override_sources_list.backend.copied_in)
 
 
 class TestAddTrustedKeys(TestCase):
 
     def test_add_trusted_keys(self):
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         args = [
             "add-trusted-keys",
-            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             ]
         input_file = io.BytesIO()
         add_trusted_keys = parse_args(args=args).operation
         add_trusted_keys.input_file = input_file
-        # XXX cjwatson 2017-07-29: With a newer version of fixtures we could
-        # mock this at the subprocess level instead, but at the moment doing
-        # that wouldn't allow us to test stdin.
-        mock_backend_run = self.useFixture(
-            MockPatchObject(add_trusted_keys.backend, "run")).mock
-        add_trusted_keys.run()
-
-        self.assertEqual(2, len(mock_backend_run.mock_calls))
-        mock_backend_run.assert_has_calls([
+        self.assertEqual(0, add_trusted_keys.run())
+        expected_run = [
             ((["apt-key", "add", "-"],), {"stdin": input_file}),
             ((["apt-key", "list"],), {}),
+            ]
+        self.assertEqual(expected_run, add_trusted_keys.backend.run.calls)
+
+
+class RanAptGet(MatchesListwise):
+
+    def __init__(self, args_list):
+        super(RanAptGet, self).__init__([
+            MatchesListwise([
+                Equals((["/usr/bin/apt-get"] + args,)),
+                ContainsDict({
+                    "env": MatchesDict({
+                        "LANG": Equals("C"),
+                        "DEBIAN_FRONTEND": Equals("noninteractive"),
+                        "TTY": Equals("unknown"),
+                        }),
+                    }),
+                ]) for args in args_list
             ])
 
 
 class TestUpdate(TestCase):
 
     def test_succeeds(self):
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
-        processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="sudo")
         self.useFixture(FakeTime())
         start_time = time.time()
         args = [
             "update-debian-chroot",
-            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             ]
-        parse_args(args=args).operation.run()
+        update = parse_args(args=args).operation
+        self.assertEqual(0, update.run())
 
-        apt_get_args = [
-            "sudo", "/usr/sbin/chroot",
-            "/expected/home/build-1/chroot-autobuild",
-            "linux64", "env",
-            "LANG=C",
-            "DEBIAN_FRONTEND=noninteractive",
-            "TTY=unknown",
-            "/usr/bin/apt-get",
-            ]
         expected_args = [
-            apt_get_args + ["-uy", "update"],
-            apt_get_args + [
-                "-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
-                "dist-upgrade",
-                ],
+            ["-uy", "update"],
+            ["-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
+             "dist-upgrade"],
             ]
-        self.assertEqual(
-            expected_args,
-            [proc._args["args"] for proc in processes_fixture.procs])
+        self.assertThat(update.backend.run.calls, RanAptGet(expected_args))
         self.assertEqual(start_time, time.time())
 
     def test_first_run_fails(self):
+        class FailFirstTime(FakeMethod):
+            def __call__(self, run_args, *args, **kwargs):
+                super(FailFirstTime, self).__call__(run_args, *args, **kwargs)
+                if len(self.calls) == 1:
+                    raise subprocess.CalledProcessError(1, run_args)
+
         logger = self.useFixture(FakeLogger())
-        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
-        processes_fixture = self.useFixture(FakeProcesses())
-        apt_get_proc_infos = iter([{"returncode": 1}, {}, {}])
-        processes_fixture.add(lambda _: next(apt_get_proc_infos), name="sudo")
         self.useFixture(FakeTime())
         start_time = time.time()
         args = [
             "update-debian-chroot",
-            "--backend=chroot", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             ]
-        parse_args(args=args).operation.run()
+        update = parse_args(args=args).operation
+        update.backend.run = FailFirstTime()
+        self.assertEqual(0, update.run())
 
-        apt_get_args = [
-            "sudo", "/usr/sbin/chroot",
-            "/expected/home/build-1/chroot-autobuild",
-            "linux64", "env",
-            "LANG=C",
-            "DEBIAN_FRONTEND=noninteractive",
-            "TTY=unknown",
-            "/usr/bin/apt-get",
-            ]
         expected_args = [
-            apt_get_args + ["-uy", "update"],
-            apt_get_args + ["-uy", "update"],
-            apt_get_args + [
-                "-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
-                "dist-upgrade",
-                ],
+            ["-uy", "update"],
+            ["-uy", "update"],
+            ["-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
+             "dist-upgrade"],
             ]
-        self.assertEqual(
-            expected_args,
-            [proc._args["args"] for proc in processes_fixture.procs])
+        self.assertThat(update.backend.run.calls, RanAptGet(expected_args))
         self.assertEqual(
             "Updating target for build 1\n"
             "Waiting 15 seconds and trying again ...\n",
