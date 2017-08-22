@@ -75,9 +75,11 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertEqual(
             LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
         expected_command = [
-            "sharepath/slavebin/buildlivefs", "buildlivefs", "--build-id",
-            self.buildid, "--arch", "i386", "--project", "ubuntu",
-            "--series", "saucy",
+            "sharepath/slavebin/in-target", "in-target",
+            "buildlivefs",
+            "--backend=chroot", "--series=saucy", "--arch=i386",
+            self.buildid,
+            "--project", "ubuntu",
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(

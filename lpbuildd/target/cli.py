@@ -14,6 +14,7 @@ from lpbuildd.target.apt import (
     OverrideSourcesList,
     Update,
     )
+from lpbuildd.target.build_livefs import BuildLiveFS
 from lpbuildd.target.lifecycle import (
     Create,
     KillProcesses,
@@ -44,6 +45,7 @@ def configure_logging():
 
 operations = {
     "add-trusted-keys": AddTrustedKeys,
+    "buildlivefs": BuildLiveFS,
     "override-sources-list": OverrideSourcesList,
     "mount-chroot": Start,
     "remove-build": Remove,

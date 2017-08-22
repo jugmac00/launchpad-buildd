@@ -25,10 +25,6 @@ class LiveFilesystemBuildManager(DebianBuildManager):
 
     initial_build_state = LiveFilesystemBuildState.BUILD_LIVEFS
 
-    def __init__(self, slave, buildid, **kwargs):
-        DebianBuildManager.__init__(self, slave, buildid, **kwargs)
-        self.build_livefs_path = os.path.join(self._slavebin, "buildlivefs")
-
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
         self.subarch = extra_args.get("subarch")
@@ -45,17 +41,12 @@ class LiveFilesystemBuildManager(DebianBuildManager):
 
     def doRunBuild(self):
         """Run the process to build the live filesystem."""
-        args = [
-            "buildlivefs",
-            "--build-id", self._buildid,
-            "--arch", self.arch_tag,
-            ]
+        args = []
         if self.subarch:
             args.extend(["--subarch", self.subarch])
         args.extend(["--project", self.project])
         if self.subproject:
             args.extend(["--subproject", self.subproject])
-        args.extend(["--series", self.series])
         if self.datestamp:
             args.extend(["--datestamp", self.datestamp])
         if self.image_format:
@@ -66,7 +57,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--locale", self.locale])
         for ppa in self.extra_ppas:
             args.extend(["--extra-ppa", ppa])
-        self.runSubProcess(self.build_livefs_path, args)
+        self.runTargetSubProcess("buildlivefs", *args)
 
     def iterate_BUILD_LIVEFS(self, retcode):
         """Finished building the live filesystem."""
