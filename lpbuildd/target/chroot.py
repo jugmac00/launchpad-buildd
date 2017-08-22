@@ -92,7 +92,8 @@ class Chroot(Backend):
         full_source_path = os.path.join(
             self.chroot_path, source_path.lstrip("/"))
         subprocess.check_call(
-            ["sudo", "cp", "-p", full_source_path, target_path])
+            ["sudo", "cp", "--preserve=timestamps",
+             full_source_path, target_path])
 
     def kill_processes(self):
         """See `Backend`."""
