@@ -28,6 +28,7 @@ from lpbuildd.target.build_snap import (
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
     )
+from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakeslave import FakeMethod
 
 
@@ -77,10 +78,11 @@ class TestBuildSnap(TestCase):
 
     def test_run_build_command_no_env(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.run_build_command(["echo", "hello world"])
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand("env LANG=C.UTF-8 echo 'hello world'"),
@@ -88,10 +90,11 @@ class TestBuildSnap(TestCase):
 
     def test_run_build_command_env(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.run_build_command(
             ["echo", "hello world"], env={"FOO": "bar baz"})
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
@@ -101,10 +104,11 @@ class TestBuildSnap(TestCase):
 
     def test_install_bzr(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap"
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanAptGet("install", "snapcraft", "bzr"),
@@ -112,10 +116,11 @@ class TestBuildSnap(TestCase):
 
     def test_install_git(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo", "test-snap"
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanAptGet("install", "snapcraft", "git"),
@@ -123,12 +128,14 @@ class TestBuildSnap(TestCase):
 
     def test_install_proxy(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo",
             "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
+        build_snap.slavebin = "/slavebin"
         self.useFixture(FakeFilesystem()).add("/slavebin")
         os.mkdir("/slavebin")
         with open("/slavebin/snap-git-proxy", "w") as proxy_script:
@@ -144,10 +151,11 @@ class TestBuildSnap(TestCase):
 
     def test_repo_bzr(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("42")
         build_snap.repo()
@@ -163,10 +171,11 @@ class TestBuildSnap(TestCase):
 
     def test_repo_git(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
@@ -184,10 +193,11 @@ class TestBuildSnap(TestCase):
 
     def test_repo_git_with_path(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo", "--git-path", "next", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
@@ -205,12 +215,13 @@ class TestBuildSnap(TestCase):
 
     def test_repo_proxy(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo",
             "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
@@ -232,10 +243,11 @@ class TestBuildSnap(TestCase):
 
     def test_pull(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.pull()
         env = (
             "env LANG=C.UTF-8 "
@@ -246,11 +258,12 @@ class TestBuildSnap(TestCase):
 
     def test_pull_proxy(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.pull()
         env = (
             "env LANG=C.UTF-8 "
@@ -264,10 +277,11 @@ class TestBuildSnap(TestCase):
 
     def test_build(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.build()
         env = "env LANG=C.UTF-8 "
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
@@ -276,11 +290,12 @@ class TestBuildSnap(TestCase):
 
     def test_build_proxy(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.build()
         env = (
             "env LANG=C.UTF-8 "
@@ -296,10 +311,11 @@ class TestBuildSnap(TestCase):
 
     def test_run_succeeds(self):
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("42")
         self.assertEqual(0, build_snap.run())
@@ -324,10 +340,11 @@ class TestBuildSnap(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.run = FailInstall()
         self.assertEqual(RETCODE_FAILURE_INSTALL, build_snap.run())
 
@@ -342,10 +359,11 @@ class TestBuildSnap(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.run = FailRepo()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_snap.run())
 
@@ -362,10 +380,11 @@ class TestBuildSnap(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FailPull()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_snap.run())
@@ -383,10 +402,11 @@ class TestBuildSnap(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
+            "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-snap",
             ]
-        build_snap = BuildSnap("/slavebin", args=args)
+        build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FailBuild()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_snap.run())

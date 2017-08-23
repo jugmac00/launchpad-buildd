@@ -11,6 +11,7 @@ import json
 import logging
 import os.path
 import subprocess
+import sys
 import urllib2
 from urlparse import urlparse
 
@@ -29,15 +30,9 @@ class BuildSnap(Operation):
 
     description = "Build a snap."
 
-    def __init__(self, slavebin, args=None):
-        super(BuildSnap, self).__init__(args=args)
-        self.slavebin = slavebin
-        # Set to False for local testing if your target doesn't have an
-        # appropriate certificate for your codehosting system.
-        self.ssl_verify = True
-
-    def make_parser(self):
-        parser = super(BuildSnap, self).make_parser()
+    @classmethod
+    def add_arguments(cls, parser):
+        super(BuildSnap, cls).add_arguments(parser)
         build_from_group = parser.add_mutually_exclusive_group(required=True)
         build_from_group.add_argument(
             "--branch", metavar="BRANCH", help="build from this Bazaar branch")
@@ -52,15 +47,15 @@ class BuildSnap(Operation):
             "--revocation-endpoint",
             help="builder proxy token revocation endpoint")
         parser.add_argument("name", help="name of snap to build")
-        return parser
 
-    def parse_args(self, args=None):
-        parser = self.make_parser()
-        parsed_args = parser.parse_args(args=args)
-        if (parsed_args.git_repository is None and
-                parsed_args.git_path is not None):
+    def __init__(self, args, parser):
+        super(BuildSnap, self).__init__(args, parser)
+        if args.git_repository is None and args.git_path is not None:
             parser.error("--git-path requires --git-repository")
-        self.args = parsed_args
+        self.slavebin = os.path.dirname(sys.argv[0])
+        # Set to False for local testing if your target doesn't have an
+        # appropriate certificate for your codehosting system.
+        self.ssl_verify = True
 
     def run_build_command(self, args, path="/build", env=None,
                           get_output=False, echo=False):

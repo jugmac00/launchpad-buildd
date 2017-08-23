@@ -17,10 +17,10 @@ from testtools.matchers import (
     )
 
 from lpbuildd.target.build_livefs import (
-    BuildLiveFS,
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
     )
+from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakeslave import FakeMethod
 
 
@@ -52,16 +52,22 @@ class RanBuildCommand(RanCommand):
 class TestBuildLiveFS(TestCase):
 
     def test_run_build_command_no_env(self):
-        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
-        build_livefs = BuildLiveFS(args=args)
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            ]
+        build_livefs = parse_args(args=args).operation
         build_livefs.run_build_command(["echo", "hello world"])
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
             RanBuildCommand("echo 'hello world'"),
             ]))
 
     def test_run_build_command_env(self):
-        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
-        build_livefs = BuildLiveFS(args=args)
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            ]
+        build_livefs = parse_args(args=args).operation
         build_livefs.run_build_command(
             ["echo", "hello world"], env={"FOO": "bar baz"})
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
@@ -69,16 +75,22 @@ class TestBuildLiveFS(TestCase):
             ]))
 
     def test_install(self):
-        args = ["--backend=fake", "--series=xenial", "--arch=amd64", "1"]
-        build_livefs = BuildLiveFS(args=args)
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            ]
+        build_livefs = parse_args(args=args).operation
         build_livefs.install()
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
             RanAptGet("install", "livecd-rootfs"),
             ]))
 
     def test_install_i386(self):
-        args = ["--backend=fake", "--series=xenial", "--arch=i386", "1"]
-        build_livefs = BuildLiveFS(args=args)
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=i386", "1",
+            ]
+        build_livefs = parse_args(args=args).operation
         build_livefs.install()
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
             RanAptGet("install", "livecd-rootfs"),
@@ -87,10 +99,11 @@ class TestBuildLiveFS(TestCase):
 
     def test_install_locale(self):
         args = [
+            "buildlivefs",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--locale=zh_CN",
             ]
-        build_livefs = BuildLiveFS(args=args)
+        build_livefs = parse_args(args=args).operation
         build_livefs.install()
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
             RanAptGet("install", "livecd-rootfs"),
@@ -100,10 +113,11 @@ class TestBuildLiveFS(TestCase):
 
     def test_build(self):
         args = [
+            "buildlivefs",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--project=ubuntu",
             ]
-        build_livefs = BuildLiveFS(args=args)
+        build_livefs = parse_args(args=args).operation
         build_livefs.build()
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
             RanBuildCommand("rm -rf auto"),
@@ -122,10 +136,11 @@ class TestBuildLiveFS(TestCase):
 
     def test_build_locale(self):
         args = [
+            "buildlivefs",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--locale=zh_CN",
             ]
-        build_livefs = BuildLiveFS(args=args)
+        build_livefs = parse_args(args=args).operation
         build_livefs.build()
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -135,10 +150,11 @@ class TestBuildLiveFS(TestCase):
 
     def test_run_succeeds(self):
         args = [
+            "buildlivefs",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--project=ubuntu",
             ]
-        build_livefs = BuildLiveFS(args=args)
+        build_livefs = parse_args(args=args).operation
         self.assertEqual(0, build_livefs.run())
         self.assertThat(build_livefs.backend.run.calls, MatchesAll(
             AnyMatch(RanAptGet("install", "livecd-rootfs")),
@@ -154,10 +170,11 @@ class TestBuildLiveFS(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
+            "buildlivefs",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--project=ubuntu",
             ]
-        build_livefs = BuildLiveFS(args=args)
+        build_livefs = parse_args(args=args).operation
         build_livefs.backend.run = FailInstall()
         self.assertEqual(RETCODE_FAILURE_INSTALL, build_livefs.run())
 
@@ -170,9 +187,10 @@ class TestBuildLiveFS(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
+            "buildlivefs",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--project=ubuntu",
             ]
-        build_livefs = BuildLiveFS(args=args)
+        build_livefs = parse_args(args=args).operation
         build_livefs.backend.run = FailBuild()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_livefs.run())
