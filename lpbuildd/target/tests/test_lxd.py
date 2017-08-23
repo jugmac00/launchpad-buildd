@@ -205,16 +205,18 @@ class TestLXD(TestCase):
                 Equals(lxc + ["profile", "show", "lpbuildd"]),
                 Equals(lxc + ["profile", "copy", "default", "lpbuildd"]),
                 Equals(lxc + ["profile", "device", "set", "lpbuildd", "eth0",
-                              "parent", "lpbr0"]),
+                              "parent", "lpbuilddbr0"]),
                 Equals(lxc + ["profile", "set", "lpbuildd",
                               "security.privileged", "true"]),
                 Equals(lxc + ["profile", "set", "lpbuildd",
                               "security.nesting", "true"]),
                 Equals(lxc + ["profile", "set", "lpbuildd",
                               "raw.lxc", raw_lxc]),
-                Equals(ip + ["link", "add", "dev", "lpbr0", "type", "bridge"]),
-                Equals(ip + ["addr", "add", "10.10.10.1/24", "dev", "lpbr0"]),
-                Equals(ip + ["link", "set", "dev", "lpbr0", "up"]),
+                Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
+                             "type", "bridge"]),
+                Equals(ip + ["addr", "add", "10.10.10.1/24",
+                             "dev", "lpbuilddbr0"]),
+                Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "up"]),
                 Equals(
                     ["sudo", "sh", "-c",
                      "echo 1 >/proc/sys/net/ipv4/ip_forward"]),
@@ -226,28 +228,28 @@ class TestLXD(TestCase):
                     iptables_comment),
                 Equals(
                     iptables +
-                    ["-I", "INPUT", "-i", "lpbr0",
+                    ["-I", "INPUT", "-i", "lpbuilddbr0",
                      "-p", "udp", "--dport", "53", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     iptables +
-                    ["-I", "INPUT", "-i", "lpbr0",
+                    ["-I", "INPUT", "-i", "lpbuilddbr0",
                      "-p", "tcp", "--dport", "53", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     iptables +
-                    ["-I", "FORWARD", "-i", "lpbr0", "-j", "ACCEPT"] +
+                    ["-I", "FORWARD", "-i", "lpbuilddbr0", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     iptables +
-                    ["-I", "FORWARD", "-o", "lpbr0", "-j", "ACCEPT"] +
+                    ["-I", "FORWARD", "-o", "lpbuilddbr0", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     ["sudo", "/usr/sbin/dnsmasq", "-s", "lpbuildd",
                      "-S", "/lpbuildd/", "-u", "buildd", "--strict-order",
                      "--bind-interfaces",
                      "--pid-file=/run/launchpad-buildd/dnsmasq.pid",
-                     "--except-interface=lo", "--interface=lpbr0",
+                     "--except-interface=lo", "--interface=lpbuilddbr0",
                      "--listen-address=10.10.10.1"]),
                 Equals(lxc + ["init", "--ephemeral", "-p", "lpbuildd",
                               "lp-xenial-amd64", "lp-xenial-amd64"]),
@@ -402,7 +404,7 @@ class TestLXD(TestCase):
 
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
-        os.makedirs("/sys/class/net/lpbr0")
+        os.makedirs("/sys/class/net/lpbuilddbr0")
         fs_fixture.add("/run")
         os.makedirs("/run/launchpad-buildd")
         with open("/run/launchpad-buildd/dnsmasq.pid", "w") as f:
@@ -423,25 +425,25 @@ class TestLXD(TestCase):
                 Equals(lxc + ["stop", "lp-xenial-amd64"]),
                 Equals(lxc + ["info", "lp-xenial-amd64"]),
                 Equals(lxc + ["delete", "lp-xenial-amd64"]),
-                Equals(ip + ["addr", "flush", "dev", "lpbr0"]),
-                Equals(ip + ["link", "set", "dev", "lpbr0", "down"]),
+                Equals(ip + ["addr", "flush", "dev", "lpbuilddbr0"]),
+                Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "down"]),
                 Equals(
                     iptables +
-                    ["-D", "INPUT", "-i", "lpbr0",
+                    ["-D", "INPUT", "-i", "lpbuilddbr0",
                      "-p", "udp", "--dport", "53", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     iptables +
-                    ["-D", "INPUT", "-i", "lpbr0",
+                    ["-D", "INPUT", "-i", "lpbuilddbr0",
                      "-p", "tcp", "--dport", "53", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     iptables +
-                    ["-D", "FORWARD", "-i", "lpbr0", "-j", "ACCEPT"] +
+                    ["-D", "FORWARD", "-i", "lpbuilddbr0", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     iptables +
-                    ["-D", "FORWARD", "-o", "lpbr0", "-j", "ACCEPT"] +
+                    ["-D", "FORWARD", "-o", "lpbuilddbr0", "-j", "ACCEPT"] +
                     iptables_comment),
                 Equals(
                     iptables +
@@ -450,7 +452,7 @@ class TestLXD(TestCase):
                      "-j", "MASQUERADE"] +
                     iptables_comment),
                 Equals(["sudo", "kill", "-9", "42"]),
-                Equals(ip + ["link", "delete", "lpbr0"]),
+                Equals(ip + ["link", "delete", "lpbuilddbr0"]),
                 ]))
 
     def test_remove(self):

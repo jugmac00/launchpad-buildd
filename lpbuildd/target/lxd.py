@@ -42,7 +42,7 @@ class LXD(Backend):
         }
 
     profile_name = "lpbuildd"
-    bridge_name = "lpbr0"
+    bridge_name = "lpbuilddbr0"
     # XXX cjwatson 2017-08-07: Hardcoded for now to be in a range reserved
     # for employee private networks in
     # https://wiki.canonical.com/InformationInfrastructure/IS/Network, so it
