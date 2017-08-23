@@ -207,7 +207,7 @@ class LXD(Backend):
         subprocess.check_call(
             ["sudo", "ip", "link", "set", "dev", self.bridge_name, "up"])
         subprocess.check_call(
-            ["sudo", "sh", "-c", "echo 1 >/proc/sys/net/ipv4/ip_forward"])
+            ["sudo", "sysctl", "-w", "net.ipv4.ip_forward=1"])
         self.iptables(
             ["-t", "nat", "-A", "POSTROUTING",
              "-s", str(self.ipv4_network), "!", "-d", str(self.ipv4_network),

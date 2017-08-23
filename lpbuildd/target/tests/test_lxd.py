@@ -217,9 +217,7 @@ class TestLXD(TestCase):
                 Equals(ip + ["addr", "add", "10.10.10.1/24",
                              "dev", "lpbuilddbr0"]),
                 Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "up"]),
-                Equals(
-                    ["sudo", "sh", "-c",
-                     "echo 1 >/proc/sys/net/ipv4/ip_forward"]),
+                Equals(["sudo", "sysctl", "-w", "net.ipv4.ip_forward=1"]),
                 Equals(
                     iptables +
                     ["-t", "nat", "-A", "POSTROUTING",
