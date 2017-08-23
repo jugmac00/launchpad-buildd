@@ -4,7 +4,6 @@ debian/upgrade-config			usr/share/launchpad-buildd
 sbuildrc				usr/share/launchpad-buildd
 template-buildd-slave.conf		usr/share/launchpad-buildd
 bin/buildrecipe				usr/share/launchpad-buildd/slavebin
-bin/buildsnap				usr/share/launchpad-buildd/slavebin
 bin/generate-translation-templates	usr/share/launchpad-buildd/slavebin
 bin/in-target				usr/share/launchpad-buildd/slavebin
 bin/sbuild-package			usr/share/launchpad-buildd/slavebin

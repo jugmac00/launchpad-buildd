@@ -1,7 +1,6 @@
 include LICENSE
 include Makefile
 include bin/buildrecipe
-include bin/buildsnap
 include bin/generate-translation-templates
 include bin/in-target
 include bin/sbuild-package

@@ -15,6 +15,7 @@ from lpbuildd.target.apt import (
     Update,
     )
 from lpbuildd.target.build_livefs import BuildLiveFS
+from lpbuildd.target.build_snap import BuildSnap
 from lpbuildd.target.lifecycle import (
     Create,
     KillProcesses,
@@ -46,6 +47,7 @@ def configure_logging():
 operations = {
     "add-trusted-keys": AddTrustedKeys,
     "buildlivefs": BuildLiveFS,
+    "buildsnap": BuildSnap,
     "override-sources-list": OverrideSourcesList,
     "mount-chroot": Start,
     "remove-build": Remove,
