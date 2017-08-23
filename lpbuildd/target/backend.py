@@ -22,22 +22,6 @@ class Backend:
         self.arch = arch
         self.build_path = os.path.join(os.environ["HOME"], "build-" + build_id)
 
-    @staticmethod
-    def get(name, build_id, series=None, arch=None):
-        if name == "chroot":
-            from lpbuildd.target.chroot import Chroot
-            backend_factory = Chroot
-        elif name == "lxd":
-            from lpbuildd.target.lxd import LXD
-            backend_factory = LXD
-        elif name == "fake":
-            # Only for use in tests.
-            from lpbuildd.tests.fakeslave import FakeBackend
-            backend_factory = FakeBackend
-        else:
-            raise KeyError("Unknown backend: %s" % name)
-        return backend_factory(build_id, series=series, arch=arch)
-
     def create(self, tarball_path):
         """Create the backend based on a chroot tarball.
 
@@ -136,6 +120,8 @@ class Backend:
         This is allowed to do nothing if stopping the target will reliably
         kill all processes running in it.
         """
+        # XXX cjwatson 2017-08-22: It might make sense to merge this into
+        # `stop` later.
         pass
 
     def stop(self):
@@ -145,3 +131,19 @@ class Backend:
     def remove(self):
         """Remove the backend."""
         subprocess.check_call(["sudo", "rm", "-rf", self.build_path])
+
+
+def make_backend(name, build_id, series=None, arch=None):
+    if name == "chroot":
+        from lpbuildd.target.chroot import Chroot
+        backend_factory = Chroot
+    elif name == "lxd":
+        from lpbuildd.target.lxd import LXD
+        backend_factory = LXD
+    elif name == "fake":
+        # Only for use in tests.
+        from lpbuildd.tests.fakeslave import FakeBackend
+        backend_factory = FakeBackend
+    else:
+        raise KeyError("Unknown backend: %s" % name)
+    return backend_factory(build_id, series=series, arch=arch)

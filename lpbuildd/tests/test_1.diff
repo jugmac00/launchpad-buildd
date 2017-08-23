@@ -5,7 +5,7 @@
 @@ -6,9 +6,9 @@
 
  Attempting OGRE for universe in build-370614-896976
- RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+ RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
  Updating debian chroot for build 370614-896976
 -Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 +Get:1 http://ftpmaster.internal gutsy Release.gpg [191B]

@@ -147,7 +147,7 @@ class TestChroot(TestCase):
             "/path/to/source", "/path/to/target")
 
         expected_args = [
-            ["sudo", "cp", "-p",
+            ["sudo", "cp", "--preserve=timestamps",
              "/expected/home/build-1/chroot-autobuild/path/to/source",
              "/path/to/target"],
             ]

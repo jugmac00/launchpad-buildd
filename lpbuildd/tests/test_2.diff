@@ -2,11 +2,13 @@
 
 +++  
 
-@@ -1,10 +1,9 @@
+@@ -1,12 +1,11 @@
 
--l ['apply-ogre-model', '370614-896976', 'universe']
+-are/launchpad-buildd/slavebin/mount-chroot 370614-896976
+ Mounting chroot for build 370614-896976
+ RUN: /usr/share/launchpad-buildd/slavebin/apply-ogre-model 370614-896976 universe
  Attempting OGRE for universe in build-370614-896976
- RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+ RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
  Updating debian chroot for build 370614-896976
 -Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 +Get:1 http://ftpmaster.internal gutsy Release.gpg [191B]
@@ -16,10 +18,10 @@
  Get:4 http://ftpmaster.internal gutsy/universe Packages [3991kB]
  Fetched 5142kB in 5s (1012kB/s)
  Reading package lists...
-@@ -25,9 +24,9 @@
+@@ -27,9 +26,9 @@
 
  Attempting OGRE for universe in build-370614-896976
- RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+ RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
  Updating debian chroot for build 370614-896976
 -Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 -Get:2 http://must:go@ftpmaster.internal gutsy Release [65.9kB]
