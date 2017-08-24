@@ -20,6 +20,7 @@ from systemfixtures import (
     )
 from testtools import TestCase
 from testtools.matchers import (
+    Contains,
     DirContains,
     EndsWith,
     Equals,
@@ -101,27 +102,23 @@ class TestLXD(TestCase):
         self.assertThat(hello, HasPermissions("0755"))
         self.assertThat(
             os.path.join(rootfs, "etc"),
-            DirContains(["hosts", "hostname", "resolv.conf"]))
+            DirContains(["hosts", "hostname", "resolv.conf", "systemd"]))
         for name in ("hosts", "hostname", "resolv.conf"):
             self.assertThat(
                 os.path.join(rootfs, "etc", name),
                 FileContains("host %s\n" % name))
+        self.assertThat(
+            os.path.join(
+                rootfs,
+                "etc", "systemd", "system", "snapd.service.d", "no-nice.conf"),
+            FileContains("[Service]\nNice=0\n"))
         policy_rc_d = os.path.join(
             rootfs, "usr", "local", "sbin", "policy-rc.d")
         self.assertThat(
             policy_rc_d,
             FileContains(dedent("""\
                 #! /bin/sh
-                while :; do
-                    case "$1" in
-                        -*)             shift ;;
-                        snapd.service)  exit 0 ;;
-                        *)
-                            echo "Not running services in chroot."
-                            exit 101
-                            ;;
-                    esac
-                done
+                exit 0
                 """)))
         self.assertThat(policy_rc_d, HasPermissions("0755"))
 
@@ -187,9 +184,6 @@ class TestLXD(TestCase):
 
         lxc = ["sudo", "lxc"]
         raw_lxc = dedent("""\
-            lxc.aa_profile=unconfined
-            lxc.cgroup.devices.deny=
-            lxc.cgroup.devices.allow=
             lxc.network.0.ipv4=10.10.10.2/24
             lxc.network.0.ipv4.gateway=10.10.10.1
             """)
@@ -206,10 +200,6 @@ class TestLXD(TestCase):
                 Equals(lxc + ["profile", "copy", "default", "lpbuildd"]),
                 Equals(lxc + ["profile", "device", "set", "lpbuildd", "eth0",
                               "parent", "lpbuilddbr0"]),
-                Equals(lxc + ["profile", "set", "lpbuildd",
-                              "security.privileged", "true"]),
-                Equals(lxc + ["profile", "set", "lpbuildd",
-                              "security.nesting", "true"]),
                 Equals(lxc + ["profile", "set", "lpbuildd",
                               "raw.lxc", raw_lxc]),
                 Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
@@ -265,6 +255,13 @@ class TestLXD(TestCase):
                               "lp-xenial-amd64/etc/resolv.conf"]),
                 Equals(lxc + ["start", "lp-xenial-amd64"]),
                 Equals(lxc + ["info", "lp-xenial-amd64"]),
+                Equals(lxc + ["info", "lp-xenial-amd64"]),
+                MatchesListwise(
+                    [Equals(arg)
+                     for arg in lxc + ["file", "push", "--uid=0", "--gid=0",
+                                       "--mode=755"]] +
+                    [Contains("tmp"),
+                     Equals("lp-xenial-amd64/usr/local/sbin/policy-rc.d")]),
                 ]))
 
     def test_run(self):
