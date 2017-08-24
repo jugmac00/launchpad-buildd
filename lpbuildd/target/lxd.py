@@ -118,6 +118,22 @@ class LXD(Backend):
         target_tarball.addfile(metadata_file, io.BytesIO(metadata_yaml))
 
         copy_from_host = {"/etc/hosts", "/etc/hostname", "/etc/resolv.conf"}
+        replace = {
+            "/usr/local/sbin/policy-rc.d": dedent("""\
+                #! /bin/sh
+                while :; do
+                    case "$1" in
+                        -*)                     shift ;;
+                        systemd-udevd.service)  exit 0 ;;
+                        snapd.service)          exit 0 ;;
+                        *)
+                            echo "Not running services in chroot."
+                            exit 101
+                            ;;
+                    esac
+                done
+                """).encode("UTF-8"),
+            }
 
         for entry in source_tarball:
             fileptr = None
@@ -130,20 +146,8 @@ class LXD(Backend):
                         target_tarball.add(
                             os.path.realpath(orig_name), arcname=entry.name)
                         continue
-                    elif orig_name == "/usr/local/sbin/policy-rc.d":
-                        new_bytes = dedent("""\
-                            #! /bin/sh
-                            while :; do
-                                case "$1" in
-                                    -*)             shift ;;
-                                    snapd.service)  exit 0 ;;
-                                    *)
-                                        echo "Not running services in chroot."
-                                        exit 101
-                                        ;;
-                                esac
-                            done
-                            """).encode("UTF-8")
+                    elif orig_name in replace:
+                        new_bytes = replace[orig_name]
                         entry.size = len(new_bytes)
                         fileptr = io.BytesIO(new_bytes)
                     else:
