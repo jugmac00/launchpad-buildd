@@ -20,7 +20,7 @@ from lpbuildd.target.cli import (
 def main():
     configure_logging()
     args = parse_args()
-    args.operation.run()
+    return args.operation.run()
 
 
 if __name__ == "__main__":
