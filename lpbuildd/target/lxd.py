@@ -307,12 +307,7 @@ class LXD(Backend):
                 ["sudo", "lxc", "profile", "set", self.profile_name,
                  key, value])
 
-        set_key("security.privileged", "true")
-        set_key("security.nesting", "true")
         set_key("raw.lxc", dedent("""\
-            lxc.aa_profile=unconfined
-            lxc.cgroup.devices.deny=
-            lxc.cgroup.devices.allow=
             lxc.network.0.ipv4={ipv4_address}
             lxc.network.0.ipv4.gateway={ipv4_gateway}
             """.format(
