@@ -332,7 +332,7 @@ class LXD(Backend):
         now = time.time()
         while time.time() < now + timeout:
             if self.is_running():
-                return
+                break
             time.sleep(5)
         if not self.is_running():
             raise BackendException(
