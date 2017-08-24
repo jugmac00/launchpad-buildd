@@ -119,19 +119,11 @@ class LXD(Backend):
 
         copy_from_host = {"/etc/hosts", "/etc/hostname", "/etc/resolv.conf"}
         replace = {
+            # We'll put a stricter version in place later, but we need a
+            # liberal version to let the container start up properly.
             "/usr/local/sbin/policy-rc.d": dedent("""\
                 #! /bin/sh
-                while :; do
-                    case "$1" in
-                        -*)                     shift ;;
-                        systemd-udevd.service)  exit 0 ;;
-                        snapd.service)          exit 0 ;;
-                        *)
-                            echo "Not running services in chroot."
-                            exit 101
-                            ;;
-                    esac
-                done
+                exit 0
                 """).encode("UTF-8"),
             }
 
@@ -331,6 +323,24 @@ class LXD(Backend):
         if not self.is_running():
             raise BackendException(
                 "Container failed to start within %d seconds" % timeout)
+
+        with tempfile.NamedTemporaryFile(mode="w") as policy_rc_d_file:
+            print(dedent("""\
+                #! /bin/sh
+                while :; do
+                    case "$1" in
+                        -*)                     shift ;;
+                        snapd.service)          exit 0 ;;
+                        *)
+                            echo "Not running services in chroot."
+                            exit 101
+                            ;;
+                    esac
+                done
+                """), file=policy_rc_d_file, end="")
+            policy_rc_d_file.flush()
+            os.fchmod(policy_rc_d_file.fileno(), 0o755)
+            self.copy_in(policy_rc_d_file.name, "/usr/local/sbin/policy-rc.d")
 
     def run(self, args, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):
