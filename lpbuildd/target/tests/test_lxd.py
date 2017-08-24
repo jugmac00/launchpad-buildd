@@ -132,35 +132,35 @@ class TestLXD(TestCase):
             lambda proc_args: {
                 "returncode": 1 if "info" in proc_args["args"] else 0,
                 },
-            name="sudo")
+            name="lxc")
         LXD("1", "xenial", "amd64").create(source_tarball_path)
 
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise([
-                Equals(["sudo", "lxc", "image", "info", "lp-xenial-amd64"]),
+                Equals(["lxc", "image", "info", "lp-xenial-amd64"]),
                 MatchesListwise([
-                    Equals("sudo"), Equals("lxc"), Equals("image"),
+                    Equals("lxc"), Equals("image"),
                     Equals("import"), EndsWith("/lxd.tar.gz"),
                     Equals("--alias"), Equals("lp-xenial-amd64"),
                     ]),
                 ]))
 
     def test_start(self):
-        class SudoLXC:
+        class FakeLXC:
             def __init__(self):
                 self.created = False
                 self.started = False
 
             def __call__(self, proc_info):
                 ret = {}
-                if proc_info["args"][:4] == ["sudo", "lxc", "profile", "show"]:
+                if proc_info["args"][:3] == ["lxc", "profile", "show"]:
                     ret["returncode"] = 1
-                elif proc_info["args"][:3] == ["sudo", "lxc", "init"]:
+                elif proc_info["args"][:2] == ["lxc", "init"]:
                     self.created = True
-                elif proc_info["args"][:3] == ["sudo", "lxc", "start"]:
+                elif proc_info["args"][:2] == ["lxc", "start"]:
                     self.started = True
-                elif proc_info["args"][:3] == ["sudo", "lxc", "info"]:
+                elif proc_info["args"][:2] == ["lxc", "info"]:
                     if not self.created:
                         ret["returncode"] = 1
                     else:
@@ -179,10 +179,10 @@ class TestLXD(TestCase):
             with open(os.path.join("/etc", name), "w") as f:
                 f.write("host %s\n" % name)
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(SudoLXC(), name="sudo")
+        processes_fixture.add(FakeLXC(), name="lxc")
+        processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").start()
 
-        lxc = ["sudo", "lxc"]
         raw_lxc = dedent("""\
             lxc.network.0.ipv4=10.10.10.2/24
             lxc.network.0.ipv4.gateway=10.10.10.1
@@ -194,14 +194,14 @@ class TestLXD(TestCase):
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise([
-                Equals(lxc + ["info", "lp-xenial-amd64"]),
-                Equals(lxc + ["info", "lp-xenial-amd64"]),
-                Equals(lxc + ["profile", "show", "lpbuildd"]),
-                Equals(lxc + ["profile", "copy", "default", "lpbuildd"]),
-                Equals(lxc + ["profile", "device", "set", "lpbuildd", "eth0",
-                              "parent", "lpbuilddbr0"]),
-                Equals(lxc + ["profile", "set", "lpbuildd",
-                              "raw.lxc", raw_lxc]),
+                Equals(["lxc", "info", "lp-xenial-amd64"]),
+                Equals(["lxc", "info", "lp-xenial-amd64"]),
+                Equals(["lxc", "profile", "show", "lpbuildd"]),
+                Equals(["lxc", "profile", "copy", "default", "lpbuildd"]),
+                Equals(["lxc", "profile", "device", "set", "lpbuildd", "eth0",
+                        "parent", "lpbuilddbr0"]),
+                Equals(["lxc", "profile", "set", "lpbuildd",
+                        "raw.lxc", raw_lxc]),
                 Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
                              "type", "bridge"]),
                 Equals(ip + ["addr", "add", "10.10.10.1/24",
@@ -240,38 +240,38 @@ class TestLXD(TestCase):
                      "--pid-file=/run/launchpad-buildd/dnsmasq.pid",
                      "--except-interface=lo", "--interface=lpbuilddbr0",
                      "--listen-address=10.10.10.1"]),
-                Equals(lxc + ["init", "--ephemeral", "-p", "lpbuildd",
-                              "lp-xenial-amd64", "lp-xenial-amd64"]),
-                Equals(lxc + ["file", "push",
-                              "--uid=0", "--gid=0", "--mode=644",
-                              "/etc/hosts", "lp-xenial-amd64/etc/hosts"]),
-                Equals(lxc + ["file", "push",
-                              "--uid=0", "--gid=0", "--mode=644",
-                              "/etc/hostname",
-                              "lp-xenial-amd64/etc/hostname"]),
-                Equals(lxc + ["file", "push",
-                              "--uid=0", "--gid=0", "--mode=644",
-                              "/etc/resolv.conf",
-                              "lp-xenial-amd64/etc/resolv.conf"]),
-                Equals(lxc + ["start", "lp-xenial-amd64"]),
-                Equals(lxc + ["info", "lp-xenial-amd64"]),
-                Equals(lxc + ["info", "lp-xenial-amd64"]),
+                Equals(["lxc", "init", "--ephemeral", "-p", "lpbuildd",
+                        "lp-xenial-amd64", "lp-xenial-amd64"]),
+                Equals(["lxc", "file", "push",
+                        "--uid=0", "--gid=0", "--mode=644",
+                        "/etc/hosts", "lp-xenial-amd64/etc/hosts"]),
+                Equals(["lxc", "file", "push",
+                        "--uid=0", "--gid=0", "--mode=644",
+                        "/etc/hostname",
+                        "lp-xenial-amd64/etc/hostname"]),
+                Equals(["lxc", "file", "push",
+                        "--uid=0", "--gid=0", "--mode=644",
+                        "/etc/resolv.conf",
+                        "lp-xenial-amd64/etc/resolv.conf"]),
+                Equals(["lxc", "start", "lp-xenial-amd64"]),
+                Equals(["lxc", "info", "lp-xenial-amd64"]),
+                Equals(["lxc", "info", "lp-xenial-amd64"]),
                 MatchesListwise(
                     [Equals(arg)
-                     for arg in lxc + ["file", "push", "--uid=0", "--gid=0",
-                                       "--mode=755"]] +
+                     for arg in ["lxc", "file", "push", "--uid=0", "--gid=0",
+                                 "--mode=755"]] +
                     [Contains("tmp"),
                      Equals("lp-xenial-amd64/usr/local/sbin/policy-rc.d")]),
                 ]))
 
     def test_run(self):
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         LXD("1", "xenial", "amd64").run(
             ["apt-get", "update"], env={"LANG": "C"})
 
         expected_args = [
-            ["sudo", "lxc", "exec", "lp-xenial-amd64", "--",
+            ["lxc", "exec", "lp-xenial-amd64", "--",
              "linux64", "env", "LANG=C", "apt-get", "update"],
             ]
         self.assertEqual(
@@ -281,14 +281,14 @@ class TestLXD(TestCase):
     def test_run_get_output(self):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.BytesIO(b"hello\n")}, name="sudo")
+            lambda _: {"stdout": io.BytesIO(b"hello\n")}, name="lxc")
         self.assertEqual(
             "hello\n",
             LXD("1", "xenial", "amd64").run(
                 ["echo", "hello"], get_output=True))
 
         expected_args = [
-            ["sudo", "lxc", "exec", "lp-xenial-amd64", "--",
+            ["lxc", "exec", "lp-xenial-amd64", "--",
              "linux64", "echo", "hello"],
             ]
         self.assertEqual(
@@ -298,7 +298,7 @@ class TestLXD(TestCase):
     def test_copy_in(self):
         source_dir = self.useFixture(TempDir()).path
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         source_path = os.path.join(source_dir, "source")
         with open(source_path, "w"):
             pass
@@ -307,7 +307,7 @@ class TestLXD(TestCase):
         LXD("1", "xenial", "amd64").copy_in(source_path, target_path)
 
         expected_args = [
-            ["sudo", "lxc", "file", "push", "--uid=0", "--gid=0", "--mode=644",
+            ["lxc", "file", "push", "--uid=0", "--gid=0", "--mode=644",
              source_path, "lp-xenial-amd64" + target_path],
             ]
         self.assertEqual(
@@ -316,12 +316,12 @@ class TestLXD(TestCase):
 
     def test_copy_out(self):
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         LXD("1", "xenial", "amd64").copy_out(
             "/path/to/source", "/path/to/target")
 
         expected_args = [
-            ["sudo", "lxc", "file", "pull",
+            ["lxc", "file", "pull",
              "lp-xenial-amd64/path/to/source", "/path/to/target"],
             ]
         self.assertEqual(
@@ -331,12 +331,12 @@ class TestLXD(TestCase):
     def test_path_exists(self):
         processes_fixture = self.useFixture(FakeProcesses())
         test_proc_infos = iter([{}, {"returncode": 1}])
-        processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
+        processes_fixture.add(lambda _: next(test_proc_infos), name="lxc")
         self.assertTrue(LXD("1", "xenial", "amd64").path_exists("/present"))
         self.assertFalse(LXD("1", "xenial", "amd64").path_exists("/absent"))
 
         expected_args = [
-            ["sudo", "lxc", "exec", "lp-xenial-amd64", "--",
+            ["lxc", "exec", "lp-xenial-amd64", "--",
              "linux64", "test", "-e", path]
             for path in ("/present", "/absent")
             ]
@@ -347,12 +347,12 @@ class TestLXD(TestCase):
     def test_islink(self):
         processes_fixture = self.useFixture(FakeProcesses())
         test_proc_infos = iter([{}, {"returncode": 1}])
-        processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
+        processes_fixture.add(lambda _: next(test_proc_infos), name="lxc")
         self.assertTrue(LXD("1", "xenial", "amd64").islink("/link"))
         self.assertFalse(LXD("1", "xenial", "amd64").islink("/file"))
 
         expected_args = [
-            ["sudo", "lxc", "exec", "lp-xenial-amd64", "--",
+            ["lxc", "exec", "lp-xenial-amd64", "--",
              "linux64", "test", "-h", path]
             for path in ("/link", "/file")
             ]
@@ -363,13 +363,13 @@ class TestLXD(TestCase):
     def test_listdir(self):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.BytesIO(b"foo\0bar\0baz\0")}, name="sudo")
+            lambda _: {"stdout": io.BytesIO(b"foo\0bar\0baz\0")}, name="lxc")
         self.assertEqual(
             ["foo", "bar", "baz"],
             LXD("1", "xenial", "amd64").listdir("/path"))
 
         expected_args = [
-            ["sudo", "lxc", "exec", "lp-xenial-amd64", "--",
+            ["lxc", "exec", "lp-xenial-amd64", "--",
              "linux64", "find", "/path", "-mindepth", "1", "-maxdepth", "1",
              "-printf", "%P\\0"],
             ]
@@ -378,18 +378,18 @@ class TestLXD(TestCase):
             [proc._args["args"] for proc in processes_fixture.procs])
 
     def test_stop(self):
-        class SudoLXC:
+        class FakeLXC:
             def __init__(self):
                 self.stopped = False
                 self.deleted = False
 
             def __call__(self, proc_info):
                 ret = {}
-                if proc_info["args"][:3] == ["sudo", "lxc", "stop"]:
+                if proc_info["args"][:2] == ["lxc", "stop"]:
                     self.stopped = True
-                elif proc_info["args"][:3] == ["sudo", "lxc", "delete"]:
+                elif proc_info["args"][:2] == ["lxc", "delete"]:
                     self.deleted = True
-                elif proc_info["args"][:3] == ["sudo", "lxc", "info"]:
+                elif proc_info["args"][:2] == ["lxc", "info"]:
                     if self.deleted:
                         ret["returncode"] = 1
                     else:
@@ -406,10 +406,10 @@ class TestLXD(TestCase):
         with open("/run/launchpad-buildd/dnsmasq.pid", "w") as f:
             f.write("42\n")
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(SudoLXC(), name="sudo")
+        processes_fixture.add(FakeLXC(), name="lxc")
+        processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").stop()
 
-        lxc = ["sudo", "lxc"]
         ip = ["sudo", "ip"]
         iptables = ["sudo", "iptables", "-w"]
         iptables_comment = [
@@ -417,10 +417,10 @@ class TestLXD(TestCase):
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise([
-                Equals(lxc + ["info", "lp-xenial-amd64"]),
-                Equals(lxc + ["stop", "lp-xenial-amd64"]),
-                Equals(lxc + ["info", "lp-xenial-amd64"]),
-                Equals(lxc + ["delete", "lp-xenial-amd64"]),
+                Equals(["lxc", "info", "lp-xenial-amd64"]),
+                Equals(["lxc", "stop", "lp-xenial-amd64"]),
+                Equals(["lxc", "info", "lp-xenial-amd64"]),
+                Equals(["lxc", "delete", "lp-xenial-amd64"]),
                 Equals(ip + ["addr", "flush", "dev", "lpbuilddbr0"]),
                 Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "down"]),
                 Equals(
@@ -454,14 +454,14 @@ class TestLXD(TestCase):
     def test_remove(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="lxc")
         processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").remove()
 
-        lxc = ["sudo", "lxc"]
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise([
-                Equals(lxc + ["image", "info", "lp-xenial-amd64"]),
-                Equals(lxc + ["image", "delete", "lp-xenial-amd64"]),
+                Equals(["lxc", "image", "info", "lp-xenial-amd64"]),
+                Equals(["lxc", "image", "delete", "lp-xenial-amd64"]),
                 Equals(["sudo", "rm", "-rf", "/expected/home/build-1"]),
                 ]))

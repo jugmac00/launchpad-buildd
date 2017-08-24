@@ -66,26 +66,26 @@ class LXD(Backend):
     def profile_exists(self):
         with open("/dev/null", "w") as devnull:
             return subprocess.call(
-                ["sudo", "lxc", "profile", "show", self.profile_name],
+                ["lxc", "profile", "show", self.profile_name],
                 stdout=devnull, stderr=devnull) == 0
 
     def image_exists(self):
         with open("/dev/null", "w") as devnull:
             return subprocess.call(
-                ["sudo", "lxc", "image", "info", self.alias],
+                ["lxc", "image", "info", self.alias],
                 stdout=devnull, stderr=devnull) == 0
 
     def container_exists(self):
         with open("/dev/null", "w") as devnull:
             return subprocess.call(
-                ["sudo", "lxc", "info", self.name],
+                ["lxc", "info", self.name],
                 stdout=devnull, stderr=devnull) == 0
 
     def is_running(self):
         try:
             with open("/dev/null", "w") as devnull:
                 output = subprocess.check_output(
-                    ["sudo", "lxc", "info", self.name], stderr=devnull)
+                    ["lxc", "info", self.name], stderr=devnull)
             for line in output.splitlines():
                 if line.strip() == "Status: Running":
                     return True
@@ -191,7 +191,7 @@ class LXD(Backend):
 
             with open("/dev/null", "w") as devnull:
                 subprocess.check_call(
-                    ["sudo", "lxc", "image", "import", target_path,
+                    ["lxc", "image", "import", target_path,
                      "--alias", self.alias], stdout=devnull)
         finally:
             shutil.rmtree(tempdir)
@@ -294,18 +294,17 @@ class LXD(Backend):
         if self.profile_exists():
             with open("/dev/null", "w") as devnull:
                 subprocess.check_call(
-                    ["sudo", "lxc", "profile", "delete", self.profile_name],
+                    ["lxc", "profile", "delete", self.profile_name],
                     stdout=devnull)
         subprocess.check_call(
-            ["sudo", "lxc", "profile", "copy", "default", self.profile_name])
+            ["lxc", "profile", "copy", "default", self.profile_name])
         subprocess.check_call(
-            ["sudo", "lxc", "profile", "device", "set", self.profile_name,
+            ["lxc", "profile", "device", "set", self.profile_name,
              "eth0", "parent", self.bridge_name])
 
         def set_key(key, value):
             subprocess.check_call(
-                ["sudo", "lxc", "profile", "set", self.profile_name,
-                 key, value])
+                ["lxc", "profile", "set", self.profile_name, key, value])
 
         set_key("raw.lxc", dedent("""\
             lxc.network.0.ipv4={ipv4_address}
@@ -316,7 +315,7 @@ class LXD(Backend):
         self.start_bridge()
 
         subprocess.check_call(
-            ["sudo", "lxc", "init", "--ephemeral", "-p", self.profile_name,
+            ["lxc", "init", "--ephemeral", "-p", self.profile_name,
              self.alias, self.name])
 
         for path in ("/etc/hosts", "/etc/hostname", "/etc/resolv.conf"):
@@ -324,8 +323,7 @@ class LXD(Backend):
 
         # Start the container
         with open("/dev/null", "w") as devnull:
-            subprocess.check_call(
-                ["sudo", "lxc", "start", self.name], stdout=devnull)
+            subprocess.check_call(["lxc", "start", self.name], stdout=devnull)
 
         # Wait for container to start
         timeout = 60
@@ -368,7 +366,7 @@ class LXD(Backend):
         if echo:
             print("Running in container: %s" % ' '.join(
                 shell_escape(arg) for arg in args))
-        cmd = ["sudo", "lxc", "exec", self.name, "--"] + args
+        cmd = ["lxc", "exec", self.name, "--"] + args
         if input_text is None and not get_output:
             subprocess.check_call(cmd, **kwargs)
         else:
@@ -386,25 +384,23 @@ class LXD(Backend):
         """See `Backend`."""
         mode = stat.S_IMODE(os.stat(source_path).st_mode)
         subprocess.check_call(
-            ["sudo", "lxc", "file", "push",
-             "--uid=0", "--gid=0", "--mode=%o" % mode,
+            ["lxc", "file", "push", "--uid=0", "--gid=0", "--mode=%o" % mode,
              source_path, self.name + target_path])
 
     def copy_out(self, source_path, target_path):
         subprocess.check_call(
-            ["sudo", "lxc", "file", "pull",
-             self.name + source_path, target_path])
+            ["lxc", "file", "pull", self.name + source_path, target_path])
 
     def stop(self):
         """See `Backend`."""
         if self.is_running():
-            subprocess.check_call(["sudo", "lxc", "stop", self.name])
+            subprocess.check_call(["lxc", "stop", self.name])
         if self.container_exists():
-            subprocess.check_call(["sudo", "lxc", "delete", self.name])
+            subprocess.check_call(["lxc", "delete", self.name])
         self.stop_bridge()
 
     def remove_image(self):
-        subprocess.check_call(["sudo", "lxc", "image", "delete", self.alias])
+        subprocess.check_call(["lxc", "image", "delete", self.alias])
 
     def remove(self):
         """See `Backend`."""
