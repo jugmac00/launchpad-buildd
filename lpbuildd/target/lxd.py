@@ -386,7 +386,7 @@ class LXD(Backend):
             headers = {
                 "X-LXD-uid": 0,
                 "X-LXD-gid": 0,
-                "X-LXD-mode": "%o" % mode,
+                "X-LXD-mode": "%#o" % mode,
                 }
             container.api.files.post(params=params, data=data, headers=headers)
 

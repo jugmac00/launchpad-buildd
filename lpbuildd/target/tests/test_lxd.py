@@ -275,15 +275,15 @@ class TestLXD(TestCase):
         container.api.files.post.assert_any_call(
             params={"path": "/etc/hosts"},
             data=b"host hosts\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
         container.api.files.post.assert_any_call(
             params={"path": "/etc/hostname"},
             data=b"host hostname\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
         container.api.files.post.assert_any_call(
             params={"path": "/etc/resolv.conf"},
             data=b"host resolv.conf\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
         container.start.assert_called_once_with(wait=True)
         self.assertEqual(LXD_RUNNING, container.status_code)
 
@@ -335,7 +335,7 @@ class TestLXD(TestCase):
         container.api.files.post.assert_called_once_with(
             params={"path": target_path},
             data=b"hello\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
 
     def test_copy_out(self):
         target_dir = self.useFixture(TempDir()).path
