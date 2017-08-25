@@ -123,6 +123,9 @@ class LXD(Backend):
         metadata_file.size = len(metadata_yaml)
         target_tarball.addfile(metadata_file, io.BytesIO(metadata_yaml))
 
+        # Mangle the chroot tarball into the form needed by LXD: when using
+        # the combined metadata/rootfs form, the rootfs must be under
+        # rootfs/ rather than under chroot-autobuild/.
         for entry in source_tarball:
             fileptr = None
             try:
