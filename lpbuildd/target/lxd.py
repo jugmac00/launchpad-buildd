@@ -119,9 +119,8 @@ class LXD(Backend):
         metadata_yaml = json.dumps(
             metadata, sort_keys=True, indent=4, separators=(",", ": "),
             ensure_ascii=False).encode("UTF-8") + b"\n"
-        metadata_file = tarfile.TarInfo()
+        metadata_file = tarfile.TarInfo(name="metadata.yaml")
         metadata_file.size = len(metadata_yaml)
-        metadata_file.name = "metadata.yaml"
         target_tarball.addfile(metadata_file, io.BytesIO(metadata_yaml))
 
         for entry in source_tarball:
