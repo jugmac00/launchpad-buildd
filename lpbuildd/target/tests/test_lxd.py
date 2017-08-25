@@ -188,24 +188,6 @@ class TestLXD(TestCase):
                      "-j", "MASQUERADE"] +
                     iptables_comment),
                 Equals(
-                    iptables +
-                    ["-I", "INPUT", "-i", "lpbuilddbr0",
-                     "-p", "udp", "--dport", "53", "-j", "ACCEPT"] +
-                    iptables_comment),
-                Equals(
-                    iptables +
-                    ["-I", "INPUT", "-i", "lpbuilddbr0",
-                     "-p", "tcp", "--dport", "53", "-j", "ACCEPT"] +
-                    iptables_comment),
-                Equals(
-                    iptables +
-                    ["-I", "FORWARD", "-i", "lpbuilddbr0", "-j", "ACCEPT"] +
-                    iptables_comment),
-                Equals(
-                    iptables +
-                    ["-I", "FORWARD", "-o", "lpbuilddbr0", "-j", "ACCEPT"] +
-                    iptables_comment),
-                Equals(
                     ["sudo", "/usr/sbin/dnsmasq", "-s", "lpbuildd",
                      "-S", "/lpbuildd/", "-u", "buildd", "--strict-order",
                      "--bind-interfaces",
@@ -381,24 +363,6 @@ class TestLXD(TestCase):
             MatchesListwise([
                 Equals(ip + ["addr", "flush", "dev", "lpbuilddbr0"]),
                 Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "down"]),
-                Equals(
-                    iptables +
-                    ["-D", "INPUT", "-i", "lpbuilddbr0",
-                     "-p", "udp", "--dport", "53", "-j", "ACCEPT"] +
-                    iptables_comment),
-                Equals(
-                    iptables +
-                    ["-D", "INPUT", "-i", "lpbuilddbr0",
-                     "-p", "tcp", "--dport", "53", "-j", "ACCEPT"] +
-                    iptables_comment),
-                Equals(
-                    iptables +
-                    ["-D", "FORWARD", "-i", "lpbuilddbr0", "-j", "ACCEPT"] +
-                    iptables_comment),
-                Equals(
-                    iptables +
-                    ["-D", "FORWARD", "-o", "lpbuilddbr0", "-j", "ACCEPT"] +
-                    iptables_comment),
                 Equals(
                     iptables +
                     ["-t", "nat", "-D", "POSTROUTING",

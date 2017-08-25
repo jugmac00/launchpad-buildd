@@ -196,14 +196,6 @@ class LXD(Backend):
             ["-t", "nat", "-A", "POSTROUTING",
              "-s", str(self.ipv4_network), "!", "-d", str(self.ipv4_network),
              "-j", "MASQUERADE"])
-        for protocol in ("udp", "tcp"):
-            self.iptables(
-                ["-I", "INPUT", "-i", self.bridge_name,
-                 "-p", protocol, "--dport", "53", "-j", "ACCEPT"])
-        self.iptables(
-            ["-I", "FORWARD", "-i", self.bridge_name, "-j", "ACCEPT"])
-        self.iptables(
-            ["-I", "FORWARD", "-o", self.bridge_name, "-j", "ACCEPT"])
         subprocess.check_call(
             ["sudo", "/usr/sbin/dnsmasq", "-s", "lpbuildd", "-S", "/lpbuildd/",
              "-u", "buildd", "--strict-order", "--bind-interfaces",
@@ -218,16 +210,6 @@ class LXD(Backend):
             ["sudo", "ip", "addr", "flush", "dev", self.bridge_name])
         subprocess.call(
             ["sudo", "ip", "link", "set", "dev", self.bridge_name, "down"])
-        for protocol in ("udp", "tcp"):
-            self.iptables(
-                ["-D", "INPUT", "-i", self.bridge_name,
-                 "-p", protocol, "--dport", "53", "-j", "ACCEPT"], check=False)
-        self.iptables(
-            ["-D", "FORWARD", "-i", self.bridge_name, "-j", "ACCEPT"],
-            check=False)
-        self.iptables(
-            ["-D", "FORWARD", "-o", self.bridge_name, "-j", "ACCEPT"],
-            check=False)
         self.iptables(
             ["-t", "nat", "-D", "POSTROUTING",
              "-s", str(self.ipv4_network), "!", "-d", str(self.ipv4_network),
