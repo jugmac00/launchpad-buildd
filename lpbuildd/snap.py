@@ -28,6 +28,7 @@ class SnapBuildState(DebianBuildState):
 class SnapBuildManager(DebianBuildManager):
     """Build a snap."""
 
+    backend_name = "lxd"
     initial_build_state = SnapBuildState.BUILD_SNAP
 
     @property

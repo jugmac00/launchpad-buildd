@@ -99,6 +99,8 @@ class BuildSnap(Operation):
     def install(self):
         logger.info("Running install phase...")
         deps = ["snapcraft"]
+        if self.args.backend == "lxd":
+            deps.extend(["snapd", "fuse", "squashfuse"])
         if self.args.branch is not None:
             deps.append("bzr")
         else:
