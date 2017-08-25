@@ -103,11 +103,6 @@ class TestLXD(TestCase):
         hello = os.path.join(rootfs, "bin", "hello")
         self.assertThat(hello, FileContains("hello\n"))
         self.assertThat(hello, HasPermissions("0755"))
-        self.assertThat(
-            os.path.join(
-                rootfs,
-                "etc", "systemd", "system", "snapd.service.d", "no-nice.conf"),
-            FileContains("[Service]\nNice=0\n"))
 
     def test_create(self):
         tmp = self.useFixture(TempDir()).path

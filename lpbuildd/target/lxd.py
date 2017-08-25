@@ -146,25 +146,6 @@ class LXD(Backend):
                 if fileptr is not None:
                     fileptr.close()
 
-        # Work around https://bugs.launchpad.net/snapd/+bug/1709536.  This
-        # can be dropped once we no longer need to support installing
-        # affected versions of snapd.
-        snapd_service_d = tarfile.TarInfo(
-            "rootfs/etc/systemd/system/snapd.service.d")
-        snapd_service_d.type = tarfile.DIRTYPE
-        snapd_service_d.mode = 0o755
-        snapd_service_d.mtime = time.time()
-        target_tarball.addfile(snapd_service_d)
-        no_nice = tarfile.TarInfo(
-            "rootfs/etc/systemd/system/snapd.service.d/no-nice.conf")
-        no_nice_bytes = dedent("""\
-            [Service]
-            Nice=0
-            """).encode("UTF-8")
-        no_nice.size = len(no_nice_bytes)
-        no_nice.mtime = time.time()
-        target_tarball.addfile(no_nice, io.BytesIO(no_nice_bytes))
-
     def create(self, tarball_path):
         """See `Backend`."""
         self.remove_image()
