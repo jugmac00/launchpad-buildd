@@ -5,18 +5,19 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+from contextlib import closing
 import io
 import json
 import os
-import shutil
 import stat
 import subprocess
 import tarfile
-import tempfile
 from textwrap import dedent
 import time
 
 import netaddr
+import pylxd
+from pylxd.exceptions import LXDAPIException
 
 from lpbuildd.target.backend import (
     Backend,
@@ -26,6 +27,9 @@ from lpbuildd.util import (
     set_personality,
     shell_escape,
     )
+
+
+LXD_RUNNING = 103
 
 
 class LXD(Backend):
@@ -51,6 +55,14 @@ class LXD(Backend):
     ipv4_network = netaddr.IPNetwork("10.10.10.1/24")
     run_dir = "/run/launchpad-buildd"
 
+    _client = None
+
+    @property
+    def client(self):
+        if self._client is None:
+            self._client = pylxd.Client()
+        return self._client
+
     @property
     def lxc_arch(self):
         return self.arches[self.arch]
@@ -63,35 +75,11 @@ class LXD(Backend):
     def name(self):
         return self.alias
 
-    def profile_exists(self):
-        with open("/dev/null", "w") as devnull:
-            return subprocess.call(
-                ["lxc", "profile", "show", self.profile_name],
-                stdout=devnull, stderr=devnull) == 0
-
-    def image_exists(self):
-        with open("/dev/null", "w") as devnull:
-            return subprocess.call(
-                ["lxc", "image", "info", self.alias],
-                stdout=devnull, stderr=devnull) == 0
-
-    def container_exists(self):
-        with open("/dev/null", "w") as devnull:
-            return subprocess.call(
-                ["lxc", "info", self.name],
-                stdout=devnull, stderr=devnull) == 0
-
     def is_running(self):
         try:
-            with open("/dev/null", "w") as devnull:
-                output = subprocess.check_output(
-                    ["lxc", "info", self.name], stderr=devnull)
-            for line in output.splitlines():
-                if line.strip() == "Status: Running":
-                    return True
-            else:
-                return False
-        except Exception:
+            container = self.client.containers.get(self.name)
+            return container.status_code == LXD_RUNNING
+        except LXDAPIException:
             return False
 
     def _convert(self, source_tarball, target_tarball):
@@ -189,22 +177,20 @@ class LXD(Backend):
 
     def create(self, tarball_path):
         """See `Backend`."""
-        if self.image_exists():
-            self.remove_image()
+        self.remove_image()
 
-        tempdir = tempfile.mkdtemp()
-        try:
-            target_path = os.path.join(tempdir, "lxd.tar.gz")
-            with tarfile.open(tarball_path, "r") as source_tarball:
-                with tarfile.open(target_path, "w:gz") as target_tarball:
+        # This is a lot of data to shuffle around in Python, but there
+        # doesn't currently seem to be any way to ask pylxd to ask lxd to
+        # import an image from a file on disk.
+        with io.BytesIO() as target_file:
+            with tarfile.open(name=tarball_path, mode="r") as source_tarball:
+                with tarfile.open(
+                        fileobj=target_file, mode="w:gz") as target_tarball:
                     self._convert(source_tarball, target_tarball)
 
-            with open("/dev/null", "w") as devnull:
-                subprocess.check_call(
-                    ["lxc", "image", "import", target_path,
-                     "--alias", self.alias], stdout=devnull)
-        finally:
-            shutil.rmtree(tempdir)
+            image = self.client.images.create(
+                target_file.getvalue(), wait=True)
+            image.add_alias(self.alias, self.alias)
 
     @property
     def sys_dir(self):
@@ -301,73 +287,81 @@ class LXD(Backend):
             raise BackendException(
                 "%s has no usable IP addresses" % self.ipv4_network)
 
-        if self.profile_exists():
-            with open("/dev/null", "w") as devnull:
-                subprocess.check_call(
-                    ["lxc", "profile", "delete", self.profile_name],
-                    stdout=devnull)
-        subprocess.check_call(
-            ["lxc", "profile", "copy", "default", self.profile_name])
-        subprocess.check_call(
-            ["lxc", "profile", "device", "set", self.profile_name,
-             "eth0", "parent", self.bridge_name])
+        try:
+            old_profile = self.client.profiles.get(self.profile_name)
+        except LXDAPIException:
+            pass
+        else:
+            old_profile.delete()
 
-        def set_key(key, value):
-            subprocess.check_call(
-                ["lxc", "profile", "set", self.profile_name, key, value])
-
-        set_key("security.privileged", "true")
-        set_key("security.nesting", "true")
-        set_key("raw.lxc", dedent("""\
-            lxc.aa_profile=unconfined
-            lxc.cgroup.devices.deny=
-            lxc.cgroup.devices.allow=
-            lxc.mount.auto=
-            lxc.mount.auto=proc:rw sys:rw
-            lxc.network.0.ipv4={ipv4_address}
-            lxc.network.0.ipv4.gateway={ipv4_gateway}
-            """.format(
-                ipv4_address=ipv4_address, ipv4_gateway=self.ipv4_network.ip)))
+        config = {
+            "security.privileged": "true",
+            "security.nesting": "true",
+            "raw.lxc": dedent("""\
+                lxc.aa_profile=unconfined
+                lxc.cgroup.devices.deny=
+                lxc.cgroup.devices.allow=
+                lxc.mount.auto=
+                lxc.mount.auto=proc:rw sys:rw
+                lxc.network.0.ipv4={ipv4_address}
+                lxc.network.0.ipv4.gateway={ipv4_gateway}
+                """.format(
+                    ipv4_address=ipv4_address,
+                    ipv4_gateway=self.ipv4_network.ip)),
+            }
+        devices = {
+            "eth0": {
+                "name": "eth0",
+                "nictype": "bridged",
+                "parent": self.bridge_name,
+                "type": "nic",
+                },
+            }
+        self.client.profiles.create(self.profile_name, config, devices)
 
         self.start_bridge()
 
-        subprocess.check_call(
-            ["lxc", "init", "--ephemeral", "-p", self.profile_name,
-             self.alias, self.name])
+        container = self.client.containers.create({
+            "name": self.name,
+            "profiles": ["default", self.profile_name],
+            "source": {"type": "image", "alias": self.alias},
+            }, wait=True)
 
         for path in ("/etc/hosts", "/etc/hostname", "/etc/resolv.conf"):
             self.copy_in(path, path)
 
-        # Start the container
-        with open("/dev/null", "w") as devnull:
-            subprocess.check_call(["lxc", "start", self.name], stdout=devnull)
-
-        # Wait for container to start
+        # Start the container and wait for it to start.
+        container.start(wait=True)
         timeout = 60
         now = time.time()
-        container_running = False
         while time.time() < now + timeout:
-            if not container_running and self.is_running():
-                container_running = True
+            try:
+                container = self.client.containers.get(self.name)
+            except LXDAPIException:
+                container = None
+                break
+            if container.status_code == LXD_RUNNING:
                 break
             time.sleep(5)
-        if not container_running:
+        if container is None or container.status_code != LXD_RUNNING:
             raise BackendException(
                 "Container failed to start within %d seconds" % timeout)
 
     def run(self, args, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):
         """See `Backend`."""
+        env_params = []
         if env:
-            args = ["env"] + [
-                "%s=%s" % (key, shell_escape(value))
-                for key, value in env.items()] + args
+            for key, value in env.items():
+                env_params.extend(["--env", "%s=%s" % (key, value)])
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         if echo:
             print("Running in container: %s" % ' '.join(
                 shell_escape(arg) for arg in args))
-        cmd = ["lxc", "exec", self.name, "--"] + args
+        # pylxd's Container.execute doesn't support sending stdin, and it's
+        # tedious to implement ourselves.
+        cmd = ["lxc", "exec", self.name] + env_params + ["--"] + args
         if input_text is None and not get_output:
             subprocess.check_call(cmd, **kwargs)
         else:
@@ -383,28 +377,51 @@ class LXD(Backend):
 
     def copy_in(self, source_path, target_path):
         """See `Backend`."""
-        mode = stat.S_IMODE(os.stat(source_path).st_mode)
-        subprocess.check_call(
-            ["lxc", "file", "push", "--uid=0", "--gid=0", "--mode=%o" % mode,
-             source_path, self.name + target_path])
+        # pylxd's FilesManager doesn't support sending UID/GID/mode.
+        container = self.client.containers.get(self.name)
+        with open(source_path, "rb") as source_file:
+            params = {"path": target_path}
+            data = source_file.read()
+            mode = stat.S_IMODE(os.fstat(source_file.fileno()).st_mode)
+            headers = {
+                "X-LXD-uid": 0,
+                "X-LXD-gid": 0,
+                "X-LXD-mode": "%o" % mode,
+                }
+            container.api.files.post(params=params, data=data, headers=headers)
 
     def copy_out(self, source_path, target_path):
-        subprocess.check_call(
-            ["lxc", "file", "pull", self.name + source_path, target_path])
+        # pylxd's FilesManager doesn't support streaming, which is important
+        # since copied-out files may be large.
+        # This ignores UID/GID/mode, but then so does "lxc file pull".
+        container = self.client.containers.get(self.name)
+        with open(target_path, "wb") as target_file:
+            params = {"path": source_path}
+            with closing(
+                    container.api.files.get(
+                        params=params, stream=True)) as response:
+                for chunk in response.iter_content(chunk_size=65536):
+                    target_file.write(chunk)
 
     def stop(self):
         """See `Backend`."""
-        if self.is_running():
-            subprocess.check_call(["lxc", "stop", self.name])
-        if self.container_exists():
-            subprocess.check_call(["lxc", "delete", self.name])
+        try:
+            container = self.client.containers.get(self.name)
+        except LXDAPIException:
+            pass
+        else:
+            if container.status_code == LXD_RUNNING:
+                container.stop(wait=True)
+            container.delete(wait=True)
         self.stop_bridge()
 
     def remove_image(self):
-        subprocess.check_call(["lxc", "image", "delete", self.alias])
+        for image in self.client.images.all():
+            if any(alias["name"] == self.alias for alias in image.aliases):
+                image.delete(wait=True)
+                return
 
     def remove(self):
         """See `Backend`."""
-        if self.image_exists():
-            self.remove_image()
+        self.remove_image()
         super(LXD, self).remove()

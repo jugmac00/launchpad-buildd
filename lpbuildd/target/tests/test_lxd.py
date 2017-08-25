@@ -3,26 +3,32 @@
 
 __metaclass__ = type
 
+from contextlib import closing
 import io
 import json
 import os.path
 import tarfile
 from textwrap import dedent
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from fixtures import (
     EnvironmentVariable,
+    MockPatch,
     MonkeyPatch,
     TempDir,
     )
+import pylxd
+from pylxd.exceptions import LXDAPIException
 from systemfixtures import (
     FakeFilesystem,
     FakeProcesses,
     )
 from testtools import TestCase
 from testtools.matchers import (
-    Contains,
     DirContains,
-    EndsWith,
     Equals,
     FileContains,
     HasPermissions,
@@ -31,6 +37,18 @@ from testtools.matchers import (
     )
 
 from lpbuildd.target.lxd import LXD
+
+
+LXD_RUNNING = 103
+
+
+class FakeLXDAPIException(LXDAPIException):
+
+    def __init__(self):
+        super(FakeLXDAPIException, self).__init__(None)
+
+    def __str__(self):
+        return "Fake LXD exception"
 
 
 class TestLXD(TestCase):
@@ -139,48 +157,22 @@ class TestLXD(TestCase):
         source_tarball_path = os.path.join(tmp, "source.tar.bz2")
         self.make_chroot_tarball(source_tarball_path)
         self.make_fake_etc()
-        processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(
-            lambda proc_args: {
-                "returncode": 1 if "info" in proc_args["args"] else 0,
-                },
-            name="lxc")
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.images.all.return_value = []
+        image = mock.MagicMock()
+        client.images.create.return_value = image
         LXD("1", "xenial", "amd64").create(source_tarball_path)
 
-        self.assertThat(
-            [proc._args["args"] for proc in processes_fixture.procs],
-            MatchesListwise([
-                Equals(["lxc", "image", "info", "lp-xenial-amd64"]),
-                MatchesListwise([
-                    Equals("lxc"), Equals("image"),
-                    Equals("import"), EndsWith("/lxd.tar.gz"),
-                    Equals("--alias"), Equals("lp-xenial-amd64"),
-                    ]),
-                ]))
+        client.images.create.assert_called_once_with(mock.ANY, wait=True)
+        with io.BytesIO(client.images.create.call_args[0][0]) as f:
+            with tarfile.open(fileobj=f) as tar:
+                with closing(tar.extractfile("rootfs/bin/hello")) as hello:
+                    self.assertEqual("hello\n", hello.read())
+        image.add_alias.assert_called_once_with(
+            "lp-xenial-amd64", "lp-xenial-amd64")
 
     def test_start(self):
-        class FakeLXC:
-            def __init__(self):
-                self.created = False
-                self.started = False
-
-            def __call__(self, proc_info):
-                ret = {}
-                if proc_info["args"][:3] == ["lxc", "profile", "show"]:
-                    ret["returncode"] = 1
-                elif proc_info["args"][:2] == ["lxc", "init"]:
-                    self.created = True
-                elif proc_info["args"][:2] == ["lxc", "start"]:
-                    self.started = True
-                elif proc_info["args"][:2] == ["lxc", "info"]:
-                    if not self.created:
-                        ret["returncode"] = 1
-                    else:
-                        status = "Running" if self.started else "Stopped"
-                        ret["stdout"] = io.BytesIO(
-                            ("Status: %s\n" % status).encode("UTF-8"))
-                return ret
-
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
         fs_fixture.add("/run")
@@ -188,22 +180,46 @@ class TestLXD(TestCase):
         fs_fixture.add("/etc")
         os.mkdir("/etc")
         for name in ("hosts", "hostname", "resolv.conf"):
-            with open(os.path.join("/etc", name), "w") as f:
+            path = os.path.join("/etc", name)
+            with open(path, "w") as f:
                 f.write("host %s\n" % name)
+            os.chmod(path, 0o644)
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.profiles.get.side_effect = FakeLXDAPIException
+        container = client.containers.create.return_value
+        client.containers.get.return_value = container
+        container.start.side_effect = (
+            lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(FakeLXC(), name="lxc")
         processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").start()
 
-        raw_lxc = dedent("""\
-            lxc.aa_profile=unconfined
-            lxc.cgroup.devices.deny=
-            lxc.cgroup.devices.allow=
-            lxc.mount.auto=
-            lxc.mount.auto=proc:rw sys:rw
-            lxc.network.0.ipv4=10.10.10.2/24
-            lxc.network.0.ipv4.gateway=10.10.10.1
-            """)
+        client.profiles.get.assert_called_once_with("lpbuildd")
+        expected_config = {
+            "security.privileged": "true",
+            "security.nesting": "true",
+            "raw.lxc": dedent("""\
+                lxc.aa_profile=unconfined
+                lxc.cgroup.devices.deny=
+                lxc.cgroup.devices.allow=
+                lxc.mount.auto=
+                lxc.mount.auto=proc:rw sys:rw
+                lxc.network.0.ipv4=10.10.10.2/24
+                lxc.network.0.ipv4.gateway=10.10.10.1
+                """),
+            }
+        expected_devices = {
+            "eth0": {
+                "name": "eth0",
+                "nictype": "bridged",
+                "parent": "lpbuilddbr0",
+                "type": "nic",
+                },
+            }
+        client.profiles.create.assert_called_once_with(
+            "lpbuildd", expected_config, expected_devices)
+
         ip = ["sudo", "ip"]
         iptables = ["sudo", "iptables", "-w"]
         iptables_comment = [
@@ -211,18 +227,6 @@ class TestLXD(TestCase):
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise([
-                Equals(["lxc", "info", "lp-xenial-amd64"]),
-                Equals(["lxc", "info", "lp-xenial-amd64"]),
-                Equals(["lxc", "profile", "show", "lpbuildd"]),
-                Equals(["lxc", "profile", "copy", "default", "lpbuildd"]),
-                Equals(["lxc", "profile", "device", "set", "lpbuildd", "eth0",
-                        "parent", "lpbuilddbr0"]),
-                Equals(["lxc", "profile", "set", "lpbuildd",
-                              "security.privileged", "true"]),
-                Equals(["lxc", "profile", "set", "lpbuildd",
-                        "security.nesting", "true"]),
-                Equals(["lxc", "profile", "set", "lpbuildd",
-                        "raw.lxc", raw_lxc]),
                 Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
                              "type", "bridge"]),
                 Equals(ip + ["addr", "add", "10.10.10.1/24",
@@ -261,22 +265,27 @@ class TestLXD(TestCase):
                      "--pid-file=/run/launchpad-buildd/dnsmasq.pid",
                      "--except-interface=lo", "--interface=lpbuilddbr0",
                      "--listen-address=10.10.10.1"]),
-                Equals(["lxc", "init", "--ephemeral", "-p", "lpbuildd",
-                        "lp-xenial-amd64", "lp-xenial-amd64"]),
-                Equals(["lxc", "file", "push",
-                        "--uid=0", "--gid=0", "--mode=644",
-                        "/etc/hosts", "lp-xenial-amd64/etc/hosts"]),
-                Equals(["lxc", "file", "push",
-                        "--uid=0", "--gid=0", "--mode=644",
-                        "/etc/hostname",
-                        "lp-xenial-amd64/etc/hostname"]),
-                Equals(["lxc", "file", "push",
-                        "--uid=0", "--gid=0", "--mode=644",
-                        "/etc/resolv.conf",
-                        "lp-xenial-amd64/etc/resolv.conf"]),
-                Equals(["lxc", "start", "lp-xenial-amd64"]),
-                Equals(["lxc", "info", "lp-xenial-amd64"]),
                 ]))
+
+        client.containers.create.assert_called_once_with({
+            "name": "lp-xenial-amd64",
+            "profiles": ["default", "lpbuildd"],
+            "source": {"type": "image", "alias": "lp-xenial-amd64"},
+            }, wait=True)
+        container.api.files.post.assert_any_call(
+            params={"path": "/etc/hosts"},
+            data=b"host hosts\n",
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
+        container.api.files.post.assert_any_call(
+            params={"path": "/etc/hostname"},
+            data=b"host hostname\n",
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
+        container.api.files.post.assert_any_call(
+            params={"path": "/etc/resolv.conf"},
+            data=b"host resolv.conf\n",
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
+        container.start.assert_called_once_with(wait=True)
+        self.assertEqual(LXD_RUNNING, container.status_code)
 
     def test_run(self):
         processes_fixture = self.useFixture(FakeProcesses())
@@ -285,8 +294,8 @@ class TestLXD(TestCase):
             ["apt-get", "update"], env={"LANG": "C"})
 
         expected_args = [
-            ["lxc", "exec", "lp-xenial-amd64", "--",
-             "linux64", "env", "LANG=C", "apt-get", "update"],
+            ["lxc", "exec", "lp-xenial-amd64", "--env", "LANG=C", "--",
+             "linux64", "apt-get", "update"],
             ]
         self.assertEqual(
             expected_args,
@@ -311,36 +320,39 @@ class TestLXD(TestCase):
 
     def test_copy_in(self):
         source_dir = self.useFixture(TempDir()).path
-        processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="lxc")
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        container = mock.MagicMock()
+        client.containers.get.return_value = container
         source_path = os.path.join(source_dir, "source")
-        with open(source_path, "w"):
-            pass
+        with open(source_path, "w") as source_file:
+            source_file.write("hello\n")
         os.chmod(source_path, 0o644)
         target_path = "/path/to/target"
         LXD("1", "xenial", "amd64").copy_in(source_path, target_path)
 
-        expected_args = [
-            ["lxc", "file", "push", "--uid=0", "--gid=0", "--mode=644",
-             source_path, "lp-xenial-amd64" + target_path],
-            ]
-        self.assertEqual(
-            expected_args,
-            [proc._args["args"] for proc in processes_fixture.procs])
+        client.containers.get.assert_called_once_with("lp-xenial-amd64")
+        container.api.files.post.assert_called_once_with(
+            params={"path": target_path},
+            data=b"hello\n",
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "644"})
 
     def test_copy_out(self):
-        processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="lxc")
-        LXD("1", "xenial", "amd64").copy_out(
-            "/path/to/source", "/path/to/target")
+        target_dir = self.useFixture(TempDir()).path
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        container = mock.MagicMock()
+        client.containers.get.return_value = container
+        container.api.files.get.return_value.iter_content.return_value = (
+            iter([b"hello\n", b"world\n"]))
+        source_path = "/path/to/source"
+        target_path = os.path.join(target_dir, "target")
+        LXD("1", "xenial", "amd64").copy_out(source_path, target_path)
 
-        expected_args = [
-            ["lxc", "file", "pull",
-             "lp-xenial-amd64/path/to/source", "/path/to/target"],
-            ]
-        self.assertEqual(
-            expected_args,
-            [proc._args["args"] for proc in processes_fixture.procs])
+        client.containers.get.assert_called_once_with("lp-xenial-amd64")
+        container.api.files.get.assert_called_once_with(
+            params={"path": source_path}, stream=True)
+        self.assertThat(target_path, FileContains("hello\nworld\n"))
 
     def test_path_exists(self):
         processes_fixture = self.useFixture(FakeProcesses())
@@ -392,26 +404,6 @@ class TestLXD(TestCase):
             [proc._args["args"] for proc in processes_fixture.procs])
 
     def test_stop(self):
-        class FakeLXC:
-            def __init__(self):
-                self.stopped = False
-                self.deleted = False
-
-            def __call__(self, proc_info):
-                ret = {}
-                if proc_info["args"][:2] == ["lxc", "stop"]:
-                    self.stopped = True
-                elif proc_info["args"][:2] == ["lxc", "delete"]:
-                    self.deleted = True
-                elif proc_info["args"][:2] == ["lxc", "info"]:
-                    if self.deleted:
-                        ret["returncode"] = 1
-                    else:
-                        status = "Stopped" if self.stopped else "Running"
-                        ret["stdout"] = io.BytesIO(
-                            ("Status: %s\n" % status).encode("UTF-8"))
-                return ret
-
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
         os.makedirs("/sys/class/net/lpbuilddbr0")
@@ -419,11 +411,16 @@ class TestLXD(TestCase):
         os.makedirs("/run/launchpad-buildd")
         with open("/run/launchpad-buildd/dnsmasq.pid", "w") as f:
             f.write("42\n")
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        container = client.containers.get('lp-xenial-amd64')
+        container.status_code = LXD_RUNNING
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(FakeLXC(), name="lxc")
         processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").stop()
 
+        container.stop.assert_called_once_with(wait=True)
+        container.delete.assert_called_once_with(wait=True)
         ip = ["sudo", "ip"]
         iptables = ["sudo", "iptables", "-w"]
         iptables_comment = [
@@ -431,10 +428,6 @@ class TestLXD(TestCase):
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise([
-                Equals(["lxc", "info", "lp-xenial-amd64"]),
-                Equals(["lxc", "stop", "lp-xenial-amd64"]),
-                Equals(["lxc", "info", "lp-xenial-amd64"]),
-                Equals(["lxc", "delete", "lp-xenial-amd64"]),
                 Equals(ip + ["addr", "flush", "dev", "lpbuilddbr0"]),
                 Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "down"]),
                 Equals(
@@ -467,15 +460,21 @@ class TestLXD(TestCase):
 
     def test_remove(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        self.useFixture(MockPatch("pylxd.Client"))
+        other_image = mock.MagicMock()
+        other_image.aliases = []
+        image = mock.MagicMock()
+        image.aliases = [{"name": "lp-xenial-amd64"}]
+        client = pylxd.Client()
+        client.images.all.return_value = [other_image, image]
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="lxc")
         processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").remove()
 
+        other_image.delete.assert_not_called()
+        image.delete.assert_called_once_with(wait=True)
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise([
-                Equals(["lxc", "image", "info", "lp-xenial-amd64"]),
-                Equals(["lxc", "image", "delete", "lp-xenial-amd64"]),
                 Equals(["sudo", "rm", "-rf", "/expected/home/build-1"]),
                 ]))

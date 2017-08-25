@@ -3,7 +3,7 @@ Section: admin
 Priority: extra
 Maintainer: Adam Conrad <adconrad@ubuntu.com>
 Standards-Version: 3.9.5
-Build-Depends: debhelper (>= 7.0.50~), apt-utils, bzr, intltool, python, python-apt, python-debian, python-fixtures, python-mock, python-systemfixtures, python-testtools, python-twisted, python-txfixtures, python-zope.interface
+Build-Depends: debhelper (>= 7.0.50~), apt-utils, bzr, intltool, python, python-apt, python-debian, python-fixtures, python-mock, python-netaddr, python-pylxd, python-setuptools, python-systemfixtures, python-testtools, python-twisted, python-txfixtures, python-zope.interface
 
 Package: launchpad-buildd
 Section: misc
@@ -21,7 +21,7 @@ Description: Launchpad buildd slave
 Package: python-lpbuildd
 Section: python
 Architecture: all
-Depends: python, python-twisted-core, python-twisted-web, python-zope.interface, python-apt, python-debian (>= 0.1.23), python-netaddr, apt-utils, procps, ${misc:Depends}
+Depends: python, python-twisted-core, python-twisted-web, python-zope.interface, python-apt, python-debian (>= 0.1.23), python-netaddr, python-pylxd, python-setuptools, apt-utils, procps, ${misc:Depends}
 Breaks: launchpad-buildd (<< 88)
 Replaces: launchpad-buildd (<< 88)
 Description: Python libraries for a Launchpad buildd slave
