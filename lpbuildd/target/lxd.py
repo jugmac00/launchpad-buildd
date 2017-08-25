@@ -282,8 +282,12 @@ class LXD(Backend):
             "source": {"type": "image", "alias": self.alias},
             }, wait=True)
 
-        for path in ("/etc/hosts", "/etc/hostname", "/etc/resolv.conf"):
-            self.copy_in(path, path)
+        with tempfile.NamedTemporaryFile(mode="w+") as hostname_file:
+            print(self.name, file=hostname_file)
+            hostname_file.flush()
+            os.fchmod(hostname_file.fileno(), 0o644)
+            self.copy_in(hostname_file.name, "/etc/hostname")
+        self.copy_in("/etc/resolv.conf", "/etc/resolv.conf")
         with tempfile.NamedTemporaryFile(mode="w+") as policy_rc_d_file:
             policy_rc_d_file.write(policy_rc_d)
             policy_rc_d_file.flush()

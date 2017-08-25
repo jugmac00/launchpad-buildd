@@ -1,6 +1,8 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import print_function
+
 __metaclass__ = type
 
 from contextlib import closing
@@ -126,11 +128,9 @@ class TestLXD(TestCase):
         os.makedirs("/run/launchpad-buildd")
         fs_fixture.add("/etc")
         os.mkdir("/etc")
-        for name in ("hosts", "hostname", "resolv.conf"):
-            path = os.path.join("/etc", name)
-            with open(path, "w") as f:
-                f.write("host %s\n" % name)
-            os.chmod(path, 0o644)
+        with open("/etc/resolv.conf", "w") as f:
+            print("host resolv.conf", file=f)
+        os.chmod("/etc/resolv.conf", 0o644)
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -202,12 +202,8 @@ class TestLXD(TestCase):
             "source": {"type": "image", "alias": "lp-xenial-amd64"},
             }, wait=True)
         container.api.files.post.assert_any_call(
-            params={"path": "/etc/hosts"},
-            data=b"host hosts\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
-        container.api.files.post.assert_any_call(
             params={"path": "/etc/hostname"},
-            data=b"host hostname\n",
+            data=b"lp-xenial-amd64\n",
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
         container.api.files.post.assert_any_call(
             params={"path": "/etc/resolv.conf"},
