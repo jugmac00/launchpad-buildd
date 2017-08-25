@@ -306,7 +306,7 @@ class LXD(Backend):
                 break
             if container.status_code == LXD_RUNNING:
                 break
-            time.sleep(5)
+            time.sleep(1)
         if container is None or container.status_code != LXD_RUNNING:
             raise BackendException(
                 "Container failed to start within %d seconds" % timeout)
