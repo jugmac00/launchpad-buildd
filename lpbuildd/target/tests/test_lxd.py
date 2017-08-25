@@ -62,10 +62,6 @@ class TestLXD(TestCase):
         with open(hello, "w") as f:
             f.write("hello\n")
             os.fchmod(f.fileno(), 0o755)
-        os.mkdir(os.path.join(source, "etc"))
-        for name in ("hosts", "hostname", "resolv.conf"):
-            with open(os.path.join(source, "etc", name), "w") as f:
-                f.write("%s\n" % name)
         with tarfile.open(output_path, "w:bz2") as tar:
             tar.add(source, arcname="chroot-autobuild")
 
@@ -98,7 +94,7 @@ class TestLXD(TestCase):
                 }),
             }))
         rootfs = os.path.join(target, "rootfs")
-        self.assertThat(rootfs, DirContains(["bin", "etc"]))
+        self.assertThat(rootfs, DirContains(["bin"]))
         self.assertThat(os.path.join(rootfs, "bin"), DirContains(["hello"]))
         hello = os.path.join(rootfs, "bin", "hello")
         self.assertThat(hello, FileContains("hello\n"))
