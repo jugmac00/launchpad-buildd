@@ -24,7 +24,6 @@ from testtools.matchers import (
     )
 
 from lpbuildd.target.build_snap import (
-    BuildSnap,
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
     )

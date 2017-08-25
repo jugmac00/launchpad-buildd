@@ -112,7 +112,7 @@ class Backend:
             get_output=True).rstrip(b"\0").split(b"\0")
         # XXX cjwatson 2017-08-04: Use `os.fsdecode` instead once we're on
         # Python 3.
-        return [path.decode("UTF-8") for path in paths]
+        return [p.decode("UTF-8") for p in paths]
 
     def kill_processes(self):
         """Kill any processes left running in the target.
