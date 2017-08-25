@@ -119,11 +119,21 @@ class LXD(Backend):
 
         copy_from_host = {"/etc/hosts", "/etc/hostname", "/etc/resolv.conf"}
         replace = {
-            # We'll put a stricter version in place later, but we need a
-            # liberal version to let the container start up properly.
             "/usr/local/sbin/policy-rc.d": dedent("""\
                 #! /bin/sh
-                exit 0
+                while :; do
+                    case "$1" in
+                        -*) shift ;;
+                        systemd-udevd|systemd-udevd.service|udev|udev.service)
+                            exit 0 ;;
+                        snapd|snapd.socket|snapd.service)
+                            exit 0 ;;
+                        *)
+                            echo "Not running services in chroot."
+                            exit 101
+                            ;;
+                    esac
+                done
                 """).encode("UTF-8"),
             }
 
@@ -306,7 +316,14 @@ class LXD(Backend):
             subprocess.check_call(
                 ["lxc", "profile", "set", self.profile_name, key, value])
 
+        set_key("security.privileged", "true")
+        set_key("security.nesting", "true")
         set_key("raw.lxc", dedent("""\
+            lxc.aa_profile=unconfined
+            lxc.cgroup.devices.deny=
+            lxc.cgroup.devices.allow=
+            lxc.mount.auto=
+            lxc.mount.auto=proc:rw sys:rw
             lxc.network.0.ipv4={ipv4_address}
             lxc.network.0.ipv4.gateway={ipv4_gateway}
             """.format(
@@ -328,31 +345,15 @@ class LXD(Backend):
         # Wait for container to start
         timeout = 60
         now = time.time()
+        container_running = False
         while time.time() < now + timeout:
-            if self.is_running():
+            if not container_running and self.is_running():
+                container_running = True
                 break
             time.sleep(5)
-        if not self.is_running():
+        if not container_running:
             raise BackendException(
                 "Container failed to start within %d seconds" % timeout)
-
-        with tempfile.NamedTemporaryFile(mode="w") as policy_rc_d_file:
-            print(dedent("""\
-                #! /bin/sh
-                while :; do
-                    case "$1" in
-                        -*)                     shift ;;
-                        snapd.service)          exit 0 ;;
-                        *)
-                            echo "Not running services in chroot."
-                            exit 101
-                            ;;
-                    esac
-                done
-                """), file=policy_rc_d_file, end="")
-            policy_rc_d_file.flush()
-            os.fchmod(policy_rc_d_file.fileno(), 0o755)
-            self.copy_in(policy_rc_d_file.name, "/usr/local/sbin/policy-rc.d")
 
     def run(self, args, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):

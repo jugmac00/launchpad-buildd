@@ -118,7 +118,19 @@ class TestLXD(TestCase):
             policy_rc_d,
             FileContains(dedent("""\
                 #! /bin/sh
-                exit 0
+                while :; do
+                    case "$1" in
+                        -*) shift ;;
+                        systemd-udevd|systemd-udevd.service|udev|udev.service)
+                            exit 0 ;;
+                        snapd|snapd.socket|snapd.service)
+                            exit 0 ;;
+                        *)
+                            echo "Not running services in chroot."
+                            exit 101
+                            ;;
+                    esac
+                done
                 """)))
         self.assertThat(policy_rc_d, HasPermissions("0755"))
 
@@ -184,6 +196,11 @@ class TestLXD(TestCase):
         LXD("1", "xenial", "amd64").start()
 
         raw_lxc = dedent("""\
+            lxc.aa_profile=unconfined
+            lxc.cgroup.devices.deny=
+            lxc.cgroup.devices.allow=
+            lxc.mount.auto=
+            lxc.mount.auto=proc:rw sys:rw
             lxc.network.0.ipv4=10.10.10.2/24
             lxc.network.0.ipv4.gateway=10.10.10.1
             """)
@@ -200,6 +217,10 @@ class TestLXD(TestCase):
                 Equals(["lxc", "profile", "copy", "default", "lpbuildd"]),
                 Equals(["lxc", "profile", "device", "set", "lpbuildd", "eth0",
                         "parent", "lpbuilddbr0"]),
+                Equals(["lxc", "profile", "set", "lpbuildd",
+                              "security.privileged", "true"]),
+                Equals(["lxc", "profile", "set", "lpbuildd",
+                        "security.nesting", "true"]),
                 Equals(["lxc", "profile", "set", "lpbuildd",
                         "raw.lxc", raw_lxc]),
                 Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
@@ -255,13 +276,6 @@ class TestLXD(TestCase):
                         "lp-xenial-amd64/etc/resolv.conf"]),
                 Equals(["lxc", "start", "lp-xenial-amd64"]),
                 Equals(["lxc", "info", "lp-xenial-amd64"]),
-                Equals(["lxc", "info", "lp-xenial-amd64"]),
-                MatchesListwise(
-                    [Equals(arg)
-                     for arg in ["lxc", "file", "push", "--uid=0", "--gid=0",
-                                 "--mode=755"]] +
-                    [Contains("tmp"),
-                     Equals("lp-xenial-amd64/usr/local/sbin/policy-rc.d")]),
                 ]))
 
     def test_run(self):
