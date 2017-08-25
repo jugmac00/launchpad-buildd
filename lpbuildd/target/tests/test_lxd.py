@@ -17,7 +17,6 @@ except ImportError:
 from fixtures import (
     EnvironmentVariable,
     MockPatch,
-    MonkeyPatch,
     TempDir,
     )
 import pylxd
@@ -36,7 +35,10 @@ from testtools.matchers import (
     MatchesListwise,
     )
 
-from lpbuildd.target.lxd import LXD
+from lpbuildd.target.lxd import (
+    LXD,
+    policy_rc_d,
+    )
 
 
 LXD_RUNNING = 103
@@ -64,31 +66,14 @@ class TestLXD(TestCase):
         for name in ("hosts", "hostname", "resolv.conf"):
             with open(os.path.join(source, "etc", name), "w") as f:
                 f.write("%s\n" % name)
-        policy_rc_d = os.path.join(
-            source, "usr", "local", "sbin", "policy-rc.d")
-        os.makedirs(os.path.dirname(policy_rc_d))
-        with open(policy_rc_d, "w") as f:
-            f.write("original policy-rc.d\n")
-            os.fchmod(f.fileno(), 0o755)
         with tarfile.open(output_path, "w:bz2") as tar:
             tar.add(source, arcname="chroot-autobuild")
-
-    def make_fake_etc(self):
-        fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/etc")
-        os.mkdir("/etc")
-        for name in ("hosts", "hostname", "resolv.conf"):
-            with open(os.path.join("/etc", name), "w") as f:
-                f.write("host %s\n" % name)
-        # systemfixtures doesn't patch this, but arguably should.
-        self.useFixture(MonkeyPatch("tarfile.bltn_open", open))
 
     def test_convert(self):
         tmp = self.useFixture(TempDir()).path
         source_tarball_path = os.path.join(tmp, "source.tar.bz2")
         target_tarball_path = os.path.join(tmp, "target.tar.gz")
         self.make_chroot_tarball(source_tarball_path)
-        self.make_fake_etc()
         with tarfile.open(source_tarball_path, "r") as source_tarball:
             creation_time = source_tarball.getmember("chroot-autobuild").mtime
             with tarfile.open(target_tarball_path, "w:gz") as target_tarball:
@@ -113,50 +98,21 @@ class TestLXD(TestCase):
                 }),
             }))
         rootfs = os.path.join(target, "rootfs")
-        self.assertThat(rootfs, DirContains(["bin", "etc", "usr"]))
+        self.assertThat(rootfs, DirContains(["bin", "etc"]))
         self.assertThat(os.path.join(rootfs, "bin"), DirContains(["hello"]))
         hello = os.path.join(rootfs, "bin", "hello")
         self.assertThat(hello, FileContains("hello\n"))
         self.assertThat(hello, HasPermissions("0755"))
         self.assertThat(
-            os.path.join(rootfs, "etc"),
-            DirContains(["hosts", "hostname", "resolv.conf", "systemd"]))
-        for name in ("hosts", "hostname", "resolv.conf"):
-            self.assertThat(
-                os.path.join(rootfs, "etc", name),
-                FileContains("host %s\n" % name))
-        self.assertThat(
             os.path.join(
                 rootfs,
                 "etc", "systemd", "system", "snapd.service.d", "no-nice.conf"),
             FileContains("[Service]\nNice=0\n"))
-        policy_rc_d = os.path.join(
-            rootfs, "usr", "local", "sbin", "policy-rc.d")
-        self.assertThat(
-            policy_rc_d,
-            FileContains(dedent("""\
-                #! /bin/sh
-                while :; do
-                    case "$1" in
-                        -*) shift ;;
-                        systemd-udevd|systemd-udevd.service|udev|udev.service)
-                            exit 0 ;;
-                        snapd|snapd.socket|snapd.service)
-                            exit 0 ;;
-                        *)
-                            echo "Not running services in chroot."
-                            exit 101
-                            ;;
-                    esac
-                done
-                """)))
-        self.assertThat(policy_rc_d, HasPermissions("0755"))
 
     def test_create(self):
         tmp = self.useFixture(TempDir()).path
         source_tarball_path = os.path.join(tmp, "source.tar.bz2")
         self.make_chroot_tarball(source_tarball_path)
-        self.make_fake_etc()
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.images.all.return_value = []
@@ -284,6 +240,10 @@ class TestLXD(TestCase):
             params={"path": "/etc/resolv.conf"},
             data=b"host resolv.conf\n",
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+        container.api.files.post.assert_any_call(
+            params={"path": "/usr/local/sbin/policy-rc.d"},
+            data=policy_rc_d.encode("UTF-8"),
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0755"})
         container.start.assert_called_once_with(wait=True)
         self.assertEqual(LXD_RUNNING, container.status_code)
 

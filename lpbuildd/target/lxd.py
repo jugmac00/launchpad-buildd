@@ -12,6 +12,7 @@ import os
 import stat
 import subprocess
 import tarfile
+import tempfile
 from textwrap import dedent
 import time
 
@@ -30,6 +31,24 @@ from lpbuildd.util import (
 
 
 LXD_RUNNING = 103
+
+
+policy_rc_d = dedent("""\
+    #! /bin/sh
+    while :; do
+        case "$1" in
+            -*) shift ;;
+            systemd-udevd|systemd-udevd.service|udev|udev.service)
+                exit 0 ;;
+            snapd|snapd.socket|snapd.service)
+                exit 0 ;;
+            *)
+                echo "Not running services in chroot."
+                exit 101
+                ;;
+        esac
+    done
+    """)
 
 
 class LXD(Backend):
@@ -105,26 +124,6 @@ class LXD(Backend):
         metadata_file.name = "metadata.yaml"
         target_tarball.addfile(metadata_file, io.BytesIO(metadata_yaml))
 
-        copy_from_host = {"/etc/hosts", "/etc/hostname", "/etc/resolv.conf"}
-        replace = {
-            "/usr/local/sbin/policy-rc.d": dedent("""\
-                #! /bin/sh
-                while :; do
-                    case "$1" in
-                        -*) shift ;;
-                        systemd-udevd|systemd-udevd.service|udev|udev.service)
-                            exit 0 ;;
-                        snapd|snapd.socket|snapd.service)
-                            exit 0 ;;
-                        *)
-                            echo "Not running services in chroot."
-                            exit 101
-                            ;;
-                    esac
-                done
-                """).encode("UTF-8"),
-            }
-
         for entry in source_tarball:
             fileptr = None
             try:
@@ -132,19 +131,10 @@ class LXD(Backend):
                 entry.name = "rootfs" + orig_name
 
                 if entry.isfile():
-                    if orig_name in copy_from_host:
-                        target_tarball.add(
-                            os.path.realpath(orig_name), arcname=entry.name)
-                        continue
-                    elif orig_name in replace:
-                        new_bytes = replace[orig_name]
-                        entry.size = len(new_bytes)
-                        fileptr = io.BytesIO(new_bytes)
-                    else:
-                        try:
-                            fileptr = source_tarball.extractfile(entry.name)
-                        except KeyError:
-                            pass
+                    try:
+                        fileptr = source_tarball.extractfile(entry.name)
+                    except KeyError:
+                        pass
                 elif entry.islnk():
                     # Update hardlinks to point to the right target
                     entry.linkname = (
@@ -329,6 +319,11 @@ class LXD(Backend):
 
         for path in ("/etc/hosts", "/etc/hostname", "/etc/resolv.conf"):
             self.copy_in(path, path)
+        with tempfile.NamedTemporaryFile(mode="w+") as policy_rc_d_file:
+            policy_rc_d_file.write(policy_rc_d)
+            policy_rc_d_file.flush()
+            os.fchmod(policy_rc_d_file.fileno(), 0o755)
+            self.copy_in(policy_rc_d_file.name, "/usr/local/sbin/policy-rc.d")
 
         # Start the container and wait for it to start.
         container.start(wait=True)
