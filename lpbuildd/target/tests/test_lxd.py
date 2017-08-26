@@ -138,6 +138,11 @@ class TestLXD(TestCase):
         client.containers.get.return_value = container
         container.start.side_effect = (
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
+        files_api = container.api.files
+        files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
+        files_api.session.get.return_value.status_code = 200
+        files_api.session.get.return_value.iter_content.return_value = (
+            iter([b"127.0.0.1\tlocalhost\n"]))
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").start()
@@ -201,15 +206,22 @@ class TestLXD(TestCase):
             "profiles": ["default", "lpbuildd"],
             "source": {"type": "image", "alias": "lp-xenial-amd64"},
             }, wait=True)
-        container.api.files.post.assert_any_call(
+        files_api.session.get.assert_called_once_with(
+            "/1.0/containers/lp-xenial-amd64/files",
+            params={"path": "/etc/hosts"}, stream=True)
+        files_api.post.assert_any_call(
+            params={"path": "/etc/hosts"},
+            data=b"127.0.0.1\tlocalhost\n\n127.0.1.1\tlp-xenial-amd64\n",
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+        files_api.post.assert_any_call(
             params={"path": "/etc/hostname"},
             data=b"lp-xenial-amd64\n",
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
-        container.api.files.post.assert_any_call(
+        files_api.post.assert_any_call(
             params={"path": "/etc/resolv.conf"},
             data=b"host resolv.conf\n",
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
-        container.api.files.post.assert_any_call(
+        files_api.post.assert_any_call(
             params={"path": "/usr/local/sbin/policy-rc.d"},
             data=policy_rc_d.encode("UTF-8"),
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0755"})
