@@ -272,14 +272,18 @@ class TestLXD(TestCase):
         client = pylxd.Client()
         container = mock.MagicMock()
         client.containers.get.return_value = container
-        container.api.files.get.return_value.iter_content.return_value = (
+        files_api = container.api.files
+        files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
+        files_api.session.get.return_value.status_code = 200
+        files_api.session.get.return_value.iter_content.return_value = (
             iter([b"hello\n", b"world\n"]))
         source_path = "/path/to/source"
         target_path = os.path.join(target_dir, "target")
         LXD("1", "xenial", "amd64").copy_out(source_path, target_path)
 
         client.containers.get.assert_called_once_with("lp-xenial-amd64")
-        container.api.files.get.assert_called_once_with(
+        files_api.session.get.assert_called_once_with(
+            "/1.0/containers/lp-xenial-amd64/files",
             params={"path": source_path}, stream=True)
         self.assertThat(target_path, FileContains("hello\nworld\n"))
 

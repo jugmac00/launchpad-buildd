@@ -354,6 +354,16 @@ class LXD(Backend):
                 }
             container.api.files.post(params=params, data=data, headers=headers)
 
+    def _get_file(self, container, *args, **kwargs):
+        # pylxd < 2.1.1 tries to validate the response as JSON in streaming
+        # mode and ends up running out of memory on large files.  Work
+        # around this.
+        response = container.api.files.session.get(
+            container.api.files._api_endpoint, *args, **kwargs)
+        if response.status_code != 200:
+            raise LXDAPIException(response)
+        return response
+
     def copy_out(self, source_path, target_path):
         # pylxd's FilesManager doesn't support streaming, which is important
         # since copied-out files may be large.
@@ -362,8 +372,8 @@ class LXD(Backend):
         with open(target_path, "wb") as target_file:
             params = {"path": source_path}
             with closing(
-                    container.api.files.get(
-                        params=params, stream=True)) as response:
+                    self._get_file(
+                        container, params=params, stream=True)) as response:
                 for chunk in response.iter_content(chunk_size=65536):
                     target_file.write(chunk)
 
