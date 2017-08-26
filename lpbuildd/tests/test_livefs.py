@@ -77,8 +77,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "buildlivefs",
-            "--backend=chroot", "--series=saucy", "--arch=i386",
-            self.buildid,
+            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             "--project", "ubuntu",
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -102,8 +101,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "scan-for-processes",
-            "--backend=chroot", "--series=saucy", "--arch=i386",
-            self.buildid,
+            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             ]
         self.assertEqual(
             LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
@@ -120,8 +118,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "umount-chroot",
-            "--backend=chroot", "--series=saucy", "--arch=i386",
-            self.buildid,
+            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             ]
         self.assertEqual(LiveFilesystemBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])

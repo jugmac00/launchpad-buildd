@@ -23,6 +23,7 @@ class LiveFilesystemBuildState(DebianBuildState):
 class LiveFilesystemBuildManager(DebianBuildManager):
     """Build a live filesystem."""
 
+    backend_name = "lxd"
     initial_build_state = LiveFilesystemBuildState.BUILD_LIVEFS
 
     def initiate(self, files, chroot, extra_args):
