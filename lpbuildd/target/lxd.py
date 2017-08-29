@@ -282,6 +282,13 @@ class LXD(Backend):
             "source": {"type": "image", "alias": self.alias},
             }, wait=True)
 
+        with tempfile.NamedTemporaryFile(mode="w+b") as hosts_file:
+            self.copy_out("/etc/hosts", hosts_file.name)
+            hosts_file.seek(0, os.SEEK_END)
+            print("\n127.0.1.1\t%s" % self.name, file=hosts_file)
+            hosts_file.flush()
+            os.fchmod(hosts_file.fileno(), 0o644)
+            self.copy_in(hosts_file.name, "/etc/hosts")
         with tempfile.NamedTemporaryFile(mode="w+") as hostname_file:
             print(self.name, file=hostname_file)
             hostname_file.flush()

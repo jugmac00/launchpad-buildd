@@ -80,7 +80,12 @@ class BuildLiveFS(Operation):
         self.backend.run(["/bin/sh", "-c", command], echo=echo)
 
     def install(self):
-        self.backend.run(["apt-get", "-y", "install", "livecd-rootfs"])
+        deps = ["livecd-rootfs"]
+        if self.args.backend == "lxd":
+            for dep in "snapd", "fuse", "squashfuse":
+                if self.backend.is_package_available(dep):
+                    deps.append(dep)
+        self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.arch == "i386":
             self.backend.run([
                 "apt-get", "-y", "--no-install-recommends", "install",
