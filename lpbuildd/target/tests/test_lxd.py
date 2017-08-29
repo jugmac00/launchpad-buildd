@@ -203,7 +203,7 @@ class TestLXD(TestCase):
 
         client.containers.create.assert_called_once_with({
             "name": "lp-xenial-amd64",
-            "profiles": ["default", "lpbuildd"],
+            "profiles": ["lpbuildd"],
             "source": {"type": "image", "alias": "lp-xenial-amd64"},
             }, wait=True)
         files_api.session.get.assert_called_once_with(

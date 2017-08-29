@@ -278,7 +278,7 @@ class LXD(Backend):
 
         container = self.client.containers.create({
             "name": self.name,
-            "profiles": ["default", self.profile_name],
+            "profiles": [self.profile_name],
             "source": {"type": "image", "alias": self.alias},
             }, wait=True)
 
