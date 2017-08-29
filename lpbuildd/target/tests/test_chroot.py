@@ -210,6 +210,26 @@ class TestChroot(TestCase):
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])
 
+    def test_is_package_available(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        test_proc_infos = iter([{}, {"returncode": 100}])
+        processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
+        self.assertTrue(
+            Chroot("1", "xenial", "amd64").is_package_available("snapd"))
+        self.assertFalse(
+            Chroot("1", "xenial", "amd64").is_package_available("nonexistent"))
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "apt-cache", "show", package]
+            for package in ("snapd", "nonexistent")
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
     def test_kill_processes(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         fs_fixture = self.useFixture(FakeFilesystem())

@@ -77,7 +77,7 @@ class TestSnapBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "buildsnap",
-            "--backend=chroot", "--series=xenial", "--arch=i386", self.buildid,
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
             "--git-path", "master",
             "test-snap",
@@ -113,8 +113,7 @@ class TestSnapBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "scan-for-processes",
-            "--backend=chroot", "--series=xenial", "--arch=i386",
-            self.buildid,
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -130,8 +129,7 @@ class TestSnapBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "umount-chroot",
-            "--backend=chroot", "--series=xenial", "--arch=i386",
-            self.buildid,
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -158,8 +156,7 @@ class TestSnapBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "scan-for-processes",
-            "--backend=chroot", "--series=xenial", "--arch=i386",
-            self.buildid,
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -176,8 +173,7 @@ class TestSnapBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "umount-chroot",
-            "--backend=chroot", "--series=xenial", "--arch=i386",
-            self.buildid,
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])

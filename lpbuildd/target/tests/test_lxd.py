@@ -336,6 +336,24 @@ class TestLXD(TestCase):
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])
 
+    def test_is_package_available(self):
+        processes_fixture = self.useFixture(FakeProcesses())
+        test_proc_infos = iter([{}, {"returncode": 100}])
+        processes_fixture.add(lambda _: next(test_proc_infos), name="lxc")
+        self.assertTrue(
+            LXD("1", "xenial", "amd64").is_package_available("snapd"))
+        self.assertFalse(
+            LXD("1", "xenial", "amd64").is_package_available("nonexistent"))
+
+        expected_args = [
+            ["lxc", "exec", "lp-xenial-amd64", "--",
+             "linux64", "apt-cache", "show", package]
+            for package in ("snapd", "nonexistent")
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
     def test_stop(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")

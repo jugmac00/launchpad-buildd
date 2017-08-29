@@ -25,6 +25,7 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
   * Convert buildlivefs to the new Operation framework and add unit tests.
   * Convert buildsnap to the new Operation framework and add unit tests.
   * Add a LXD backend.
+  * Switch snap builds to the LXD backend.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
 
