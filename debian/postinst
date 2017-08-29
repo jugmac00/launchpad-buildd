@@ -108,7 +108,7 @@ EOF
 
 	# Configure LXD if necessary
 	if [ ! -e /var/lib/lxd/server.key ]; then
-	    lxd init --auto
+	    lxd init --auto || true
 	fi
 
 	;;
