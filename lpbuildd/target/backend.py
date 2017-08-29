@@ -114,6 +114,20 @@ class Backend:
         # Python 3.
         return [p.decode("UTF-8") for p in paths]
 
+    def is_package_available(self, package):
+        """Test whether a package is available in the target environment.
+
+        :param package: a binary package name.
+        """
+        try:
+            with open("/dev/null", "w") as devnull:
+                self.run(
+                    ["apt-cache", "show", package],
+                    stdout=devnull, stderr=devnull)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
     def kill_processes(self):
         """Kill any processes left running in the target.
 
