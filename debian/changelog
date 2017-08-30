@@ -1,4 +1,4 @@
-launchpad-buildd (148) UNRELEASED; urgency=medium
+launchpad-buildd (148) xenial; urgency=medium
 
   * Move the contents of /usr/share/launchpad-buildd/slavebin/ into bin/ in
     the source package, to keep things a bit more organised.
@@ -28,7 +28,7 @@ launchpad-buildd (148) UNRELEASED; urgency=medium
   * Switch snap builds to the LXD backend.
   * Switch livefs builds to the LXD backend.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 23:07:58 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 30 Aug 2017 15:18:41 +0100
 
 launchpad-buildd (147) xenial; urgency=medium
 
