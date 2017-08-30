@@ -158,7 +158,7 @@ class LXD(Backend):
         with io.BytesIO() as target_file:
             with tarfile.open(name=tarball_path, mode="r") as source_tarball:
                 with tarfile.open(
-                        fileobj=target_file, mode="w:gz") as target_tarball:
+                        fileobj=target_file, mode="w") as target_tarball:
                     self._convert(source_tarball, target_tarball)
 
             image = self.client.images.create(
