@@ -39,6 +39,7 @@ from testtools.matchers import (
 
 from lpbuildd.target.lxd import (
     LXD,
+    fallback_hosts,
     policy_rc_d,
     )
 
@@ -227,6 +228,43 @@ class TestLXD(TestCase):
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0755"})
         container.start.assert_called_once_with(wait=True)
         self.assertEqual(LXD_RUNNING, container.status_code)
+
+    def test_start_missing_etc_hosts(self):
+        fs_fixture = self.useFixture(FakeFilesystem())
+        fs_fixture.add("/sys")
+        fs_fixture.add("/run")
+        os.makedirs("/run/launchpad-buildd")
+        fs_fixture.add("/etc")
+        os.mkdir("/etc")
+        with open("/etc/resolv.conf", "w") as f:
+            print("host resolv.conf", file=f)
+        os.chmod("/etc/resolv.conf", 0o644)
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.profiles.get.side_effect = FakeLXDAPIException
+        container = client.containers.create.return_value
+        client.containers.get.return_value = container
+        container.start.side_effect = (
+            lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
+        files_api = container.api.files
+        files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
+        files_api.session.get.return_value.status_code = 404
+        files_api.session.get.return_value.json.return_value = {
+            "error": "not found",
+            }
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        LXD("1", "xenial", "amd64").start()
+
+        files_api.session.get.assert_called_once_with(
+            "/1.0/containers/lp-xenial-amd64/files",
+            params={"path": "/etc/hosts"}, stream=True)
+        files_api.post.assert_any_call(
+            params={"path": "/etc/hosts"},
+            data=(
+                fallback_hosts +
+                "\n127.0.1.1\tlp-xenial-amd64\n").encode("UTF-8"),
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
 
     def test_run(self):
         processes_fixture = self.useFixture(FakeProcesses())
