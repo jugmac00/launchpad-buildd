@@ -33,6 +33,16 @@ from lpbuildd.util import (
 LXD_RUNNING = 103
 
 
+fallback_hosts = dedent("""\
+    127.0.0.1\tlocalhost
+    ::1\tlocalhost ip6-localhost ip6-loopback
+    fe00::0\tip6-localnet
+    ff00::0\tip6-mcastprefix
+    ff02::1\tip6-allnodes
+    ff02::2\tip6-allrouters
+    """)
+
+
 policy_rc_d = dedent("""\
     #! /bin/sh
     while :; do
@@ -283,7 +293,11 @@ class LXD(Backend):
             }, wait=True)
 
         with tempfile.NamedTemporaryFile(mode="w+b") as hosts_file:
-            self.copy_out("/etc/hosts", hosts_file.name)
+            try:
+                self.copy_out("/etc/hosts", hosts_file.name)
+            except LXDAPIException:
+                hosts_file.seek(0, os.SEEK_SET)
+                hosts_file.write(fallback_hosts.encode("UTF-8"))
             hosts_file.seek(0, os.SEEK_END)
             print("\n127.0.1.1\t%s" % self.name, file=hosts_file)
             hosts_file.flush()
