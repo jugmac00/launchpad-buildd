@@ -203,6 +203,10 @@ class LXD(Backend):
         subprocess.check_call(
             ["sudo", "sysctl", "-q", "-w", "net.ipv4.ip_forward=1"])
         self.iptables(
+            ["-t", "mangle", "-A", "FORWARD", "-i", self.bridge_name,
+             "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
+             "-j", "TCPMSS", "--clamp-mss-to-pmtu"])
+        self.iptables(
             ["-t", "nat", "-A", "POSTROUTING",
              "-s", str(self.ipv4_network), "!", "-d", str(self.ipv4_network),
              "-j", "MASQUERADE"])
@@ -220,6 +224,10 @@ class LXD(Backend):
             ["sudo", "ip", "addr", "flush", "dev", self.bridge_name])
         subprocess.call(
             ["sudo", "ip", "link", "set", "dev", self.bridge_name, "down"])
+        self.iptables(
+            ["-t", "mangle", "-D", "FORWARD", "-i", self.bridge_name,
+             "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
+             "-j", "TCPMSS", "--clamp-mss-to-pmtu"])
         self.iptables(
             ["-t", "nat", "-D", "POSTROUTING",
              "-s", str(self.ipv4_network), "!", "-d", str(self.ipv4_network),

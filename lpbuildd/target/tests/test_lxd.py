@@ -189,6 +189,12 @@ class TestLXD(TestCase):
                     ["sudo", "sysctl", "-q", "-w", "net.ipv4.ip_forward=1"]),
                 Equals(
                     iptables +
+                    ["-t", "mangle", "-A", "FORWARD", "-i", "lpbuilddbr0",
+                     "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
+                     "-j", "TCPMSS", "--clamp-mss-to-pmtu"] +
+                    iptables_comment),
+                Equals(
+                    iptables +
                     ["-t", "nat", "-A", "POSTROUTING",
                      "-s", "10.10.10.1/24", "!", "-d", "10.10.10.1/24",
                      "-j", "MASQUERADE"] +
@@ -431,6 +437,12 @@ class TestLXD(TestCase):
             MatchesListwise([
                 Equals(ip + ["addr", "flush", "dev", "lpbuilddbr0"]),
                 Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "down"]),
+                Equals(
+                    iptables +
+                    ["-t", "mangle", "-D", "FORWARD", "-i", "lpbuilddbr0",
+                     "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
+                     "-j", "TCPMSS", "--clamp-mss-to-pmtu"] +
+                    iptables_comment),
                 Equals(
                     iptables +
                     ["-t", "nat", "-D", "POSTROUTING",

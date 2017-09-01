@@ -1,3 +1,10 @@
+launchpad-buildd (149) UNRELEASED; urgency=medium
+
+  * Clamp the TCP MSS on the LXD bridge interface to the path MTU, to avoid
+    problems in environments where the path MTU is lower than 1500.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 01 Sep 2017 13:46:25 +0100
+
 launchpad-buildd (148) xenial; urgency=medium
 
   * Move the contents of /usr/share/launchpad-buildd/slavebin/ into bin/ in
