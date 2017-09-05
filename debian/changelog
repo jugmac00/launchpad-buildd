@@ -1,3 +1,10 @@
+launchpad-buildd (150) UNRELEASED; urgency=medium
+
+  * Tell LXD to disable seccomp on powerpc, since it doesn't work there on
+    Linux 4.4.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 05 Sep 2017 10:41:55 +0100
+
 launchpad-buildd (149) xenial; urgency=medium
 
   * Clamp the TCP MSS on the LXD bridge interface to the path MTU, to avoid

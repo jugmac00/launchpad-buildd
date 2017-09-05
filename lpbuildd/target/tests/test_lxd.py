@@ -156,6 +156,13 @@ class TestLXD(TestCase):
         LXD("1", "xenial", "amd64").create_profile()
         self.assert_correct_profile()
 
+    def test_create_profile_powerpc(self):
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.profiles.get.side_effect = FakeLXDAPIException
+        LXD("1", "xenial", "powerpc").create_profile()
+        self.assert_correct_profile("lxc.seccomp=\n")
+
     def test_start(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")

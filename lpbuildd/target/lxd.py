@@ -273,6 +273,8 @@ class LXD(Backend):
             ("lxc.network.0.ipv4", ipv4_address),
             ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
             ]
+        if self.arch == "powerpc":
+            raw_lxc_config.append(("lxc.seccomp", ""))
         config = {
             "security.privileged": "true",
             "security.nesting": "true",
