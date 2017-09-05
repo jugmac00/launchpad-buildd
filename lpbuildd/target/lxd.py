@@ -267,20 +267,21 @@ class LXD(Backend):
         else:
             old_profile.delete()
 
+        raw_lxc_config = [
+            ("lxc.aa_profile", "unconfined"),
+            ("lxc.cgroup.devices.deny", ""),
+            ("lxc.cgroup.devices.allow", ""),
+            ("lxc.mount.auto", ""),
+            ("lxc.mount.auto", "proc:rw sys:rw"),
+            ("lxc.network.0.ipv4", ipv4_address),
+            ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
+            ]
         config = {
             "security.privileged": "true",
             "security.nesting": "true",
-            "raw.lxc": dedent("""\
-                lxc.aa_profile=unconfined
-                lxc.cgroup.devices.deny=
-                lxc.cgroup.devices.allow=
-                lxc.mount.auto=
-                lxc.mount.auto=proc:rw sys:rw
-                lxc.network.0.ipv4={ipv4_address}
-                lxc.network.0.ipv4.gateway={ipv4_gateway}
-                """.format(
-                    ipv4_address=ipv4_address,
-                    ipv4_gateway=self.ipv4_network.ip)),
+            "raw.lxc": "".join(
+                "{key}={value}\n".format(key=key, value=value)
+                for key, value in raw_lxc_config),
             }
         devices = {
             "eth0": {
