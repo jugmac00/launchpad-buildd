@@ -245,10 +245,7 @@ class LXD(Backend):
             os.unlink(self.dnsmasq_pid_file)
         subprocess.call(["sudo", "ip", "link", "delete", self.bridge_name])
 
-    def start(self):
-        """See `Backend`."""
-        self.stop()
-
+    def create_profile(self):
         for addr in self.ipv4_network:
             if addr not in (
                     self.ipv4_network.network, self.ipv4_network.ip,
@@ -293,6 +290,11 @@ class LXD(Backend):
             }
         self.client.profiles.create(self.profile_name, config, devices)
 
+    def start(self):
+        """See `Backend`."""
+        self.stop()
+
+        self.create_profile()
         self.start_bridge()
 
         container = self.client.containers.create({
