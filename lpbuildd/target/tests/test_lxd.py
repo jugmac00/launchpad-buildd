@@ -145,7 +145,20 @@ class TestLXD(TestCase):
                 "parent": "lpbuilddbr0",
                 "type": "nic",
                 },
+            "loop-control": {
+                "major": "10",
+                "minor": "237",
+                "path": "/dev/loop-control",
+                "type": "unix-char",
+                },
             }
+        for minor in range(8):
+            expected_devices["loop%d" % minor] = {
+                "major": "7",
+                "minor": str(minor),
+                "path": "/dev/loop%d" % minor,
+                "type": "unix-block",
+                }
         client.profiles.create.assert_called_once_with(
             "lpbuildd", expected_config, expected_devices)
 

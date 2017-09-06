@@ -2,6 +2,7 @@ launchpad-buildd (150) UNRELEASED; urgency=medium
 
   * Tell LXD to disable seccomp on powerpc, since it doesn't work there on
     Linux 4.4.
+  * Make loop devices available to LXD containers.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 05 Sep 2017 10:41:55 +0100
 
