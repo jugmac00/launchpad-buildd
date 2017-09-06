@@ -289,7 +289,20 @@ class LXD(Backend):
                 "parent": self.bridge_name,
                 "type": "nic",
                 },
+            "loop-control": {
+                "major": "10",
+                "minor": "237",
+                "path": "/dev/loop-control",
+                "type": "unix-char",
+                },
             }
+        for minor in range(8):
+            devices["loop%d" % minor] = {
+                "major": "7",
+                "minor": str(minor),
+                "path": "/dev/loop%d" % minor,
+                "type": "unix-block",
+                }
         self.client.profiles.create(self.profile_name, config, devices)
 
     def start(self):
