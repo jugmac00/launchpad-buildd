@@ -273,6 +273,8 @@ class LXD(Backend):
             ("lxc.network.0.ipv4", ipv4_address),
             ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
             ]
+        # Linux 4.4 on powerpc doesn't support all the seccomp bits that LXD
+        # needs.
         if self.arch == "powerpc":
             raw_lxc_config.append(("lxc.seccomp", ""))
         config = {
