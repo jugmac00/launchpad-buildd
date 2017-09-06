@@ -245,10 +245,7 @@ class LXD(Backend):
             os.unlink(self.dnsmasq_pid_file)
         subprocess.call(["sudo", "ip", "link", "delete", self.bridge_name])
 
-    def start(self):
-        """See `Backend`."""
-        self.stop()
-
+    def create_profile(self):
         for addr in self.ipv4_network:
             if addr not in (
                     self.ipv4_network.network, self.ipv4_network.ip,
@@ -267,20 +264,25 @@ class LXD(Backend):
         else:
             old_profile.delete()
 
+        raw_lxc_config = [
+            ("lxc.aa_profile", "unconfined"),
+            ("lxc.cgroup.devices.deny", ""),
+            ("lxc.cgroup.devices.allow", ""),
+            ("lxc.mount.auto", ""),
+            ("lxc.mount.auto", "proc:rw sys:rw"),
+            ("lxc.network.0.ipv4", ipv4_address),
+            ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
+            ]
+        # Linux 4.4 on powerpc doesn't support all the seccomp bits that LXD
+        # needs.
+        if self.arch == "powerpc":
+            raw_lxc_config.append(("lxc.seccomp", ""))
         config = {
             "security.privileged": "true",
             "security.nesting": "true",
-            "raw.lxc": dedent("""\
-                lxc.aa_profile=unconfined
-                lxc.cgroup.devices.deny=
-                lxc.cgroup.devices.allow=
-                lxc.mount.auto=
-                lxc.mount.auto=proc:rw sys:rw
-                lxc.network.0.ipv4={ipv4_address}
-                lxc.network.0.ipv4.gateway={ipv4_gateway}
-                """.format(
-                    ipv4_address=ipv4_address,
-                    ipv4_gateway=self.ipv4_network.ip)),
+            "raw.lxc": "".join(
+                "{key}={value}\n".format(key=key, value=value)
+                for key, value in raw_lxc_config),
             }
         devices = {
             "eth0": {
@@ -292,6 +294,11 @@ class LXD(Backend):
             }
         self.client.profiles.create(self.profile_name, config, devices)
 
+    def start(self):
+        """See `Backend`."""
+        self.stop()
+
+        self.create_profile()
         self.start_bridge()
 
         container = self.client.containers.create({

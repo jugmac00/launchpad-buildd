@@ -122,6 +122,47 @@ class TestLXD(TestCase):
         image.add_alias.assert_called_once_with(
             "lp-xenial-amd64", "lp-xenial-amd64")
 
+    def assert_correct_profile(self, extra_raw_lxc_config=""):
+        client = pylxd.Client()
+        client.profiles.get.assert_called_once_with("lpbuildd")
+        expected_config = {
+            "security.privileged": "true",
+            "security.nesting": "true",
+            "raw.lxc": dedent("""\
+                lxc.aa_profile=unconfined
+                lxc.cgroup.devices.deny=
+                lxc.cgroup.devices.allow=
+                lxc.mount.auto=
+                lxc.mount.auto=proc:rw sys:rw
+                lxc.network.0.ipv4=10.10.10.2/24
+                lxc.network.0.ipv4.gateway=10.10.10.1
+                """) + extra_raw_lxc_config,
+            }
+        expected_devices = {
+            "eth0": {
+                "name": "eth0",
+                "nictype": "bridged",
+                "parent": "lpbuilddbr0",
+                "type": "nic",
+                },
+            }
+        client.profiles.create.assert_called_once_with(
+            "lpbuildd", expected_config, expected_devices)
+
+    def test_create_profile_amd64(self):
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.profiles.get.side_effect = FakeLXDAPIException
+        LXD("1", "xenial", "amd64").create_profile()
+        self.assert_correct_profile()
+
+    def test_create_profile_powerpc(self):
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.profiles.get.side_effect = FakeLXDAPIException
+        LXD("1", "xenial", "powerpc").create_profile()
+        self.assert_correct_profile("lxc.seccomp=\n")
+
     def test_start(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
@@ -148,30 +189,7 @@ class TestLXD(TestCase):
         processes_fixture.add(lambda _: {}, name="sudo")
         LXD("1", "xenial", "amd64").start()
 
-        client.profiles.get.assert_called_once_with("lpbuildd")
-        expected_config = {
-            "security.privileged": "true",
-            "security.nesting": "true",
-            "raw.lxc": dedent("""\
-                lxc.aa_profile=unconfined
-                lxc.cgroup.devices.deny=
-                lxc.cgroup.devices.allow=
-                lxc.mount.auto=
-                lxc.mount.auto=proc:rw sys:rw
-                lxc.network.0.ipv4=10.10.10.2/24
-                lxc.network.0.ipv4.gateway=10.10.10.1
-                """),
-            }
-        expected_devices = {
-            "eth0": {
-                "name": "eth0",
-                "nictype": "bridged",
-                "parent": "lpbuilddbr0",
-                "type": "nic",
-                },
-            }
-        client.profiles.create.assert_called_once_with(
-            "lpbuildd", expected_config, expected_devices)
+        self.assert_correct_profile()
 
         ip = ["sudo", "ip"]
         iptables = ["sudo", "iptables", "-w"]
