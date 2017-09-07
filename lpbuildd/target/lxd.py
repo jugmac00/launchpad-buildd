@@ -360,6 +360,21 @@ class LXD(Backend):
             raise BackendException(
                 "Container failed to start within %d seconds" % timeout)
 
+        # XXX cjwatson 2017-09-07: With LXD < 2.2 we can't create the
+        # directory until the container has started.  We can get away with
+        # this for the time being because snapd isn't in the buildd chroots.
+        self.run(["mkdir", "-p", "/etc/systemd/system/snapd.service.d"])
+        with tempfile.NamedTemporaryFile(mode="w+") as no_cdn_file:
+            print(dedent("""\
+                [Service]
+                Environment=SNAPPY_STORE_NO_CDN=1
+                """), file=no_cdn_file, end="")
+            no_cdn_file.flush()
+            os.fchmod(no_cdn_file.fileno(), 0o644)
+            self.copy_in(
+                no_cdn_file.name,
+                "/etc/systemd/system/snapd.service.d/no-cdn.conf")
+
     def run(self, args, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):
         """See `Backend`."""
