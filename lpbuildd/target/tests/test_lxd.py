@@ -200,6 +200,7 @@ class TestLXD(TestCase):
             iter([b"127.0.0.1\tlocalhost\n"]))
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         LXD("1", "xenial", "amd64").start()
 
         self.assert_correct_profile()
@@ -237,6 +238,9 @@ class TestLXD(TestCase):
                      "--pid-file=/run/launchpad-buildd/dnsmasq.pid",
                      "--except-interface=lo", "--interface=lpbuilddbr0",
                      "--listen-address=10.10.10.1"]),
+                Equals(
+                    ["lxc", "exec", "lp-xenial-amd64", "--", "linux64",
+                     "mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
                 ]))
 
         client.containers.create.assert_called_once_with({
@@ -263,6 +267,10 @@ class TestLXD(TestCase):
             params={"path": "/usr/local/sbin/policy-rc.d"},
             data=policy_rc_d.encode("UTF-8"),
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0755"})
+        files_api.post.assert_any_call(
+            params={"path": "/etc/systemd/system/snapd.service.d/no-cdn.conf"},
+            data=b"[Service]\nEnvironment=SNAPPY_STORE_NO_CDN=1\n",
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
         container.start.assert_called_once_with(wait=True)
         self.assertEqual(LXD_RUNNING, container.status_code)
 
@@ -291,6 +299,7 @@ class TestLXD(TestCase):
             }
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         LXD("1", "xenial", "amd64").start()
 
         files_api.session.get.assert_called_once_with(
