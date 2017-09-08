@@ -13,22 +13,23 @@ __all__ = [
     'find_potfiles_in',
     ]
 
-from contextlib import contextmanager
 import errno
 import os.path
 import re
-from subprocess import call
+import subprocess
 
 
-def find_potfiles_in():
+def find_potfiles_in(package_dir):
     """Search the current directory and its subdirectories for POTFILES.in.
 
-    :returns: A list of names of directories that contain a file POTFILES.in.
+    :param package_dir: The directory to search.
+    :returns: A list of names of directories that contain a file
+        POTFILES.in, relative to `package_dir`.
     """
     result_dirs = []
-    for dirpath, dirnames, dirfiles in os.walk("."):
+    for dirpath, dirnames, dirfiles in os.walk(package_dir):
         if "POTFILES.in" in dirfiles:
-            result_dirs.append(dirpath)
+            result_dirs.append(os.path.relpath(dirpath, package_dir))
     return result_dirs
 
 
@@ -51,51 +52,43 @@ def check_potfiles_in(path):
         POTFILES.in. True if all went fine and all files in POTFILES.in
         actually exist.
     """
-    current_path = os.getcwd()
-
-    try:
-        os.chdir(path)
-    except OSError as e:
-        # Abort nicely if the directory does not exist.
-        if e.errno == errno.ENOENT:
-            return False
-        raise
-    try:
-        # Remove stale files from a previous run of intltool-update -m.
-        for unlink_name in ['missing', 'notexist']:
-            try:
-                os.unlink(unlink_name)
-            except OSError as e:
-                # It's ok if the files are missing.
-                if e.errno != errno.ENOENT:
-                    raise
-        devnull = open("/dev/null", "w")
-        returncode = call(
-            ["/usr/bin/intltool-update", "-m"],
-            stdout=devnull, stderr=devnull)
-        devnull.close()
-    finally:
-        os.chdir(current_path)
-
-    if returncode != 0:
-        # An error occurred when executing intltool-update.
+    # Abort nicely if the directory does not exist.
+    if not os.path.isdir(path):
         return False
+    # Remove stale files from a previous run of intltool-update -m.
+    for unlink_name in ['missing', 'notexist']:
+        try:
+            os.unlink(os.path.join(path, unlink_name))
+        except OSError as e:
+            # It's ok if the files are missing.
+            if e.errno != errno.ENOENT:
+                raise
+    with open("/dev/null", "w") as devnull:
+        try:
+            subprocess.check_call(
+                ["/usr/bin/intltool-update", "-m"],
+                stdout=devnull, stderr=devnull, cwd=path)
+        except subprocess.CalledProcessError:
+            return False
 
     notexist = os.path.join(path, "notexist")
     return not os.access(notexist, os.R_OK)
 
 
-def find_intltool_dirs():
+def find_intltool_dirs(package_dir):
     """Search for directories with intltool structure.
 
-    The current directory and its subdiretories are searched. An 'intltool
+    `package_dir` and its subdirectories are searched. An 'intltool
     structure' is a directory that contains a POFILES.in file and where all
     files listed in that POTFILES.in do actually exist. The latter
     condition makes sure that the file is not stale.
 
-    :returns: A list of directory names.
+    :param package_dir: The directory to search.
+    :returns: A list of directory names, relative to `package_dir`.
     """
-    return sorted(filter(check_potfiles_in, find_potfiles_in()))
+    return sorted(
+        podir for podir in find_potfiles_in(package_dir)
+        if check_potfiles_in(os.path.join(package_dir, podir)))
 
 
 def _get_AC_PACKAGE_NAME(config_file):
@@ -188,14 +181,6 @@ def get_translation_domain(dirname):
     return value
 
 
-@contextmanager
-def chdir(directory):
-    cwd = os.getcwd()
-    os.chdir(directory)
-    yield
-    os.chdir(cwd)
-
-
 def generate_pot(podir, domain):
     """Generate one PO template using intltool.
 
@@ -212,26 +197,28 @@ def generate_pot(podir, domain):
     """
     if domain is None or domain.strip() == "":
         domain = "messages"
-    with chdir(podir):
-        with open("/dev/null", "w") as devnull:
-            returncode = call(
+    with open("/dev/null", "w") as devnull:
+        try:
+            subprocess.check_call(
                 ["/usr/bin/intltool-update", "-p", "-g", domain],
-                stdout=devnull, stderr=devnull)
-    return returncode == 0
+                stdout=devnull, stderr=devnull, cwd=podir)
+            return True
+        except subprocess.CalledProcessError:
+            return False
 
 
-def generate_pots(package_dir='.'):
+def generate_pots(package_dir):
     """Top-level function to generate all PO templates in a package."""
     potpaths = []
-    with chdir(package_dir):
-        for podir in find_intltool_dirs():
-            domain = get_translation_domain(podir)
-            if generate_pot(podir, domain):
-                potpaths.append(os.path.join(podir, domain + ".pot"))
+    for podir in find_intltool_dirs(package_dir):
+        full_podir = os.path.join(package_dir, podir)
+        domain = get_translation_domain(full_podir)
+        if generate_pot(full_podir, domain):
+            potpaths.append(os.path.join(podir, domain + ".pot"))
     return potpaths
 
 
-class ConfigFile(object):
+class ConfigFile:
     """Represent a config file and return variables defined in it."""
 
     def __init__(self, file_or_name):
@@ -294,7 +281,7 @@ class Substitution(object):
     style) or preceded by a $ sign with optional () (make style).
 
     This class identifies a single such substitution in a variable text and
-    extract the name of the variable who's value is to be inserted. It also
+    extracts the name of the variable whose value is to be inserted. It also
     facilitates the actual replacement so that caller does not have to worry
     about the substitution style that is being used.
     """

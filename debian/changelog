@@ -1,3 +1,9 @@
+launchpad-buildd (152) UNRELEASED; urgency=medium
+
+  * Refactor lpbuildd.pottery.intltool to avoid calling chdir.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 13:42:17 +0100
+
 launchpad-buildd (151) xenial; urgency=medium
 
   * Run snapd with SNAPPY_STORE_NO_CDN=1, since the buildd network isn't
