@@ -3,6 +3,7 @@ launchpad-buildd (152) UNRELEASED; urgency=medium
   * Refactor lpbuildd.pottery.intltool to avoid calling chdir.
   * Merge TranslationTemplatesBuildState.{INSTALL,GENERATE} into a single
     state.
+  * Convert generate-translation-templates to the new Operation framework.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 13:42:17 +0100
 

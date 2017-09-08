@@ -88,6 +88,18 @@ class Backend:
         except subprocess.CalledProcessError:
             return False
 
+    def isdir(self, path):
+        """Test whether a path is a directory in the target environment.
+
+        :param path: the path to test, relative to the target environment's
+            root.
+        """
+        try:
+            self.run(["test", "-d", path])
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
     def islink(self, path):
         """Test whether a file is a symbolic link in the target environment.
 
@@ -100,19 +112,37 @@ class Backend:
         except subprocess.CalledProcessError:
             return False
 
+    def find(self, path, max_depth=None, include_directories=True, name=None):
+        """Find entries in `path`.
+
+        :param path: the path to the directory to search.
+        :param max_depth: do not descend more than this number of directory
+            levels: as with find(1), 1 includes the contents of `path`, 2
+            includes the contents of its subdirectories, etc.
+        :param include_directories: include entries representing
+            directories.
+        :param name: only include entries whose name is equal to this.
+        """
+        cmd = ["find", path, "-mindepth", "1"]
+        if max_depth is not None:
+            cmd.extend(["-maxdepth", str(max_depth)])
+        if not include_directories:
+            cmd.extend(["!", "-type", "d"])
+        if name is not None:
+            cmd.extend(["-name", name])
+        cmd.extend(["-printf", "%P\\0"])
+        paths = self.run(cmd, get_output=True).rstrip(b"\0").split(b"\0")
+        # XXX cjwatson 2017-08-04: Use `os.fsdecode` instead once we're on
+        # Python 3.
+        return [p.decode("UTF-8") for p in paths]
+
     def listdir(self, path):
         """List a directory in the target environment.
 
         :param path: the path to the directory to list, relative to the
             target environment's root.
         """
-        paths = self.run(
-            ["find", path, "-mindepth", "1", "-maxdepth", "1",
-             "-printf", "%P\\0"],
-            get_output=True).rstrip(b"\0").split(b"\0")
-        # XXX cjwatson 2017-08-04: Use `os.fsdecode` instead once we're on
-        # Python 3.
-        return [p.decode("UTF-8") for p in paths]
+        return self.find(path, max_depth=1)
 
     def is_package_available(self, package):
         """Test whether a package is available in the target environment.
@@ -158,6 +188,10 @@ def make_backend(name, build_id, series=None, arch=None):
         # Only for use in tests.
         from lpbuildd.tests.fakeslave import FakeBackend
         backend_factory = FakeBackend
+    elif name == "uncontained":
+        # Only for use in tests.
+        from lpbuildd.tests.fakeslave import UncontainedBackend
+        backend_factory = UncontainedBackend
     else:
         raise KeyError("Unknown backend: %s" % name)
     return backend_factory(build_id, series=series, arch=arch)

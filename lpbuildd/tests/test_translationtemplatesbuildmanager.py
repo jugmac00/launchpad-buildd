@@ -11,11 +11,13 @@ from fixtures import (
     )
 from testtools import TestCase
 
+from lpbuildd.target.generate_translation_templates import (
+    RETCODE_FAILURE_BUILD,
+    RETCODE_FAILURE_INSTALL,
+    )
 from lpbuildd.tests.fakeslave import FakeSlave
 from lpbuildd.tests.matchers import HasWaitingFiles
 from lpbuildd.translationtemplates import (
-    RETCODE_FAILURE_BUILD,
-    RETCODE_FAILURE_INSTALL,
     TranslationTemplatesBuildManager,
     TranslationTemplatesBuildState,
     )
@@ -76,9 +78,11 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
-            'sharepath/slavebin/generate-translation-templates',
-            'sharepath/slavebin/generate-translation-templates',
-            self.buildid, url, 'resultarchive'
+            'sharepath/slavebin/in-target', 'in-target',
+            'generate-translation-templates',
+            '--backend=chroot', '--series=xenial', '--arch=i386',
+            self.buildid,
+            url, 'resultarchive',
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
