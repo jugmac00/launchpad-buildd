@@ -1,4 +1,4 @@
-launchpad-buildd (151) UNRELEASED; urgency=medium
+launchpad-buildd (151) xenial; urgency=medium
 
   * Run snapd with SNAPPY_STORE_NO_CDN=1, since the buildd network isn't
     allowed to talk to the CDN.
@@ -6,7 +6,7 @@ launchpad-buildd (151) UNRELEASED; urgency=medium
     as LXD-managed devices, since the latter involves bind-mounting
     individual devices which confuses some livecd-rootfs scripts.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 07 Sep 2017 15:52:10 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 01:41:20 +0100
 
 launchpad-buildd (150) xenial; urgency=medium
 
