@@ -49,29 +49,26 @@ setup(
         """).strip(),
     url='https://launchpad.net/launchpad-buildd',
     packages=find_packages(),
-    package_data={
-        'lpbuildd': [
-            'tests/buildd-slave-test.conf',
-            ],
-        },
+    include_package_data=True,
     maintainer='Launchpad Developers',
     maintainer_email='launchpad-dev@lists.launchpad.net',
     license='Affero GPL v3',
     install_requires=[
+        'netaddr',
+        'pylxd',
         # XXX cjwatson 2015-11-04: This does in fact require python-apt, but
         # that's normally shipped as a system package and specifying it here
         # causes problems for Launchpad's build system.
         #'python-apt',
-        'python-debian',
+        'python-debian>=0.1.23',
         'Twisted',
         'zope.interface',
-        ],
-    data_files=[
-        ('', ['buildd-slave.tac', 'template-buildd-slave.conf']),
         ],
     test_suite='lpbuildd.tests',
     tests_require=[
         'fixtures',
+        'mock',
+        'systemfixtures',
         'testtools',
         'txfixtures',
         ],

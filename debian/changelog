@@ -4,6 +4,10 @@ launchpad-buildd (152) UNRELEASED; urgency=medium
   * Merge TranslationTemplatesBuildState.{INSTALL,GENERATE} into a single
     state.
   * Convert generate-translation-templates to the new Operation framework.
+  * Normalise Python packaging.  We now install our modules on the normal
+    system path, using pybuild.  setup.py now installs buildd-slave.tac in
+    the lpbuildd package rather than data_files in order not to pollute the
+    top level of a virtualenv.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 13:42:17 +0100
 

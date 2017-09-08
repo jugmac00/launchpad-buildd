@@ -8,8 +8,7 @@ include bin/snap-git-proxy
 include bin/test_buildd_generatetranslationtemplates
 include bin/test_buildd_recipe
 include buildd-genconfig
-include buildd-slave.tac
 include debian/changelog
 include sbuildrc
 include template-buildd-slave.conf
-recursive-include lpbuildd/tests *.diff *.tar.gz buildd-slave-test.conf buildlog buildlog.long
+recursive-include lpbuildd/tests *.diff *.tar.gz buildd-slave.tac buildd-slave-test.conf buildlog buildlog.long

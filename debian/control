@@ -5,9 +5,11 @@ Maintainer: Adam Conrad <adconrad@ubuntu.com>
 Standards-Version: 3.9.5
 Build-Depends: apt-utils,
                bzr,
-               debhelper (>= 7.0.50~),
+               debhelper (>= 9~),
+               dh-exec,
+               dh-python,
                intltool,
-               python,
+               python (>= 2.6.6-3~),
                python-apt,
                python-debian,
                python-fixtures,
@@ -19,6 +21,9 @@ Build-Depends: apt-utils,
                python-testtools,
                python-twisted,
                python-txfixtures,
+# We don't use the bits of pylxd that require this at run-time, but at
+# build-time pybuild fails if it's not available.
+               python-ws4py,
                python-zope.interface,
 
 Package: launchpad-buildd
@@ -54,16 +59,11 @@ Section: python
 Architecture: all
 Depends: apt-utils,
          procps,
-         python,
          python-apt,
-         python-debian (>= 0.1.23),
-         python-netaddr,
-         python-pylxd,
+# Work around missing dependency in python-pbr.
          python-setuptools,
-         python-twisted-core,
-         python-twisted-web,
-         python-zope.interface,
          ${misc:Depends},
+         ${python:Depends},
 Breaks: launchpad-buildd (<< 88)
 Replaces: launchpad-buildd (<< 88)
 Description: Python libraries for a Launchpad buildd slave
