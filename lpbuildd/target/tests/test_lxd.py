@@ -145,20 +145,7 @@ class TestLXD(TestCase):
                 "parent": "lpbuilddbr0",
                 "type": "nic",
                 },
-            "loop-control": {
-                "major": "10",
-                "minor": "237",
-                "path": "/dev/loop-control",
-                "type": "unix-char",
-                },
             }
-        for minor in range(8):
-            expected_devices["loop%d" % minor] = {
-                "major": "7",
-                "minor": str(minor),
-                "path": "/dev/loop%d" % minor,
-                "type": "unix-block",
-                }
         client.profiles.create.assert_called_once_with(
             "lpbuildd", expected_config, expected_devices)
 
@@ -209,39 +196,50 @@ class TestLXD(TestCase):
         iptables = ["sudo", "iptables", "-w"]
         iptables_comment = [
             "-m", "comment", "--comment", "managed by launchpad-buildd"]
+        lxc = ["lxc", "exec", "lp-xenial-amd64", "--", "linux64"]
+        expected_args = [
+            Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
+                         "type", "bridge"]),
+            Equals(ip + ["addr", "add", "10.10.10.1/24",
+                         "dev", "lpbuilddbr0"]),
+            Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "up"]),
+            Equals(["sudo", "sysctl", "-q", "-w", "net.ipv4.ip_forward=1"]),
+            Equals(
+                iptables +
+                ["-t", "mangle", "-A", "FORWARD", "-i", "lpbuilddbr0",
+                 "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
+                 "-j", "TCPMSS", "--clamp-mss-to-pmtu"] +
+                iptables_comment),
+            Equals(
+                iptables +
+                ["-t", "nat", "-A", "POSTROUTING",
+                 "-s", "10.10.10.1/24", "!", "-d", "10.10.10.1/24",
+                 "-j", "MASQUERADE"] +
+                iptables_comment),
+            Equals(
+                ["sudo", "/usr/sbin/dnsmasq", "-s", "lpbuildd",
+                 "-S", "/lpbuildd/", "-u", "buildd", "--strict-order",
+                 "--bind-interfaces",
+                 "--pid-file=/run/launchpad-buildd/dnsmasq.pid",
+                 "--except-interface=lo", "--interface=lpbuilddbr0",
+                 "--listen-address=10.10.10.1"]),
+            Equals(
+                lxc +
+                ["mknod", "-m", "0660", "/dev/loop-control",
+                 "c", "10", "237"]),
+            ]
+        for minor in range(8):
+            expected_args.append(
+                Equals(
+                    lxc +
+                    ["mknod", "-m", "0660", "/dev/loop%d" % minor,
+                     "b", "7", str(minor)]))
+        expected_args.append(
+            Equals(
+                lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]))
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
-            MatchesListwise([
-                Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
-                             "type", "bridge"]),
-                Equals(ip + ["addr", "add", "10.10.10.1/24",
-                             "dev", "lpbuilddbr0"]),
-                Equals(ip + ["link", "set", "dev", "lpbuilddbr0", "up"]),
-                Equals(
-                    ["sudo", "sysctl", "-q", "-w", "net.ipv4.ip_forward=1"]),
-                Equals(
-                    iptables +
-                    ["-t", "mangle", "-A", "FORWARD", "-i", "lpbuilddbr0",
-                     "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
-                     "-j", "TCPMSS", "--clamp-mss-to-pmtu"] +
-                    iptables_comment),
-                Equals(
-                    iptables +
-                    ["-t", "nat", "-A", "POSTROUTING",
-                     "-s", "10.10.10.1/24", "!", "-d", "10.10.10.1/24",
-                     "-j", "MASQUERADE"] +
-                    iptables_comment),
-                Equals(
-                    ["sudo", "/usr/sbin/dnsmasq", "-s", "lpbuildd",
-                     "-S", "/lpbuildd/", "-u", "buildd", "--strict-order",
-                     "--bind-interfaces",
-                     "--pid-file=/run/launchpad-buildd/dnsmasq.pid",
-                     "--except-interface=lo", "--interface=lpbuilddbr0",
-                     "--listen-address=10.10.10.1"]),
-                Equals(
-                    ["lxc", "exec", "lp-xenial-amd64", "--", "linux64",
-                     "mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
-                ]))
+            MatchesListwise(expected_args))
 
         client.containers.create.assert_called_once_with({
             "name": "lp-xenial-amd64",

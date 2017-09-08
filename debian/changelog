@@ -2,6 +2,9 @@ launchpad-buildd (151) UNRELEASED; urgency=medium
 
   * Run snapd with SNAPPY_STORE_NO_CDN=1, since the buildd network isn't
     allowed to talk to the CDN.
+  * Create loop devices in LXD containers manually using mknod rather than
+    as LXD-managed devices, since the latter involves bind-mounting
+    individual devices which confuses some livecd-rootfs scripts.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 07 Sep 2017 15:52:10 +0100
 
