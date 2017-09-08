@@ -291,20 +291,7 @@ class LXD(Backend):
                 "parent": self.bridge_name,
                 "type": "nic",
                 },
-            "loop-control": {
-                "major": "10",
-                "minor": "237",
-                "path": "/dev/loop-control",
-                "type": "unix-char",
-                },
             }
-        for minor in range(8):
-            devices["loop%d" % minor] = {
-                "major": "7",
-                "minor": str(minor),
-                "path": "/dev/loop%d" % minor,
-                "type": "unix-block",
-                }
         self.client.profiles.create(self.profile_name, config, devices)
 
     def start(self):
@@ -359,6 +346,17 @@ class LXD(Backend):
         if container is None or container.status_code != LXD_RUNNING:
             raise BackendException(
                 "Container failed to start within %d seconds" % timeout)
+
+        # Create loop devices.  We do this by hand rather than via the LXD
+        # profile, as the latter approach creates lots of independent mounts
+        # under /dev/, and that can cause confusion when building live
+        # filesystems.
+        self.run(
+            ["mknod", "-m", "0660", "/dev/loop-control", "c", "10", "237"])
+        for minor in range(8):
+            self.run(
+                ["mknod", "-m", "0660", "/dev/loop%d" % minor,
+                 "b", "7", str(minor)])
 
         # XXX cjwatson 2017-09-07: With LXD < 2.2 we can't create the
         # directory until the container has started.  We can get away with
