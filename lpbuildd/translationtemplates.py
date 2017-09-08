@@ -1,15 +1,21 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import os
 
-from lpbuildd.debian import DebianBuildManager, DebianBuildState
+from lpbuildd.debian import (
+    DebianBuildManager,
+    DebianBuildState,
+    )
+
+
+RETCODE_FAILURE_INSTALL = 200
+RETCODE_FAILURE_BUILD = 201
 
 
 class TranslationTemplatesBuildState(DebianBuildState):
-    INSTALL = "INSTALL"
     GENERATE = "GENERATE"
 
 
@@ -21,7 +27,7 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
     runs on the build slave.
     """
 
-    initial_build_state = TranslationTemplatesBuildState.INSTALL
+    initial_build_state = TranslationTemplatesBuildState.GENERATE
 
     def __init__(self, slave, buildid):
         super(TranslationTemplatesBuildManager, self).__init__(slave, buildid)
@@ -33,25 +39,9 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
     def initiate(self, files, chroot, extra_args):
         """See `BuildManager`."""
         self._branch_url = extra_args['branch_url']
-        self._chroot_path = os.path.join(
-            self.home, 'build-' + self._buildid, 'chroot-autobuild')
 
         super(TranslationTemplatesBuildManager, self).initiate(
             files, chroot, extra_args)
-
-    def doInstall(self):
-        """Install packages required."""
-        required_packages = [
-            'bzr',
-            'intltool',
-            ]
-        command = ['apt-get', 'install', '-y'] + required_packages
-        chroot = ['sudo', 'chroot', self._chroot_path]
-        self.runSubProcess('/usr/bin/sudo', chroot + command)
-
-    # To satisfy DebianPackageManagers needs without having a misleading
-    # method name here.
-    doRunBuild = doInstall
 
     def doGenerate(self):
         """Generate templates."""
@@ -60,37 +50,33 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
             self._buildid, self._branch_url, self._resultname]
         self.runSubProcess(self._generatepath, command)
 
+    # Satisfy DebianPackageManager's needs without having a misleading
+    # method name here.
+    doRunBuild = doGenerate
+
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
-        # The file is inside the chroot, in the home directory of the buildd
+        # The file is inside the target, in the home directory of the buildd
         # user. Should be safe to assume the home dirs are named identically.
         path = os.path.join(self.home, self._resultname)
         if self.backend.path_exists(path):
             self.addWaitingFileFromBackend(path)
 
-    def iterate_INSTALL(self, success):
-        """Installation was done."""
-        if success == 0:
-            self._state = TranslationTemplatesBuildState.GENERATE
-            self.doGenerate()
-        else:
-            if not self.alreadyfailed:
-                self._slave.chrootFail()
-                self.alreadyfailed = True
-            self._state = TranslationTemplatesBuildState.UMOUNT
-            self.doUnmounting()
-
-    def iterate_GENERATE(self, success):
+    def iterate_GENERATE(self, retcode):
         """Template generation finished."""
-        if success == 0:
+        if retcode == 0:
             # It worked! Now let's bring in the harvest.
             self.gatherResults()
-            self.doReapProcesses(self._state)
         else:
             if not self.alreadyfailed:
-                self._slave.buildFail()
+                if retcode == RETCODE_FAILURE_INSTALL:
+                    self._slave.chrootFail()
+                elif retcode == RETCODE_FAILURE_BUILD:
+                    self._slave.buildFail()
+                else:
+                    self._slave.builderFail()
                 self.alreadyfailed = True
-            self.doReapProcesses(self._state)
+        self.doReapProcesses(self._state)
 
     def iterateReap_GENERATE(self, success):
         """Finished reaping after template generation."""
