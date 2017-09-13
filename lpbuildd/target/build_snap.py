@@ -76,6 +76,7 @@ class BuildSnap(Operation):
         path = shell_escape(path)
         full_env = OrderedDict()
         full_env["LANG"] = "C.UTF-8"
+        full_env["SHELL"] = "/bin/sh"
         if env:
             full_env.update(env)
         args = ["env"] + [

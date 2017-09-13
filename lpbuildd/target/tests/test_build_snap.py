@@ -84,7 +84,8 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.run_build_command(["echo", "hello world"])
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand("env LANG=C.UTF-8 echo 'hello world'"),
+            RanBuildCommand(
+                "env LANG=C.UTF-8 SHELL=/bin/sh echo 'hello world'"),
             ]))
 
     def test_run_build_command_env(self):
@@ -98,7 +99,8 @@ class TestBuildSnap(TestCase):
             ["echo", "hello world"], env={"FOO": "bar baz"})
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                "env LANG=C.UTF-8 FOO='bar baz' echo 'hello world'"),
+                "env LANG=C.UTF-8 SHELL=/bin/sh FOO='bar baz' "
+                "echo 'hello world'"),
             ]))
 
     def test_install_bzr(self):
@@ -158,7 +160,7 @@ class TestBuildSnap(TestCase):
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("42")
         build_snap.repo()
-        env = "env LANG=C.UTF-8 "
+        env = "env LANG=C.UTF-8 SHELL=/bin/sh "
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(env + "ls /build"),
             RanBuildCommand(env + "bzr branch lp:foo test-snap"),
@@ -178,7 +180,7 @@ class TestBuildSnap(TestCase):
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
-        env = "env LANG=C.UTF-8 "
+        env = "env LANG=C.UTF-8 SHELL=/bin/sh "
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(env + "git clone lp:foo test-snap"),
             RanBuildCommand(
@@ -200,7 +202,7 @@ class TestBuildSnap(TestCase):
         build_snap.backend.build_path = self.useFixture(TempDir()).path
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
-        env = "env LANG=C.UTF-8 "
+        env = "env LANG=C.UTF-8 SHELL=/bin/sh "
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(env + "git clone -b next lp:foo test-snap"),
             RanBuildCommand(
@@ -225,7 +227,8 @@ class TestBuildSnap(TestCase):
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
         env = (
-            "env LANG=C.UTF-8 http_proxy=http://proxy.example:3128/ "
+            "env LANG=C.UTF-8 SHELL=/bin/sh "
+            "http_proxy=http://proxy.example:3128/ "
             "https_proxy=http://proxy.example:3128/ "
             "GIT_PROXY_COMMAND=/usr/local/bin/snap-git-proxy ")
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
@@ -233,7 +236,8 @@ class TestBuildSnap(TestCase):
             RanBuildCommand(
                 env + "git -C test-snap submodule update --init --recursive"),
             RanBuildCommand(
-                "env LANG=C.UTF-8 git -C test-snap rev-parse HEAD",
+                "env LANG=C.UTF-8 SHELL=/bin/sh "
+                "git -C test-snap rev-parse HEAD",
                 get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
@@ -249,7 +253,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.pull()
         env = (
-            "env LANG=C.UTF-8 "
+            "env LANG=C.UTF-8 SHELL=/bin/sh "
             "SNAPCRAFT_LOCAL_SOURCES=1 SNAPCRAFT_SETUP_CORE=1 ")
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(env + "snapcraft pull", path="/build/test-snap"),
@@ -265,7 +269,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.pull()
         env = (
-            "env LANG=C.UTF-8 "
+            "env LANG=C.UTF-8 SHELL=/bin/sh "
             "SNAPCRAFT_LOCAL_SOURCES=1 SNAPCRAFT_SETUP_CORE=1 "
             "http_proxy=http://proxy.example:3128/ "
             "https_proxy=http://proxy.example:3128/ "
@@ -282,7 +286,7 @@ class TestBuildSnap(TestCase):
             ]
         build_snap = parse_args(args=args).operation
         build_snap.build()
-        env = "env LANG=C.UTF-8 "
+        env = "env LANG=C.UTF-8 SHELL=/bin/sh "
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(env + "snapcraft", path="/build/test-snap"),
             ]))
@@ -297,7 +301,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.build()
         env = (
-            "env LANG=C.UTF-8 "
+            "env LANG=C.UTF-8 SHELL=/bin/sh "
             "http_proxy=http://proxy.example:3128/ "
             "https_proxy=http://proxy.example:3128/ "
             "GIT_PROXY_COMMAND=/usr/local/bin/snap-git-proxy ")
@@ -321,13 +325,14 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesAll(
             AnyMatch(RanAptGet("install", "snapcraft", "bzr")),
             AnyMatch(RanBuildCommand(
-                "env LANG=C.UTF-8 bzr branch lp:foo test-snap")),
+                "env LANG=C.UTF-8 SHELL=/bin/sh bzr branch lp:foo test-snap")),
             AnyMatch(RanBuildCommand(
-                "env LANG=C.UTF-8 "
+                "env LANG=C.UTF-8 SHELL=/bin/sh "
                 "SNAPCRAFT_LOCAL_SOURCES=1 SNAPCRAFT_SETUP_CORE=1 "
                 "snapcraft pull", path="/build/test-snap")),
             AnyMatch(RanBuildCommand(
-                "env LANG=C.UTF-8 snapcraft", path="/build/test-snap")),
+                "env LANG=C.UTF-8 SHELL=/bin/sh snapcraft",
+                path="/build/test-snap")),
             ))
 
     def test_run_install_fails(self):
