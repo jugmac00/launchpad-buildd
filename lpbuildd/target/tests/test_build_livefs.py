@@ -120,7 +120,7 @@ class TestBuildLiveFS(TestCase):
         build_livefs = parse_args(args=args).operation
         build_livefs.build()
         self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand("rm -rf auto"),
+            RanBuildCommand("rm -rf auto local"),
             RanBuildCommand("mkdir -p auto"),
             RanBuildCommand(
                 "ln -s /usr/share/livecd-rootfs/live-build/auto/config auto/"),
@@ -146,6 +146,32 @@ class TestBuildLiveFS(TestCase):
             RanBuildCommand(
                 "ubuntu-defaults-image --locale zh_CN --arch amd64 "
                 "--release xenial"),
+            ]))
+
+    def test_build_debug(self):
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--project=ubuntu", "--debug",
+            ]
+        build_livefs = parse_args(args=args).operation
+        build_livefs.build()
+        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
+            RanBuildCommand("rm -rf auto local"),
+            RanBuildCommand("mkdir -p auto"),
+            RanBuildCommand(
+                "ln -s /usr/share/livecd-rootfs/live-build/auto/config auto/"),
+            RanBuildCommand(
+                "ln -s /usr/share/livecd-rootfs/live-build/auto/build auto/"),
+            RanBuildCommand(
+                "ln -s /usr/share/livecd-rootfs/live-build/auto/clean auto/"),
+            RanBuildCommand("mkdir -p local/functions"),
+            RanBuildCommand(
+                "sh -c 'echo '\\''set -x'\\'' >local/functions/debug.sh'"),
+            RanBuildCommand("lb clean --purge"),
+            RanBuildCommand(
+                "env PROJECT=ubuntu ARCH=amd64 SUITE=xenial lb config"),
+            RanBuildCommand("env PROJECT=ubuntu ARCH=amd64 lb build"),
             ]))
 
     def test_run_succeeds(self):

@@ -58,6 +58,9 @@ class BuildLiveFS(Operation):
         parser.add_argument(
             "--extra-ppa", dest="extra_ppas", default=[], action="append",
             help="use this additional PPA")
+        parser.add_argument(
+            "--debug", default=False, action="store_true",
+            help="enable detailed live-build debugging")
 
     def run_build_command(self, args, env=None, echo=False):
         """Run a build command in the chroot.
@@ -106,12 +109,16 @@ class BuildLiveFS(Operation):
                 "--release", self.args.series,
                 ])
         else:
-            self.run_build_command(["rm", "-rf", "auto"])
+            self.run_build_command(["rm", "-rf", "auto", "local"])
             self.run_build_command(["mkdir", "-p", "auto"])
             for lb_script in ("config", "build", "clean"):
                 lb_script_path = os.path.join(
                     "/usr/share/livecd-rootfs/live-build/auto", lb_script)
                 self.run_build_command(["ln", "-s", lb_script_path, "auto/"])
+            if self.args.debug:
+                self.run_build_command(["mkdir", "-p", "local/functions"])
+                self.run_build_command(
+                    ["sh", "-c", "echo 'set -x' >local/functions/debug.sh"])
             self.run_build_command(["lb", "clean", "--purge"])
 
             base_lb_env = OrderedDict()
