@@ -3,6 +3,9 @@ launchpad-buildd (152) UNRELEASED; urgency=medium
   [ Colin Watson ]
   * Accept a "debug" entry in livefs arguments, which enables detailed
     live-build debugging.
+  * Set SHELL=/bin/sh in snap builds, since it was previously passed through
+    by the chroot backend and some build systems expect SHELL to be set
+    (LP: #1716739).
 
   [ Robert C Jennings ]
   * LXD: Do not drop sys_rawio capability (LP: #1716060).
