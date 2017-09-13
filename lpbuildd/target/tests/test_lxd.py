@@ -130,6 +130,8 @@ class TestLXD(TestCase):
             "security.nesting": "true",
             "raw.lxc": dedent("""\
                 lxc.aa_profile=unconfined
+                lxc.cap.drop=
+                lxc.cap.drop=sys_time sys_module mac_admin mac_override
                 lxc.cgroup.devices.deny=
                 lxc.cgroup.devices.allow=
                 lxc.mount.auto=
