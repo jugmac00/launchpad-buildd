@@ -331,6 +331,26 @@ class LXD(Backend):
             policy_rc_d_file.flush()
             os.fchmod(policy_rc_d_file.fileno(), 0o755)
             self.copy_in(policy_rc_d_file.name, "/usr/local/sbin/policy-rc.d")
+        # Ensure that loop devices are not created, even if the target
+        # system's udev rules would ordinarily do so.  We can't do it the
+        # other way round (ensure that udev always creates them) because not
+        # all buildd chroots have udev.
+        # Poking this into /lib is wrong, but /etc/udev/rules.d/ doesn't
+        # exist in all buildd chroots, and xenial's LXD doesn't support
+        # creating directories when pushing files.  The containers won't be
+        # upgraded in ways that make this be a problem anyway.
+        with tempfile.NamedTemporaryFile(mode="w+") as udev_rules_file:
+            # Copied from systemd 234.
+            print(
+                'SUBSYSTEM=="block", KERNEL=="loop[0-9]*", '
+                'ENV{DEVTYPE}=="disk", TEST!="loop/backing_file", '
+                'ENV{SYSTEMD_READY}="0"',
+                file=udev_rules_file)
+            udev_rules_file.flush()
+            os.fchmod(udev_rules_file.fileno(), 0o644)
+            self.copy_in(
+                udev_rules_file.name,
+                "/lib/udev/rules.d/99-zz-buildd-loop.rules")
 
         # Start the container and wait for it to start.
         container.start(wait=True)
