@@ -268,6 +268,13 @@ class TestLXD(TestCase):
             data=policy_rc_d.encode("UTF-8"),
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0755"})
         files_api.post.assert_any_call(
+            params={"path": "/lib/udev/rules.d/99-zz-buildd-loop.rules"},
+            data=(
+                b'SUBSYSTEM=="block", KERNEL=="loop[0-9]*", '
+                b'ENV{DEVTYPE}=="disk", TEST!="loop/backing_file", '
+                b'ENV{SYSTEMD_READY}="0"\n'),
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+        files_api.post.assert_any_call(
             params={"path": "/etc/systemd/system/snapd.service.d/no-cdn.conf"},
             data=b"[Service]\nEnvironment=SNAPPY_STORE_NO_CDN=1\n",
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
