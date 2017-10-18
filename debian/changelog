@@ -1,9 +1,9 @@
-launchpad-buildd (153) UNRELEASED; urgency=medium
+launchpad-buildd (153) xenial; urgency=medium
 
   * Defend against racing with udev to create loop devices in trusty
     containers (LP: #1723216).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 17 Oct 2017 17:19:44 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 18 Oct 2017 07:57:32 +0100
 
 launchpad-buildd (152) xenial; urgency=medium
 
