@@ -9,6 +9,7 @@ from contextlib import closing
 import io
 import json
 import os
+import re
 import stat
 import subprocess
 import tarfile
@@ -331,26 +332,38 @@ class LXD(Backend):
             policy_rc_d_file.flush()
             os.fchmod(policy_rc_d_file.fileno(), 0o755)
             self.copy_in(policy_rc_d_file.name, "/usr/local/sbin/policy-rc.d")
-        # Ensure that loop devices are not created, even if the target
-        # system's udev rules would ordinarily do so.  We can't do it the
-        # other way round (ensure that udev always creates them) because not
-        # all buildd chroots have udev.
-        # Poking this into /lib is wrong, but /etc/udev/rules.d/ doesn't
-        # exist in all buildd chroots, and xenial's LXD doesn't support
-        # creating directories when pushing files.  The containers won't be
-        # upgraded in ways that make this be a problem anyway.
-        with tempfile.NamedTemporaryFile(mode="w+") as udev_rules_file:
-            # Copied from systemd 234.
-            print(
-                'SUBSYSTEM=="block", KERNEL=="loop[0-9]*", '
-                'ENV{DEVTYPE}=="disk", TEST!="loop/backing_file", '
-                'ENV{SYSTEMD_READY}="0"',
-                file=udev_rules_file)
-            udev_rules_file.flush()
-            os.fchmod(udev_rules_file.fileno(), 0o644)
-            self.copy_in(
-                udev_rules_file.name,
-                "/lib/udev/rules.d/99-zz-buildd-loop.rules")
+        # For targets that use Upstart, prevent the mounted-dev job from
+        # creating devices.  Most of the devices it creates are unnecessary
+        # in a container, and creating loop devices will race with our own
+        # code to do so.
+        with tempfile.NamedTemporaryFile(mode="w+") as mounted_dev_file:
+            try:
+                self.copy_out(
+                    "/etc/init/mounted-dev.conf", mounted_dev_file.name)
+            except LXDAPIException:
+                pass
+            else:
+                mounted_dev_file.seek(0, os.SEEK_SET)
+                script = ""
+                in_script = False
+                for line in mounted_dev_file:
+                    if in_script:
+                        script += re.sub(
+                            r"^(\s*)(.*MAKEDEV)", r"\1: # \2", line)
+                        if line.strip() == "end script":
+                            in_script = False
+                    elif line.strip() == "script":
+                        script += line
+                        in_script = True
+                if script:
+                    mounted_dev_file.seek(0, os.SEEK_SET)
+                    mounted_dev_file.truncate()
+                    mounted_dev_file.write(script)
+                    mounted_dev_file.flush()
+                    os.fchmod(mounted_dev_file.fileno(), 0o644)
+                    self.copy_in(
+                        mounted_dev_file.name,
+                        "/etc/init/mounted-dev.override")
 
         # Start the container and wait for it to start.
         container.start(wait=True)
