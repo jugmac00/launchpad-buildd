@@ -56,6 +56,23 @@ class FakeLXDAPIException(LXDAPIException):
         return "Fake LXD exception"
 
 
+class FakeSessionGet:
+
+    def __init__(self, file_contents):
+        self.file_contents = file_contents
+
+    def __call__(self, *args, **kwargs):
+        params = kwargs["params"]
+        response = mock.MagicMock()
+        if params["path"] in self.file_contents:
+            response.status_code = 200
+            response.iter_content.return_value = iter(
+                self.file_contents[params["path"]])
+        else:
+            response.json.return_value = {"error": "not found"}
+        return response
+
+
 class TestLXD(TestCase):
 
     def make_chroot_tarball(self, output_path):
@@ -184,9 +201,9 @@ class TestLXD(TestCase):
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         files_api = container.api.files
         files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
-        files_api.session.get.return_value.status_code = 200
-        files_api.session.get.return_value.iter_content.return_value = (
-            iter([b"127.0.0.1\tlocalhost\n"]))
+        files_api.session.get.side_effect = FakeSessionGet({
+            "/etc/hosts": [b"127.0.0.1\tlocalhost\n"],
+            })
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
@@ -248,7 +265,7 @@ class TestLXD(TestCase):
             "profiles": ["lpbuildd"],
             "source": {"type": "image", "alias": "lp-xenial-amd64"},
             }, wait=True)
-        files_api.session.get.assert_called_once_with(
+        files_api.session.get.assert_any_call(
             "/1.0/containers/lp-xenial-amd64/files",
             params={"path": "/etc/hosts"}, stream=True)
         files_api.post.assert_any_call(
@@ -267,13 +284,13 @@ class TestLXD(TestCase):
             params={"path": "/usr/local/sbin/policy-rc.d"},
             data=policy_rc_d.encode("UTF-8"),
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0755"})
-        files_api.post.assert_any_call(
-            params={"path": "/lib/udev/rules.d/99-zz-buildd-loop.rules"},
-            data=(
-                b'SUBSYSTEM=="block", KERNEL=="loop[0-9]*", '
-                b'ENV{DEVTYPE}=="disk", TEST!="loop/backing_file", '
-                b'ENV{SYSTEMD_READY}="0"\n'),
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+        files_api.session.get.assert_any_call(
+            "/1.0/containers/lp-xenial-amd64/files",
+            params={"path": "/etc/init/mounted-dev.conf"}, stream=True)
+        self.assertNotIn(
+            "/etc/init/mounted-dev.override",
+            [kwargs["params"]["path"]
+             for _, kwargs in files_api.post.call_args_list])
         files_api.post.assert_any_call(
             params={"path": "/etc/systemd/system/snapd.service.d/no-cdn.conf"},
             data=b"[Service]\nEnvironment=SNAPPY_STORE_NO_CDN=1\n",
@@ -300,16 +317,13 @@ class TestLXD(TestCase):
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         files_api = container.api.files
         files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
-        files_api.session.get.return_value.status_code = 404
-        files_api.session.get.return_value.json.return_value = {
-            "error": "not found",
-            }
+        files_api.session.get.side_effect = FakeSessionGet({})
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
         LXD("1", "xenial", "amd64").start()
 
-        files_api.session.get.assert_called_once_with(
+        files_api.session.get.assert_any_call(
             "/1.0/containers/lp-xenial-amd64/files",
             params={"path": "/etc/hosts"}, stream=True)
         files_api.post.assert_any_call(
@@ -317,6 +331,52 @@ class TestLXD(TestCase):
             data=(
                 fallback_hosts +
                 "\n127.0.1.1\tlp-xenial-amd64\n").encode("UTF-8"),
+            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+
+    def test_start_with_mounted_dev_conf(self):
+        fs_fixture = self.useFixture(FakeFilesystem())
+        fs_fixture.add("/sys")
+        fs_fixture.add("/run")
+        os.makedirs("/run/launchpad-buildd")
+        fs_fixture.add("/etc")
+        os.mkdir("/etc")
+        with open("/etc/resolv.conf", "w") as f:
+            print("host resolv.conf", file=f)
+        os.chmod("/etc/resolv.conf", 0o644)
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.profiles.get.side_effect = FakeLXDAPIException
+        container = client.containers.create.return_value
+        client.containers.get.return_value = container
+        container.start.side_effect = (
+            lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
+        files_api = container.api.files
+        files_api._api_endpoint = "/1.0/containers/lp-trusty-amd64/files"
+        files_api.session.get.side_effect = FakeSessionGet({
+            "/etc/init/mounted-dev.conf": dedent("""\
+                start on mounted MOUNTPOINT=/dev
+                script
+                    [ -e /dev/shm ] || ln -s /run/shm /dev/shm
+                    /sbin/MAKEDEV std fd ppp tun
+                end script
+                task
+                """)})
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
+        LXD("1", "trusty", "amd64").start()
+
+        files_api.session.get.assert_any_call(
+            "/1.0/containers/lp-trusty-amd64/files",
+            params={"path": "/etc/init/mounted-dev.conf"}, stream=True)
+        files_api.post.assert_any_call(
+            params={"path": "/etc/init/mounted-dev.override"},
+            data=dedent("""\
+                script
+                    [ -e /dev/shm ] || ln -s /run/shm /dev/shm
+                    : # /sbin/MAKEDEV std fd ppp tun
+                end script
+                """).encode("UTF-8"),
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
 
     def test_run(self):
@@ -375,13 +435,13 @@ class TestLXD(TestCase):
         client = pylxd.Client()
         container = mock.MagicMock()
         client.containers.get.return_value = container
-        files_api = container.api.files
-        files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
-        files_api.session.get.return_value.status_code = 200
-        files_api.session.get.return_value.iter_content.return_value = (
-            iter([b"hello\n", b"world\n"]))
         source_path = "/path/to/source"
         target_path = os.path.join(target_dir, "target")
+        files_api = container.api.files
+        files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
+        files_api.session.get.side_effect = FakeSessionGet({
+            source_path: [b"hello\n", b"world\n"],
+            })
         LXD("1", "xenial", "amd64").copy_out(source_path, target_path)
 
         client.containers.get.assert_called_once_with("lp-xenial-amd64")

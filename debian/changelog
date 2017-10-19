@@ -1,3 +1,11 @@
+launchpad-buildd (154) UNRELEASED; urgency=medium
+
+  * The previous patch was labouring under mistaken assumptions: it's
+    actually the mounted-dev Upstart job that we race with in trusty
+    containers, so neuter that instead.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 18 Oct 2017 12:52:26 +0100
+
 launchpad-buildd (153) xenial; urgency=medium
 
   * Defend against racing with udev to create loop devices in trusty
