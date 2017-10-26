@@ -14,6 +14,8 @@ from testtools import TestCase
 from lpbuildd.tests.fakeslave import FakeSlave
 from lpbuildd.tests.matchers import HasWaitingFiles
 from lpbuildd.translationtemplates import (
+    RETCODE_FAILURE_BUILD,
+    RETCODE_FAILURE_INSTALL,
     TranslationTemplatesBuildManager,
     TranslationTemplatesBuildState,
     )
@@ -65,22 +67,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.buildmanager.backend_name = original_backend_name
 
         # Skip states that are done in DebianBuildManager to the state
-        # directly before INSTALL.
+        # directly before GENERATE.
         self.buildmanager._state = TranslationTemplatesBuildState.UPDATE
-
-        # INSTALL: Install additional packages needed for this job into
-        # the chroot.
-        self.buildmanager.iterate(0)
-        self.assertEqual(
-            TranslationTemplatesBuildState.INSTALL, self.getState())
-        expected_command = [
-            '/usr/bin/sudo',
-            'sudo', 'chroot', self.chrootdir,
-            'apt-get',
-            ]
-        self.assertEqual(expected_command, self.buildmanager.commands[-1][:5])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
         # GENERATE: Run the slave's payload, the script that generates
         # templates.
@@ -136,19 +124,35 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
-    def test_iterate_fail_INSTALL(self):
-        # See that a failing INSTALL is handled properly.
+    def test_iterate_fail_GENERATE_install(self):
+        # See that a GENERATE that fails at the install step is handled
+        # properly.
         url = 'lp:~my/branch'
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         self.buildmanager.initiate(
             {}, 'chroot.tar.gz', {'series': 'xenial', 'branch_url': url})
 
-        # Skip states to the INSTALL state.
-        self.buildmanager._state = TranslationTemplatesBuildState.INSTALL
+        # Skip states to the GENERATE state.
+        self.buildmanager._state = TranslationTemplatesBuildState.GENERATE
 
-        # The buildmanager fails and iterates to the UMOUNT state.
-        self.buildmanager.iterate(-1)
+        # The buildmanager fails and reaps processes.
+        self.buildmanager.iterate(RETCODE_FAILURE_INSTALL)
+        self.assertEqual(
+            TranslationTemplatesBuildState.GENERATE, self.getState())
+        expected_command = [
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=xenial', '--arch=i386',
+            self.buildid,
+            ]
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertTrue(self.slave.wasCalled('chrootFail'))
+
+        # The buildmanager iterates to the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
@@ -160,10 +164,10 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertTrue(self.slave.wasCalled('chrootFail'))
 
-    def test_iterate_fail_GENERATE(self):
-        # See that a failing GENERATE is handled properly.
+    def test_iterate_fail_GENERATE_build(self):
+        # See that a GENERATE that fails at the build step is handled
+        # properly.
         url = 'lp:~my/branch'
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
@@ -174,7 +178,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.buildmanager._state = TranslationTemplatesBuildState.GENERATE
 
         # The buildmanager fails and reaps processes.
-        self.buildmanager.iterate(-1)
+        self.buildmanager.iterate(RETCODE_FAILURE_BUILD)
         expected_command = [
             'sharepath/slavebin/in-target', 'in-target',
             'scan-for-processes',
