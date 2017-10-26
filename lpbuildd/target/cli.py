@@ -16,6 +16,9 @@ from lpbuildd.target.apt import (
     )
 from lpbuildd.target.build_livefs import BuildLiveFS
 from lpbuildd.target.build_snap import BuildSnap
+from lpbuildd.target.generate_translation_templates import (
+    GenerateTranslationTemplates,
+    )
 from lpbuildd.target.lifecycle import (
     Create,
     KillProcesses,
@@ -48,6 +51,7 @@ operations = {
     "add-trusted-keys": AddTrustedKeys,
     "buildlivefs": BuildLiveFS,
     "buildsnap": BuildSnap,
+    "generate-translation-templates": GenerateTranslationTemplates,
     "override-sources-list": OverrideSourcesList,
     "mount-chroot": Start,
     "remove-build": Remove,

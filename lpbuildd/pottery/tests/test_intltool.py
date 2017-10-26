@@ -25,7 +25,10 @@ from lpbuildd.pottery.intltool import (
     generate_pots,
     get_translation_domain,
     )
-from lpbuildd.tests.fakeslave import FakeMethod
+from lpbuildd.tests.fakeslave import (
+    FakeMethod,
+    UncontainedBackend,
+    )
 
 
 class SetupTestPackageMixin:
@@ -75,71 +78,86 @@ class TestDetectIntltool(TestCase, SetupTestPackageMixin):
     def test_detect_potfiles_in(self):
         # Find POTFILES.in in a package with multiple dirs when only one has
         # POTFILES.in.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_POTFILES_in_1")
-        dirs = find_potfiles_in(package_dir)
+        dirs = find_potfiles_in(backend, package_dir)
         self.assertThat(dirs, MatchesSetwise(Equals("po-intltool")))
 
     def test_detect_potfiles_in_module(self):
         # Find POTFILES.in in a package with POTFILES.in at different levels.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_POTFILES_in_2")
-        dirs = find_potfiles_in(package_dir)
+        dirs = find_potfiles_in(backend, package_dir)
         self.assertThat(
             dirs, MatchesSetwise(Equals("po"), Equals("module1/po")))
 
     def test_check_potfiles_in_content_ok(self):
         # Ideally all files listed in POTFILES.in exist in the source package.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_single_ok")
-        self.assertTrue(check_potfiles_in(os.path.join(package_dir, "po")))
+        self.assertTrue(
+            check_potfiles_in(backend, os.path.join(package_dir, "po")))
 
     def test_check_potfiles_in_content_ok_file_added(self):
         # If a file is not listed in POTFILES.in, the file is still good for
         # our purposes.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_single_ok")
         added_path = os.path.join(package_dir, "src/sourcefile_new.c")
         with open(added_path, "w") as added_file:
             added_file.write("/* Test file. */")
-        self.assertTrue(check_potfiles_in(os.path.join(package_dir, "po")))
+        self.assertTrue(
+            check_potfiles_in(backend, os.path.join(package_dir, "po")))
 
     def test_check_potfiles_in_content_not_ok_file_removed(self):
         # If a file is missing that is listed in POTFILES.in, the file
         # intltool structure is probably broken and cannot be used for
         # our purposes.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_single_ok")
         os.remove(os.path.join(package_dir, "src/sourcefile1.c"))
-        self.assertFalse(check_potfiles_in(os.path.join(package_dir, "po")))
+        self.assertFalse(
+            check_potfiles_in(backend, os.path.join(package_dir, "po")))
 
     def test_check_potfiles_in_wrong_directory(self):
         # Passing in the wrong directory will cause the check to fail
         # gracefully and return False.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_single_ok")
-        self.assertFalse(check_potfiles_in(os.path.join(package_dir, "foo")))
+        self.assertFalse(
+            check_potfiles_in(backend, os.path.join(package_dir, "foo")))
 
     def test_find_intltool_dirs(self):
         # Complete run: find all directories with intltool structure.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
         self.assertEqual(
-            ["po-module1", "po-module2"], find_intltool_dirs(package_dir))
+            ["po-module1", "po-module2"],
+            find_intltool_dirs(backend, package_dir))
 
     def test_find_intltool_dirs_broken(self):
         # Complete run: part of the intltool structure is broken.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
         os.remove(os.path.join(package_dir, "src/module1/sourcefile1.c"))
         self.assertEqual(
-            ["po-module2"], find_intltool_dirs(package_dir))
+            ["po-module2"], find_intltool_dirs(backend, package_dir))
 
 
 class TestIntltoolDomain(TestCase, SetupTestPackageMixin):
 
     def test_get_translation_domain_makevars(self):
         # Find a translation domain in Makevars.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_domain_makevars")
         self.assertEqual(
             "translationdomain",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_makevars_subst_1(self):
         # Find a translation domain in Makevars, substituted from
         # Makefile.in.in.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package(
             "intltool_domain_base",
             {
@@ -148,11 +166,12 @@ class TestIntltoolDomain(TestCase, SetupTestPackageMixin):
             })
         self.assertEqual(
             "packagename-in-in",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_makevars_subst_2(self):
         # Find a translation domain in Makevars, substituted from
         # configure.ac.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package(
             "intltool_domain_base",
             {
@@ -162,21 +181,23 @@ class TestIntltoolDomain(TestCase, SetupTestPackageMixin):
             })
         self.assertEqual(
             "packagename-ac",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_makefile_in_in(self):
         # Find a translation domain in Makefile.in.in.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_domain_makefile_in_in")
         self.assertEqual(
             "packagename-in-in",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_ac(self):
         # Find a translation domain in configure.ac.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_domain_configure_ac")
         self.assertEqual(
             "packagename-ac",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def prepare_ac_init(self, parameters):
         # Prepare test for various permutations of AC_INIT parameters
@@ -192,113 +213,127 @@ class TestIntltoolDomain(TestCase, SetupTestPackageMixin):
 
     def test_get_translation_domain_configure_ac_init(self):
         # Find a translation domain in configure.ac in AC_INIT.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_ac_init(
             "packagename-ac-init, 1.0, http://bug.org")
         self.assertEqual(
             "packagename-ac-init",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_ac_init_single_param(self):
         # Find a translation domain in configure.ac in AC_INIT.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_ac_init("[Just 1 param]")
         self.assertIsNone(
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_ac_init_brackets(self):
         # Find a translation domain in configure.ac in AC_INIT with brackets.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_ac_init(
             "[packagename-ac-init], 1.0, http://bug.org")
         self.assertEqual(
             "packagename-ac-init",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_ac_init_tarname(self):
         # Find a translation domain in configure.ac in AC_INIT tar name
         # parameter.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_ac_init(
             "[Package name], 1.0, http://bug.org, [package-tarname]")
         self.assertEqual(
             "package-tarname",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_ac_init_multiline(self):
         # Find a translation domain in configure.ac in AC_INIT when it
         # spans multiple lines.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_ac_init(
             "[packagename-ac-init],\n    1.0,\n    http://bug.org")
         self.assertEqual(
             "packagename-ac-init",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_ac_init_multiline_tarname(self):
         # Find a translation domain in configure.ac in AC_INIT tar name
         # parameter that is on a different line.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_ac_init(
             "[Package name], 1.0,\n    http://bug.org, [package-tarname]")
         self.assertEqual(
             "package-tarname",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_in(self):
         # Find a translation domain in configure.in.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_domain_configure_in")
         self.assertEqual(
             "packagename-in",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_makefile_in_in_substitute(self):
         # Find a translation domain in Makefile.in.in with substitution from
         # configure.ac.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package(
             "intltool_domain_makefile_in_in_substitute")
         self.assertEqual(
             "domainname-ac-in-in",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_makefile_in_in_substitute_same_name(self):
         # Find a translation domain in Makefile.in.in with substitution from
         # configure.ac from a variable with the same name as in
         # Makefile.in.in.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package(
             "intltool_domain_makefile_in_in_substitute_same_name")
         self.assertEqual(
             "packagename-ac-in-in",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_makefile_in_in_substitute_same_file(self):
         # Find a translation domain in Makefile.in.in with substitution from
         # the same file.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package(
             "intltool_domain_makefile_in_in_substitute_same_file")
         self.assertEqual(
             "domain-in-in-in-in",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_makefile_in_in_substitute_broken(self):
         # Find no translation domain in Makefile.in.in when the substitution
         # cannot be fulfilled.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package(
             "intltool_domain_makefile_in_in_substitute_broken")
         self.assertIsNone(
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_in_substitute_version(self):
         # Find a translation domain in configure.in with Makefile-style
         # substitution from the same file.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package(
             "intltool_domain_configure_in_substitute_version")
         self.assertEqual(
             "domainname-in42",
-            get_translation_domain(os.path.join(package_dir, "po")))
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
 
 
 class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
 
     def test_generate_pot(self):
         # Generate a given PO template.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
         self.assertTrue(
-            generate_pot(os.path.join(package_dir, "po-module1"), "module1"),
+            generate_pot(
+                backend, os.path.join(package_dir, "po-module1"), "module1"),
             "PO template generation failed.")
         expected_path = "po-module1/module1.pot"
         self.assertTrue(
@@ -307,9 +342,11 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
 
     def test_generate_pot_no_domain(self):
         # Generate a generic PO template.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
         self.assertTrue(
-            generate_pot(os.path.join(package_dir, "po-module1"), None),
+            generate_pot(
+                backend, os.path.join(package_dir, "po-module1"), None),
             "PO template generation failed.")
         expected_path = "po-module1/messages.pot"
         self.assertTrue(
@@ -318,9 +355,10 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
 
     def test_generate_pot_empty_domain(self):
         # Generate a generic PO template.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
         self.assertTrue(
-            generate_pot(os.path.join(package_dir, "po-module1"), ""),
+            generate_pot(backend, os.path.join(package_dir, "po-module1"), ""),
             "PO template generation failed.")
         expected_path = "po-module1/messages.pot"
         self.assertTrue(
@@ -329,11 +367,13 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
 
     def test_generate_pot_not_intltool(self):
         # Fail when not an intltool setup.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
         # Cripple the setup.
         os.remove(os.path.join(package_dir, "po-module1/POTFILES.in"))
         self.assertFalse(
-            generate_pot(os.path.join(package_dir, "po-module1"), "nothing"),
+            generate_pot(
+                backend, os.path.join(package_dir, "po-module1"), "nothing"),
             "PO template generation should have failed.")
         not_expected_path = "po-module1/nothing.pot"
         self.assertFalse(
@@ -342,12 +382,13 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
 
     def test_generate_pots(self):
         # Generate all PO templates in the package.
+        backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
         expected_paths = [
             'po-module1/packagename-module1.pot',
             'po-module2/packagename-module2.pot',
             ]
-        pots_list = generate_pots(package_dir)
+        pots_list = generate_pots(backend, package_dir)
         self.assertEqual(expected_paths, pots_list)
         for expected_path in expected_paths:
             self.assertTrue(

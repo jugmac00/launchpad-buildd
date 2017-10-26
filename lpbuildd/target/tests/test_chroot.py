@@ -173,6 +173,24 @@ class TestChroot(TestCase):
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])
 
+    def test_isdir(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        test_proc_infos = iter([{}, {"returncode": 1}])
+        processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
+        self.assertTrue(Chroot("1", "xenial", "amd64").isdir("/dir"))
+        self.assertFalse(Chroot("1", "xenial", "amd64").isdir("/file"))
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "test", "-d", path]
+            for path in ("/dir", "/file")
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
     def test_islink(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
@@ -186,6 +204,46 @@ class TestChroot(TestCase):
              "/expected/home/build-1/chroot-autobuild",
              "linux64", "test", "-h", path]
             for path in ("/link", "/file")
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_find(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        test_proc_infos = iter([
+            {"stdout": io.BytesIO(b"foo\0bar\0bar/bar\0bar/baz\0")},
+            {"stdout": io.BytesIO(b"foo\0bar\0")},
+            {"stdout": io.BytesIO(b"foo\0bar/bar\0bar/baz\0")},
+            {"stdout": io.BytesIO(b"bar\0bar/bar\0")},
+            ])
+        processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
+        self.assertEqual(
+            ["foo", "bar", "bar/bar", "bar/baz"],
+            Chroot("1", "xenial", "amd64").find("/path"))
+        self.assertEqual(
+            ["foo", "bar"],
+            Chroot("1", "xenial", "amd64").find("/path", max_depth=1))
+        self.assertEqual(
+            ["foo", "bar/bar", "bar/baz"],
+            Chroot("1", "xenial", "amd64").find(
+                "/path", include_directories=False))
+        self.assertEqual(
+            ["bar", "bar/bar"],
+            Chroot("1", "xenial", "amd64").find("/path", name="bar"))
+
+        find_prefix = [
+            "sudo", "/usr/sbin/chroot",
+            "/expected/home/build-1/chroot-autobuild",
+            "linux64", "find", "/path", "-mindepth", "1",
+            ]
+        find_suffix = ["-printf", "%P\\0"]
+        expected_args = [
+            find_prefix + find_suffix,
+            find_prefix + ["-maxdepth", "1"] + find_suffix,
+            find_prefix + ["!", "-type", "d"] + find_suffix,
+            find_prefix + ["-name", "bar"] + find_suffix,
             ]
         self.assertEqual(
             expected_args,

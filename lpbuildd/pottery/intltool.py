@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functions to build PO templates on the build slave."""
@@ -13,27 +13,26 @@ __all__ = [
     'find_potfiles_in',
     ]
 
-import errno
 import os.path
 import re
 import subprocess
+import tempfile
 
 
-def find_potfiles_in(package_dir):
-    """Search the current directory and its subdirectories for POTFILES.in.
+def find_potfiles_in(backend, package_dir):
+    """Search `package_dir` and its subdirectories for POTFILES.in.
 
+    :param backend: The `Backend` where work is done.
     :param package_dir: The directory to search.
     :returns: A list of names of directories that contain a file
         POTFILES.in, relative to `package_dir`.
     """
-    result_dirs = []
-    for dirpath, dirnames, dirfiles in os.walk(package_dir):
-        if "POTFILES.in" in dirfiles:
-            result_dirs.append(os.path.relpath(dirpath, package_dir))
-    return result_dirs
+    paths = backend.find(
+        package_dir, include_directories=False, name="POTFILES.in")
+    return [os.path.dirname(path) for path in paths]
 
 
-def check_potfiles_in(path):
+def check_potfiles_in(backend, path):
     """Check if the files listed in the POTFILES.in file exist.
 
     Running 'intltool-update -m' will perform this check and also take a
@@ -46,6 +45,7 @@ def check_potfiles_in(path):
     all listed files exist. The presence of the 'notexist' file tells us
     that.
 
+    :param backend: The `Backend` where work is done.
     :param path: The directory where POTFILES.in resides.
     :returns: False if the directory does not exist, if an error occurred
         when executing intltool-update or if files are missing from
@@ -53,29 +53,24 @@ def check_potfiles_in(path):
         actually exist.
     """
     # Abort nicely if the directory does not exist.
-    if not os.path.isdir(path):
+    if not backend.isdir(path):
         return False
     # Remove stale files from a previous run of intltool-update -m.
-    for unlink_name in ['missing', 'notexist']:
-        try:
-            os.unlink(os.path.join(path, unlink_name))
-        except OSError as e:
-            # It's ok if the files are missing.
-            if e.errno != errno.ENOENT:
-                raise
+    backend.run(
+        ["rm", "-f"] +
+        [os.path.join(path, name) for name in ("missing", "notexist")])
     with open("/dev/null", "w") as devnull:
         try:
-            subprocess.check_call(
+            backend.run(
                 ["/usr/bin/intltool-update", "-m"],
                 stdout=devnull, stderr=devnull, cwd=path)
         except subprocess.CalledProcessError:
             return False
 
-    notexist = os.path.join(path, "notexist")
-    return not os.access(notexist, os.R_OK)
+    return not backend.path_exists(os.path.join(path, "notexist"))
 
 
-def find_intltool_dirs(package_dir):
+def find_intltool_dirs(backend, package_dir):
     """Search for directories with intltool structure.
 
     `package_dir` and its subdirectories are searched. An 'intltool
@@ -83,12 +78,13 @@ def find_intltool_dirs(package_dir):
     files listed in that POTFILES.in do actually exist. The latter
     condition makes sure that the file is not stale.
 
+    :param backend: The `Backend` where work is done.
     :param package_dir: The directory to search.
     :returns: A list of directory names, relative to `package_dir`.
     """
     return sorted(
-        podir for podir in find_potfiles_in(package_dir)
-        if check_potfiles_in(os.path.join(package_dir, podir)))
+        podir for podir in find_potfiles_in(backend, package_dir)
+        if check_potfiles_in(backend, os.path.join(package_dir, podir)))
 
 
 def _get_AC_PACKAGE_NAME(config_file):
@@ -127,7 +123,7 @@ def _try_substitution(config_files, varname, substitution):
     return substitution.replace(subst_value)
 
 
-def get_translation_domain(dirname):
+def get_translation_domain(backend, dirname):
     """Get the translation domain for this PO directory.
 
     Imitates some of the behavior of intltool-update to find out which
@@ -156,10 +152,12 @@ def get_translation_domain(dirname):
     config_files = []
     for filename, varname, keep_trying in locations:
         path = os.path.join(dirname, filename)
-        if not os.access(path, os.R_OK):
+        if not backend.path_exists(path):
             # Skip non-existent files.
             continue
-        config_files.append(ConfigFile(path))
+        with tempfile.NamedTemporaryFile() as local_file:
+            backend.copy_out(path, local_file.name)
+            config_files.append(ConfigFile(local_file.file))
         new_value = config_files[-1].getVariable(varname)
         if new_value is not None:
             value = new_value
@@ -181,7 +179,7 @@ def get_translation_domain(dirname):
     return value
 
 
-def generate_pot(podir, domain):
+def generate_pot(backend, podir, domain):
     """Generate one PO template using intltool.
 
     Although 'intltool-update -p' can try to find out the translation domain
@@ -190,6 +188,7 @@ def generate_pot(podir, domain):
     "has an additional effect: the name of current working directory is no
     more  limited  to 'po' or 'po-*'." We don't want that limit either.
 
+    :param backend: The `Backend` where work is done.
     :param podir: The PO directory in which to build template.
     :param domain: The translation domain to use as the name of the template.
       If it is None or empty, 'messages.pot' will be used.
@@ -199,7 +198,7 @@ def generate_pot(podir, domain):
         domain = "messages"
     with open("/dev/null", "w") as devnull:
         try:
-            subprocess.check_call(
+            backend.run(
                 ["/usr/bin/intltool-update", "-p", "-g", domain],
                 stdout=devnull, stderr=devnull, cwd=podir)
             return True
@@ -207,13 +206,13 @@ def generate_pot(podir, domain):
             return False
 
 
-def generate_pots(package_dir):
+def generate_pots(backend, package_dir):
     """Top-level function to generate all PO templates in a package."""
     potpaths = []
-    for podir in find_intltool_dirs(package_dir):
+    for podir in find_intltool_dirs(backend, package_dir):
         full_podir = os.path.join(package_dir, podir)
-        domain = get_translation_domain(full_podir)
-        if generate_pot(full_podir, domain):
+        domain = get_translation_domain(backend, full_podir)
+        if generate_pot(backend, full_podir, domain):
             potpaths.append(os.path.join(podir, domain + ".pot"))
     return potpaths
 

@@ -3,16 +3,23 @@
 
 __metaclass__ = type
 __all__ = [
+    'FakeBackend',
     'FakeMethod',
     'FakeSlave',
+    'UncontainedBackend',
     ]
 
 import hashlib
 import os
 import shutil
 import stat
+import subprocess
 
 from lpbuildd.target.backend import Backend
+from lpbuildd.util import (
+    set_personality,
+    shell_escape,
+    )
 
 
 class FakeMethod:
@@ -162,11 +169,75 @@ class FakeBackend(Backend):
         except KeyError:
             return False
 
+    def isdir(self, path):
+        _, mode = self.backend_fs.get(path, (b"", 0))
+        return stat.S_ISDIR(mode)
+
     def islink(self, path):
         _, mode = self.backend_fs.get(path, (b"", 0))
         return stat.S_ISLNK(mode)
 
-    def listdir(self, path):
+    def find(self, path, max_depth=None, include_directories=True, name=None):
+        def match(backend_path, mode):
+            rel_path = os.path.relpath(backend_path, path)
+            if rel_path == os.sep or os.path.dirname(rel_path) == os.pardir:
+                return False
+            if max_depth is not None:
+                if rel_path.count(os.sep) + 1 > max_depth:
+                    return False
+            if not include_directories:
+                if stat.S_ISDIR(mode):
+                    return False
+            if name is not None:
+                if os.path.basename(rel_path) != name:
+                    return False
+            return True
+
         return [
-            os.path.basename(p) for p in self.backend_fs
-            if os.path.dirname(p) == path]
+            os.path.relpath(backend_path, path)
+            for backend_path, (_, mode) in self.backend_fs.items()
+            if match(backend_path, mode)]
+
+
+class UncontainedBackend(Backend):
+    """A partial backend implementation with no containment."""
+
+    def run(self, args, env=None, input_text=None, get_output=False,
+            echo=False, **kwargs):
+        """See `Backend`."""
+        if env:
+            args = ["env"] + [
+                "%s=%s" % (key, shell_escape(value))
+                for key, value in env.items()] + args
+        if self.arch is not None:
+            args = set_personality(args, self.arch, series=self.series)
+        if input_text is None and not get_output:
+            subprocess.check_call(args, **kwargs)
+        else:
+            if get_output:
+                kwargs["stdout"] = subprocess.PIPE
+            proc = subprocess.Popen(args, stdin=subprocess.PIPE, **kwargs)
+            output, _ = proc.communicate(input_text)
+            if proc.returncode:
+                raise subprocess.CalledProcessError(proc.returncode, args)
+            if get_output:
+                return output
+
+    def _copy(self, source_path, target_path):
+        if source_path == target_path:
+            raise Exception(
+                "TrivialBackend copy operations require source_path and "
+                "target_path to differ.")
+        subprocess.check_call(
+            ["cp", "--preserve=timestamps", source_path, target_path])
+
+    def copy_in(self, source_path, target_path):
+        """See `Backend`."""
+        self._copy(source_path, target_path)
+
+    def copy_out(self, source_path, target_path):
+        """See `Backend`."""
+        self._copy(source_path, target_path)
+
+    def remove(self):
+        raise NotImplementedError

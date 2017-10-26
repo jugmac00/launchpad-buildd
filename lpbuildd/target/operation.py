@@ -16,7 +16,7 @@ class Operation:
     @classmethod
     def add_arguments(cls, parser):
         parser.add_argument(
-            "--backend", choices=["chroot", "lxd", "fake"],
+            "--backend", choices=["chroot", "lxd", "fake", "uncontained"],
             help="use this type of backend")
         parser.add_argument(
             "--series", metavar="SERIES", help="operate on series SERIES")

@@ -9,10 +9,10 @@ from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
     )
-
-
-RETCODE_FAILURE_INSTALL = 200
-RETCODE_FAILURE_BUILD = 201
+from lpbuildd.target.generate_translation_templates import (
+    RETCODE_FAILURE_BUILD,
+    RETCODE_FAILURE_INSTALL,
+    )
 
 
 class TranslationTemplatesBuildState(DebianBuildState):
@@ -31,8 +31,6 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
 
     def __init__(self, slave, buildid):
         super(TranslationTemplatesBuildManager, self).__init__(slave, buildid)
-        self._generatepath = os.path.join(
-            self._slavebin, "generate-translation-templates")
         self._resultname = slave._config.get(
             "translationtemplatesmanager", "resultarchive")
 
@@ -45,10 +43,9 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
 
     def doGenerate(self):
         """Generate templates."""
-        command = [
-            self._generatepath,
-            self._buildid, self._branch_url, self._resultname]
-        self.runSubProcess(self._generatepath, command)
+        self.runTargetSubProcess(
+            "generate-translation-templates",
+            self._branch_url, self._resultname)
 
     # Satisfy DebianPackageManager's needs without having a misleading
     # method name here.

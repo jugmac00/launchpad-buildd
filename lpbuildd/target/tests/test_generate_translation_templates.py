@@ -4,26 +4,34 @@
 __metaclass__ = type
 
 import os
-from StringIO import StringIO
 import subprocess
-import sys
 import tarfile
 
 from fixtures import (
     EnvironmentVariable,
+    FakeLogger,
     TempDir,
     )
 from testtools import TestCase
 from testtools.matchers import (
+    ContainsDict,
+    EndsWith,
     Equals,
+    MatchesListwise,
     MatchesSetwise,
     )
 
-from lpbuildd import pottery
-from lpbuildd.pottery.generate_translation_templates import (
-    GenerateTranslationTemplates,
-    )
+from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakeslave import FakeMethod
+
+
+class MatchesCall(MatchesListwise):
+
+    def __init__(self, *args, **kwargs):
+        super(MatchesCall, self).__init__([
+            Equals(args),
+            ContainsDict(
+                {name: Equals(value) for name, value in kwargs.items()})])
 
 
 class TestGenerateTranslationTemplates(TestCase):
@@ -31,28 +39,37 @@ class TestGenerateTranslationTemplates(TestCase):
 
     result_name = "translation-templates.tar.gz"
 
+    def setUp(self):
+        super(TestGenerateTranslationTemplates, self).setUp()
+        self.home_dir = self.useFixture(TempDir()).path
+        self.useFixture(EnvironmentVariable("HOME", self.home_dir))
+        self.logger = self.useFixture(FakeLogger())
+
     def test_getBranch_url(self):
         # If passed a branch URL, the template generation script will
         # check out that branch into a directory called "source-tree."
-        branch_url = 'lp://~my/translation/branch'
-
-        generator = GenerateTranslationTemplates(
-            branch_url, self.result_name, self.useFixture(TempDir()).path,
-            log_file=StringIO())
+        args = [
+            "generate-translation-templates",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "lp://~my/translation/branch", self.result_name,
+            ]
+        generator = parse_args(args=args).operation
         generator._checkout = FakeMethod()
         generator._getBranch()
 
         self.assertEqual(1, generator._checkout.call_count)
-        self.assertTrue(generator.branch_dir.endswith('source-tree'))
+        self.assertThat(generator.branch_dir, EndsWith("source-tree"))
 
     def test_getBranch_dir(self):
         # If passed a branch directory, the template generation script
         # works directly in that directory.
-        branch_dir = '/home/me/branch'
-
-        generator = GenerateTranslationTemplates(
-            branch_dir, self.result_name, self.useFixture(TempDir()).path,
-            log_file=StringIO())
+        branch_dir = "/home/me/branch"
+        args = [
+            "generate-translation-templates",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            branch_dir, self.result_name,
+            ]
+        generator = parse_args(args=args).operation
         generator._checkout = FakeMethod()
         generator._getBranch()
 
@@ -97,9 +114,12 @@ class TestGenerateTranslationTemplates(TestCase):
         marker_text = "Ceci n'est pas cet branch."
         branch_url = self._createBranch({'marker.txt': marker_text})
 
-        generator = GenerateTranslationTemplates(
-            branch_url, self.result_name, self.useFixture(TempDir()).path,
-            log_file=StringIO())
+        args = [
+            "generate-translation-templates",
+            "--backend=uncontained", "--series=xenial", "--arch=amd64", "1",
+            branch_url, self.result_name,
+            ]
+        generator = parse_args(args=args).operation
         generator._getBranch()
 
         marker_path = os.path.join(generator.branch_dir, 'marker.txt')
@@ -108,8 +128,7 @@ class TestGenerateTranslationTemplates(TestCase):
 
     def test_templates_tarball(self):
         # Create a tarball from pot files.
-        workdir = self.useFixture(TempDir()).path
-        branchdir = os.path.join(workdir, 'branchdir')
+        branchdir = os.path.join(self.home_dir, 'branchdir')
         dummy_tar = os.path.join(
             os.path.dirname(__file__), 'dummy_templates.tar.gz')
         with tarfile.open(dummy_tar, 'r|*') as tar:
@@ -118,24 +137,47 @@ class TestGenerateTranslationTemplates(TestCase):
                 member.name
                 for member in tar.getmembers() if not member.isdir()]
 
-        generator = GenerateTranslationTemplates(
-            branchdir, self.result_name, workdir, log_file=StringIO())
+        args = [
+            "generate-translation-templates",
+            "--backend=uncontained", "--series=xenial", "--arch=amd64", "1",
+            branchdir, self.result_name,
+            ]
+        generator = parse_args(args=args).operation
         generator._getBranch()
         generator._makeTarball(potnames)
-        result_path = os.path.join(workdir, self.result_name)
+        result_path = os.path.join(self.home_dir, self.result_name)
         with tarfile.open(result_path, 'r|*') as tar:
             tarnames = tar.getnames()
         self.assertThat(tarnames, MatchesSetwise(*(map(Equals, potnames))))
 
-    def test_script(self):
-        tempdir = self.useFixture(TempDir()).path
-        workdir = self.useFixture(TempDir()).path
-        command = [
-            sys.executable,
-            os.path.join(
-                os.path.dirname(pottery.__file__),
-                'generate_translation_templates.py'),
-            tempdir, self.result_name, workdir]
-        retval = subprocess.call(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.assertEqual(0, retval)
+    def test_run(self):
+        # Install dependencies and generate a templates tarball.
+        branch_url = "lp:~my/branch"
+        branch_dir = os.path.join(self.home_dir, "source-tree")
+        po_dir = os.path.join(branch_dir, "po")
+        result_path = os.path.join(self.home_dir, self.result_name)
+
+        args = [
+            "generate-translation-templates",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            branch_url, self.result_name,
+            ]
+        generator = parse_args(args=args).operation
+        generator.backend.add_file(os.path.join(po_dir, "POTFILES.in"), "")
+        generator.backend.add_file(
+            os.path.join(po_dir, "Makevars"), "DOMAIN = test\n")
+        generator.run()
+        self.assertThat(generator.backend.run.calls, MatchesListwise([
+            MatchesCall(["apt-get", "-y", "install", "bzr", "intltool"]),
+            MatchesCall(
+                ["bzr", "export", "-q", "-d", "lp:~my/branch", branch_dir]),
+            MatchesCall(
+                ["rm", "-f",
+                 os.path.join(po_dir, "missing"),
+                 os.path.join(po_dir, "notexist")]),
+            MatchesCall(["/usr/bin/intltool-update", "-m"], cwd=po_dir),
+            MatchesCall(
+                ["/usr/bin/intltool-update", "-p", "-g", "test"], cwd=po_dir),
+            MatchesCall(
+                ["tar", "-C", branch_dir, "-czf", result_path, "po/test.pot"]),
+            ]))
