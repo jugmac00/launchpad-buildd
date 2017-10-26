@@ -1,3 +1,9 @@
+launchpad-buildd (155) UNRELEASED; urgency=medium
+
+  * Refactor lpbuildd.pottery.intltool to avoid calling chdir.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 13:42:17 +0100
+
 launchpad-buildd (154) xenial; urgency=medium
 
   * The previous patch was labouring under mistaken assumptions: it's
