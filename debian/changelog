@@ -6,6 +6,7 @@ launchpad-buildd (155) UNRELEASED; urgency=medium
   * Convert generate-translation-templates to the new Operation framework.
   * Use Python 3-style print functions.
   * Make urllib imports Python 3-compatible.
+  * Make xmlrpc imports Python 3-compatible.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 13:42:17 +0100
 

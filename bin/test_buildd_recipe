@@ -8,7 +8,10 @@
 from __future__ import print_function
 
 import sys
-from xmlrpclib import ServerProxy
+try:
+    from xmlrpc.client import ServerProxy
+except ImportError:
+    from xmlrpclib import ServerProxy
 
 country_code = 'us'
 apt_cacher_ng_host = 'stumpy'

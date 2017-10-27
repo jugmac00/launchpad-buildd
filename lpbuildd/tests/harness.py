@@ -68,8 +68,11 @@ class BuilddSlaveTestSetup(TacTestFixture):
 
     Make sure the server is running
 
-    >>> import xmlrpclib
-    >>> s = xmlrpclib.Server('http://localhost:8321/rpc/')
+    >>> try:
+    ...     from xmlrpc.client import ServerProxy
+    ... except ImportError:
+    ...     from xmlrpclib import ServerProxy
+    >>> s = ServerProxy('http://localhost:8321/rpc/')
     >>> s.echo('Hello World')
     ['Hello World']
     >>> fixture.tearDown()
@@ -77,7 +80,7 @@ class BuilddSlaveTestSetup(TacTestFixture):
     Again for luck !
 
     >>> fixture.setUp()
-    >>> s = xmlrpclib.Server('http://localhost:8321/rpc/')
+    >>> s = ServerProxy('http://localhost:8321/rpc/')
 
     >>> s.echo('Hello World')
     ['Hello World']

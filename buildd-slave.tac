@@ -60,7 +60,7 @@ strports.service(slave.slave._config.get("slave", "bindport"),
 # You can interact with a running slave like this:
 # (assuming the slave is on localhost:8221)
 #
-# python
-# import xmlrpclib
-# s = xmlrpclib.ServerProxy("http://localhost:8221/rpc")
+# python3
+# from xmlrpc.client import ServerProxy
+# s = ServerProxy("http://localhost:8221/rpc")
 # s.echo("Hello World")

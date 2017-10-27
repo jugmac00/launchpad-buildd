@@ -24,7 +24,10 @@ try:
 except ImportError:
     from urllib2 import HTTPBasicAuthHandler
 import unittest
-import xmlrpclib
+try:
+    from xmlrpc.client import ServerProxy
+except ImportError:
+    from xmlrpclib import ServerProxy
 
 from lpbuildd.tests.harness import (
     BuilddSlaveTestSetup,
@@ -209,7 +212,7 @@ class XMLRPCBuildDSlaveTests(unittest.TestCase):
         super(XMLRPCBuildDSlaveTests, self).setUp()
         self.slave = BuilddSlaveTestSetup()
         self.slave.setUp()
-        self.server = xmlrpclib.Server('http://localhost:8321/rpc/')
+        self.server = ServerProxy('http://localhost:8321/rpc/')
 
     def tearDown(self):
         self.slave.tearDown()

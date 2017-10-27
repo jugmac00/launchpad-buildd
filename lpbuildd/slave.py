@@ -28,7 +28,10 @@ except ImportError:
         HTTPPasswordMgrWithDefaultRealm,
         urlopen,
         )
-import xmlrpclib
+try:
+    from xmlrpc.client import Binary
+except ImportError:
+    from xmlrpclib import Binary
 
 import apt
 from twisted.internet import protocol
@@ -743,7 +746,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         Returns the build id and up to one kilobyte of log tail.
         """
         tail = self.slave.getLogTail()
-        return {"build_id": self.buildid, "logtail": xmlrpclib.Binary(tail)}
+        return {"build_id": self.buildid, "logtail": Binary(tail)}
 
     def status_WAITING(self):
         """Handler for xmlrpc_status WAITING.
