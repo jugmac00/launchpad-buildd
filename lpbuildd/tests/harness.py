@@ -85,11 +85,11 @@ class BuilddSlaveTestSetup(TacTestFixture):
     >>> info = s.info()
     >>> len(info)
     3
-    >>> print info[:2]
+    >>> print(info[:2])
     ['1.0', 'i386']
 
     >>> for buildtype in sorted(info[2]):
-    ...     print buildtype
+    ...     print(buildtype)
     binarypackage
     debian
     sourcepackagerecipe
