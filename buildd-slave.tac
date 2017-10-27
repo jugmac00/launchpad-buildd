@@ -5,7 +5,10 @@
 # XXX: dsilvers: 2005/01/21: Currently everything logged in the slave gets
 # passed through to the twistd log too. this could get dangerous/big
 
-from ConfigParser import SafeConfigParser
+try:
+    from configparser import ConfigParser as SafeConfigParser
+except ImportError:
+    from ConfigParser import SafeConfigParser
 import os
 
 from twisted.application import (

@@ -6,11 +6,14 @@ __all__ = [
     'BuilddTestCase',
     ]
 
+try:
+    from configparser import ConfigParser as SafeConfigParser
+except ImportError:
+    from ConfigParser import SafeConfigParser
 import os
 import shutil
 import tempfile
 import unittest
-from ConfigParser import SafeConfigParser
 
 from fixtures import EnvironmentVariable
 from txfixtures.tachandler import TacTestFixture
