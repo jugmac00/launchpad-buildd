@@ -91,7 +91,7 @@ class TestGenerateTranslationTemplates(TestCase):
         subprocess.check_call(['bzr', 'init', '-q'], cwd=branch_path)
 
         if content_map is not None:
-            for name, contents in content_map.iteritems():
+            for name, contents in content_map.items():
                 with open(os.path.join(branch_path, name), 'wb') as f:
                     f.write(contents)
             subprocess.check_call(

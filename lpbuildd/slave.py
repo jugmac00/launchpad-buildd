@@ -715,7 +715,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
     def xmlrpc_info(self):
         """Return the protocol version and the builder methods supported."""
         return (self.protocolversion, self.slave.getArch(),
-                self._builders.keys())
+                list(self._builders))
 
     def xmlrpc_status(self):
         """Return the status of the build daemon, as a dictionary.
@@ -796,7 +796,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         """
         # check requested builder
         if not builder in self._builders:
-            extra_info = "%s not in %r" % (builder, self._builders.keys())
+            extra_info = "%s not in %r" % (builder, list(self._builders))
             return (BuilderStatus.UNKNOWNBUILDER, extra_info)
         # check requested chroot availability
         chroot_present, info = self.slave.ensurePresent(chrootsum)
@@ -808,7 +808,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
             """ % (chrootsum, info)
             return (BuilderStatus.UNKNOWNSUM, extra_info)
         # check requested files availability
-        for filesum in filemap.itervalues():
+        for filesum in filemap.values():
             file_present, info = self.slave.ensurePresent(filesum)
             if not file_present:
                 extra_info = """FILESUM -> %s
