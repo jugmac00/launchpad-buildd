@@ -14,7 +14,20 @@ import os
 import re
 import shutil
 import tempfile
-import urllib2
+try:
+    from urllib.request import (
+        build_opener,
+        HTTPBasicAuthHandler,
+        HTTPPasswordMgrWithDefaultRealm,
+        urlopen,
+        )
+except ImportError:
+    from urllib2 import (
+        build_opener,
+        HTTPBasicAuthHandler,
+        HTTPPasswordMgrWithDefaultRealm,
+        urlopen,
+        )
 import xmlrpclib
 
 import apt
@@ -380,14 +393,13 @@ class BuildDSlave(object):
         :param password: The password for authentication.
         :return: The OpenerDirector instance.
 
-        This helper installs a urllib2.HTTPBasicAuthHandler that will deal
-        with any HTTP basic authentication required when opening the
-        URL.
+        This helper installs an HTTPBasicAuthHandler that will deal with any
+        HTTP basic authentication required when opening the URL.
         """
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        password_mgr = HTTPPasswordMgrWithDefaultRealm()
         password_mgr.add_password(None, url, username, password)
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-        opener = urllib2.build_opener(handler)
+        handler = HTTPBasicAuthHandler(password_mgr)
+        opener = build_opener(handler)
         return opener
 
     def ensurePresent(self, sha1sum, url=None, username=None, password=None):
@@ -407,7 +419,7 @@ class BuildDSlave(object):
                     opener = self.setupAuthHandler(
                         url, username, password).open
                 else:
-                    opener = urllib2.urlopen
+                    opener = urlopen
                 try:
                     f = opener(url)
                 # Don't change this to URLError without thoroughly

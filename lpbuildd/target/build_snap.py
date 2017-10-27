@@ -12,8 +12,24 @@ import logging
 import os.path
 import subprocess
 import sys
-import urllib2
-from urlparse import urlparse
+try:
+    from urllib.error import (
+        HTTPError,
+        URLError,
+        )
+    from urllib.request import (
+        Request,
+        urlopen,
+        )
+    from urllib.parse import urlparse
+except ImportError:
+    from urllib2 import (
+        HTTPError,
+        Request,
+        URLError,
+        urlopen,
+        )
+    from urlparse import urlparse
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.util import shell_escape
@@ -198,11 +214,11 @@ class BuildSnap(Operation):
         headers = {
             'Authorization': 'Basic {}'.format(base64.b64encode(auth))
             }
-        req = urllib2.Request(self.args.revocation_endpoint, None, headers)
+        req = Request(self.args.revocation_endpoint, None, headers)
         req.get_method = lambda: 'DELETE'
         try:
-            urllib2.urlopen(req)
-        except (urllib2.HTTPError, urllib2.URLError):
+            urlopen(req)
+        except (HTTPError, URLError):
             logger.exception('Unable to revoke token for %s', url.username)
 
     def run(self):

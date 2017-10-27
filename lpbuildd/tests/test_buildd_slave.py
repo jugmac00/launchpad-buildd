@@ -19,7 +19,10 @@ import difflib
 import os
 import shutil
 import tempfile
-import urllib2
+try:
+    from urllib.request import HTTPBasicAuthHandler
+except ImportError:
+    from urllib2 import HTTPBasicAuthHandler
 import unittest
 import xmlrpclib
 
@@ -50,7 +53,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # Inspect the openers and ensure the wanted handler is installed.
         basic_auth_handler = None
         for handler in opener.handlers:
-            if isinstance(handler, urllib2.HTTPBasicAuthHandler):
+            if isinstance(handler, HTTPBasicAuthHandler):
                 basic_auth_handler = handler
                 break
         self.assertTrue(
