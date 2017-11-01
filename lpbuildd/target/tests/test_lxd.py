@@ -39,6 +39,7 @@ from testtools.matchers import (
 
 from lpbuildd.target.lxd import (
     LXD,
+    LXDException,
     fallback_hosts,
     policy_rc_d,
     )
@@ -429,6 +430,24 @@ class TestLXD(TestCase):
             data=b"hello\n",
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
 
+    def test_copy_in_error(self):
+        source_dir = self.useFixture(TempDir()).path
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        container = mock.MagicMock()
+        client.containers.get.return_value = container
+        container.api.files.post.side_effect = FakeLXDAPIException
+        source_path = os.path.join(source_dir, "source")
+        with open(source_path, "w"):
+            pass
+        target_path = "/path/to/target"
+        e = self.assertRaises(
+            LXDException, LXD("1", "xenial", "amd64").copy_in,
+            source_path, target_path)
+        self.assertEqual(
+            "Failed to push lp-xenial-amd64:%s: "
+            "Fake LXD exception" % target_path, str(e))
+
     def test_copy_out(self):
         target_dir = self.useFixture(TempDir()).path
         self.useFixture(MockPatch("pylxd.Client"))
@@ -449,6 +468,24 @@ class TestLXD(TestCase):
             "/1.0/containers/lp-xenial-amd64/files",
             params={"path": source_path}, stream=True)
         self.assertThat(target_path, FileContains("hello\nworld\n"))
+
+    def test_copy_out_error(self):
+        target_dir = self.useFixture(TempDir()).path
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        container = mock.MagicMock()
+        client.containers.get.return_value = container
+        source_path = "/path/to/source"
+        target_path = os.path.join(target_dir, "target")
+        files_api = container.api.files
+        files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
+        files_api.session.get.side_effect = FakeSessionGet({})
+        e = self.assertRaises(
+            LXDException, LXD("1", "xenial", "amd64").copy_out,
+            source_path, target_path)
+        self.assertEqual(
+            "Failed to pull lp-xenial-amd64:%s: not found" % source_path,
+            str(e))
 
     def test_path_exists(self):
         processes_fixture = self.useFixture(FakeProcesses())

@@ -9,6 +9,7 @@ launchpad-buildd (155) UNRELEASED; urgency=medium
   * Make xmlrpc imports Python 3-compatible.
   * Make configparser imports Python 3-compatible.
   * Handle dict API changes in Python 3.
+  * Raise more useful exceptions when LXD.copy_in or LXD.copy_out fail.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 13:42:17 +0100
 

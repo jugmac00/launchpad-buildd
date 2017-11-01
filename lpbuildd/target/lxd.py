@@ -62,6 +62,17 @@ policy_rc_d = dedent("""\
     """)
 
 
+class LXDException(Exception):
+    """Wrap an LXDAPIException with some more useful information."""
+
+    def __init__(self, action, lxdapi_exc):
+        self.action = action
+        self.lxdapi_exc = lxdapi_exc
+
+    def __str__(self):
+        return "%s: %s" % (self.action, self.lxdapi_exc)
+
+
 class LXD(Backend):
 
     # Architecture mapping
@@ -313,7 +324,7 @@ class LXD(Backend):
         with tempfile.NamedTemporaryFile(mode="w+b") as hosts_file:
             try:
                 self.copy_out("/etc/hosts", hosts_file.name)
-            except LXDAPIException:
+            except LXDException:
                 hosts_file.seek(0, os.SEEK_SET)
                 hosts_file.write(fallback_hosts.encode("UTF-8"))
             hosts_file.seek(0, os.SEEK_END)
@@ -340,7 +351,7 @@ class LXD(Backend):
             try:
                 self.copy_out(
                     "/etc/init/mounted-dev.conf", mounted_dev_file.name)
-            except LXDAPIException:
+            except LXDException:
                 pass
             else:
                 mounted_dev_file.seek(0, os.SEEK_SET)
@@ -449,7 +460,12 @@ class LXD(Backend):
                 "X-LXD-gid": 0,
                 "X-LXD-mode": "%#o" % mode,
                 }
-            container.api.files.post(params=params, data=data, headers=headers)
+            try:
+                container.api.files.post(
+                    params=params, data=data, headers=headers)
+            except LXDAPIException as e:
+                raise LXDException(
+                    "Failed to push %s:%s" % (self.name, target_path), e)
 
     def _get_file(self, container, *args, **kwargs):
         # pylxd < 2.1.1 tries to validate the response as JSON in streaming
@@ -468,11 +484,16 @@ class LXD(Backend):
         container = self.client.containers.get(self.name)
         with open(target_path, "wb") as target_file:
             params = {"path": source_path}
-            with closing(
-                    self._get_file(
-                        container, params=params, stream=True)) as response:
-                for chunk in response.iter_content(chunk_size=65536):
-                    target_file.write(chunk)
+            try:
+                with closing(
+                        self._get_file(
+                            container, params=params,
+                            stream=True)) as response:
+                    for chunk in response.iter_content(chunk_size=65536):
+                        target_file.write(chunk)
+            except LXDAPIException as e:
+                raise LXDException(
+                    "Failed to pull %s:%s" % (self.name, source_path), e)
 
     def stop(self):
         """See `Backend`."""
