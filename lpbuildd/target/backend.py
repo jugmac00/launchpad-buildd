@@ -152,10 +152,10 @@ class Backend:
         """
         try:
             with open("/dev/null", "w") as devnull:
-                self.run(
+                output = self.run(
                     ["apt-cache", "show", package],
-                    stdout=devnull, stderr=devnull)
-            return True
+                    get_output=True, stderr=devnull)
+            return output.startswith("Package:")
         except subprocess.CalledProcessError:
             return False
 
