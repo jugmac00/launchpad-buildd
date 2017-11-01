@@ -593,17 +593,23 @@ class TestLXD(TestCase):
 
     def test_is_package_available(self):
         processes_fixture = self.useFixture(FakeProcesses())
-        test_proc_infos = iter([{}, {"returncode": 100}])
+        test_proc_infos = iter([
+            {"stdout": io.BytesIO(b"Package: snapd\n")},
+            {"returncode": 100},
+            {"stderr": io.BytesIO(b"N: No packages found\n")},
+            ])
         processes_fixture.add(lambda _: next(test_proc_infos), name="lxc")
         self.assertTrue(
             LXD("1", "xenial", "amd64").is_package_available("snapd"))
         self.assertFalse(
             LXD("1", "xenial", "amd64").is_package_available("nonexistent"))
+        self.assertFalse(
+            LXD("1", "xenial", "amd64").is_package_available("virtual"))
 
         expected_args = [
             ["lxc", "exec", "lp-xenial-amd64", "--",
              "linux64", "apt-cache", "show", package]
-            for package in ("snapd", "nonexistent")
+            for package in ("snapd", "nonexistent", "virtual")
             ]
         self.assertEqual(
             expected_args,
