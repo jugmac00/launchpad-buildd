@@ -155,7 +155,7 @@ class Backend:
                 output = self.run(
                     ["apt-cache", "show", package],
                     get_output=True, stderr=devnull)
-            return output.startswith("Package:")
+            return ("Package: %s" % package) in output.splitlines()
         except subprocess.CalledProcessError:
             return False
 
