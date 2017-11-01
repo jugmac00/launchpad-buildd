@@ -44,7 +44,8 @@ class Backend:
         :param env: additional environment variables to set.
         :param input_text: input text to pass on the command's stdin.
         :param get_output: if True, return the output from the command.
-        :param echo: if True, print the command before executing it.
+        :param echo: if True, print the command before executing it, and
+            print any output from the command if `get_output` is also True.
         :param kwargs: additional keyword arguments for `subprocess.Popen`.
         """
         raise NotImplementedError

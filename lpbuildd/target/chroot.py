@@ -75,6 +75,9 @@ class Chroot(Backend):
             if proc.returncode:
                 raise subprocess.CalledProcessError(proc.returncode, cmd)
             if get_output:
+                if echo:
+                    print("Output:")
+                    print(output)
                 return output
 
     def copy_in(self, source_path, target_path):
