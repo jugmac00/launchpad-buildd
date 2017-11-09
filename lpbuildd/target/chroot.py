@@ -66,7 +66,7 @@ class Chroot(Backend):
                 shell_escape(arg) for arg in args))
         cmd = ["sudo", "/usr/sbin/chroot", self.chroot_path] + args
         if input_text is None and not get_output:
-            subprocess.check_call(cmd, cwd=self.chroot_path, **kwargs)
+            subprocess.check_call(cmd, **kwargs)
         else:
             if get_output:
                 kwargs["stdout"] = subprocess.PIPE
