@@ -4,17 +4,11 @@
 __metaclass__ = type
 
 import os
-import re
+try:
+    from shlex import quote as shell_escape
+except ImportError:
+    from pipes import quote as shell_escape
 import subprocess
-
-
-non_meta_re = re.compile(r'^[a-zA-Z0-9+,./:=@_-]+$')
-
-def shell_escape(arg):
-    if non_meta_re.match(arg):
-        return arg
-    else:
-        return "'%s'" % arg.replace("'", "'\\''")
 
 
 def get_arch_bits(arch):

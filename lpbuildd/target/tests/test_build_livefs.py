@@ -167,7 +167,7 @@ class TestBuildLiveFS(TestCase):
                 "ln -s /usr/share/livecd-rootfs/live-build/auto/clean auto/"),
             RanBuildCommand("mkdir -p local/functions"),
             RanBuildCommand(
-                "sh -c 'echo '\\''set -x'\\'' >local/functions/debug.sh'"),
+                "sh -c 'echo '\"'\"'set -x'\"'\"' >local/functions/debug.sh'"),
             RanBuildCommand("lb clean --purge"),
             RanBuildCommand(
                 "env PROJECT=ubuntu ARCH=amd64 SUITE=xenial lb config"),

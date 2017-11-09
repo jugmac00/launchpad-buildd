@@ -2,6 +2,8 @@ launchpad-buildd (156) UNRELEASED; urgency=medium
 
   * Remove useless cwd argument passed to subprocess.check_call from
     Chroot.run.
+  * Replace shell_escape function with shlex.quote (Python 3) or pipes.quote
+    (Python 2).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 09 Nov 2017 12:08:42 +0000
 
