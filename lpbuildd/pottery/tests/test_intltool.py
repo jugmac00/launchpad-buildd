@@ -331,7 +331,8 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
         # Generate a given PO template.
         backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
-        self.assertTrue(
+        self.assertEqual(
+            "module1",
             generate_pot(
                 backend, os.path.join(package_dir, "po-module1"), "module1"),
             "PO template generation failed.")
@@ -344,7 +345,8 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
         # Generate a generic PO template.
         backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
-        self.assertTrue(
+        self.assertEqual(
+            "messages",
             generate_pot(
                 backend, os.path.join(package_dir, "po-module1"), None),
             "PO template generation failed.")
@@ -357,7 +359,8 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
         # Generate a generic PO template.
         backend = UncontainedBackend("1")
         package_dir = self.prepare_package("intltool_full_ok")
-        self.assertTrue(
+        self.assertEqual(
+            "messages",
             generate_pot(backend, os.path.join(package_dir, "po-module1"), ""),
             "PO template generation failed.")
         expected_path = "po-module1/messages.pot"
@@ -371,7 +374,7 @@ class TestGenerateTemplates(TestCase, SetupTestPackageMixin):
         package_dir = self.prepare_package("intltool_full_ok")
         # Cripple the setup.
         os.remove(os.path.join(package_dir, "po-module1/POTFILES.in"))
-        self.assertFalse(
+        self.assertIsNone(
             generate_pot(
                 backend, os.path.join(package_dir, "po-module1"), "nothing"),
             "PO template generation should have failed.")

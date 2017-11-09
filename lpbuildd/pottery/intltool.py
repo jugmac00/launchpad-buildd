@@ -192,7 +192,7 @@ def generate_pot(backend, podir, domain):
     :param podir: The PO directory in which to build template.
     :param domain: The translation domain to use as the name of the template.
       If it is None or empty, 'messages.pot' will be used.
-    :return: True if generation succeeded.
+    :return: `domain` if generation succeeded, otherwise None.
     """
     if domain is None or domain.strip() == "":
         domain = "messages"
@@ -201,9 +201,9 @@ def generate_pot(backend, podir, domain):
             backend.run(
                 ["/usr/bin/intltool-update", "-p", "-g", domain],
                 stdout=devnull, stderr=devnull, cwd=podir)
-            return True
+            return domain
         except subprocess.CalledProcessError:
-            return False
+            return None
 
 
 def generate_pots(backend, package_dir):
@@ -212,8 +212,9 @@ def generate_pots(backend, package_dir):
     for podir in find_intltool_dirs(backend, package_dir):
         full_podir = os.path.join(package_dir, podir)
         domain = get_translation_domain(backend, full_podir)
-        if generate_pot(backend, full_podir, domain):
-            potpaths.append(os.path.join(podir, domain + ".pot"))
+        generated_domain = generate_pot(backend, full_podir, domain)
+        if generated_domain is not None:
+            potpaths.append(os.path.join(podir, generated_domain + ".pot"))
     return potpaths
 
 
