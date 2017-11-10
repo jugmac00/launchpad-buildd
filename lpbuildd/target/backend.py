@@ -36,11 +36,12 @@ class Backend:
         """
         raise NotImplementedError
 
-    def run(self, args, env=None, input_text=None, get_output=False,
+    def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):
         """Run a command in the target environment.
 
         :param args: the command and arguments to run.
+        :param cwd: run the command in this working directory in the target.
         :param env: additional environment variables to set.
         :param input_text: input text to pass on the command's stdin.
         :param get_output: if True, return the output from the command.

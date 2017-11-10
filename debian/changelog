@@ -5,6 +5,9 @@ launchpad-buildd (156) UNRELEASED; urgency=medium
   * Replace shell_escape function with shlex.quote (Python 3) or pipes.quote
     (Python 2).
   * Fix handling of null/empty-domain case in generate_pots.
+  * Make Backend.run(cwd=) work, and refactor BuildLiveFS and BuildSnap to
+    use it.  This fixes translation templates builds, which were assuming
+    that this worked.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 09 Nov 2017 12:08:42 +0000
 

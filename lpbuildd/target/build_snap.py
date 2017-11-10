@@ -32,7 +32,6 @@ except ImportError:
     from urlparse import urlparse
 
 from lpbuildd.target.operation import Operation
-from lpbuildd.util import shell_escape
 
 
 RETCODE_FAILURE_INSTALL = 200
@@ -73,34 +72,20 @@ class BuildSnap(Operation):
         # appropriate certificate for your codehosting system.
         self.ssl_verify = True
 
-    def run_build_command(self, args, path="/build", env=None,
-                          get_output=False, echo=False):
+    def run_build_command(self, args, cwd="/build", env=None, **kwargs):
         """Run a build command in the target.
 
-        This is unpleasant because we need to run it with /build as the
-        working directory, and there's no way to do this without either a
-        helper program in the target or unpleasant quoting.  We go for the
-        unpleasant quoting.
-
         :param args: the command and arguments to run.
-        :param path: the working directory to use in the target.
+        :param cwd: run the command in this working directory in the target.
         :param env: dictionary of additional environment variables to set.
-        :param get_output: if True, return the output from the command.
-        :param echo: if True, print the command before executing it.
+        :param kwargs: any other keyword arguments to pass to Backend.run.
         """
-        args = [shell_escape(arg) for arg in args]
-        path = shell_escape(path)
         full_env = OrderedDict()
         full_env["LANG"] = "C.UTF-8"
         full_env["SHELL"] = "/bin/sh"
         if env:
             full_env.update(env)
-        args = ["env"] + [
-            "%s=%s" % (key, shell_escape(value))
-            for key, value in full_env.items()] + args
-        command = "cd %s && %s" % (path, " ".join(args))
-        return self.backend.run(
-            ["/bin/sh", "-c", command], get_output=get_output, echo=echo)
+        return self.backend.run(args, cwd=cwd, env=full_env, **kwargs)
 
     def save_status(self, status):
         """Save a dictionary of status information about this build.
@@ -190,7 +175,7 @@ class BuildSnap(Operation):
             env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
         self.run_build_command(
             ["snapcraft", "pull"],
-            path=os.path.join("/build", self.args.name),
+            cwd=os.path.join("/build", self.args.name),
             env=env)
 
     def build(self):
@@ -203,7 +188,7 @@ class BuildSnap(Operation):
             env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
         self.run_build_command(
             ["snapcraft"],
-            path=os.path.join("/build", self.args.name),
+            cwd=os.path.join("/build", self.args.name),
             env=env)
 
     def revoke_token(self):

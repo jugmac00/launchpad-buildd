@@ -10,7 +10,6 @@ import logging
 import os
 
 from lpbuildd.target.operation import Operation
-from lpbuildd.util import shell_escape
 
 
 RETCODE_FAILURE_INSTALL = 200
@@ -62,25 +61,13 @@ class BuildLiveFS(Operation):
             "--debug", default=False, action="store_true",
             help="enable detailed live-build debugging")
 
-    def run_build_command(self, args, env=None, echo=False):
+    def run_build_command(self, args, **kwargs):
         """Run a build command in the chroot.
 
-        This is unpleasant because we need to run it in /build under sudo
-        chroot, and there's no way to do this without either a helper
-        program in the chroot or unpleasant quoting.  We go for the
-        unpleasant quoting.
-
         :param args: the command and arguments to run.
-        :param env: dictionary of additional environment variables to set.
-        :param echo: if True, print the command before executing it.
+        :param kwargs: any other keyword arguments to pass to Backend.run.
         """
-        args = [shell_escape(arg) for arg in args]
-        if env:
-            args = ["env"] + [
-                "%s=%s" % (key, shell_escape(value))
-                for key, value in env.items()] + args
-        command = "cd /build && %s" % " ".join(args)
-        self.backend.run(["/bin/sh", "-c", command], echo=echo)
+        return self.backend.run(args, cwd="/build", **kwargs)
 
     def install(self):
         deps = ["livecd-rootfs"]

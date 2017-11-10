@@ -52,7 +52,7 @@ class Chroot(Backend):
         for path in ("/etc/hosts", "/etc/hostname", "/etc/resolv.conf"):
             self.copy_in(path, path)
 
-    def run(self, args, env=None, input_text=None, get_output=False,
+    def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):
         """See `Backend`."""
         if env:
@@ -61,6 +61,16 @@ class Chroot(Backend):
                 for key, value in env.items()] + args
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
+        if cwd is not None:
+            # This requires either a helper program in the chroot or
+            # unpleasant quoting.  For now we go for the unpleasant quoting,
+            # though once we have coreutils >= 8.28 everywhere we'll be able
+            # to use "env --chdir".
+            args = [
+                "/bin/sh", "-c", "cd %s && %s" % (
+                    shell_escape(cwd),
+                    " ".join(shell_escape(arg) for arg in args)),
+                ]
         if echo:
             print("Running in chroot: %s" % ' '.join(
                 shell_escape(arg) for arg in args))
