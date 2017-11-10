@@ -5,6 +5,8 @@ launchpad-buildd (156) UNRELEASED; urgency=medium
   * Replace shell_escape function with shlex.quote (Python 3) or pipes.quote
     (Python 2).
   * Fix handling of null/empty-domain case in generate_pots.
+  * Fall back to the package name from AC_INIT when expanding $(PACKAGE) in
+    translation configuration files if no other definition can be found.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 09 Nov 2017 12:08:42 +0000
 

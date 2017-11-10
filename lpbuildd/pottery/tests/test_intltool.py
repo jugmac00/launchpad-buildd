@@ -199,17 +199,16 @@ class TestIntltoolDomain(TestCase, SetupTestPackageMixin):
             "packagename-ac",
             get_translation_domain(backend, os.path.join(package_dir, "po")))
 
-    def prepare_ac_init(self, parameters):
+    def prepare_ac_init(self, parameters, extra_files=None):
         # Prepare test for various permutations of AC_INIT parameters
         configure_ac_content = dedent("""
             AC_INIT(%s)
             GETTEXT_PACKAGE=AC_PACKAGE_NAME
             """) % parameters
-        return self.prepare_package(
-            "intltool_domain_base",
-            {
-                "configure.ac": configure_ac_content,
-            })
+        files = {"configure.ac": configure_ac_content}
+        if extra_files is not None:
+            files.update(extra_files)
+        return self.prepare_package("intltool_domain_base", files)
 
     def test_get_translation_domain_configure_ac_init(self):
         # Find a translation domain in configure.ac in AC_INIT.
@@ -264,6 +263,16 @@ class TestIntltoolDomain(TestCase, SetupTestPackageMixin):
             "[Package name], 1.0,\n    http://bug.org, [package-tarname]")
         self.assertEqual(
             "package-tarname",
+            get_translation_domain(backend, os.path.join(package_dir, "po")))
+
+    def test_get_translation_domain_substitute_package_from_ac_init(self):
+        # PACKAGE is substituted from AC_INIT parameters as a fallback.
+        backend = UncontainedBackend("1")
+        package_dir = self.prepare_ac_init(
+            "[packagename-ac-init], 1.0, http://bug.org",
+            {"po/Makevars": "DOMAIN = $(PACKAGE)\n"})
+        self.assertEqual(
+            "packagename-ac-init",
             get_translation_domain(backend, os.path.join(package_dir, "po")))
 
     def test_get_translation_domain_configure_in(self):
