@@ -202,7 +202,7 @@ class FakeBackend(Backend):
 class UncontainedBackend(Backend):
     """A partial backend implementation with no containment."""
 
-    def run(self, args, env=None, input_text=None, get_output=False,
+    def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):
         """See `Backend`."""
         if env:
@@ -212,11 +212,12 @@ class UncontainedBackend(Backend):
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         if input_text is None and not get_output:
-            subprocess.check_call(args, **kwargs)
+            subprocess.check_call(args, cwd=cwd, **kwargs)
         else:
             if get_output:
                 kwargs["stdout"] = subprocess.PIPE
-            proc = subprocess.Popen(args, stdin=subprocess.PIPE, **kwargs)
+            proc = subprocess.Popen(
+                args, stdin=subprocess.PIPE, cwd=cwd, **kwargs)
             output, _ = proc.communicate(input_text)
             if proc.returncode:
                 raise subprocess.CalledProcessError(proc.returncode, args)
