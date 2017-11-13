@@ -279,7 +279,7 @@ class LXD(Backend):
         raw_lxc_config = [
             ("lxc.aa_profile", "unconfined"),
             ("lxc.cap.drop", ""),
-            ("lxc.cap.drop", "sys_time sys_module mac_admin mac_override"),
+            ("lxc.cap.drop", "sys_time sys_module"),
             ("lxc.cgroup.devices.deny", ""),
             ("lxc.cgroup.devices.allow", ""),
             ("lxc.mount.auto", ""),
