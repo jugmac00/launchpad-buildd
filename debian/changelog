@@ -13,6 +13,8 @@ launchpad-buildd (156) UNRELEASED; urgency=medium
   * Grant mac_admin and mac_override capabilities to LXD containers.  These
     are needed to load AppArmor profiles when installing the core snap
     (LP: #1730376).
+  * Explicitly install udev when building snaps or livefses, to work around
+    LP #1731519.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 09 Nov 2017 12:08:42 +0000
 

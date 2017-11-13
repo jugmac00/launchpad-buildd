@@ -105,6 +105,8 @@ class BuildSnap(Operation):
             for dep in "snapd", "fuse", "squashfuse":
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
+            # Work around https://bugs.launchpad.net/snapd/+bug/1731519.
+            deps.append("udev")
         if self.args.branch is not None:
             deps.append("bzr")
         else:

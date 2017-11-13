@@ -75,6 +75,8 @@ class BuildLiveFS(Operation):
             for dep in "snapd", "fuse", "squashfuse":
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
+            # Work around https://bugs.launchpad.net/snapd/+bug/1731519.
+            deps.append("udev")
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.arch == "i386":
             self.backend.run([
