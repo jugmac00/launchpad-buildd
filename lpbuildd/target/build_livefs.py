@@ -72,7 +72,9 @@ class BuildLiveFS(Operation):
     def install(self):
         deps = ["livecd-rootfs"]
         if self.args.backend == "lxd":
-            for dep in "snapd", "fuse", "squashfuse":
+            # udev is installed explicitly to work around
+            # https://bugs.launchpad.net/snapd/+bug/1731519.
+            for dep in "snapd", "fuse", "squashfuse", "udev":
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
         self.backend.run(["apt-get", "-y", "install"] + deps)
