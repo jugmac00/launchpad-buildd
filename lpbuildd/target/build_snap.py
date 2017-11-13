@@ -102,11 +102,11 @@ class BuildSnap(Operation):
         logger.info("Running install phase...")
         deps = ["snapcraft"]
         if self.args.backend == "lxd":
-            for dep in "snapd", "fuse", "squashfuse":
+            # udev is installed explicitly to work around
+            # https://bugs.launchpad.net/snapd/+bug/1731519.
+            for dep in "snapd", "fuse", "squashfuse", "udev":
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
-            # Work around https://bugs.launchpad.net/snapd/+bug/1731519.
-            deps.append("udev")
         if self.args.branch is not None:
             deps.append("bzr")
         else:
