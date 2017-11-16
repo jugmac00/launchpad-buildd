@@ -33,7 +33,7 @@ launchpad-buildd (155) xenial; urgency=medium
   * Make Backend.run implementations print command output if echo and
     get_output are both true.
   * Make Backend.is_package_available handle the case where the requested
-    package name is purely virtual.
+    package name is purely virtual (LP: #1732511).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 02 Nov 2017 11:42:24 +0000
 
