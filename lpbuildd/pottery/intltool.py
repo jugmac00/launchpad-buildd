@@ -114,6 +114,8 @@ def _try_substitution(config_files, varname, substitution):
         config_files = config_files[:-1]
     for config_file in reversed(config_files):
         subst_value = config_file.getVariable(substitution.name)
+        if subst_value is None and substitution.name == "PACKAGE":
+            subst_value = _get_AC_PACKAGE_NAME(config_file)
         if subst_value is not None:
             # Substitution found.
             break
