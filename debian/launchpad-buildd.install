@@ -1,10 +1,10 @@
-default/launchpad-buildd 		etc/default
-buildd-genconfig			usr/share/launchpad-buildd
-debian/upgrade-config			usr/share/launchpad-buildd
-sbuildrc				usr/share/launchpad-buildd
-template-buildd-slave.conf		usr/share/launchpad-buildd
 bin/buildrecipe				usr/share/launchpad-buildd/slavebin
 bin/in-target				usr/share/launchpad-buildd/slavebin
 bin/sbuild-package			usr/share/launchpad-buildd/slavebin
 bin/slave-prep				usr/share/launchpad-buildd/slavebin
 bin/snap-git-proxy			usr/share/launchpad-buildd/slavebin
+buildd-genconfig			usr/share/launchpad-buildd
+debian/upgrade-config			usr/share/launchpad-buildd
+default/launchpad-buildd 		etc/default
+sbuildrc				usr/share/launchpad-buildd
+template-buildd-slave.conf		usr/share/launchpad-buildd

@@ -1,3 +1,12 @@
+launchpad-buildd (157) UNRELEASED; urgency=medium
+
+  * Normalise Python packaging.  We now install our modules on the normal
+    system path, using pybuild.  setup.py now installs buildd-slave.tac in
+    the lpbuildd package rather than data_files in order not to pollute the
+    top level of a virtualenv.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 22 Nov 2017 15:24:06 +0000
+
 launchpad-buildd (156) xenial; urgency=medium
 
   * Remove useless cwd argument passed to subprocess.check_call from

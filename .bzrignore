@@ -1,9 +1,13 @@
 *.egg-info
 *.pyc
+.pybuild
+buildd-slave-example.conf
 dist
+debian/debhelper-build-stamp
 debian/files
 debian/launchpad-buildd
 debian/python-lpbuildd
+debian/tmp
 debian/*.debhelper.log
 debian/*.debhelper
 debian/*.substvars
