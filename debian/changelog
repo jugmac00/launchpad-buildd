@@ -1,11 +1,15 @@
 launchpad-buildd (157) UNRELEASED; urgency=medium
 
+  [ Colin Watson ]
   * Normalise Python packaging.  We now install our modules on the normal
     system path, using pybuild.  setup.py now installs buildd-slave.tac in
     the lpbuildd package rather than data_files in order not to pollute the
     top level of a virtualenv.
   * Fall back to the package name from AC_INIT when expanding $(PACKAGE) in
     translation configuration files if no other definition can be found.
+
+  [ William Grant ]
+  * Fix inclusion of buildd-slave.tac in MANIFEST.in.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 22 Nov 2017 15:24:06 +0000
 

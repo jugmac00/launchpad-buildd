@@ -11,4 +11,5 @@ include buildd-genconfig
 include debian/changelog
 include sbuildrc
 include template-buildd-slave.conf
-recursive-include lpbuildd/tests *.diff *.tar.gz buildd-slave.tac buildd-slave-test.conf buildlog buildlog.long
+include lpbuildd/buildd-slave.tac
+recursive-include lpbuildd/tests *.diff *.tar.gz buildd-slave-test.conf buildlog buildlog.long
