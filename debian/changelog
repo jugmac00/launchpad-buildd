@@ -10,6 +10,7 @@ launchpad-buildd (157) UNRELEASED; urgency=medium
 
   [ William Grant ]
   * Fix inclusion of buildd-slave.tac in MANIFEST.in.
+  * Fix check-implicit-pointer-functions symlink for new python-lpbuildd path.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 22 Nov 2017 15:24:06 +0000
 
