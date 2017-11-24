@@ -54,8 +54,6 @@ setup(
     maintainer_email='launchpad-dev@lists.launchpad.net',
     license='Affero GPL v3',
     install_requires=[
-        'netaddr',
-        'pylxd',
         # XXX cjwatson 2015-11-04: This does in fact require python-apt, but
         # that's normally shipped as a system package and specifying it here
         # causes problems for Launchpad's build system.
@@ -64,6 +62,9 @@ setup(
         'Twisted',
         'zope.interface',
         ],
+    extras_require={
+        'lxd': ['netaddr', 'pylxd'],
+        },
     test_suite='lpbuildd.tests',
     tests_require=[
         'fixtures',
