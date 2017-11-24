@@ -7,6 +7,7 @@ launchpad-buildd (157) UNRELEASED; urgency=medium
     top level of a virtualenv.
   * Fall back to the package name from AC_INIT when expanding $(PACKAGE) in
     translation configuration files if no other definition can be found.
+  * Set SNAPCRAFT_BUILD_INFO=1 to tell snapcraft to generate a manifest.
 
   [ William Grant ]
   * Fix inclusion of buildd-slave.tac in MANIFEST.in.
