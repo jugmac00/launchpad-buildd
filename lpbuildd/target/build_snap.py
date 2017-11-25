@@ -171,6 +171,9 @@ class BuildSnap(Operation):
         env = OrderedDict()
         env["SNAPCRAFT_LOCAL_SOURCES"] = "1"
         env["SNAPCRAFT_SETUP_CORE"] = "1"
+        # XXX cjwatson 2017-11-24: Once we support building private snaps,
+        # we'll need to make this optional in some way.
+        env["SNAPCRAFT_BUILD_INFO"] = "1"
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
@@ -184,6 +187,9 @@ class BuildSnap(Operation):
         """Run all build, stage and snap phases."""
         logger.info("Running build phase...")
         env = OrderedDict()
+        # XXX cjwatson 2017-11-24: Once we support building private snaps,
+        # we'll need to make this optional in some way.
+        env["SNAPCRAFT_BUILD_INFO"] = "1"
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url

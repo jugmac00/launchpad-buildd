@@ -256,6 +256,7 @@ class TestBuildSnap(TestCase):
         env = {
             "SNAPCRAFT_LOCAL_SOURCES": "1",
             "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_BUILD_INFO": "1",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -274,6 +275,7 @@ class TestBuildSnap(TestCase):
         env = {
             "SNAPCRAFT_LOCAL_SOURCES": "1",
             "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_BUILD_INFO": "1",
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
@@ -292,7 +294,9 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.build()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["snapcraft"], cwd="/build/test-snap"),
+            RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_BUILD_INFO="1"),
             ]))
 
     def test_build_proxy(self):
@@ -305,6 +309,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.build()
         env = {
+            "SNAPCRAFT_BUILD_INFO": "1",
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
@@ -332,8 +337,11 @@ class TestBuildSnap(TestCase):
                 ["bzr", "branch", "lp:foo", "test-snap"])),
             AnyMatch(RanBuildCommand(
                 ["snapcraft", "pull"], cwd="/build/test-snap",
-                SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1")),
-            AnyMatch(RanBuildCommand(["snapcraft"], cwd="/build/test-snap")),
+                SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1",
+                SNAPCRAFT_BUILD_INFO="1")),
+            AnyMatch(RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_BUILD_INFO="1")),
             ))
 
     def test_run_install_fails(self):
