@@ -60,6 +60,8 @@ Architecture: all
 Depends: apt-utils,
          procps,
          python-apt,
+         python-netaddr,
+         python-pylxd,
 # Work around missing dependency in python-pbr.
          python-setuptools,
          ${misc:Depends},
