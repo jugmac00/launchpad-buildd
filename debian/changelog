@@ -1,4 +1,4 @@
-launchpad-buildd (157) UNRELEASED; urgency=medium
+launchpad-buildd (157) xenial; urgency=medium
 
   [ Colin Watson ]
   * Normalise Python packaging.  We now install our modules on the normal
@@ -13,7 +13,7 @@ launchpad-buildd (157) UNRELEASED; urgency=medium
   * Fix inclusion of buildd-slave.tac in MANIFEST.in.
   * Fix check-implicit-pointer-functions symlink for new python-lpbuildd path.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 22 Nov 2017 15:24:06 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 29 Nov 2017 14:16:04 +0000
 
 launchpad-buildd (156) xenial; urgency=medium
 
