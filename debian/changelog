@@ -1,3 +1,9 @@
+launchpad-buildd (157ubuntu1) UNRELEASED; urgency=medium
+
+  * Add support for passing apt proxies to the debootstrap/chroot.
+
+ -- Christopher Glass (Ubuntu) <tribaal@ubuntu.com>  Fri, 05 Jan 2018 12:49:11 +0100
+
 launchpad-buildd (157) xenial; urgency=medium
 
   [ Colin Watson ]
