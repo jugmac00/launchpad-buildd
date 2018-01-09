@@ -184,6 +184,40 @@ class TestBuildLiveFS(TestCase):
             RanBuildCommand(["lb", "build"], PROJECT="ubuntu", ARCH="amd64"),
             ]))
 
+    def test_build_with_http_proxy(self):
+        proxy = "http://example.com:8000"
+        expected_env = {"PROJECT": "ubuntu-cpc",
+                        "ARCH": "amd64",
+                        "http_proxy": proxy,
+                        "LB_APT_HTTP_PROXY": proxy,
+                        }
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=amd64",
+            "--project=ubuntu-cpc",
+            "--http-proxy={}".format(proxy), "1"
+            ]
+        build_livefs = parse_args(args=args).operation
+        build_livefs.build()
+        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
+            RanBuildCommand(["rm", "-rf", "auto", "local"]),
+            RanBuildCommand(["mkdir", "-p", "auto"]),
+            RanBuildCommand(
+                ["ln", "-s",
+                 "/usr/share/livecd-rootfs/live-build/auto/config", "auto/"]),
+            RanBuildCommand(
+                ["ln", "-s",
+                 "/usr/share/livecd-rootfs/live-build/auto/build", "auto/"]),
+            RanBuildCommand(
+                ["ln", "-s",
+                 "/usr/share/livecd-rootfs/live-build/auto/clean", "auto/"]),
+            RanBuildCommand(["lb", "clean", "--purge"]),
+            RanBuildCommand(
+                ["lb", "config"],
+                SUITE="xenial", **expected_env),
+            RanBuildCommand(["lb", "build"], **expected_env),
+            ]))
+
     def test_run_succeeds(self):
         args = [
             "buildlivefs",

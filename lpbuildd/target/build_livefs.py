@@ -58,7 +58,7 @@ class BuildLiveFS(Operation):
             "--extra-ppa", dest="extra_ppas", default=[], action="append",
             help="use this additional PPA")
         parser.add_argument(
-            "--apt-http-proxy", dest="http_proxy", default=[], action="append",
+            "--http-proxy", default="", action="store",
             help="use this http proxy for apt.")
         parser.add_argument(
             "--debug", default=False, action="store_true",
@@ -133,7 +133,8 @@ class BuildLiveFS(Operation):
             if self.args.http_proxy:
                 proxy_dict = {
                     "http_proxy": self.args.http_proxy,
-                    "LB_APT_HTTP_PROXY": self.args.http_proxy}
+                    "LB_APT_HTTP_PROXY": self.args.http_proxy
+                    }
                 lb_env.update(proxy_dict)
                 base_lb_env.update(proxy_dict)
             self.run_build_command(["lb", "config"], env=lb_env)
