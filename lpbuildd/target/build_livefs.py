@@ -61,8 +61,7 @@ class BuildLiveFS(Operation):
             "--channel", metavar="CHANNEL",
             help="pull snaps from channel CHANNEL for ubuntu-core image")
         parser.add_argument(
-            "--http-proxy", default="", action="store",
-            help="use this http proxy for apt.")
+            "--http-proxy", action="store", help="use this HTTP proxy for apt")
         parser.add_argument(
             "--debug", default=False, action="store_true",
             help="enable detailed live-build debugging")
