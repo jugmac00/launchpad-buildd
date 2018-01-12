@@ -1,3 +1,11 @@
+launchpad-buildd (158) UNRELEASED; urgency=medium
+
+  [ Steve Langasek ]
+  * Support passing a snap channel into a livefs build through the
+    environment.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 12 Jan 2018 19:52:20 +0000
+
 launchpad-buildd (157) xenial; urgency=medium
 
   [ Colin Watson ]

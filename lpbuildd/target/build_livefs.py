@@ -58,6 +58,9 @@ class BuildLiveFS(Operation):
             "--extra-ppa", dest="extra_ppas", default=[], action="append",
             help="use this additional PPA")
         parser.add_argument(
+            "--channel", metavar="CHANNEL",
+            help="pull snaps from channel CHANNEL for ubuntu-core image")
+        parser.add_argument(
             "--debug", default=False, action="store_true",
             help="enable detailed live-build debugging")
 
@@ -117,6 +120,8 @@ class BuildLiveFS(Operation):
                 base_lb_env["SUBPROJECT"] = self.args.subproject
             if self.args.subarch is not None:
                 base_lb_env["SUBARCH"] = self.args.subarch
+            if self.args.channel is not None:
+                base_lb_env["CHANNEL"] = self.args.channel
             lb_env = base_lb_env.copy()
             lb_env["SUITE"] = self.args.series
             if self.args.datestamp is not None:
