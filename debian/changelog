@@ -1,4 +1,4 @@
-launchpad-buildd (158) UNRELEASED; urgency=medium
+launchpad-buildd (158) xenial; urgency=medium
 
   [ Steve Langasek ]
   * Support passing a snap channel into a livefs build through the
@@ -7,7 +7,7 @@ launchpad-buildd (158) UNRELEASED; urgency=medium
   [ Christopher Glass ]
   * Add support for passing apt proxies to live-build.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 12 Jan 2018 19:52:20 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 15 Jan 2018 10:04:42 +0000
 
 launchpad-buildd (157) xenial; urgency=medium
 
