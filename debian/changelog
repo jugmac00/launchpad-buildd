@@ -1,3 +1,10 @@
+launchpad-buildd (159) UNRELEASED; urgency=medium
+
+  * Set the hostname and FQDN of LXD containers to match the host system,
+    though with an IP address pointing to the container (LP: #1747015).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Sun, 04 Feb 2018 00:58:54 +0000
+
 launchpad-buildd (158) xenial; urgency=medium
 
   [ Steve Langasek ]
