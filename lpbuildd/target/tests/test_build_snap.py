@@ -54,6 +54,12 @@ class RanAptGet(RanCommand):
         super(RanAptGet, self).__init__(["apt-get", "-y"] + list(args))
 
 
+class RanSnap(RanCommand):
+
+    def __init__(self, *args):
+        super(RanSnap, self).__init__(["snap"] + list(args))
+
+
 class RanBuildCommand(RanCommand):
 
     def __init__(self, args, cwd="/build", **kwargs):
@@ -111,7 +117,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "snapcraft", "bzr"),
+            RanAptGet("install", "bzr", "snapcraft"),
             ]))
 
     def test_install_git(self):
@@ -123,7 +129,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "snapcraft", "git"),
+            RanAptGet("install", "git", "snapcraft"),
             ]))
 
     def test_install_proxy(self):
@@ -143,11 +149,26 @@ class TestBuildSnap(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "snapcraft", "git", "python3", "socat"),
+            RanAptGet("install", "git", "python3", "socat", "snapcraft"),
             ]))
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
             build_snap.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
+
+    def test_install_channels(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--channel-core=candidate", "--channel-snapcraft=edge",
+            "--branch", "lp:foo", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.install()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "bzr"),
+            RanSnap("install", "--channel=candidate", "core"),
+            RanSnap("install", "--classic", "--channel=edge", "snapcraft"),
+            ]))
 
     def test_repo_bzr(self):
         args = [
@@ -332,7 +353,7 @@ class TestBuildSnap(TestCase):
         build_snap.backend.run = FakeRevisionID("42")
         self.assertEqual(0, build_snap.run())
         self.assertThat(build_snap.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "snapcraft", "bzr")),
+            AnyMatch(RanAptGet("install", "bzr", "snapcraft")),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-snap"])),
             AnyMatch(RanBuildCommand(
