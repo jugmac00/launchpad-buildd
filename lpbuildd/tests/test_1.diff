@@ -5,7 +5,7 @@
 @@ -6,9 +6,9 @@
 
  Attempting OGRE for universe in build-370614-896976
- RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot ['update-debian-chroot', '370614-896976']
+ RUN: /usr/share/launchpad-buildd/slavebin/update-debian-chroot 370614-896976
  Updating debian chroot for build 370614-896976
 -Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 +Get:1 http://ftpmaster.internal gutsy Release.gpg [191B]
@@ -15,3 +15,10 @@
  Get:4 http://ftpmaster.internal gutsy/universe Packages [3991kB]
  Fetched 5142kB in 5s (1012kB/s)
  Reading package lists...
+@@ -21,4 +21,4 @@
+
+ Need to get 0B/2832kB of archives.
+ After unpacking 94.2kB of additional disk space will be used.
+ (Reading database ... 8942 files and directories currently installed.)
+-socat STDIO PROXY:snap-proxy.launchpad.dev:github.com:443,proxyport=3128,proxyauth=user:blah
++socat STDIO PROXY:snap-proxy.launchpad.dev:github.com:443,proxyport=3128

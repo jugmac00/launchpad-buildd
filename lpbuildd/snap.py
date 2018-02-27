@@ -1,12 +1,15 @@
 # Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import print_function
+
 __metaclass__ = type
 
 import base64
 import io
+import json
 import os
-import shutil
+import sys
 try:
     from urllib.error import (
         HTTPError,
@@ -253,11 +256,8 @@ class SnapBuildState(DebianBuildState):
 class SnapBuildManager(DebianBuildManager):
     """Build a snap."""
 
+    backend_name = "lxd"
     initial_build_state = SnapBuildState.BUILD_SNAP
-
-    def __init__(self, slave, buildid, **kwargs):
-        super(SnapBuildManager, self).__init__(slave, buildid, **kwargs)
-        self.build_snap_path = os.path.join(self._slavebin, "buildsnap")
 
     @property
     def needs_sanitized_logs(self):
@@ -265,11 +265,6 @@ class SnapBuildManager(DebianBuildManager):
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
-        self.build_path = get_build_path(
-            self.home, self._buildid, "chroot-autobuild", "build")
-        if os.path.isdir(self.build_path):
-            shutil.rmtree(self.build_path)
-
         self.name = extra_args["name"]
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
@@ -315,13 +310,24 @@ class SnapBuildManager(DebianBuildManager):
             self._slave.log(
                 "Unable to revoke token for %s: %s" % (url.username, e))
 
+    def status(self):
+        status_path = get_build_path(self.home, self._buildid, "status")
+        try:
+            with open(status_path) as status_file:
+                return json.load(status_file)
+        except IOError:
+            pass
+        except Exception as e:
+            print(
+                "Error deserialising status from buildsnap: %s" % e,
+                file=sys.stderr)
+        return {}
+
     def doRunBuild(self):
         """Run the process to build the snap."""
-        args = [
-            "buildsnap",
-            "--build-id", self._buildid,
-            "--arch", self.arch_tag,
-            ]
+        args = []
+        if self.proxy_url:
+            args.extend(["--proxy-url", self.proxy_url])
         args.extend(self.startProxy())
         if self.revocation_endpoint:
             args.extend(["--revocation-endpoint", self.revocation_endpoint])
@@ -332,7 +338,7 @@ class SnapBuildManager(DebianBuildManager):
         if self.git_path is not None:
             args.extend(["--git-path", self.git_path])
         args.append(self.name)
-        self.runSubProcess(self.build_snap_path, args)
+        self.runTargetSubProcess("buildsnap", *args)
 
     def iterate_BUILD_SNAP(self, retcode):
         """Finished building the snap."""
@@ -361,12 +367,12 @@ class SnapBuildManager(DebianBuildManager):
 
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
-        output_path = os.path.join(self.build_path, self.name)
-        if not os.path.exists(output_path):
+        output_path = os.path.join("/build", self.name)
+        if not self.backend.path_exists(output_path):
             return
-        for entry in sorted(os.listdir(output_path)):
+        for entry in sorted(self.backend.listdir(output_path)):
             path = os.path.join(output_path, entry)
-            if os.path.islink(path):
+            if self.backend.islink(path):
                 continue
             if entry.endswith(".snap") or entry.endswith(".manifest"):
-                self._slave.addWaitingFile(path)
+                self.addWaitingFileFromBackend(path)

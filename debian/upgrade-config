@@ -197,11 +197,11 @@ def upgrade_to_127():
     in_file.close()
     out_file.close()
 
-def upgrade_to_143():
-    print("Upgrading %s to version 143" % conf_file)
-    os.rename(conf_file, conf_file + "-prev143~")
+def upgrade_to_159():
+    print("Upgrading %s to version 159" % conf_file)
+    os.rename(conf_file, conf_file + "-prev159~")
 
-    with open(conf_file + "-prev143~", "r") as in_file:
+    with open(conf_file + "-prev159~", "r") as in_file:
         with open(conf_file, "w") as out_file:
             out_file.write(in_file.read())
             out_file.write(
@@ -234,5 +234,5 @@ if __name__ == "__main__":
         upgrade_to_126()
     if apt_pkg.version_compare(old_version, "127") < 0:
         upgrade_to_127()
-    if apt_pkg.version_compare(old_version, "143") < 0:
-        upgrade_to_143()
+    if apt_pkg.version_compare(old_version, "159") < 0:
+        upgrade_to_159()

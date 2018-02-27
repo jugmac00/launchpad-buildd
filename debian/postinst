@@ -28,6 +28,7 @@ case "$1" in
         adduser --ingroup buildd --disabled-login --gecos 'Buildd user' \
                 --uid $BUILDDUID ${USER}
         adduser --quiet buildd sbuild
+        adduser --quiet buildd lxd
 
 	SUDO_VERSION=$(sudo -V | sed -n '/^Sudo version/s/.* //p')
 	if dpkg --compare-versions $SUDO_VERSION lt 1.7 ||
@@ -103,6 +104,12 @@ EOF
 NTP=$ntphost
 EOF
 	    fi
+	fi
+
+	# Configure LXD if necessary
+	if [ ! -e /var/lib/lxd/server.key ]; then
+	    lxd init --auto || true
+	    sudo -Hu "$USER" lxc list >/dev/null || true
 	fi
 
 	;;

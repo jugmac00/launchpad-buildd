@@ -1,6 +1,8 @@
 # Copyright 2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import print_function
+
 __metaclass__ = type
 
 from contextlib import contextmanager
@@ -24,7 +26,8 @@ def disable_bytecode():
 
 # By-hand import to avoid having to put .py suffixes on slave binaries.
 with disable_bytecode():
-    RecipeBuilder = imp.load_source("buildrecipe", "buildrecipe").RecipeBuilder
+    RecipeBuilder = imp.load_source(
+        "buildrecipe", "bin/buildrecipe").RecipeBuilder
 
 
 class TestRecipeBuilder(TestCase):
@@ -61,12 +64,13 @@ class TestRecipeBuilder(TestCase):
         os.makedirs(os.path.dirname(control_path))
         os.makedirs(self.builder.apt_dir)
         with open(control_path, "w") as control:
-            print >>control, dedent("""\
+            print(dedent("""\
                 Source: foo
                 Build-Depends: debhelper (>= 9~), libfoo-dev
 
                 Package: foo
-                Depends: ${shlibs:Depends}""")
+                Depends: ${shlibs:Depends}"""),
+                file=control)
         self.builder.makeDummyDsc("foo")
         with open(os.path.join(self.builder.apt_dir, "foo.dsc")) as dsc:
             self.assertEqual(
@@ -91,7 +95,7 @@ class TestRecipeBuilder(TestCase):
         os.makedirs(os.path.dirname(control_path))
         os.makedirs(self.builder.apt_dir)
         with open(control_path, "w") as control:
-            print >>control, dedent("""\
+            print(dedent("""\
                 Source: foo
                 Build-Depends: debhelper (>= 9~),
                                libfoo-dev,
@@ -99,7 +103,8 @@ class TestRecipeBuilder(TestCase):
                                pkg-config
 
                 Package: foo
-                Depends: ${shlibs:Depends}""")
+                Depends: ${shlibs:Depends}"""),
+                file=control)
         self.builder.makeDummyDsc("foo")
         with open(os.path.join(self.builder.apt_dir, "foo.dsc")) as dsc:
             self.assertEqual(
@@ -119,13 +124,14 @@ class TestRecipeBuilder(TestCase):
     def test_runAptFtparchive(self):
         os.makedirs(self.builder.apt_dir)
         with open(os.path.join(self.builder.apt_dir, "foo.dsc"), "w") as dsc:
-            print >>dsc, dedent("""\
+            print(dedent("""\
                 Format: 1.0
                 Source: foo
                 Architecture: any
                 Version: 99:0
                 Maintainer: invalid@example.org
-                Build-Depends: debhelper (>= 9~), libfoo-dev""")
+                Build-Depends: debhelper (>= 9~), libfoo-dev"""),
+                file=dsc)
         self.assertEqual(0, self.builder.runAptFtparchive())
         self.assertEqual(
             ["Release", "Sources", "Sources.bz2", "foo.dsc",

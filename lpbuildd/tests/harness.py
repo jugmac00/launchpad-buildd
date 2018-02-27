@@ -6,11 +6,14 @@ __all__ = [
     'BuilddTestCase',
     ]
 
+try:
+    from configparser import ConfigParser as SafeConfigParser
+except ImportError:
+    from ConfigParser import SafeConfigParser
 import os
 import shutil
 import tempfile
 import unittest
-from ConfigParser import SafeConfigParser
 
 from fixtures import EnvironmentVariable
 from txfixtures.tachandler import TacTestFixture
@@ -68,8 +71,11 @@ class BuilddSlaveTestSetup(TacTestFixture):
 
     Make sure the server is running
 
-    >>> import xmlrpclib
-    >>> s = xmlrpclib.Server('http://localhost:8221/rpc/')
+    >>> try:
+    ...     from xmlrpc.client import ServerProxy
+    ... except ImportError:
+    ...     from xmlrpclib import ServerProxy
+    >>> s = ServerProxy('http://localhost:8321/rpc/')
     >>> s.echo('Hello World')
     ['Hello World']
     >>> fixture.tearDown()
@@ -77,7 +83,7 @@ class BuilddSlaveTestSetup(TacTestFixture):
     Again for luck !
 
     >>> fixture.setUp()
-    >>> s = xmlrpclib.Server('http://localhost:8221/rpc/')
+    >>> s = ServerProxy('http://localhost:8321/rpc/')
 
     >>> s.echo('Hello World')
     ['Hello World']
@@ -85,11 +91,11 @@ class BuilddSlaveTestSetup(TacTestFixture):
     >>> info = s.info()
     >>> len(info)
     3
-    >>> print info[:2]
+    >>> print(info[:2])
     ['1.0', 'i386']
 
     >>> for buildtype in sorted(info[2]):
-    ...     print buildtype
+    ...     print(buildtype)
     binarypackage
     debian
     sourcepackagerecipe
@@ -125,7 +131,6 @@ class BuilddSlaveTestSetup(TacTestFixture):
         return os.path.abspath(os.path.join(
             os.path.dirname(__file__),
             os.path.pardir,
-            os.path.pardir,
             'buildd-slave.tac'
             ))
 
@@ -140,4 +145,4 @@ class BuilddSlaveTestSetup(TacTestFixture):
     @property
     def daemon_port(self):
         # This must match buildd-slave-test.conf.
-        return 8221
+        return 8321

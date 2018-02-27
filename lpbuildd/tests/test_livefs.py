@@ -4,9 +4,11 @@
 __metaclass__ = type
 
 import os
-import shutil
-import tempfile
 
+from fixtures import (
+    EnvironmentVariable,
+    TempDir,
+    )
 from testtools import TestCase
 
 from lpbuildd.livefs import (
@@ -14,6 +16,7 @@ from lpbuildd.livefs import (
     LiveFilesystemBuildState,
     )
 from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.matchers import HasWaitingFiles
 
 
 class MockBuildManager(LiveFilesystemBuildManager):
@@ -34,19 +37,16 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
     """Run LiveFilesystemBuildManager through its iteration steps."""
     def setUp(self):
         super(TestLiveFilesystemBuildManagerIteration, self).setUp()
-        self.working_dir = tempfile.mkdtemp()
-        self.addCleanup(lambda: shutil.rmtree(self.working_dir))
+        self.working_dir = self.useFixture(TempDir()).path
         slave_dir = os.path.join(self.working_dir, "slave")
         home_dir = os.path.join(self.working_dir, "home")
         for dir in (slave_dir, home_dir):
             os.mkdir(dir)
+        self.useFixture(EnvironmentVariable("HOME", home_dir))
         self.slave = FakeSlave(slave_dir)
         self.buildid = "123"
         self.buildmanager = MockBuildManager(self.slave, self.buildid)
-        self.buildmanager.home = home_dir
         self.buildmanager._cachepath = self.slave._cachepath
-        self.build_dir = os.path.join(
-            home_dir, "build-%s" % self.buildid, "chroot-autobuild", "build")
 
     def getState(self):
         """Retrieve build manager's state."""
@@ -61,7 +61,10 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             "pocket": "release",
             "arch_tag": "i386",
             }
+        original_backend_name = self.buildmanager.backend_name
+        self.buildmanager.backend_name = "fake"
         self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
+        self.buildmanager.backend_name = original_backend_name
 
         # Skip states that are done in DebianBuildManager to the state
         # directly before BUILD_LIVEFS.
@@ -72,9 +75,10 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertEqual(
             LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
         expected_command = [
-            "sharepath/slavebin/buildlivefs", "buildlivefs", "--build-id",
-            self.buildid, "--arch", "i386", "--project", "ubuntu",
-            "--series", "saucy",
+            "sharepath/slavebin/in-target", "in-target",
+            "buildlivefs",
+            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
+            "--project", "ubuntu",
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
@@ -86,21 +90,18 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
-        log = open(log_path, "w")
-        log.write("I am a build log.")
-        log.close()
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
 
-        os.makedirs(self.build_dir)
-        manifest_path = os.path.join(self.build_dir, "livecd.ubuntu.manifest")
-        manifest = open(manifest_path, "w")
-        manifest.write("I am a manifest file.")
-        manifest.close()
+        self.buildmanager.backend.add_file(
+            "/build/livecd.ubuntu.manifest", b"I am a manifest file.")
 
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/scan-for-processes", "scan-for-processes",
-            self.buildid,
+            "sharepath/slavebin/in-target", "in-target",
+            "scan-for-processes",
+            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             ]
         self.assertEqual(
             LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
@@ -108,13 +109,17 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertEqual(
-            [((manifest_path,), {})], self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "livecd.ubuntu.manifest": b"I am a manifest file.",
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/umount-chroot", "umount-chroot", self.buildid]
+            "sharepath/slavebin/in-target", "in-target",
+            "umount-chroot",
+            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
+            ]
         self.assertEqual(LiveFilesystemBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
@@ -126,19 +131,15 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
-        log = open(log_path, "w")
-        log.write("I am a build log.")
-        log.close()
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
 
-        os.makedirs(self.build_dir)
-        target_path = os.path.join(
-            self.build_dir, "livecd.ubuntu.kernel-generic")
-        target = open(target_path, "w")
-        target.write("I am a kernel.")
-        target.close()
-        link_path = os.path.join(self.build_dir, "livecd.ubuntu.kernel")
-        os.symlink("livecd.ubuntu.kernel-generic", link_path)
+        self.buildmanager.backend.add_file(
+            "/build/livecd.ubuntu.kernel-generic", b"I am a kernel.")
+        self.buildmanager.backend.add_link(
+            "/build/livecd.ubuntu.kernel", "livefs.ubuntu.kernel-generic")
 
         self.buildmanager.iterate(0)
-        self.assertEqual(
-            [((target_path,), {})], self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "livecd.ubuntu.kernel-generic": b"I am a kernel.",
+            }))

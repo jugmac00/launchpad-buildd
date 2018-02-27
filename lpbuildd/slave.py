@@ -12,8 +12,26 @@ from functools import partial
 import hashlib
 import os
 import re
-import urllib2
-import xmlrpclib
+import shutil
+import tempfile
+try:
+    from urllib.request import (
+        build_opener,
+        HTTPBasicAuthHandler,
+        HTTPPasswordMgrWithDefaultRealm,
+        urlopen,
+        )
+except ImportError:
+    from urllib2 import (
+        build_opener,
+        HTTPBasicAuthHandler,
+        HTTPPasswordMgrWithDefaultRealm,
+        urlopen,
+        )
+try:
+    from xmlrpc.client import Binary
+except ImportError:
+    from xmlrpclib import Binary
 
 import apt
 from twisted.internet import protocol
@@ -21,6 +39,10 @@ from twisted.internet import reactor as default_reactor
 from twisted.internet import process
 from twisted.python import log
 from twisted.web import xmlrpc
+
+from lpbuildd.target.backend import make_backend
+from lpbuildd.util import shell_escape
+
 
 devnull = open("/dev/null", "r")
 
@@ -37,9 +59,12 @@ def _sanitizeURLs(text_seq):
     # This regular expression will be used to remove authentication
     # credentials from URLs.
     password_re = re.compile('://([^:]+:[^@]+@)(\S+)')
+    # Snap proxy passwords are UUIDs.
+    snap_proxy_auth_re = re.compile(',proxyauth=[^:]+:[A-Za-z0-9-]+')
 
     for line in text_seq:
         sanitized_line = password_re.sub(r'://\2', line)
+        sanitized_line = snap_proxy_auth_re.sub('', sanitized_line)
         yield sanitized_line
 
 
@@ -52,11 +77,18 @@ def _sanitizeURLs(text_seq):
 class RunCapture(protocol.ProcessProtocol):
     """Run a command and capture its output to a slave's log"""
 
-    def __init__(self, slave, callback):
+    def __init__(self, slave, callback, stdin=None):
         self.slave = slave
         self.notify = callback
+        self.stdin = stdin
         self.builderFailCall = None
         self.ignore = False
+
+    def connectionMade(self):
+        """Write any stdin data."""
+        if self.stdin is not None:
+            self.transport.write(self.stdin)
+            self.transport.closeStdin()
 
     def outReceived(self, data):
         """Pass on stdout data to the log."""
@@ -91,6 +123,8 @@ class RunCapture(protocol.ProcessProtocol):
 class BuildManager(object):
     """Build Daemon slave build manager abstract parent"""
 
+    backend_name = "chroot"
+
     def __init__(self, slave, buildid, reactor=None):
         """Create a BuildManager.
 
@@ -106,11 +140,7 @@ class BuildManager(object):
         self._sharepath = slave._config.get("slave", "sharepath")
         self._slavebin = os.path.join(self._sharepath, "slavebin")
         self._preppath = os.path.join(self._slavebin, "slave-prep")
-        self._unpackpath = os.path.join(self._slavebin, "unpack-chroot")
-        self._cleanpath = os.path.join(self._slavebin, "remove-build")
-        self._mountpath = os.path.join(self._slavebin, "mount-chroot")
-        self._umountpath = os.path.join(self._slavebin, "umount-chroot")
-        self._scanpath = os.path.join(self._slavebin, "scan-for-processes")
+        self._intargetpath = os.path.join(self._slavebin, "in-target")
         self._subprocess = None
         self._reaped_states = set()
         self.is_archive_private = False
@@ -121,22 +151,38 @@ class BuildManager(object):
     def needs_sanitized_logs(self):
         return self.is_archive_private
 
-    def runSubProcess(self, command, args, iterate=None, env=None):
-        """Run a sub process capturing the results in the log."""
+    def runSubProcess(self, command, args, iterate=None, stdin=None, env=None):
+        """Run a subprocess capturing the results in the log."""
         if iterate is None:
             iterate = self.iterate
-        self._subprocess = RunCapture(self._slave, iterate)
-        self._slave.log("RUN: %s %r\n" % (command, args))
-        childfds = {0: devnull.fileno(), 1: "r", 2: "r"}
+        self._subprocess = RunCapture(self._slave, iterate, stdin=stdin)
+        self._slave.log("RUN: %s %s\n" % (
+            command, " ".join(shell_escape(arg) for arg in args[1:])))
+        childfds = {
+            0: devnull.fileno() if stdin is None else "w",
+            1: "r",
+            2: "r",
+            }
         self._reactor.spawnProcess(
             self._subprocess, command, args, env=env,
             path=self.home, childFDs=childfds)
 
+    def runTargetSubProcess(self, command, *args, **kwargs):
+        """Run a subprocess that operates on the target environment."""
+        base_args = [
+            "in-target",
+            command,
+            "--backend=%s" % self.backend_name,
+            "--series=%s" % self.series,
+            "--arch=%s" % self.arch_tag,
+            self._buildid,
+            ]
+        self.runSubProcess(
+            self._intargetpath, base_args + list(args), **kwargs)
+
     def doUnpack(self):
         """Unpack the build chroot."""
-        self.runSubProcess(
-            self._unpackpath,
-            ["unpack-chroot", self._buildid, self._chroottarfile])
+        self.runTargetSubProcess("unpack-chroot", self._chroottarfile)
 
     def doReapProcesses(self, state, notify=True):
         """Reap any processes left lying around in the chroot."""
@@ -153,13 +199,11 @@ class BuildManager(object):
                 iterate = partial(self.iterateReap, state)
             else:
                 iterate = lambda success: None
-            self.runSubProcess(
-                self._scanpath, ["scan-for-processes", self._buildid],
-                iterate=iterate)
+            self.runTargetSubProcess("scan-for-processes", iterate=iterate)
 
     def doCleanup(self):
         """Remove the build tree etc."""
-        self.runSubProcess(self._cleanpath, ["remove-build", self._buildid])
+        self.runTargetSubProcess("remove-build")
 
         # Sanitize the URLs in the buildlog file if this is a build
         # in a private archive.
@@ -168,13 +212,11 @@ class BuildManager(object):
 
     def doMounting(self):
         """Mount things in the chroot, e.g. proc."""
-        self.runSubProcess( self._mountpath,
-                            ["mount-chroot", self._buildid])
+        self.runTargetSubProcess("mount-chroot")
 
     def doUnmounting(self):
         """Unmount the chroot."""
-        self.runSubProcess( self._umountpath,
-                            ["umount-chroot", self._buildid])
+        self.runTargetSubProcess("umount-chroot")
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build given the input files.
@@ -190,6 +232,9 @@ class BuildManager(object):
                                             self._buildid, f))
         self._chroottarfile = self._slave.cachePath(chroot)
 
+        self.series = extra_args['series']
+        self.arch_tag = extra_args.get('arch_tag', self._slave.getArch())
+
         # Check whether this is a build in a private archive and
         # whether the URLs in the buildlog file should be sanitized
         # so that they do not contain any embedded authentication
@@ -197,7 +242,19 @@ class BuildManager(object):
         if extra_args.get('archive_private'):
             self.is_archive_private = True
 
+        self.backend = make_backend(
+            self.backend_name, self._buildid,
+            series=self.series, arch=self.arch_tag)
+
         self.runSubProcess(self._preppath, ["slave-prep"])
+
+    def status(self):
+        """Return extra status for this build manager, as a dictionary.
+
+        This may be used to return manager-specific information from the
+        XML-RPC status call.
+        """
+        return {}
 
     def iterate(self, success):
         """Perform an iteration of the slave.
@@ -270,6 +327,15 @@ class BuildManager(object):
         self._subprocess.ignore = True
         self._subprocess.transport.loseConnection()
 
+    def addWaitingFileFromBackend(self, path):
+        fetched_dir = tempfile.mkdtemp()
+        try:
+            fetched_path = os.path.join(fetched_dir, os.path.basename(path))
+            self.backend.copy_out(path, fetched_path)
+            self._slave.addWaitingFile(fetched_path)
+        finally:
+            shutil.rmtree(fetched_dir)
+
 
 class BuilderStatus:
     """Status values for the builder."""
@@ -309,6 +375,7 @@ class BuildDSlave(object):
         self.waitingfiles = {}
         self.builddependencies = ""
         self._log = None
+        self.manager = None
 
         if not os.path.isdir(self._cachepath):
             raise ValueError("FileCache path is not a dir")
@@ -329,14 +396,13 @@ class BuildDSlave(object):
         :param password: The password for authentication.
         :return: The OpenerDirector instance.
 
-        This helper installs a urllib2.HTTPBasicAuthHandler that will deal
-        with any HTTP basic authentication required when opening the
-        URL.
+        This helper installs an HTTPBasicAuthHandler that will deal with any
+        HTTP basic authentication required when opening the URL.
         """
-        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        password_mgr = HTTPPasswordMgrWithDefaultRealm()
         password_mgr.add_password(None, url, username, password)
-        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
-        opener = urllib2.build_opener(handler)
+        handler = HTTPBasicAuthHandler(password_mgr)
+        opener = build_opener(handler)
         return opener
 
     def ensurePresent(self, sha1sum, url=None, username=None, password=None):
@@ -356,7 +422,7 @@ class BuildDSlave(object):
                     opener = self.setupAuthHandler(
                         url, username, password).open
                 else:
-                    opener = urllib2.urlopen
+                    opener = urlopen
                 try:
                     f = opener(url)
                 # Don't change this to URLError without thoroughly
@@ -633,7 +699,8 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         self._builders = {}
         cache = apt.Cache()
         try:
-            self._version = cache["python-lpbuildd"].installed.version
+            installed = cache["python-lpbuildd"].installed
+            self._version = installed.version if installed else None
         except KeyError:
             self._version = None
         log.msg("Initialized")
@@ -648,7 +715,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
     def xmlrpc_info(self):
         """Return the protocol version and the builder methods supported."""
         return (self.protocolversion, self.slave.getArch(),
-                self._builders.keys())
+                list(self._builders))
 
     def xmlrpc_status(self):
         """Return the status of the build daemon, as a dictionary.
@@ -665,6 +732,8 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         if self._version is not None:
             ret["builder_version"] = self._version
         ret.update(func())
+        if self.slave.manager is not None:
+            ret.update(self.slave.manager.status())
         return ret
 
     def status_IDLE(self):
@@ -677,7 +746,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         Returns the build id and up to one kilobyte of log tail.
         """
         tail = self.slave.getLogTail()
-        return {"build_id": self.buildid, "logtail": xmlrpclib.Binary(tail)}
+        return {"build_id": self.buildid, "logtail": Binary(tail)}
 
     def status_WAITING(self):
         """Handler for xmlrpc_status WAITING.
@@ -727,7 +796,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         """
         # check requested builder
         if not builder in self._builders:
-            extra_info = "%s not in %r" % (builder, self._builders.keys())
+            extra_info = "%s not in %r" % (builder, list(self._builders))
             return (BuilderStatus.UNKNOWNBUILDER, extra_info)
         # check requested chroot availability
         chroot_present, info = self.slave.ensurePresent(chrootsum)
@@ -739,7 +808,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
             """ % (chrootsum, info)
             return (BuilderStatus.UNKNOWNSUM, extra_info)
         # check requested files availability
-        for filesum in filemap.itervalues():
+        for filesum in filemap.values():
             file_present, info = self.slave.ensurePresent(filesum)
             if not file_present:
                 extra_info = """FILESUM -> %s

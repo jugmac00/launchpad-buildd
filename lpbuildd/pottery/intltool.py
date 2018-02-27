@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functions to build PO templates on the build slave."""
@@ -13,26 +13,26 @@ __all__ = [
     'find_potfiles_in',
     ]
 
-from contextlib import contextmanager
-import errno
 import os.path
 import re
-from subprocess import call
+import subprocess
+import tempfile
 
 
-def find_potfiles_in():
-    """Search the current directory and its subdirectories for POTFILES.in.
+def find_potfiles_in(backend, package_dir):
+    """Search `package_dir` and its subdirectories for POTFILES.in.
 
-    :returns: A list of names of directories that contain a file POTFILES.in.
+    :param backend: The `Backend` where work is done.
+    :param package_dir: The directory to search.
+    :returns: A list of names of directories that contain a file
+        POTFILES.in, relative to `package_dir`.
     """
-    result_dirs = []
-    for dirpath, dirnames, dirfiles in os.walk("."):
-        if "POTFILES.in" in dirfiles:
-            result_dirs.append(dirpath)
-    return result_dirs
+    paths = backend.find(
+        package_dir, include_directories=False, name="POTFILES.in")
+    return [os.path.dirname(path) for path in paths]
 
 
-def check_potfiles_in(path):
+def check_potfiles_in(backend, path):
     """Check if the files listed in the POTFILES.in file exist.
 
     Running 'intltool-update -m' will perform this check and also take a
@@ -45,57 +45,46 @@ def check_potfiles_in(path):
     all listed files exist. The presence of the 'notexist' file tells us
     that.
 
+    :param backend: The `Backend` where work is done.
     :param path: The directory where POTFILES.in resides.
     :returns: False if the directory does not exist, if an error occurred
         when executing intltool-update or if files are missing from
         POTFILES.in. True if all went fine and all files in POTFILES.in
         actually exist.
     """
-    current_path = os.getcwd()
-
-    try:
-        os.chdir(path)
-    except OSError as e:
-        # Abort nicely if the directory does not exist.
-        if e.errno == errno.ENOENT:
-            return False
-        raise
-    try:
-        # Remove stale files from a previous run of intltool-update -m.
-        for unlink_name in ['missing', 'notexist']:
-            try:
-                os.unlink(unlink_name)
-            except OSError as e:
-                # It's ok if the files are missing.
-                if e.errno != errno.ENOENT:
-                    raise
-        devnull = open("/dev/null", "w")
-        returncode = call(
-            ["/usr/bin/intltool-update", "-m"],
-            stdout=devnull, stderr=devnull)
-        devnull.close()
-    finally:
-        os.chdir(current_path)
-
-    if returncode != 0:
-        # An error occurred when executing intltool-update.
+    # Abort nicely if the directory does not exist.
+    if not backend.isdir(path):
         return False
+    # Remove stale files from a previous run of intltool-update -m.
+    backend.run(
+        ["rm", "-f"] +
+        [os.path.join(path, name) for name in ("missing", "notexist")])
+    with open("/dev/null", "w") as devnull:
+        try:
+            backend.run(
+                ["/usr/bin/intltool-update", "-m"],
+                stdout=devnull, stderr=devnull, cwd=path)
+        except subprocess.CalledProcessError:
+            return False
 
-    notexist = os.path.join(path, "notexist")
-    return not os.access(notexist, os.R_OK)
+    return not backend.path_exists(os.path.join(path, "notexist"))
 
 
-def find_intltool_dirs():
+def find_intltool_dirs(backend, package_dir):
     """Search for directories with intltool structure.
 
-    The current directory and its subdiretories are searched. An 'intltool
+    `package_dir` and its subdirectories are searched. An 'intltool
     structure' is a directory that contains a POFILES.in file and where all
     files listed in that POTFILES.in do actually exist. The latter
     condition makes sure that the file is not stale.
 
-    :returns: A list of directory names.
+    :param backend: The `Backend` where work is done.
+    :param package_dir: The directory to search.
+    :returns: A list of directory names, relative to `package_dir`.
     """
-    return sorted(filter(check_potfiles_in, find_potfiles_in()))
+    return sorted(
+        podir for podir in find_potfiles_in(backend, package_dir)
+        if check_potfiles_in(backend, os.path.join(package_dir, podir)))
 
 
 def _get_AC_PACKAGE_NAME(config_file):
@@ -125,6 +114,8 @@ def _try_substitution(config_files, varname, substitution):
         config_files = config_files[:-1]
     for config_file in reversed(config_files):
         subst_value = config_file.getVariable(substitution.name)
+        if subst_value is None and substitution.name == "PACKAGE":
+            subst_value = _get_AC_PACKAGE_NAME(config_file)
         if subst_value is not None:
             # Substitution found.
             break
@@ -134,7 +125,7 @@ def _try_substitution(config_files, varname, substitution):
     return substitution.replace(subst_value)
 
 
-def get_translation_domain(dirname):
+def get_translation_domain(backend, dirname):
     """Get the translation domain for this PO directory.
 
     Imitates some of the behavior of intltool-update to find out which
@@ -163,10 +154,12 @@ def get_translation_domain(dirname):
     config_files = []
     for filename, varname, keep_trying in locations:
         path = os.path.join(dirname, filename)
-        if not os.access(path, os.R_OK):
+        if not backend.path_exists(path):
             # Skip non-existent files.
             continue
-        config_files.append(ConfigFile(path))
+        with tempfile.NamedTemporaryFile() as local_file:
+            backend.copy_out(path, local_file.name)
+            config_files.append(ConfigFile(local_file.file))
         new_value = config_files[-1].getVariable(varname)
         if new_value is not None:
             value = new_value
@@ -188,15 +181,7 @@ def get_translation_domain(dirname):
     return value
 
 
-@contextmanager
-def chdir(directory):
-    cwd = os.getcwd()
-    os.chdir(directory)
-    yield
-    os.chdir(cwd)
-
-
-def generate_pot(podir, domain):
+def generate_pot(backend, podir, domain):
     """Generate one PO template using intltool.
 
     Although 'intltool-update -p' can try to find out the translation domain
@@ -205,38 +190,45 @@ def generate_pot(podir, domain):
     "has an additional effect: the name of current working directory is no
     more  limited  to 'po' or 'po-*'." We don't want that limit either.
 
+    :param backend: The `Backend` where work is done.
     :param podir: The PO directory in which to build template.
     :param domain: The translation domain to use as the name of the template.
       If it is None or empty, 'messages.pot' will be used.
-    :return: True if generation succeeded.
+    :return: The effective domain if generation succeeded, otherwise None.
     """
     if domain is None or domain.strip() == "":
         domain = "messages"
-    with chdir(podir):
-        with open("/dev/null", "w") as devnull:
-            returncode = call(
+    with open("/dev/null", "w") as devnull:
+        try:
+            backend.run(
                 ["/usr/bin/intltool-update", "-p", "-g", domain],
-                stdout=devnull, stderr=devnull)
-    return returncode == 0
+                stdout=devnull, stderr=devnull, cwd=podir)
+            return domain
+        except subprocess.CalledProcessError:
+            return None
 
 
-def generate_pots(package_dir='.'):
+def generate_pots(backend, package_dir):
     """Top-level function to generate all PO templates in a package."""
     potpaths = []
-    with chdir(package_dir):
-        for podir in find_intltool_dirs():
-            domain = get_translation_domain(podir)
-            if generate_pot(podir, domain):
-                potpaths.append(os.path.join(podir, domain + ".pot"))
+    for podir in find_intltool_dirs(backend, package_dir):
+        full_podir = os.path.join(package_dir, podir)
+        domain = get_translation_domain(backend, full_podir)
+        effective_domain = generate_pot(backend, full_podir, domain)
+        if effective_domain is not None:
+            potpaths.append(os.path.join(podir, effective_domain + ".pot"))
     return potpaths
 
 
-class ConfigFile(object):
+class ConfigFile:
     """Represent a config file and return variables defined in it."""
 
     def __init__(self, file_or_name):
-        with open(file_or_name) as conf_file:
-            self.content = conf_file.read()
+        if isinstance(file_or_name, str):
+            with open(file_or_name) as conf_file:
+                self.content = conf_file.read()
+        else:
+            self.content = file_or_name.read()
 
     def _stripQuotes(self, identifier):
         """Strip surrounding quotes from `identifier`, if present.
@@ -291,7 +283,7 @@ class Substitution(object):
     style) or preceded by a $ sign with optional () (make style).
 
     This class identifies a single such substitution in a variable text and
-    extract the name of the variable who's value is to be inserted. It also
+    extracts the name of the variable whose value is to be inserted. It also
     facilitates the actual replacement so that caller does not have to worry
     about the substitution style that is being used.
     """

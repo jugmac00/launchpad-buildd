@@ -3,7 +3,7 @@
 
 """Buildd Slave tests.
 
-This file contains the follwoing tests:
+This file contains the following tests:
 
  * Basic authentication handling (used to download private sources);
  * Build log sanitization (removal of passwords from private buildlog);
@@ -19,9 +19,15 @@ import difflib
 import os
 import shutil
 import tempfile
-import urllib2
+try:
+    from urllib.request import HTTPBasicAuthHandler
+except ImportError:
+    from urllib2 import HTTPBasicAuthHandler
 import unittest
-import xmlrpclib
+try:
+    from xmlrpc.client import ServerProxy
+except ImportError:
+    from xmlrpclib import ServerProxy
 
 from lpbuildd.tests.harness import (
     BuilddSlaveTestSetup,
@@ -32,11 +38,8 @@ from lpbuildd.tests.harness import (
 
 def read_file(path):
     """Helper for reading the contents of a file."""
-    file_object = open(path)
-    try:
+    with open(path) as file_object:
         return file_object.read()
-    finally:
-        file_object.close()
 
 
 class LaunchpadBuilddSlaveTests(BuilddTestCase):
@@ -53,7 +56,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # Inspect the openers and ensure the wanted handler is installed.
         basic_auth_handler = None
         for handler in opener.handlers:
-            if isinstance(handler, urllib2.HTTPBasicAuthHandler):
+            if isinstance(handler, HTTPBasicAuthHandler):
                 basic_auth_handler = handler
                 break
         self.assertTrue(
@@ -96,7 +99,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         differences = differences.replace(
             '--- \n\n+++ \n\n',
             '---  \n\n+++  \n\n')
-        
+
         # Make sure they match.
         self.assertEqual(differences, expected)
 
@@ -132,7 +135,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         differences = differences.replace(
             '--- \n\n+++ \n\n',
             '---  \n\n+++  \n\n')
-        
+
         # Finally make sure what we got is what we expected.
         self.assertEqual(differences, expected)
 
@@ -196,9 +199,8 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         self.slave.buildComplete()
         paths = [os.path.join(workdir, name) for name in ('a', 'b')]
         for path in paths:
-            f = open(path, 'w')
-            f.write('data')
-            f.close()
+            with open(path, 'w') as f:
+                f.write('data')
             self.slave.addWaitingFile(path)
         self.slave.clean()
         self.assertEqual([], os.listdir(self.slave._cachepath))
@@ -210,7 +212,7 @@ class XMLRPCBuildDSlaveTests(unittest.TestCase):
         super(XMLRPCBuildDSlaveTests, self).setUp()
         self.slave = BuilddSlaveTestSetup()
         self.slave.setUp()
-        self.server = xmlrpclib.Server('http://localhost:8221/rpc/')
+        self.server = ServerProxy('http://localhost:8321/rpc/')
 
     def tearDown(self):
         self.slave.tearDown()
@@ -223,8 +225,7 @@ class XMLRPCBuildDSlaveTests(unittest.TestCase):
         status, info = self.server.build('foo', buildername, 'sha1', {}, {})
 
         self.assertEqual('BuilderStatus.UNKNOWNBUILDER', status)
-        self.assertTrue(
-            info is not None, "UNKNOWNBUILDER returns 'None' info.")
+        self.assertIsNotNone(info, "UNKNOWNBUILDER returns 'None' info.")
         self.assertTrue(
             info.startswith("%s not in [" % buildername),
             'UNKNOWNBUILDER info is "%s"' % info)

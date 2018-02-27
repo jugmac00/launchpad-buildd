@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+#
+# Authors: Daniel Silverstone <daniel.silverstone@canonical.com>
+#      and Adam Conrad <adam.conrad@canonical.com>
+
+# Buildd Slave tool to update a debian chroot
+
+# Expects build id as arg 1, makes build-id to contain the build
+# Expects rest of arguments to be to pass to sbuild
+
+# Needs SBUILD to be set to a sbuild instance with passwordless sudo ability
+
+# We want a non-zero exit code from sbuild even if the implicit function
+# pointer check succeeds.
+set -o pipefail
+
+exec 2>&1
+
+# On multi-guest PPA hosts, the per-guest overlay sometimes gets out of
+# sync, and we notice this by way of a corrupted .sbuildrc.  We aren't going
+# to be able to build anything in this situation, so immediately return
+# BUILDERFAIL.
+if ! perl -c "$HOME/.sbuildrc" >/dev/null 2>&1; then
+    echo "$HOME/.sbuildrc is corrupt; builder needs repair work" 2>&1
+    exit 4
+fi
+
+BUILDID=$1
+ARCHITECTURETAG=$2
+SUITE=$3
+
+shift 3
+
+ACTUAL_NR_PROCESSORS=$(grep -c ^processor /proc/cpuinfo | sed 's/^0$/1/')
+NR_PROCESSORS=$ACTUAL_NR_PROCESSORS
+
+echo "Initiating build $BUILDID with $NR_PROCESSORS jobs across $ACTUAL_NR_PROCESSORS processor cores."
+
+if [ $NR_PROCESSORS -gt 1 ]; then
+  export DEB_BUILD_OPTIONS="${DEB_BUILD_OPTIONS:+$DEB_BUILD_OPTIONS }parallel=$NR_PROCESSORS"
+fi
+
+cd "$HOME/build-$BUILDID"
+
+# sbuild tries to do this itself, but can end up trying to mkdir in
+# /build too early.
+getent group sbuild | sudo tee -a chroot-autobuild/etc/group > /dev/null || exit 2
+getent passwd sbuild | sudo tee -a chroot-autobuild/etc/passwd > /dev/null || exit 2
+sudo chown sbuild:sbuild chroot-autobuild/build || exit 2
+
+hostarch=$(dpkg --print-architecture)
+
+UNAME26=""
+case $SUITE in
+  hardy*|lucid*|maverick*|natty*|oneiric*|precise*)
+    if setarch --help | grep -q uname-2.6; then
+      UNAME26="--uname-2.6"
+    fi
+    ;;
+esac
+
+WARN=""
+case $ARCHITECTURETAG in
+  armel|armhf|hppa|i386|lpia|mips|mipsel|powerpc|s390|sparc)
+    LINUX32="linux32"
+    WARN="--warnonly"
+    ;;
+  alpha|amd64|arm64|hppa64|ia64|ppc64|ppc64el|s390x|sparc64|x32)
+    LINUX32="linux64"
+    ;;
+esac
+
+echo "Kernel reported to sbuild: $($LINUX32 $UNAME26 uname -rvm)"
+SBUILD="$LINUX32 $UNAME26 sbuild"
+
+case $SUITE in
+    warty*|hoary*|breezy*|dapper*|edgy*|feisty*|gutsy*|hardy*|karmic*)
+        WARN="--warnonly"
+        ;;
+esac
+
+$SBUILD "$@" | /usr/share/launchpad-buildd/slavebin/check-implicit-pointer-functions --inline $WARN
+exit $?

@@ -1,11 +1,206 @@
-launchpad-buildd (143) UNRELEASED; urgency=medium
+launchpad-buildd (159) UNRELEASED; urgency=medium
 
   * Add a local unauthenticated proxy on port 8222, which proxies through to
     the remote authenticated proxy.  This should allow running a wider range
     of network clients, since some of them apparently don't support
     authenticated proxies very well.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 13 Apr 2017 18:02:20 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 27 Feb 2018 13:58:17 +0000
+
+launchpad-buildd (158) xenial; urgency=medium
+
+  [ Steve Langasek ]
+  * Support passing a snap channel into a livefs build through the
+    environment.
+
+  [ Christopher Glass ]
+  * Add support for passing apt proxies to live-build.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 15 Jan 2018 10:04:42 +0000
+
+launchpad-buildd (157) xenial; urgency=medium
+
+  [ Colin Watson ]
+  * Normalise Python packaging.  We now install our modules on the normal
+    system path, using pybuild.  setup.py now installs buildd-slave.tac in
+    the lpbuildd package rather than data_files in order not to pollute the
+    top level of a virtualenv.
+  * Fall back to the package name from AC_INIT when expanding $(PACKAGE) in
+    translation configuration files if no other definition can be found.
+  * Set SNAPCRAFT_BUILD_INFO=1 to tell snapcraft to generate a manifest.
+
+  [ William Grant ]
+  * Fix inclusion of buildd-slave.tac in MANIFEST.in.
+  * Fix check-implicit-pointer-functions symlink for new python-lpbuildd path.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 29 Nov 2017 14:16:04 +0000
+
+launchpad-buildd (156) xenial; urgency=medium
+
+  * Remove useless cwd argument passed to subprocess.check_call from
+    Chroot.run.
+  * Replace shell_escape function with shlex.quote (Python 3) or pipes.quote
+    (Python 2).
+  * Fix handling of null/empty-domain case in generate_pots.
+  * Make Backend.run(cwd=) work, and refactor BuildLiveFS and BuildSnap to
+    use it.  This fixes translation templates builds, which were assuming
+    that this worked.
+  * Remove executable bit from
+    lpbuildd/target/generate_translation_templates.py.
+  * Grant mac_admin and mac_override capabilities to LXD containers.  These
+    are needed to load AppArmor profiles when installing the core snap
+    (LP: #1730376).
+  * Explicitly install udev when building snaps or livefses, to work around
+    LP #1731519.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 13 Nov 2017 16:11:17 +0000
+
+launchpad-buildd (155) xenial; urgency=medium
+
+  * Refactor lpbuildd.pottery.intltool to avoid calling chdir.
+  * Merge TranslationTemplatesBuildState.{INSTALL,GENERATE} into a single
+    state.
+  * Convert generate-translation-templates to the new Operation framework.
+  * Use Python 3-style print functions.
+  * Make urllib imports Python 3-compatible.
+  * Make xmlrpc imports Python 3-compatible.
+  * Make configparser imports Python 3-compatible.
+  * Handle dict API changes in Python 3.
+  * Raise more useful exceptions when LXD.copy_in or LXD.copy_out fail.
+  * Make Backend.run implementations print command output if echo and
+    get_output are both true.
+  * Make Backend.is_package_available handle the case where the requested
+    package name is purely virtual (LP: #1732511).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 02 Nov 2017 11:42:24 +0000
+
+launchpad-buildd (154) xenial; urgency=medium
+
+  * The previous patch was labouring under mistaken assumptions: it's
+    actually the mounted-dev Upstart job that we race with in trusty
+    containers, so neuter that instead.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 19 Oct 2017 10:29:30 +0100
+
+launchpad-buildd (153) xenial; urgency=medium
+
+  * Defend against racing with udev to create loop devices in trusty
+    containers (LP: #1723216).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 18 Oct 2017 07:57:32 +0100
+
+launchpad-buildd (152) xenial; urgency=medium
+
+  [ Colin Watson ]
+  * Accept a "debug" entry in livefs arguments, which enables detailed
+    live-build debugging.
+  * Set SHELL=/bin/sh in snap builds, since it was previously passed through
+    by the chroot backend and some build systems expect SHELL to be set
+    (LP: #1716739).
+
+  [ Robert C Jennings ]
+  * LXD: Do not drop sys_rawio capability (LP: #1716060).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 13 Sep 2017 14:51:48 +0100
+
+launchpad-buildd (151) xenial; urgency=medium
+
+  * Run snapd with SNAPPY_STORE_NO_CDN=1, since the buildd network isn't
+    allowed to talk to the CDN.
+  * Create loop devices in LXD containers manually using mknod rather than
+    as LXD-managed devices, since the latter involves bind-mounting
+    individual devices which confuses some livecd-rootfs scripts.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Sep 2017 01:41:20 +0100
+
+launchpad-buildd (150) xenial; urgency=medium
+
+  * Tell LXD to disable seccomp on powerpc, since it doesn't work there on
+    Linux 4.4.
+  * Make loop devices available to LXD containers.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 06 Sep 2017 12:29:38 +0100
+
+launchpad-buildd (149) xenial; urgency=medium
+
+  * Clamp the TCP MSS on the LXD bridge interface to the path MTU, to avoid
+    problems in environments where the path MTU is lower than 1500.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 01 Sep 2017 13:51:38 +0100
+
+launchpad-buildd (148) xenial; urgency=medium
+
+  * Move the contents of /usr/share/launchpad-buildd/slavebin/ into bin/ in
+    the source package, to keep things a bit more organised.
+  * Run tests at build time, now that python-txfixtures is in
+    ppa:launchpad/ubuntu/ppa (and >= zesty).
+  * Drop qemu emulation support.  It was quite unreliable, and we've had
+    real hardware for a while.
+  * Remove most architecture hardcoding from lpbuildd.util, relying on
+    dpkg-architecture instead.
+  * Use bzr's command-line interface rather than bzrlib, to ease porting to
+    Python 3.
+  * Rewrite update-debian-chroot in Python, allowing it to use lpbuildd.util
+    and to have unit tests.
+  * Rewrite override-sources-list in Python, allowing it to have unit tests.
+  * Rewrite add-trusted-keys in Python, allowing it to have unit tests.
+  * Configure sbuild to use schroot sessions rather than sudo.
+  * Rewrite unpack-chroot and remove-build in Python, allowing them to have
+    unit tests.
+  * Rewrite mount-chroot and umount-chroot in Python, allowing them to have
+    unit tests.
+  * Rewrite scan-for-processes in Python, allowing it to have unit tests.
+  * Improve "RUN:" log messages to be copy-and-pasteable as shell commands,
+    which is sometimes useful while debugging.
+  * Convert buildlivefs to the new Operation framework and add unit tests.
+  * Convert buildsnap to the new Operation framework and add unit tests.
+  * Add a LXD backend.
+  * Switch snap builds to the LXD backend.
+  * Switch livefs builds to the LXD backend.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 30 Aug 2017 15:18:41 +0100
+
+launchpad-buildd (147) xenial; urgency=medium
+
+  * Revert change to run snapcraft as non-root with passwordless sudo; this
+    broke "type: os" and "type: kernel" snap builds, and requires more
+    thought.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 25 Jul 2017 13:48:10 +0100
+
+launchpad-buildd (146) xenial; urgency=medium
+
+  * buildsnap: Initialise git submodules (LP: #1694413).
+  * Run snapcraft as non-root with passwordless sudo, since we run into
+    buggy corner cases in some plugins when running as root (LP: #1702656).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 18 Jul 2017 17:03:36 +0100
+
+launchpad-buildd (145) xenial; urgency=medium
+
+  * buildrecipe: Explicitly mark the local apt archive as trusted
+    (LP: #1701826).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 03 Jul 2017 15:03:51 +0100
+
+launchpad-buildd (144) xenial; urgency=medium
+
+  * buildsnap: Fix revision_id computation to handle the case where
+    --git-path is not passed.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 15 May 2017 21:45:16 +0100
+
+launchpad-buildd (143) xenial; urgency=medium
+
+  * Record the branch revision used to build a snap and return it along with
+    other XML-RPC status information (LP: #1679157).
+  * Write out trusted keys sent by buildd-manager (LP: #1626739).
+  * Add tests for lpbuildd.pottery, extracted from Launchpad.
+  * Configure a git:// proxy for snap builds (LP: #1663920).
+  * buildsnap: If --git-repository is passed but --git-path is not, build
+    the default branch of the repository (LP: #1688224).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 12 May 2017 16:47:57 +0100
 
 launchpad-buildd (142) trusty; urgency=medium
 

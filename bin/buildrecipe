@@ -1,0 +1,341 @@
+#!/usr/bin/python -u
+# Copyright 2010, 2011 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""A script that builds a package from a recipe and a chroot."""
+
+from __future__ import print_function
+
+__metaclass__ = type
+
+from optparse import OptionParser
+import os
+import pwd
+import socket
+from subprocess import (
+    PIPE,
+    Popen,
+    call,
+    check_call,
+    check_output,
+    )
+import sys
+from textwrap import dedent
+
+from debian.deb822 import Deb822
+
+
+RETCODE_SUCCESS = 0
+RETCODE_FAILURE_INSTALL = 200
+RETCODE_FAILURE_BUILD_TREE = 201
+RETCODE_FAILURE_INSTALL_BUILD_DEPS = 202
+RETCODE_FAILURE_BUILD_SOURCE_PACKAGE = 203
+
+
+def call_report_rusage(args, env):
+    """Run a subprocess.
+
+    Report that it was run, and the resources used, and complain if it fails.
+
+    :return: The process wait status.
+    """
+    print('RUN %r' % args)
+    proc = Popen(args, env=env)
+    pid, status, rusage = os.wait4(proc.pid, 0)
+    print(rusage)
+    return status
+
+
+class RecipeBuilder:
+    """Builds a package from a recipe."""
+
+    def __init__(self, build_id, author_name, author_email,
+                 suite, distroseries_name, component, archive_purpose,
+                 git=False):
+        """Constructor.
+
+        :param build_id: The id of the build (a str).
+        :param author_name: The name of the author (a str).
+        :param author_email: The email address of the author (a str).
+        :param suite: The suite the package should be built for (a str).
+        :param git: If True, build a git-based recipe; if False, build a
+            bzr-based recipe.
+        """
+        self.build_id = build_id
+        self.author_name = author_name.decode('utf-8')
+        self.author_email = author_email
+        self.archive_purpose = archive_purpose
+        self.component = component
+        self.distroseries_name = distroseries_name
+        self.suite = suite
+        self.git = git
+        self.chroot_path = get_build_path(build_id, 'chroot-autobuild')
+        self.work_dir_relative = os.environ['HOME'] + '/work'
+        self.work_dir = os.path.join(self.chroot_path,
+                                     self.work_dir_relative[1:])
+
+        self.tree_path = os.path.join(self.work_dir, 'tree')
+        self.apt_dir_relative = os.path.join(self.work_dir_relative, 'apt')
+        self.apt_dir = os.path.join(self.work_dir, 'apt')
+        self.username = pwd.getpwuid(os.getuid())[0]
+        self.apt_sources_list_dir = os.path.join(
+            self.chroot_path, "etc/apt/sources.list.d")
+
+    def install(self):
+        """Install all the requirements for building recipes.
+
+        :return: A retcode from apt.
+        """
+        return self.chroot(['apt-get', 'install', '-y', 'lsb-release'])
+
+    def buildTree(self):
+        """Build the recipe into a source tree.
+
+        As a side-effect, sets self.source_dir_relative.
+        :return: a retcode from `bzr dailydeb` or `git-build-recipe`.
+        """
+        assert not os.path.exists(self.tree_path)
+        recipe_path = os.path.join(self.work_dir, 'recipe')
+        manifest_path = os.path.join(self.tree_path, 'manifest')
+        recipe_file = open(recipe_path, 'rb')
+        try:
+            recipe = recipe_file.read()
+        finally:
+            recipe_file.close()
+        # As of bzr 2.2, a defined identity is needed.  In this case, we're
+        # using buildd@<hostname>.
+        hostname = socket.gethostname()
+        email = 'buildd@%s' % hostname
+        lsb_release = Popen(['/usr/bin/sudo',
+            '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
+            '-r', '-s'], stdout=PIPE)
+        distroseries_version = lsb_release.communicate()[0].rstrip()
+        assert lsb_release.returncode == 0
+
+        if self.git:
+            print('Git version:')
+            check_call(['git', '--version'])
+            print(check_output(
+                ['dpkg-query', '-W', 'git-build-recipe']).rstrip(
+                    '\n').replace('\t', ' '))
+        else:
+            print('Bazaar versions:')
+            check_call(['bzr', 'version'])
+            check_call(['bzr', 'plugins'])
+
+        print('Building recipe:')
+        print(recipe)
+        sys.stdout.flush()
+        env = {
+            'DEBEMAIL': self.author_email,
+            'DEBFULLNAME': self.author_name.encode('utf-8'),
+            'EMAIL': email,
+            'LANG': 'C.UTF-8',
+            }
+        if self.git:
+            cmd = ['git-build-recipe']
+        else:
+            cmd = ['bzr', '-Derror', 'dailydeb']
+        cmd.extend([
+            '--safe', '--no-build',
+            '--manifest', manifest_path,
+            '--distribution', self.distroseries_name,
+            '--allow-fallback-to-native',
+            '--append-version', '~ubuntu%s.1' % distroseries_version,
+            recipe_path, self.tree_path,
+            ])
+        retcode = call_report_rusage(cmd, env=env)
+        if retcode != 0:
+            return retcode
+        (source,) = [name for name in os.listdir(self.tree_path)
+                     if os.path.isdir(os.path.join(self.tree_path, name))]
+        self.source_dir_relative = os.path.join(
+            self.work_dir_relative, 'tree', source)
+        return retcode
+
+    def getPackageName(self):
+        source_dir = os.path.join(
+            self.chroot_path, self.source_dir_relative.lstrip('/'))
+        changelog = os.path.join(source_dir, 'debian/changelog')
+        return open(changelog, 'r').readline().split(' ')[0]
+
+    def getSourceControl(self):
+        """Return the parsed source control stanza from the source tree."""
+        source_dir = os.path.join(
+            self.chroot_path, self.source_dir_relative.lstrip('/'))
+        with open(os.path.join(source_dir, 'debian/control')) as control_file:
+            # Don't let Deb822.iter_paragraphs use apt_pkg.TagFile
+            # internally, since that only handles real tag files and not the
+            # slightly more permissive syntax of debian/control which also
+            # allows comments.
+            return Deb822.iter_paragraphs(
+                control_file, use_apt_pkg=False).next()
+
+    def makeDummyDsc(self, package):
+        control = self.getSourceControl()
+        with open(os.path.join(
+                self.apt_dir, "%s.dsc" % package), "w") as dummy_dsc:
+            print(dedent("""\
+                Format: 1.0
+                Source: %(package)s
+                Architecture: any
+                Version: 99:0
+                Maintainer: invalid@example.org""") % {"package": package},
+                file=dummy_dsc)
+            for field in (
+                    "Build-Depends", "Build-Depends-Indep",
+                    "Build-Conflicts", "Build-Conflicts-Indep",
+                    ):
+                if field in control:
+                    print("%s: %s" % (field, control[field]), file=dummy_dsc)
+            print(file=dummy_dsc)
+
+    def runAptFtparchive(self):
+        conf_path = os.path.join(self.apt_dir, "ftparchive.conf")
+        with open(conf_path, "w") as conf:
+            print(dedent("""\
+                Dir::ArchiveDir "%(apt_dir)s";
+                Default::Sources::Compress ". bzip2";
+                BinDirectory "%(apt_dir)s" { Sources "Sources"; };
+                APT::FTPArchive::Release {
+                    Origin "buildrecipe-archive";
+                    Label "buildrecipe-archive";
+                    Suite "invalid";
+                    Codename "invalid";
+                    Description "buildrecipe temporary archive";
+                };""") % {"apt_dir": self.apt_dir},
+                file=conf)
+        ftparchive_env = dict(os.environ)
+        ftparchive_env.pop("APT_CONFIG", None)
+        ret = call(
+            ["apt-ftparchive", "-q=2", "generate", conf_path],
+            env=ftparchive_env)
+        if ret != 0:
+            return ret
+
+        with open(os.path.join(self.apt_dir, "Release"), "w") as release:
+            return call(
+                ["apt-ftparchive", "-q=2", "-c", conf_path, "release",
+                 self.apt_dir],
+                stdout=release, env=ftparchive_env)
+
+    def enableAptArchive(self):
+        """Enable the dummy apt archive.
+
+        We run "apt-get update" with a temporary sources.list and some
+        careful use of APT::Get::List-Cleanup=false, so that we don't have
+        to update all sources (and potentially need to mimic the care taken
+        by update-debian-chroot, etc.).
+        """
+        tmp_list_path = os.path.join(self.apt_dir, "buildrecipe-archive.list")
+        tmp_list_path_relative = os.path.join(
+            self.apt_dir_relative, "buildrecipe-archive.list")
+        with open(tmp_list_path, "w") as tmp_list:
+            print("deb-src [trusted=yes] file://%s ./" % self.apt_dir_relative,
+                  file=tmp_list)
+        ret = self.chroot([
+                'apt-get',
+                '-o', 'Dir::Etc::sourcelist=%s' % tmp_list_path_relative,
+                '-o', 'APT::Get::List-Cleanup=false',
+                'update',
+                ])
+        if ret == 0:
+            list_path = os.path.join(
+                self.apt_sources_list_dir, "buildrecipe-archive.list")
+            return call(['sudo', 'mv', tmp_list_path, list_path])
+        return ret
+
+    def setUpAptArchive(self, package):
+        """Generate a dummy apt archive with appropriate build-dependencies.
+
+        Based on Sbuild::ResolverBase.
+        """
+        os.makedirs(self.apt_dir)
+        self.makeDummyDsc(package)
+        ret = self.runAptFtparchive()
+        if ret != 0:
+            return ret
+        return self.enableAptArchive()
+
+    def installBuildDeps(self):
+        """Install the build-depends of the source tree."""
+        package = self.getPackageName()
+        currently_building_path = os.path.join(
+            self.chroot_path, 'CurrentlyBuilding')
+        currently_building_contents = (
+            'Package: %s\n'
+            'Suite: %s\n'
+            'Component: %s\n'
+            'Purpose: %s\n'
+            'Build-Debug-Symbols: no\n' %
+            (package, self.suite, self.component, self.archive_purpose))
+        currently_building = open(currently_building_path, 'w')
+        currently_building.write(currently_building_contents)
+        currently_building.close()
+        self.setUpAptArchive(package)
+        return self.chroot(
+            ['apt-get', 'build-dep', '-y', '--only-source', package])
+
+    def chroot(self, args, echo=False):
+        """Run a command in the chroot.
+
+        :param args: the command and arguments to run.
+        :return: the status code.
+        """
+        if echo:
+            print("Running in chroot: %s" %
+                  ' '.join("'%s'" % arg for arg in args))
+            sys.stdout.flush()
+        return call([
+            '/usr/bin/sudo', '/usr/sbin/chroot', self.chroot_path] + args)
+
+    def buildSourcePackage(self):
+        """Build the source package.
+
+        :return: a retcode from dpkg-buildpackage.
+        """
+        retcode = self.chroot([
+            'su', '-c',
+            'cd %s && /usr/bin/dpkg-buildpackage -i -I -us -uc -S -sa'
+            % self.source_dir_relative, self.username])
+        for filename in os.listdir(self.tree_path):
+            path = os.path.join(self.tree_path, filename)
+            if os.path.isfile(path):
+                os.rename(path, get_build_path(self.build_id, filename))
+        return retcode
+
+
+def get_build_path(build_id, *extra):
+    """Generate a path within the build directory.
+
+    :param build_id: the build id to use.
+    :param extra: the extra path segments within the build directory.
+    :return: the generated path.
+    """
+    return os.path.join(
+        os.environ["HOME"], "build-" + build_id, *extra)
+
+
+def main():
+    parser = OptionParser(usage=(
+        "usage: %prog BUILD-ID AUTHOR-NAME AUTHOR-EMAIL SUITE "
+        "DISTROSERIES-NAME COMPONENT ARCHIVE-PURPOSE"))
+    parser.add_option(
+        "--git", default=False, action="store_true",
+        help="build a git recipe (default: bzr)")
+    options, args = parser.parse_args()
+
+    builder = RecipeBuilder(*args, git=options.git)
+    if builder.install() != 0:
+        return RETCODE_FAILURE_INSTALL
+    if builder.buildTree() != 0:
+        return RETCODE_FAILURE_BUILD_TREE
+    if builder.installBuildDeps() != 0:
+        return RETCODE_FAILURE_INSTALL_BUILD_DEPS
+    if builder.buildSourcePackage() != 0:
+        return RETCODE_FAILURE_BUILD_SOURCE_PACKAGE
+    return RETCODE_SUCCESS
+
+
+if __name__ == '__main__':
+    sys.exit(main())

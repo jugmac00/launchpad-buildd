@@ -1,0 +1,27 @@
+#! /usr/bin/python -u
+#
+# Copyright 2017 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Run an operation in the target."""
+
+from __future__ import print_function
+
+__metaclass__ = type
+
+import sys
+
+from lpbuildd.target.cli import (
+    configure_logging,
+    parse_args,
+    )
+
+
+def main():
+    configure_logging()
+    args = parse_args()
+    return args.operation.run()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

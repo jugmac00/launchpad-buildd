@@ -1,4 +1,4 @@
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -10,12 +10,13 @@ from textwrap import dedent
 
 from testtools import TestCase
 
-from lpbuildd.tests.fakeslave import FakeSlave
 from lpbuildd.sourcepackagerecipe import (
     RETCODE_FAILURE_INSTALL_BUILD_DEPS,
     SourcePackageRecipeBuildManager,
     SourcePackageRecipeBuildState,
     )
+from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.matchers import HasWaitingFiles
 
 
 class MockBuildManager(SourcePackageRecipeBuildManager):
@@ -61,6 +62,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             'recipe_text': dedent("""\
                 # bzr-builder format 0.2 deb-version {debupstream}-0~{revno}
                 http://bazaar.launchpad.dev/~ppa-user/+junk/wakeonlan"""),
+            'series': 'maverick',
             'suite': 'maverick',
             'ogrecomponent': 'universe',
             'author_name': 'Steve\u1234',
@@ -104,27 +106,26 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write("I am a build log.")
-        log.close()
+        with open(log_path, 'w') as log:
+            log.write("I am a build log.")
 
         changes_path = os.path.join(
             self.buildmanager.home, 'build-%s' % self.buildid,
             'foo_1_source.changes')
-        changes = open(changes_path, 'w')
-        changes.write("I am a changes file.")
-        changes.close()
+        with open(changes_path, 'w') as changes:
+            changes.write("I am a changes file.")
 
         manifest_path = os.path.join(
             self.buildmanager.home, 'build-%s' % self.buildid, 'manifest')
-        manifest = open(manifest_path, 'w')
-        manifest.write("I am a manifest file.")
-        manifest.close()
+        with open(manifest_path, 'w') as manifest:
+            manifest.write("I am a manifest file.")
 
         # After building the package, reap processes.
         self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -133,14 +134,18 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual(
-            [((changes_path,), {}), ((manifest_path,), {})],
-            self.slave.addWaitingFile.calls)
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            'foo_1_source.changes': b'I am a changes file.',
+            'manifest': b'I am a manifest file.',
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid
+            'sharepath/slavebin/in-target', 'in-target',
+            'umount-chroot',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
+            self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -153,17 +158,19 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write(
-            "The following packages have unmet dependencies:\n"
-            " pbuilder-satisfydepends-dummy : Depends: base-files (>= 1000)"
-            " but it is not going to be installed.\n")
-        log.close()
+        with open(log_path, 'w') as log:
+            log.write(
+                "The following packages have unmet dependencies:\n"
+                " pbuilder-satisfydepends-dummy :"
+                " Depends: base-files (>= 1000)"
+                " but it is not going to be installed.\n")
 
         # The buildmanager calls depFail correctly and reaps processes.
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -178,7 +185,10 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
+            'sharepath/slavebin/in-target', 'in-target',
+            'umount-chroot',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
+            self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -192,14 +202,15 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
-        log = open(log_path, 'w')
-        log.write("I am a failing build log.")
-        log.close()
+        with open(log_path, 'w') as log:
+            log.write("I am a failing build log.")
 
         # The buildmanager calls buildFail correctly and reaps processes.
         self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/scan-for-processes', 'scan-for-processes',
+            'sharepath/slavebin/in-target', 'in-target',
+            'scan-for-processes',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(
@@ -213,7 +224,10 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/umount-chroot', 'umount-chroot', self.buildid,
+            'sharepath/slavebin/in-target', 'in-target',
+            'umount-chroot',
+            '--backend=chroot', '--series=maverick', '--arch=i386',
+            self.buildid,
             ]
         self.assertEqual(SourcePackageRecipeBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])

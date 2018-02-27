@@ -3,15 +3,50 @@ Section: admin
 Priority: extra
 Maintainer: Adam Conrad <adconrad@ubuntu.com>
 Standards-Version: 3.9.5
-Build-Depends: debhelper (>= 7.0.50~), python
+Build-Depends: apt-utils,
+               bzr,
+               debhelper (>= 9~),
+               dh-exec,
+               dh-python,
+               intltool,
+               python (>= 2.6.6-3~),
+               python-apt,
+               python-debian,
+               python-fixtures,
+               python-mock,
+               python-netaddr,
+               python-pylxd,
+               python-setuptools,
+               python-systemfixtures,
+               python-testtools,
+               python-twisted,
+               python-txfixtures,
+# We don't use the bits of pylxd that require this at run-time, but at
+# build-time pybuild fails if it's not available.
+               python-ws4py,
+               python-zope.interface,
 
 Package: launchpad-buildd
 Section: misc
 Architecture: all
-Depends: python-lpbuildd (=${source:Version}), python, debootstrap, dpkg-dev,
- file, bzip2, sudo, ntpdate, adduser, apt-transport-https, lsb-release,
- pristine-tar, python-apt, sbuild, ${misc:Depends}
-Recommends: qemu-user-static
+Depends: adduser,
+         apt-transport-https,
+         bzip2,
+         debootstrap,
+         dpkg-dev,
+         file,
+         lsb-release,
+         lsof,
+         lxd,
+         ntpdate,
+         pristine-tar,
+         python,
+         python-apt,
+         python-lpbuildd (=${source:Version}),
+         sbuild,
+         schroot,
+         sudo,
+         ${misc:Depends},
 Description: Launchpad buildd slave
  This is the launchpad buildd slave package. It contains everything needed to
  get a launchpad buildd going apart from the database manipulation required to
@@ -22,7 +57,15 @@ Description: Launchpad buildd slave
 Package: python-lpbuildd
 Section: python
 Architecture: all
-Depends: python, python-twisted-core, python-twisted-web, python-zope.interface, python-apt, python-debian (>= 0.1.23), apt-utils, ${misc:Depends}
+Depends: apt-utils,
+         procps,
+         python-apt,
+         python-netaddr,
+         python-pylxd,
+# Work around missing dependency in python-pbr.
+         python-setuptools,
+         ${misc:Depends},
+         ${python:Depends},
 Breaks: launchpad-buildd (<< 88)
 Replaces: launchpad-buildd (<< 88)
 Description: Python libraries for a Launchpad buildd slave

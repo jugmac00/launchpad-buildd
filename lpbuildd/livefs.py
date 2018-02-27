@@ -1,15 +1,13 @@
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import os
-import shutil
 
 from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
-    get_build_path,
     )
 
 
@@ -25,45 +23,33 @@ class LiveFilesystemBuildState(DebianBuildState):
 class LiveFilesystemBuildManager(DebianBuildManager):
     """Build a live filesystem."""
 
+    backend_name = "lxd"
     initial_build_state = LiveFilesystemBuildState.BUILD_LIVEFS
-
-    def __init__(self, slave, buildid, **kwargs):
-        DebianBuildManager.__init__(self, slave, buildid, **kwargs)
-        self.build_livefs_path = os.path.join(self._slavebin, "buildlivefs")
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
-        self.build_path = get_build_path(
-            self.home, self._buildid, "chroot-autobuild", "build")
-        if os.path.isdir(self.build_path):
-            shutil.rmtree(self.build_path)
-
         self.subarch = extra_args.get("subarch")
         self.project = extra_args["project"]
         self.subproject = extra_args.get("subproject")
-        self.series = extra_args["series"]
         self.pocket = extra_args["pocket"]
         self.datestamp = extra_args.get("datestamp")
         self.image_format = extra_args.get("image_format")
         self.locale = extra_args.get("locale")
         self.extra_ppas = extra_args.get("extra_ppas", [])
+        self.channel = extra_args.get("channel")
+        self.debug = extra_args.get("debug", False)
 
         super(LiveFilesystemBuildManager, self).initiate(
             files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the process to build the live filesystem."""
-        args = [
-            "buildlivefs",
-            "--build-id", self._buildid,
-            "--arch", self.arch_tag,
-            ]
+        args = []
         if self.subarch:
             args.extend(["--subarch", self.subarch])
         args.extend(["--project", self.project])
         if self.subproject:
             args.extend(["--subproject", self.subproject])
-        args.extend(["--series", self.series])
         if self.datestamp:
             args.extend(["--datestamp", self.datestamp])
         if self.image_format:
@@ -74,7 +60,11 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--locale", self.locale])
         for ppa in self.extra_ppas:
             args.extend(["--extra-ppa", ppa])
-        self.runSubProcess(self.build_livefs_path, args)
+        if self.channel:
+            args.extend(["--channel", self.channel])
+        if self.debug:
+            args.append("--debug")
+        self.runTargetSubProcess("buildlivefs", *args)
 
     def iterate_BUILD_LIVEFS(self, retcode):
         """Finished building the live filesystem."""
@@ -101,7 +91,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
 
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
-        for entry in sorted(os.listdir(self.build_path)):
-            path = os.path.join(self.build_path, entry)
-            if entry.startswith("livecd.") and not os.path.islink(path):
-                self._slave.addWaitingFile(path)
+        for entry in sorted(self.backend.listdir("/build")):
+            path = os.path.join("/build", entry)
+            if (entry.startswith("livecd.") and
+                    not self.backend.islink(path)):
+                self.addWaitingFileFromBackend(path)

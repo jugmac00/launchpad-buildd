@@ -1,1 +1,2 @@
-usr/lib/launchpad-buildd/lpbuildd/check_implicit_pointer_functions.py	usr/share/launchpad-buildd/slavebin/check-implicit-pointer-functions
+#! /usr/bin/dh-exec
+${LIBDIR}/lpbuildd/check_implicit_pointer_functions.py	usr/share/launchpad-buildd/slavebin/check-implicit-pointer-functions
