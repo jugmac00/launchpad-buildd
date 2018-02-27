@@ -218,29 +218,20 @@ class SnapProxyFactory(http.HTTPFactory):
         http.HTTPFactory.__init__(self, *args, **kwargs)
         self.manager = manager
         self.remote_url = remote_url
-        # Hack for compatibility with the old version of Twisted that
-        # Launchpad currently uses, for the benefit of tests.
-        try:
-            from twisted.web.http import _escape
-            self._log_escape = _escape
-        except ImportError:
-            self._log_escape = self._escape
 
     def log(self, request):
         # Log requests to the build log rather than to Twisted.
-        # Reimplement log formatting partly to make it easier to stay
-        # compatible with the old version of Twisted that Launchpad
-        # currently uses, and partly because there's no point logging the IP
+        # Reimplement log formatting because there's no point logging the IP
         # here.
-        referrer = self._log_escape(request.getHeader(b"referer") or b"-")
-        agent = self._log_escape(request.getHeader(b"user-agent") or b"-")
+        referrer = http._escape(request.getHeader(b"referer") or b"-")
+        agent = http._escape(request.getHeader(b"user-agent") or b"-")
         line = (
             u'%(timestamp)s "%(method)s %(uri)s %(protocol)s" '
             u'%(code)d %(length)s "%(referrer)s" "%(agent)s"\n' % {
                 'timestamp': self._logDateTime,
-                'method': self._log_escape(request.method),
-                'uri': self._log_escape(request.uri),
-                'protocol': self._log_escape(request.clientproto),
+                'method': http._escape(request.method),
+                'uri': http._escape(request.uri),
+                'protocol': http._escape(request.clientproto),
                 'code': request.code,
                 'length': request.sentLength or "-",
                 'referrer': referrer,
