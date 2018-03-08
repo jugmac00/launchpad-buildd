@@ -1,3 +1,10 @@
+launchpad-buildd (159) UNRELEASED; urgency=medium
+
+  * If Launchpad passes a build_url item in the extra build arguments, then
+    emit it at the start of the log.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 08 Mar 2018 11:28:40 +0000
+
 launchpad-buildd (158) xenial; urgency=medium
 
   [ Steve Langasek ]

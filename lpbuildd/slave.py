@@ -225,6 +225,9 @@ class BuildManager(object):
         value keyed under the 'archive_private' string. If that value
         evaluates to True the build at hand is for a private archive.
         """
+        if 'build_url' in extra_args:
+            self._slave.log("%s\n" % extra_args['build_url'])
+
         os.mkdir("%s/build-%s" % (self.home, self._buildid))
         for f in files:
             os.symlink( self._slave.cachePath(files[f]),
