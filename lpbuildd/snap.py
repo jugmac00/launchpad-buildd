@@ -38,6 +38,7 @@ class SnapBuildManager(DebianBuildManager):
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
         self.name = extra_args["name"]
+        self.channels = extra_args.get("channels", {})
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
@@ -62,6 +63,16 @@ class SnapBuildManager(DebianBuildManager):
     def doRunBuild(self):
         """Run the process to build the snap."""
         args = []
+        known_snaps = ("core", "snapcraft")
+        for snap in known_snaps:
+            if snap in self.channels:
+                args.extend(["--channel-%s" % snap, self.channels[snap]])
+        unknown_snaps = set(self.channels) - set(known_snaps)
+        if unknown_snaps:
+            print(
+                "Channels requested for unknown snaps: %s" %
+                " ".join(sorted(unknown_snaps)),
+                file=sys.stderr)
         if self.proxy_url:
             args.extend(["--proxy-url", self.proxy_url])
         if self.revocation_endpoint:

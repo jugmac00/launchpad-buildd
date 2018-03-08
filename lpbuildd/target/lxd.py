@@ -51,7 +51,7 @@ policy_rc_d = dedent("""\
             -*) shift ;;
             systemd-udevd|systemd-udevd.service|udev|udev.service)
                 exit 0 ;;
-            snapd|snapd.socket|snapd.service)
+            snapd|snapd.*)
                 exit 0 ;;
             *)
                 echo "Not running services in chroot."
@@ -418,6 +418,14 @@ class LXD(Backend):
             self.copy_in(
                 no_cdn_file.name,
                 "/etc/systemd/system/snapd.service.d/no-cdn.conf")
+
+        # Refreshing snaps from a timer unit during a build isn't
+        # appropriate.  Mask this, but manually so that we don't depend on
+        # systemctl existing.  This relies on /etc/systemd/system/ having
+        # been created above.
+        self.run(
+            ["ln", "-s", "/dev/null",
+             "/etc/systemd/system/snapd.refresh.timer"])
 
     def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):

@@ -48,6 +48,14 @@ class BuildSnap(Operation):
     @classmethod
     def add_arguments(cls, parser):
         super(BuildSnap, cls).add_arguments(parser)
+        parser.add_argument(
+            "--channel-core", metavar="CHANNEL",
+            help="install core snap from CHANNEL")
+        parser.add_argument(
+            "--channel-snapcraft", metavar="CHANNEL",
+            help=(
+                "install snapcraft as a snap from CHANNEL rather than as a "
+                ".deb"))
         build_from_group = parser.add_mutually_exclusive_group(required=True)
         build_from_group.add_argument(
             "--branch", metavar="BRANCH", help="build from this Bazaar branch")
@@ -100,7 +108,7 @@ class BuildSnap(Operation):
 
     def install(self):
         logger.info("Running install phase...")
-        deps = ["snapcraft"]
+        deps = []
         if self.args.backend == "lxd":
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.
@@ -113,7 +121,17 @@ class BuildSnap(Operation):
             deps.append("git")
         if self.args.proxy_url:
             deps.extend(["python3", "socat"])
+        if not self.args.channel_snapcraft:
+            deps.append("snapcraft")
         self.backend.run(["apt-get", "-y", "install"] + deps)
+        if self.args.channel_core:
+            self.backend.run(
+                ["snap", "install",
+                 "--channel=%s" % self.args.channel_core, "core"])
+        if self.args.channel_snapcraft:
+            self.backend.run(
+                ["snap", "install", "--classic",
+                 "--channel=%s" % self.args.channel_snapcraft, "snapcraft"])
         if self.args.proxy_url:
             self.backend.copy_in(
                 os.path.join(self.slavebin, "snap-git-proxy"),

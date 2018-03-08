@@ -254,9 +254,14 @@ class TestLXD(TestCase):
                     lxc +
                     ["mknod", "-m", "0660", "/dev/loop%d" % minor,
                      "b", "7", str(minor)]))
-        expected_args.append(
+        expected_args.extend([
             Equals(
-                lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]))
+                lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
+            Equals(
+                lxc +
+                ["ln", "-s", "/dev/null",
+                 "/etc/systemd/system/snapd.refresh.timer"]),
+            ])
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise(expected_args))
