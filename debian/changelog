@@ -19,6 +19,8 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Only include mock in tests_require for Python 2.
   * Fix snap proxy testing for Python 3.
   * Rename [slave] configuration section to [builder].
+  * Convert translation templates builds to the VCS mixin, thereby adding
+    git support.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 

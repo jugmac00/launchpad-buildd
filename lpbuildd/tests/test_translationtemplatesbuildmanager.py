@@ -88,7 +88,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             'generate-translation-templates',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
-            url, 'resultarchive',
+            '--branch', url, 'resultarchive',
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(

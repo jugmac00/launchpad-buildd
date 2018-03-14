@@ -37,16 +37,28 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
 
     def initiate(self, files, chroot, extra_args):
         """See `BuildManager`."""
-        self._branch_url = extra_args['branch_url']
+        self.branch = extra_args.get('branch')
+        # XXX cjwatson 2017-11-10: Backward-compatibility; remove once the
+        # manager passes branch instead.
+        if self.branch is None:
+            self.branch = extra_args['branch_url']
+        self.git_repository = extra_args.get("git_repository")
+        self.git_path = extra_args.get("git_path")
 
         super(TranslationTemplatesBuildManager, self).initiate(
             files, chroot, extra_args)
 
     def doGenerate(self):
         """Generate templates."""
-        self.runTargetSubProcess(
-            "generate-translation-templates",
-            self._branch_url, self._resultname)
+        args = []
+        if self.branch is not None:
+            args.extend(["--branch", self.branch])
+        if self.git_repository is not None:
+            args.extend(["--git-repository", self.git_repository])
+        if self.git_path is not None:
+            args.extend(["--git-path", self.git_path])
+        args.append(self._resultname)
+        self.runTargetSubProcess("generate-translation-templates", *args)
 
     # Satisfy DebianPackageManager's needs without having a misleading
     # method name here.
