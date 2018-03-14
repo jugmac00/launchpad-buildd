@@ -62,10 +62,10 @@ class RanSnap(RanCommand):
 
 class RanBuildCommand(RanCommand):
 
-    def __init__(self, args, cwd="/build", **kwargs):
+    def __init__(self, args, **kwargs):
         kwargs.setdefault("LANG", "C.UTF-8")
         kwargs.setdefault("SHELL", "/bin/sh")
-        super(RanBuildCommand, self).__init__(args, cwd=cwd, **kwargs)
+        super(RanBuildCommand, self).__init__(args, **kwargs)
 
 
 class FakeRevisionID(FakeMethod):
@@ -181,9 +181,10 @@ class TestBuildSnap(TestCase):
         build_snap.backend.run = FakeRevisionID("42")
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["ls", "/build"]),
-            RanBuildCommand(["bzr", "branch", "lp:foo", "test-snap"]),
-            RanBuildCommand(["bzr", "revno", "test-snap"], get_output=True),
+            RanBuildCommand(
+                ["bzr", "branch", "lp:foo", "test-snap"], cwd="/build"),
+            RanBuildCommand(
+                ["bzr", "revno"], cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -200,13 +201,14 @@ class TestBuildSnap(TestCase):
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["git", "clone", "lp:foo", "test-snap"]),
             RanBuildCommand(
-                ["git", "-C", "test-snap",
-                 "submodule", "update", "--init", "--recursive"]),
+                ["git", "clone", "lp:foo", "test-snap"], cwd="/build"),
             RanBuildCommand(
-                ["git", "-C", "test-snap", "rev-parse", "HEAD"],
-                get_output=True),
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap"),
+            RanBuildCommand(
+                ["git", "rev-parse", "HEAD"],
+                cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -224,13 +226,14 @@ class TestBuildSnap(TestCase):
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "next", "lp:foo", "test-snap"]),
+                ["git", "clone", "-b", "next", "lp:foo", "test-snap"],
+                cwd="/build"),
             RanBuildCommand(
-                ["git", "-C", "test-snap",
-                 "submodule", "update", "--init", "--recursive"]),
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap"),
             RanBuildCommand(
-                ["git", "-C", "test-snap", "rev-parse", "next"],
-                get_output=True),
+                ["git", "rev-parse", "next"],
+                cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -254,13 +257,14 @@ class TestBuildSnap(TestCase):
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["git", "clone", "lp:foo", "test-snap"], **env),
             RanBuildCommand(
-                ["git", "-C", "test-snap",
-                 "submodule", "update", "--init", "--recursive"], **env),
+                ["git", "clone", "lp:foo", "test-snap"], cwd="/build", **env),
             RanBuildCommand(
-                ["git", "-C", "test-snap", "rev-parse", "HEAD"],
-                get_output=True),
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap", **env),
+            RanBuildCommand(
+                ["git", "rev-parse", "HEAD"],
+                cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -355,7 +359,7 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesAll(
             AnyMatch(RanAptGet("install", "bzr", "snapcraft")),
             AnyMatch(RanBuildCommand(
-                ["bzr", "branch", "lp:foo", "test-snap"])),
+                ["bzr", "branch", "lp:foo", "test-snap"], cwd="/build")),
             AnyMatch(RanBuildCommand(
                 ["snapcraft", "pull"], cwd="/build/test-snap",
                 SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1",
