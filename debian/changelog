@@ -7,6 +7,8 @@ launchpad-buildd (159) UNRELEASED; urgency=medium
   * Allow optionally installing snapcraft as a snap (LP: #1737994).
   * If Launchpad passes a build_url item in the extra build arguments, then
     emit it at the start of the log.
+  * Make buildd-slave.tac compatible with Twisted >= 17.1.0, which drops
+    support for passing an unqualified port to strports.service.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 02 Feb 2018 16:14:46 +0000
 
