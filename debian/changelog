@@ -5,6 +5,7 @@ launchpad-buildd (159) UNRELEASED; urgency=medium
     won't start any of them, including snapd itself, if any of them is
     forbidden.  Mask snapd.refresh.timer so that it doesn't cause trouble.
   * Allow optionally installing snapcraft as a snap (LP: #1737994).
+  * Pass build URL to snapcraft using SNAPCRAFT_IMAGE_INFO.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 02 Feb 2018 16:14:46 +0000
 

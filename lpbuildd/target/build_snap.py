@@ -56,6 +56,8 @@ class BuildSnap(Operation):
             help=(
                 "install snapcraft as a snap from CHANNEL rather than as a "
                 ".deb"))
+        parser.add_argument(
+            "--build-url", help="URL of this build on Launchpad")
         build_from_group = parser.add_mutually_exclusive_group(required=True)
         build_from_group.add_argument(
             "--branch", metavar="BRANCH", help="build from this Bazaar branch")
@@ -183,6 +185,13 @@ class BuildSnap(Operation):
                 get_output=True).rstrip("\n")
         self.save_status(status)
 
+    @property
+    def image_info(self):
+        data = {}
+        if self.args.build_url is not None:
+            data["build_url"] = self.args.build_url
+        return json.dumps(data)
+
     def pull(self):
         """Run pull phase."""
         logger.info("Running pull phase...")
@@ -192,6 +201,7 @@ class BuildSnap(Operation):
         # XXX cjwatson 2017-11-24: Once we support building private snaps,
         # we'll need to make this optional in some way.
         env["SNAPCRAFT_BUILD_INFO"] = "1"
+        env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
@@ -208,6 +218,7 @@ class BuildSnap(Operation):
         # XXX cjwatson 2017-11-24: Once we support building private snaps,
         # we'll need to make this optional in some way.
         env["SNAPCRAFT_BUILD_INFO"] = "1"
+        env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
