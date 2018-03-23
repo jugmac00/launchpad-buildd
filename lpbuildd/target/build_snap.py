@@ -121,7 +121,11 @@ class BuildSnap(Operation):
             deps.append("git")
         if self.args.proxy_url:
             deps.extend(["python3", "socat"])
-        if not self.args.channel_snapcraft:
+        if self.args.channel_snapcraft:
+            # snapcraft requires sudo in lots of places, but can't depend on
+            # it when installed as a snap.
+            deps.append("sudo")
+        else:
             deps.append("snapcraft")
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.channel_core:
