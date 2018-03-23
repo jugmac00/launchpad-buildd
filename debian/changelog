@@ -1,4 +1,4 @@
-launchpad-buildd (159) UNRELEASED; urgency=medium
+launchpad-buildd (159) xenial; urgency=medium
 
   * Allow all snapd services in the policy-rc.d we install in LXD
     containers; for better or worse, snapd.postinst (via deb-systemd-invoke)
@@ -10,7 +10,7 @@ launchpad-buildd (159) UNRELEASED; urgency=medium
   * Make buildd-slave.tac compatible with Twisted >= 17.1.0, which drops
     support for passing an unqualified port to strports.service.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 02 Feb 2018 16:14:46 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 23 Mar 2018 07:53:24 +0000
 
 launchpad-buildd (158) xenial; urgency=medium
 
