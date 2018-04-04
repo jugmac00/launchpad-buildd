@@ -39,6 +39,7 @@ class SnapBuildManager(DebianBuildManager):
         """Initiate a build with a given set of files and chroot."""
         self.name = extra_args["name"]
         self.channels = extra_args.get("channels", {})
+        self.build_url = extra_args.get("build_url")
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
@@ -73,6 +74,8 @@ class SnapBuildManager(DebianBuildManager):
                 "Channels requested for unknown snaps: %s" %
                 " ".join(sorted(unknown_snaps)),
                 file=sys.stderr)
+        if self.build_url:
+            args.extend(["--build-url", self.build_url])
         if self.proxy_url:
             args.extend(["--proxy-url", self.proxy_url])
         if self.revocation_endpoint:
