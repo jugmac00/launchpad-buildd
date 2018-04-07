@@ -1,6 +1,8 @@
 launchpad-buildd (161) UNRELEASED; urgency=medium
 
   * Pass build URL to snapcraft using SNAPCRAFT_IMAGE_INFO.
+  * Tolerate chroot tarballs with a top-level directory other than
+    chroot-autobuild/.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 04 Apr 2018 17:03:14 +0100
 
