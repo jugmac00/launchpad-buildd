@@ -71,6 +71,11 @@ class BuildSnap(Operation):
         parser.add_argument(
             "--revocation-endpoint",
             help="builder proxy token revocation endpoint")
+        parser.add_argument(
+            "--source-tarball", default=False, action="store_true",
+            help=(
+                "build a tarball containing all source code, including "
+                "external dependencies"))
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
@@ -214,6 +219,12 @@ class BuildSnap(Operation):
             ["snapcraft", "pull"],
             cwd=os.path.join("/build", self.args.name),
             env=env)
+        if self.args.source_tarball:
+            self.run_build_command(
+                ["tar", "-czf", "%s.tar.gz" % self.args.name,
+                 "--format=gnu", "--sort=name", "--exclude-vcs",
+                 "--numeric-owner", "--owner=0", "--group=0",
+                 self.args.name])
 
     def build(self):
         """Run all build, stage and snap phases."""

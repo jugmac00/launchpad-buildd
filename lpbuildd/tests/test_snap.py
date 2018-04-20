@@ -52,7 +52,7 @@ class TestSnapBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
-    def startBuild(self):
+    def startBuild(self, args=None, options=None):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         extra_args = {
@@ -62,6 +62,8 @@ class TestSnapBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
             "git_path": "master",
             }
+        if args is not None:
+            extra_args.update(args)
         original_backend_name = self.buildmanager.backend_name
         self.buildmanager.backend_name = "fake"
         self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
@@ -80,8 +82,10 @@ class TestSnapBuildManagerIteration(TestCase):
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
             "--git-path", "master",
-            "test-snap",
             ]
+        if options is not None:
+            expected_command.extend(options)
+        expected_command.append("test-snap")
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
@@ -166,6 +170,50 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertThat(self.slave, HasWaitingFiles.byEquality({
             "test-snap_0_all.manifest": b"I am a manifest.",
             "test-snap_0_all.snap": b"I am a snap package.",
+            }))
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/slavebin/in-target", "in-target",
+            "umount-chroot",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled("buildFail"))
+
+    def test_iterate_with_source_tarball(self):
+        # The build manager iterates a build that uploads a source tarball
+        # from start to finish.
+        self.startBuild({"source_tarball": True}, ["--source-tarball"])
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+        self.buildmanager.backend.add_file(
+            "/build/test-snap.tar.gz", b"I am a source tarball.")
+
+        # After building the package, reap processes.
+        self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/slavebin/in-target", "in-target",
+            "scan-for-processes",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "test-snap_0_all.snap": b"I am a snap package.",
+            "test-snap.tar.gz": b"I am a source tarball.",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.

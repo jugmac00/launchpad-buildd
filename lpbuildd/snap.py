@@ -45,6 +45,7 @@ class SnapBuildManager(DebianBuildManager):
         self.git_path = extra_args.get("git_path")
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
+        self.source_tarball = extra_args.get("source_tarball", False)
 
         super(SnapBuildManager, self).initiate(files, chroot, extra_args)
 
@@ -86,6 +87,8 @@ class SnapBuildManager(DebianBuildManager):
             args.extend(["--git-repository", self.git_repository])
         if self.git_path is not None:
             args.extend(["--git-path", self.git_path])
+        if self.source_tarball:
+            args.append("--source-tarball")
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 
@@ -115,11 +118,13 @@ class SnapBuildManager(DebianBuildManager):
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
         output_path = os.path.join("/build", self.name)
-        if not self.backend.path_exists(output_path):
-            return
-        for entry in sorted(self.backend.listdir(output_path)):
-            path = os.path.join(output_path, entry)
-            if self.backend.islink(path):
-                continue
-            if entry.endswith(".snap") or entry.endswith(".manifest"):
-                self.addWaitingFileFromBackend(path)
+        if self.backend.path_exists(output_path):
+            for entry in sorted(self.backend.listdir(output_path)):
+                path = os.path.join(output_path, entry)
+                if self.backend.islink(path):
+                    continue
+                if entry.endswith(".snap") or entry.endswith(".manifest"):
+                    self.addWaitingFileFromBackend(path)
+        source_tarball_path = os.path.join("/build", "%s.tar.gz" % self.name)
+        if self.backend.path_exists(source_tarball_path):
+            self.addWaitingFileFromBackend(source_tarball_path)
