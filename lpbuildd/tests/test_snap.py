@@ -185,10 +185,11 @@ class TestSnapBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
 
-    def test_iterate_with_source_tarball(self):
+    def test_iterate_with_build_source_tarball(self):
         # The build manager iterates a build that uploads a source tarball
         # from start to finish.
-        self.startBuild({"source_tarball": True}, ["--source-tarball"])
+        self.startBuild(
+            {"build_source_tarball": True}, ["--build-source-tarball"])
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:

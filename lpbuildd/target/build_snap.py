@@ -72,7 +72,7 @@ class BuildSnap(Operation):
             "--revocation-endpoint",
             help="builder proxy token revocation endpoint")
         parser.add_argument(
-            "--source-tarball", default=False, action="store_true",
+            "--build-source-tarball", default=False, action="store_true",
             help=(
                 "build a tarball containing all source code, including "
                 "external dependencies"))
@@ -219,7 +219,7 @@ class BuildSnap(Operation):
             ["snapcraft", "pull"],
             cwd=os.path.join("/build", self.args.name),
             env=env)
-        if self.args.source_tarball:
+        if self.args.build_source_tarball:
             self.run_build_command(
                 ["tar", "-czf", "%s.tar.gz" % self.args.name,
                  "--format=gnu", "--sort=name", "--exclude-vcs",

@@ -310,11 +310,11 @@ class TestBuildSnap(TestCase):
                 ["snapcraft", "pull"], cwd="/build/test-snap", **env),
             ]))
 
-    def test_pull_source_tarball(self):
+    def test_pull_build_source_tarball(self):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--branch", "lp:foo", "--source-tarball", "test-snap",
+            "--branch", "lp:foo", "--build-source-tarball", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
         build_snap.pull()
