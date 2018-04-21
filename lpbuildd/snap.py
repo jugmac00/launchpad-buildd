@@ -126,6 +126,8 @@ class SnapBuildManager(DebianBuildManager):
                     continue
                 if entry.endswith(".snap") or entry.endswith(".manifest"):
                     self.addWaitingFileFromBackend(path)
-        source_tarball_path = os.path.join("/build", "%s.tar.gz" % self.name)
-        if self.backend.path_exists(source_tarball_path):
-            self.addWaitingFileFromBackend(source_tarball_path)
+        if self.build_source_tarball:
+            source_tarball_path = os.path.join(
+                "/build", "%s.tar.gz" % self.name)
+            if self.backend.path_exists(source_tarball_path):
+                self.addWaitingFileFromBackend(source_tarball_path)
