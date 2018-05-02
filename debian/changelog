@@ -1,3 +1,11 @@
+launchpad-buildd (162) UNRELEASED; urgency=medium
+
+  * If the extra build arguments include fast_cleanup: True, then skip the
+    final cleanup steps of the build.  This can be used when building in a
+    VM that is guaranteed to be torn down after the build.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 02 May 2018 09:58:15 +0100
+
 launchpad-buildd (161) xenial; urgency=medium
 
   * Pass build URL to snapcraft using SNAPCRAFT_IMAGE_INFO.

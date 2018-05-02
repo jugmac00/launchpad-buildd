@@ -203,12 +203,16 @@ class BuildManager(object):
 
     def doCleanup(self):
         """Remove the build tree etc."""
-        self.runTargetSubProcess("remove-build")
+        if not self.fast_cleanup:
+            self.runTargetSubProcess("remove-build")
 
         # Sanitize the URLs in the buildlog file if this is a build
         # in a private archive.
         if self.needs_sanitized_logs:
             self._slave.sanitizeBuildlog(self._slave.cachePath("buildlog"))
+
+        if self.fast_cleanup:
+            self.iterate(0, quiet=True)
 
     def doMounting(self):
         """Mount things in the chroot, e.g. proc."""
@@ -216,7 +220,10 @@ class BuildManager(object):
 
     def doUnmounting(self):
         """Unmount the chroot."""
-        self.runTargetSubProcess("umount-chroot")
+        if self.fast_cleanup:
+            self.iterate(0, quiet=True)
+        else:
+            self.runTargetSubProcess("umount-chroot")
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build given the input files.
@@ -237,6 +244,7 @@ class BuildManager(object):
 
         self.series = extra_args['series']
         self.arch_tag = extra_args.get('arch_tag', self._slave.getArch())
+        self.fast_cleanup = extra_args.get('fast_cleanup', False)
 
         # Check whether this is a build in a private archive and
         # whether the URLs in the buildlog file should be sanitized
@@ -259,7 +267,7 @@ class BuildManager(object):
         """
         return {}
 
-    def iterate(self, success):
+    def iterate(self, success, quiet=False):
         """Perform an iteration of the slave.
 
         The BuildManager tends to work by invoking several
