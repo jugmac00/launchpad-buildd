@@ -139,7 +139,9 @@ class BuildSnap(VCSOperationMixin, Operation):
                 self.args.git_path
                 if self.args.git_path is not None else "HEAD")
             status["revision_id"] = self.run_build_command(
-                ["git", "rev-parse", rev],
+                # The ^{} suffix copes with tags: we want to peel them
+                # recursively until we get an actual commit.
+                ["git", "rev-parse", rev + "^{}"],
                 cwd=os.path.join("/build", self.args.name),
                 get_output=True).rstrip("\n")
         self.save_status(status)

@@ -207,7 +207,7 @@ class TestBuildSnap(TestCase):
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/test-snap"),
             RanBuildCommand(
-                ["git", "rev-parse", "HEAD"],
+                ["git", "rev-parse", "HEAD^{}"],
                 cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
@@ -232,7 +232,33 @@ class TestBuildSnap(TestCase):
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/test-snap"),
             RanBuildCommand(
-                ["git", "rev-parse", "next"],
+                ["git", "rev-parse", "next^{}"],
+                cwd="/build/test-snap", get_output=True),
+            ]))
+        status_path = os.path.join(build_snap.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
+
+    def test_repo_git_with_tag_path(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo", "--git-path", "refs/tags/1.0",
+            "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.backend.build_path = self.useFixture(TempDir()).path
+        build_snap.backend.run = FakeRevisionID("0" * 40)
+        build_snap.repo()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["git", "clone", "-b", "1.0", "lp:foo", "test-snap"],
+                cwd="/build"),
+            RanBuildCommand(
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap"),
+            RanBuildCommand(
+                ["git", "rev-parse", "refs/tags/1.0^{}"],
                 cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
@@ -263,7 +289,7 @@ class TestBuildSnap(TestCase):
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/test-snap", **env),
             RanBuildCommand(
-                ["git", "rev-parse", "HEAD"],
+                ["git", "rev-parse", "HEAD^{}"],
                 cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")

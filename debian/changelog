@@ -7,6 +7,7 @@ launchpad-buildd (159) UNRELEASED; urgency=medium
   * Allow optionally installing snapcraft as a snap (LP: #1737994).
   * Refactor VCS operations from lpbuildd.target.build_snap out to a module
     that can be used by other targets.
+  * Allow checking out a git tag rather than a branch (LP: #1687078).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 02 Feb 2018 16:14:46 +0000
 
