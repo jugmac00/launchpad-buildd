@@ -2,6 +2,8 @@ launchpad-buildd (162) UNRELEASED; urgency=medium
 
   * Set the hostname and FQDN of LXD containers to match the host system,
     though with an IP address pointing to the container (LP: #1747015).
+  * Tolerate chroot tarballs with a top-level directory other than
+    chroot-autobuild/.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 08 May 2018 10:36:22 +0100
 

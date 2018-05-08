@@ -39,6 +39,7 @@ class TestChroot(TestCase):
 
         expected_args = [
             ["sudo", "tar", "-C", "/expected/home/build-1",
+             "--transform", "s,[^/]*,chroot-autobuild,",
              "-xf", "/path/to/tarball"],
             ]
         self.assertEqual(
