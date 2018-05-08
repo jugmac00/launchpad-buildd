@@ -4,6 +4,9 @@ launchpad-buildd (162) UNRELEASED; urgency=medium
     though with an IP address pointing to the container (LP: #1747015).
   * Tolerate chroot tarballs with a top-level directory other than
     chroot-autobuild/.
+  * If the extra build arguments include fast_cleanup: True, then skip the
+    final cleanup steps of the build.  This can be used when building in a
+    VM that is guaranteed to be torn down after the build.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 08 May 2018 10:36:22 +0100
 
