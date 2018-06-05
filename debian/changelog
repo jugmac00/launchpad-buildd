@@ -7,6 +7,8 @@ launchpad-buildd (162) UNRELEASED; urgency=medium
   * If the extra build arguments include fast_cleanup: True, then skip the
     final cleanup steps of the build.  This can be used when building in a
     VM that is guaranteed to be torn down after the build.
+  * Refactor VCS operations from lpbuildd.target.build_snap out to a module
+    that can be used by other targets.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 08 May 2018 10:36:22 +0100
 
