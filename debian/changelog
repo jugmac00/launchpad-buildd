@@ -1,11 +1,50 @@
-launchpad-buildd (159) UNRELEASED; urgency=medium
+launchpad-buildd (162) UNRELEASED; urgency=medium
 
+  * Set the hostname and FQDN of LXD containers to match the host system,
+    though with an IP address pointing to the container (LP: #1747015).
+  * Tolerate chroot tarballs with a top-level directory other than
+    chroot-autobuild/.
+  * If the extra build arguments include fast_cleanup: True, then skip the
+    final cleanup steps of the build.  This can be used when building in a
+    VM that is guaranteed to be torn down after the build.
+  * Refactor VCS operations from lpbuildd.target.build_snap out to a module
+    that can be used by other targets.
+  * Allow checking out a git tag rather than a branch (LP: #1687078).
   * Add a local unauthenticated proxy on port 8222, which proxies through to
     the remote authenticated proxy.  This should allow running a wider range
     of network clients, since some of them apparently don't support
     authenticated proxies very well.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 27 Feb 2018 13:58:17 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 08 May 2018 10:36:22 +0100
+
+launchpad-buildd (161) xenial; urgency=medium
+
+  * Pass build URL to snapcraft using SNAPCRAFT_IMAGE_INFO.
+  * Add an option to generate source tarballs for snaps after pulling
+    external dependencies (LP: #1763639).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 23 Apr 2018 09:44:49 +0100
+
+launchpad-buildd (160) xenial; urgency=medium
+
+  * Install sudo if installing snapcraft as a snap, since in that case
+    snapcraft's usual dependency on it is ineffective.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 23 Mar 2018 22:43:38 +0000
+
+launchpad-buildd (159) xenial; urgency=medium
+
+  * Allow all snapd services in the policy-rc.d we install in LXD
+    containers; for better or worse, snapd.postinst (via deb-systemd-invoke)
+    won't start any of them, including snapd itself, if any of them is
+    forbidden.  Mask snapd.refresh.timer so that it doesn't cause trouble.
+  * Allow optionally installing snapcraft as a snap (LP: #1737994).
+  * If Launchpad passes a build_url item in the extra build arguments, then
+    emit it at the start of the log.
+  * Make buildd-slave.tac compatible with Twisted >= 17.1.0, which drops
+    support for passing an unqualified port to strports.service.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 23 Mar 2018 07:53:24 +0000
 
 launchpad-buildd (158) xenial; urgency=medium
 

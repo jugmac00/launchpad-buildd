@@ -58,7 +58,7 @@ root.putChild('rpc', slave)
 root.putChild('filecache', static.File(conf.get('slave', 'filecache')))
 slavesite = server.Site(root)
 
-strports.service(slave.slave._config.get("slave", "bindport"),
+strports.service("tcp:%s" % slave.slave._config.get("slave", "bindport"),
                  slavesite).setServiceParent(builddslaveService)
 
 # You can interact with a running slave like this:

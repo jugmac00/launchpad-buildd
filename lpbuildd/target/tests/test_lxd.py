@@ -5,6 +5,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+import argparse
 from contextlib import closing
 import io
 import json
@@ -72,6 +73,20 @@ class FakeSessionGet:
         else:
             response.json.return_value = {"error": "not found"}
         return response
+
+
+class FakeHostname:
+
+    def __init__(self, hostname, fqdn):
+        self.hostname = hostname
+        self.fqdn = fqdn
+
+    def __call__(self, proc_args):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--fqdn", action="store_true", default=False)
+        args = parser.parse_args(proc_args["args"][1:])
+        output = self.fqdn if args.fqdn else self.hostname
+        return {"stdout": io.BytesIO((output + "\n").encode("UTF-8"))}
 
 
 class TestLXD(TestCase):
@@ -208,6 +223,8 @@ class TestLXD(TestCase):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
+        processes_fixture.add(
+            FakeHostname("example", "example.buildd"), name="hostname")
         LXD("1", "xenial", "amd64").start()
 
         self.assert_correct_profile()
@@ -243,6 +260,8 @@ class TestLXD(TestCase):
                  "--pid-file=/run/launchpad-buildd/dnsmasq.pid",
                  "--except-interface=lo", "--interface=lpbuilddbr0",
                  "--listen-address=10.10.10.1"]),
+            Equals(["hostname"]),
+            Equals(["hostname", "--fqdn"]),
             Equals(
                 lxc +
                 ["mknod", "-m", "0660", "/dev/loop-control",
@@ -254,9 +273,14 @@ class TestLXD(TestCase):
                     lxc +
                     ["mknod", "-m", "0660", "/dev/loop%d" % minor,
                      "b", "7", str(minor)]))
-        expected_args.append(
+        expected_args.extend([
             Equals(
-                lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]))
+                lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
+            Equals(
+                lxc +
+                ["ln", "-s", "/dev/null",
+                 "/etc/systemd/system/snapd.refresh.timer"]),
+            ])
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise(expected_args))
@@ -271,11 +295,13 @@ class TestLXD(TestCase):
             params={"path": "/etc/hosts"}, stream=True)
         files_api.post.assert_any_call(
             params={"path": "/etc/hosts"},
-            data=b"127.0.0.1\tlocalhost\n\n127.0.1.1\tlp-xenial-amd64\n",
+            data=(
+                b"127.0.0.1\tlocalhost\n\n"
+                b"127.0.1.1\texample.buildd example\n"),
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
         files_api.post.assert_any_call(
             params={"path": "/etc/hostname"},
-            data=b"lp-xenial-amd64\n",
+            data=b"example\n",
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
         files_api.post.assert_any_call(
             params={"path": "/etc/resolv.conf"},
@@ -322,6 +348,8 @@ class TestLXD(TestCase):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
+        processes_fixture.add(
+            FakeHostname("example", "example.buildd"), name="hostname")
         LXD("1", "xenial", "amd64").start()
 
         files_api.session.get.assert_any_call(
@@ -331,7 +359,7 @@ class TestLXD(TestCase):
             params={"path": "/etc/hosts"},
             data=(
                 fallback_hosts +
-                "\n127.0.1.1\tlp-xenial-amd64\n").encode("UTF-8"),
+                "\n127.0.1.1\texample.buildd example\n").encode("UTF-8"),
             headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
 
     def test_start_with_mounted_dev_conf(self):

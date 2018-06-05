@@ -51,7 +51,7 @@ policy_rc_d = dedent("""\
             -*) shift ;;
             systemd-udevd|systemd-udevd.service|udev|udev.service)
                 exit 0 ;;
-            snapd|snapd.socket|snapd.service)
+            snapd|snapd.*)
                 exit 0 ;;
             *)
                 echo "Not running services in chroot."
@@ -124,7 +124,8 @@ class LXD(Backend):
             return False
 
     def _convert(self, source_tarball, target_tarball):
-        creation_time = source_tarball.getmember("chroot-autobuild").mtime
+        first_entry = next(iter(source_tarball))
+        creation_time = first_entry.mtime
         metadata = {
             "architecture": self.lxc_arch,
             "creation_date": creation_time,
@@ -147,11 +148,15 @@ class LXD(Backend):
 
         # Mangle the chroot tarball into the form needed by LXD: when using
         # the combined metadata/rootfs form, the rootfs must be under
-        # rootfs/ rather than under chroot-autobuild/.
+        # rootfs/ rather than under chroot-autobuild/ or anything else.
         for entry in source_tarball:
             fileptr = None
             try:
-                orig_name = entry.name.split("chroot-autobuild", 1)[-1]
+                orig_name_bits = entry.name.split("/", 1)
+                if len(orig_name_bits) > 1:
+                    orig_name = "/" + orig_name_bits[1]
+                else:
+                    orig_name = ""
                 entry.name = "rootfs" + orig_name
 
                 if entry.isfile():
@@ -162,8 +167,7 @@ class LXD(Backend):
                 elif entry.islnk():
                     # Update hardlinks to point to the right target
                     entry.linkname = (
-                        "rootfs" +
-                        entry.linkname.split("chroot-autobuild", 1)[-1])
+                        "rootfs/" + entry.linkname.split("/", 1)[-1])
 
                 target_tarball.addfile(entry, fileobj=fileptr)
             finally:
@@ -321,6 +325,10 @@ class LXD(Backend):
             "source": {"type": "image", "alias": self.alias},
             }, wait=True)
 
+        hostname = subprocess.check_output(
+            ["hostname"], universal_newlines=True).rstrip("\n")
+        fqdn = subprocess.check_output(
+            ["hostname", "--fqdn"], universal_newlines=True).rstrip("\n")
         with tempfile.NamedTemporaryFile(mode="w+b") as hosts_file:
             try:
                 self.copy_out("/etc/hosts", hosts_file.name)
@@ -328,12 +336,12 @@ class LXD(Backend):
                 hosts_file.seek(0, os.SEEK_SET)
                 hosts_file.write(fallback_hosts.encode("UTF-8"))
             hosts_file.seek(0, os.SEEK_END)
-            print("\n127.0.1.1\t%s" % self.name, file=hosts_file)
+            print("\n127.0.1.1\t%s %s" % (fqdn, hostname), file=hosts_file)
             hosts_file.flush()
             os.fchmod(hosts_file.fileno(), 0o644)
             self.copy_in(hosts_file.name, "/etc/hosts")
         with tempfile.NamedTemporaryFile(mode="w+") as hostname_file:
-            print(self.name, file=hostname_file)
+            print(hostname, file=hostname_file)
             hostname_file.flush()
             os.fchmod(hostname_file.fileno(), 0o644)
             self.copy_in(hostname_file.name, "/etc/hostname")
@@ -418,6 +426,14 @@ class LXD(Backend):
             self.copy_in(
                 no_cdn_file.name,
                 "/etc/systemd/system/snapd.service.d/no-cdn.conf")
+
+        # Refreshing snaps from a timer unit during a build isn't
+        # appropriate.  Mask this, but manually so that we don't depend on
+        # systemctl existing.  This relies on /etc/systemd/system/ having
+        # been created above.
+        self.run(
+            ["ln", "-s", "/dev/null",
+             "/etc/systemd/system/snapd.refresh.timer"])
 
     def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
             echo=False, **kwargs):

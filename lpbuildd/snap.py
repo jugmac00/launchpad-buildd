@@ -257,11 +257,15 @@ class SnapBuildManager(DebianBuildManager):
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
         self.name = extra_args["name"]
+        self.channels = extra_args.get("channels", {})
+        self.build_url = extra_args.get("build_url")
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
+        self.build_source_tarball = extra_args.get(
+            "build_source_tarball", False)
         self.proxy_service = None
 
         super(SnapBuildManager, self).initiate(files, chroot, extra_args)
@@ -317,6 +321,18 @@ class SnapBuildManager(DebianBuildManager):
     def doRunBuild(self):
         """Run the process to build the snap."""
         args = []
+        known_snaps = ("core", "snapcraft")
+        for snap in known_snaps:
+            if snap in self.channels:
+                args.extend(["--channel-%s" % snap, self.channels[snap]])
+        unknown_snaps = set(self.channels) - set(known_snaps)
+        if unknown_snaps:
+            print(
+                "Channels requested for unknown snaps: %s" %
+                " ".join(sorted(unknown_snaps)),
+                file=sys.stderr)
+        if self.build_url:
+            args.extend(["--build-url", self.build_url])
         if self.proxy_url:
             args.extend(["--proxy-url", self.proxy_url])
         args.extend(self.startProxy())
@@ -328,6 +344,8 @@ class SnapBuildManager(DebianBuildManager):
             args.extend(["--git-repository", self.git_repository])
         if self.git_path is not None:
             args.extend(["--git-path", self.git_path])
+        if self.build_source_tarball:
+            args.append("--build-source-tarball")
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 
@@ -359,11 +377,15 @@ class SnapBuildManager(DebianBuildManager):
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
         output_path = os.path.join("/build", self.name)
-        if not self.backend.path_exists(output_path):
-            return
-        for entry in sorted(self.backend.listdir(output_path)):
-            path = os.path.join(output_path, entry)
-            if self.backend.islink(path):
-                continue
-            if entry.endswith(".snap") or entry.endswith(".manifest"):
-                self.addWaitingFileFromBackend(path)
+        if self.backend.path_exists(output_path):
+            for entry in sorted(self.backend.listdir(output_path)):
+                path = os.path.join(output_path, entry)
+                if self.backend.islink(path):
+                    continue
+                if entry.endswith(".snap") or entry.endswith(".manifest"):
+                    self.addWaitingFileFromBackend(path)
+        if self.build_source_tarball:
+            source_tarball_path = os.path.join(
+                "/build", "%s.tar.gz" % self.name)
+            if self.backend.path_exists(source_tarball_path):
+                self.addWaitingFileFromBackend(source_tarball_path)

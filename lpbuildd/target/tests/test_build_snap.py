@@ -54,12 +54,18 @@ class RanAptGet(RanCommand):
         super(RanAptGet, self).__init__(["apt-get", "-y"] + list(args))
 
 
+class RanSnap(RanCommand):
+
+    def __init__(self, *args):
+        super(RanSnap, self).__init__(["snap"] + list(args))
+
+
 class RanBuildCommand(RanCommand):
 
-    def __init__(self, args, cwd="/build", **kwargs):
+    def __init__(self, args, **kwargs):
         kwargs.setdefault("LANG", "C.UTF-8")
         kwargs.setdefault("SHELL", "/bin/sh")
-        super(RanBuildCommand, self).__init__(args, cwd=cwd, **kwargs)
+        super(RanBuildCommand, self).__init__(args, **kwargs)
 
 
 class FakeRevisionID(FakeMethod):
@@ -111,7 +117,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "snapcraft", "bzr"),
+            RanAptGet("install", "bzr", "snapcraft"),
             ]))
 
     def test_install_git(self):
@@ -123,7 +129,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "snapcraft", "git"),
+            RanAptGet("install", "git", "snapcraft"),
             ]))
 
     def test_install_proxy(self):
@@ -143,11 +149,26 @@ class TestBuildSnap(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "snapcraft", "git", "python3", "socat"),
+            RanAptGet("install", "git", "python3", "socat", "snapcraft"),
             ]))
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
             build_snap.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
+
+    def test_install_channels(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--channel-core=candidate", "--channel-snapcraft=edge",
+            "--branch", "lp:foo", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.install()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "bzr", "sudo"),
+            RanSnap("install", "--channel=candidate", "core"),
+            RanSnap("install", "--classic", "--channel=edge", "snapcraft"),
+            ]))
 
     def test_repo_bzr(self):
         args = [
@@ -160,9 +181,10 @@ class TestBuildSnap(TestCase):
         build_snap.backend.run = FakeRevisionID("42")
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["ls", "/build"]),
-            RanBuildCommand(["bzr", "branch", "lp:foo", "test-snap"]),
-            RanBuildCommand(["bzr", "revno", "test-snap"], get_output=True),
+            RanBuildCommand(
+                ["bzr", "branch", "lp:foo", "test-snap"], cwd="/build"),
+            RanBuildCommand(
+                ["bzr", "revno"], cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -179,13 +201,14 @@ class TestBuildSnap(TestCase):
         build_snap.backend.run = FakeRevisionID("0" * 40)
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["git", "clone", "lp:foo", "test-snap"]),
             RanBuildCommand(
-                ["git", "-C", "test-snap",
-                 "submodule", "update", "--init", "--recursive"]),
+                ["git", "clone", "lp:foo", "test-snap"], cwd="/build"),
             RanBuildCommand(
-                ["git", "-C", "test-snap", "rev-parse", "HEAD"],
-                get_output=True),
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap"),
+            RanBuildCommand(
+                ["git", "rev-parse", "HEAD^{}"],
+                cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -203,13 +226,40 @@ class TestBuildSnap(TestCase):
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "next", "lp:foo", "test-snap"]),
+                ["git", "clone", "-b", "next", "lp:foo", "test-snap"],
+                cwd="/build"),
             RanBuildCommand(
-                ["git", "-C", "test-snap",
-                 "submodule", "update", "--init", "--recursive"]),
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap"),
             RanBuildCommand(
-                ["git", "-C", "test-snap", "rev-parse", "next"],
-                get_output=True),
+                ["git", "rev-parse", "next^{}"],
+                cwd="/build/test-snap", get_output=True),
+            ]))
+        status_path = os.path.join(build_snap.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
+
+    def test_repo_git_with_tag_path(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo", "--git-path", "refs/tags/1.0",
+            "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.backend.build_path = self.useFixture(TempDir()).path
+        build_snap.backend.run = FakeRevisionID("0" * 40)
+        build_snap.repo()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["git", "clone", "-b", "1.0", "lp:foo", "test-snap"],
+                cwd="/build"),
+            RanBuildCommand(
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap"),
+            RanBuildCommand(
+                ["git", "rev-parse", "refs/tags/1.0^{}"],
+                cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -233,13 +283,14 @@ class TestBuildSnap(TestCase):
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["git", "clone", "lp:foo", "test-snap"], **env),
             RanBuildCommand(
-                ["git", "-C", "test-snap",
-                 "submodule", "update", "--init", "--recursive"], **env),
+                ["git", "clone", "lp:foo", "test-snap"], cwd="/build", **env),
             RanBuildCommand(
-                ["git", "-C", "test-snap", "rev-parse", "HEAD"],
-                get_output=True),
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/build/test-snap", **env),
+            RanBuildCommand(
+                ["git", "rev-parse", "HEAD^{}"],
+                cwd="/build/test-snap", get_output=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -257,6 +308,7 @@ class TestBuildSnap(TestCase):
             "SNAPCRAFT_LOCAL_SOURCES": "1",
             "SNAPCRAFT_SETUP_CORE": "1",
             "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": "{}",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -267,6 +319,7 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
@@ -276,6 +329,8 @@ class TestBuildSnap(TestCase):
             "SNAPCRAFT_LOCAL_SOURCES": "1",
             "SNAPCRAFT_SETUP_CORE": "1",
             "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": (
+                '{"build_url": "https://launchpad.example/build"}'),
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
@@ -283,6 +338,30 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["snapcraft", "pull"], cwd="/build/test-snap", **env),
+            ]))
+
+    def test_pull_build_source_tarball(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-source-tarball", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.pull()
+        env = {
+            "SNAPCRAFT_LOCAL_SOURCES": "1",
+            "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": "{}",
+            }
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft", "pull"], cwd="/build/test-snap", **env),
+            RanBuildCommand(
+                ["tar", "-czf", "test-snap.tar.gz",
+                 "--format=gnu", "--sort=name", "--exclude-vcs",
+                 "--numeric-owner", "--owner=0", "--group=0",
+                 "test-snap"]),
             ]))
 
     def test_build(self):
@@ -296,13 +375,14 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
-                SNAPCRAFT_BUILD_INFO="1"),
+                SNAPCRAFT_BUILD_INFO="1", SNAPCRAFT_IMAGE_INFO="{}"),
             ]))
 
     def test_build_proxy(self):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
@@ -310,6 +390,8 @@ class TestBuildSnap(TestCase):
         build_snap.build()
         env = {
             "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": (
+                '{"build_url": "https://launchpad.example/build"}'),
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
@@ -325,6 +407,7 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
@@ -332,16 +415,20 @@ class TestBuildSnap(TestCase):
         build_snap.backend.run = FakeRevisionID("42")
         self.assertEqual(0, build_snap.run())
         self.assertThat(build_snap.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "snapcraft", "bzr")),
+            AnyMatch(RanAptGet("install", "bzr", "snapcraft")),
             AnyMatch(RanBuildCommand(
-                ["bzr", "branch", "lp:foo", "test-snap"])),
+                ["bzr", "branch", "lp:foo", "test-snap"], cwd="/build")),
             AnyMatch(RanBuildCommand(
                 ["snapcraft", "pull"], cwd="/build/test-snap",
                 SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1",
-                SNAPCRAFT_BUILD_INFO="1")),
+                SNAPCRAFT_BUILD_INFO="1",
+                SNAPCRAFT_IMAGE_INFO=(
+                    '{"build_url": "https://launchpad.example/build"}'))),
             AnyMatch(RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
-                SNAPCRAFT_BUILD_INFO="1")),
+                SNAPCRAFT_BUILD_INFO="1",
+                SNAPCRAFT_IMAGE_INFO=(
+                    '{"build_url": "https://launchpad.example/build"}'))),
             ))
 
     def test_run_install_fails(self):
