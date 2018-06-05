@@ -328,3 +328,96 @@ class TestDebianBuildManagerIteration(TestCase):
         self.assertFalse(self.slave.wasCalled('depFail'))
         self.assertTrue(self.slave.wasCalled('buildOK'))
         self.assertTrue(self.slave.wasCalled('buildComplete'))
+
+    def test_iterate_fast_cleanup(self):
+        # The build manager can be told that it doesn't need to do the final
+        # cleanup steps, because the VM is about to be torn down anyway.  It
+        # iterates such a build from start to finish, but without calling
+        # umount-chroot or remove-build.
+        extra_args = {
+            'arch_tag': 'amd64',
+            'archives': [
+                'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
+                ],
+            'fast_cleanup': True,
+            'series': 'xenial',
+            }
+        self.startBuild(extra_args)
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.UNPACK, self.getState())
+        self.assertEqual(
+            (['sharepath/slavebin/in-target', 'in-target',
+              'unpack-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid,
+              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.MOUNT, self.getState())
+        self.assertEqual(
+            (['sharepath/slavebin/in-target', 'in-target',
+              'mount-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.SOURCES, self.getState())
+        self.assertEqual(
+            (['sharepath/slavebin/in-target', 'in-target',
+              'override-sources-list',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid,
+              'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.UPDATE, self.getState())
+        self.assertEqual(
+            (['sharepath/slavebin/in-target', 'in-target',
+              'update-debian-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(MockBuildState.MAIN, self.getState())
+        self.assertEqual(
+            (['/bin/true', 'true'], None), self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(MockBuildState.MAIN, self.getState())
+        self.assertEqual(
+            (['sharepath/slavebin/in-target', 'in-target',
+              'scan-for-processes',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterateReap(self.getState(), 0)
+        self.assertFalse(self.slave.wasCalled('builderFail'))
+        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.slave.wasCalled('depFail'))
+        self.assertTrue(self.slave.wasCalled('buildOK'))
+        self.assertTrue(self.slave.wasCalled('buildComplete'))
+

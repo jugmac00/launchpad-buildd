@@ -165,7 +165,7 @@ class TestBuildSnap(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "bzr"),
+            RanAptGet("install", "bzr", "sudo"),
             RanSnap("install", "--channel=candidate", "core"),
             RanSnap("install", "--classic", "--channel=edge", "snapcraft"),
             ]))
@@ -308,6 +308,7 @@ class TestBuildSnap(TestCase):
             "SNAPCRAFT_LOCAL_SOURCES": "1",
             "SNAPCRAFT_SETUP_CORE": "1",
             "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": "{}",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -318,6 +319,7 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
@@ -327,6 +329,8 @@ class TestBuildSnap(TestCase):
             "SNAPCRAFT_LOCAL_SOURCES": "1",
             "SNAPCRAFT_SETUP_CORE": "1",
             "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": (
+                '{"build_url": "https://launchpad.example/build"}'),
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
@@ -334,6 +338,30 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["snapcraft", "pull"], cwd="/build/test-snap", **env),
+            ]))
+
+    def test_pull_build_source_tarball(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-source-tarball", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.pull()
+        env = {
+            "SNAPCRAFT_LOCAL_SOURCES": "1",
+            "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": "{}",
+            }
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft", "pull"], cwd="/build/test-snap", **env),
+            RanBuildCommand(
+                ["tar", "-czf", "test-snap.tar.gz",
+                 "--format=gnu", "--sort=name", "--exclude-vcs",
+                 "--numeric-owner", "--owner=0", "--group=0",
+                 "test-snap"]),
             ]))
 
     def test_build(self):
@@ -347,13 +375,14 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
-                SNAPCRAFT_BUILD_INFO="1"),
+                SNAPCRAFT_BUILD_INFO="1", SNAPCRAFT_IMAGE_INFO="{}"),
             ]))
 
     def test_build_proxy(self):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
             "test-snap",
             ]
@@ -361,6 +390,8 @@ class TestBuildSnap(TestCase):
         build_snap.build()
         env = {
             "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": (
+                '{"build_url": "https://launchpad.example/build"}'),
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
@@ -376,6 +407,7 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
@@ -389,10 +421,14 @@ class TestBuildSnap(TestCase):
             AnyMatch(RanBuildCommand(
                 ["snapcraft", "pull"], cwd="/build/test-snap",
                 SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1",
-                SNAPCRAFT_BUILD_INFO="1")),
+                SNAPCRAFT_BUILD_INFO="1",
+                SNAPCRAFT_IMAGE_INFO=(
+                    '{"build_url": "https://launchpad.example/build"}'))),
             AnyMatch(RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
-                SNAPCRAFT_BUILD_INFO="1")),
+                SNAPCRAFT_BUILD_INFO="1",
+                SNAPCRAFT_IMAGE_INFO=(
+                    '{"build_url": "https://launchpad.example/build"}'))),
             ))
 
     def test_run_install_fails(self):
