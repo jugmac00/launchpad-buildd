@@ -75,7 +75,19 @@ class VCSOperationMixin:
             if quiet:
                 cmd.append("-q")
             if self.args.git_path is not None:
-                cmd.extend(["-b", self.args.git_path])
+                git_path = self.args.git_path
+                # "git clone -b" is a bit odd: it takes either branches or
+                # tags, but they must be in their short form, i.e. "master"
+                # rather than "refs/heads/master" and "1.0" rather than
+                # "refs/tags/1.0".  There's thus room for ambiguity if a
+                # repository has a branch and a tag with the same name (the
+                # branch will win), but using tags in the first place is
+                # pretty rare here and a name collision is rarer still.
+                # Launchpad shortens branch names before sending them to us,
+                # but not tag names.
+                if git_path.startswith("refs/tags/"):
+                    git_path = git_path[len("refs/tags/"):]
+                cmd.extend(["-b", git_path])
             cmd.extend([self.args.git_repository, name])
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"

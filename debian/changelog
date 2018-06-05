@@ -9,6 +9,7 @@ launchpad-buildd (162) UNRELEASED; urgency=medium
     VM that is guaranteed to be torn down after the build.
   * Refactor VCS operations from lpbuildd.target.build_snap out to a module
     that can be used by other targets.
+  * Allow checking out a git tag rather than a branch (LP: #1687078).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 08 May 2018 10:36:22 +0100
 
