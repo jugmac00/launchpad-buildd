@@ -56,10 +56,17 @@ class BuildSnap(VCSOperationMixin, Operation):
             help=(
                 "install snapcraft as a snap from CHANNEL rather than as a "
                 ".deb"))
+        parser.add_argument(
+            "--build-url", help="URL of this build on Launchpad")
         parser.add_argument("--proxy-url", help="builder proxy url")
         parser.add_argument(
             "--revocation-endpoint",
             help="builder proxy token revocation endpoint")
+        parser.add_argument(
+            "--build-source-tarball", default=False, action="store_true",
+            help=(
+                "build a tarball containing all source code, including "
+                "external dependencies"))
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
@@ -103,7 +110,11 @@ class BuildSnap(VCSOperationMixin, Operation):
         deps.extend(self.vcs_deps)
         if self.args.proxy_url:
             deps.extend(["python3", "socat"])
-        if not self.args.channel_snapcraft:
+        if self.args.channel_snapcraft:
+            # snapcraft requires sudo in lots of places, but can't depend on
+            # it when installed as a snap.
+            deps.append("sudo")
+        else:
             deps.append("snapcraft")
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.channel_core:
@@ -144,6 +155,13 @@ class BuildSnap(VCSOperationMixin, Operation):
                 get_output=True).rstrip("\n")
         self.save_status(status)
 
+    @property
+    def image_info(self):
+        data = {}
+        if self.args.build_url is not None:
+            data["build_url"] = self.args.build_url
+        return json.dumps(data)
+
     def pull(self):
         """Run pull phase."""
         logger.info("Running pull phase...")
@@ -153,6 +171,7 @@ class BuildSnap(VCSOperationMixin, Operation):
         # XXX cjwatson 2017-11-24: Once we support building private snaps,
         # we'll need to make this optional in some way.
         env["SNAPCRAFT_BUILD_INFO"] = "1"
+        env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
@@ -161,6 +180,12 @@ class BuildSnap(VCSOperationMixin, Operation):
             ["snapcraft", "pull"],
             cwd=os.path.join("/build", self.args.name),
             env=env)
+        if self.args.build_source_tarball:
+            self.run_build_command(
+                ["tar", "-czf", "%s.tar.gz" % self.args.name,
+                 "--format=gnu", "--sort=name", "--exclude-vcs",
+                 "--numeric-owner", "--owner=0", "--group=0",
+                 self.args.name])
 
     def build(self):
         """Run all build, stage and snap phases."""
@@ -169,6 +194,7 @@ class BuildSnap(VCSOperationMixin, Operation):
         # XXX cjwatson 2017-11-24: Once we support building private snaps,
         # we'll need to make this optional in some way.
         env["SNAPCRAFT_BUILD_INFO"] = "1"
+        env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url

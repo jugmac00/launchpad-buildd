@@ -115,7 +115,7 @@ class DebianBuildManager(BuildManager):
         finally:
             chfile.close()
 
-    def iterate(self, success):
+    def iterate(self, success, quiet=False):
         # When a Twisted ProcessControl class is killed by SIGTERM,
         # which we call 'build process aborted', 'None' is returned as
         # exit_code.
@@ -123,8 +123,9 @@ class DebianBuildManager(BuildManager):
             # We may have been aborted in between subprocesses; pretend that
             # we were terminated by a signal, which is close enough.
             success = 128 + signal.SIGKILL
-        log.msg("Iterating with success flag %s against stage %s"
-                % (success, self._state))
+        if not quiet:
+            log.msg("Iterating with success flag %s against stage %s"
+                    % (success, self._state))
         func = getattr(self, "iterate_" + self._state, None)
         if func is None:
             raise ValueError("Unknown internal state " + self._state)

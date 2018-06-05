@@ -31,7 +31,9 @@ class Chroot(Backend):
     def create(self, tarball_path):
         """See `Backend`."""
         subprocess.check_call(
-            ["sudo", "tar", "-C", self.build_path, "-xf", tarball_path])
+            ["sudo", "tar", "-C", self.build_path,
+             "--transform", "s,[^/]*,chroot-autobuild,",
+             "-xf", tarball_path])
 
     def start(self):
         """See `Backend`."""
