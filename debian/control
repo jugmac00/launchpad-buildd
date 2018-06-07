@@ -5,6 +5,7 @@ Maintainer: Adam Conrad <adconrad@ubuntu.com>
 Standards-Version: 3.9.5
 Build-Depends: apt-utils,
                bzr,
+               curl,
                debhelper (>= 9~),
                dh-exec,
                dh-python,
