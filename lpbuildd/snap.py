@@ -333,8 +333,6 @@ class SnapBuildManager(DebianBuildManager):
                 file=sys.stderr)
         if self.build_url:
             args.extend(["--build-url", self.build_url])
-        if self.proxy_url:
-            args.extend(["--proxy-url", self.proxy_url])
         args.extend(self.startProxy())
         if self.revocation_endpoint:
             args.extend(["--revocation-endpoint", self.revocation_endpoint])
