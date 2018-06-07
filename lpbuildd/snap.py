@@ -278,7 +278,11 @@ class SnapBuildManager(DebianBuildManager):
         proxy_factory = SnapProxyFactory(self, self.proxy_url, timeout=60)
         self.proxy_service = strports.service(proxy_port, proxy_factory)
         self.proxy_service.setServiceParent(self._slave.service)
-        return ["--proxy-url", "http://localhost:{}/".format(proxy_port)]
+        if self.backend_name == "lxd":
+            proxy_host = self.backend.ipv4_network.ip
+        else:
+            proxy_host = "localhost"
+        return ["--proxy-url", "http://{}:{}/".format(proxy_host, proxy_port)]
 
     def stopProxy(self):
         """Stop the local snap proxy, if necessary."""
