@@ -10,10 +10,25 @@ from fixtures import (
     TempDir,
     )
 from testtools import TestCase
+from testtools.content import text_content
+from testtools.deferredruntest import AsynchronousDeferredRunTest
+from twisted.internet import (
+    defer,
+    reactor,
+    utils,
+    )
+from twisted.web import (
+    http,
+    proxy,
+    resource,
+    server,
+    static,
+    )
 
 from lpbuildd.snap import (
     SnapBuildManager,
     SnapBuildState,
+    SnapProxyFactory,
     )
 from lpbuildd.tests.fakeslave import FakeSlave
 from lpbuildd.tests.matchers import HasWaitingFiles
@@ -35,6 +50,9 @@ class MockBuildManager(SnapBuildManager):
 
 class TestSnapBuildManagerIteration(TestCase):
     """Run SnapBuildManager through its iteration steps."""
+
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
+
     def setUp(self):
         super(TestSnapBuildManagerIteration, self).setUp()
         self.working_dir = self.useFixture(TempDir()).path
@@ -229,3 +247,64 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
+
+    def getListenerURL(self, listener):
+        port = listener.getHost().port
+        return b"http://localhost:%d/" % port
+
+    def startFakeRemoteEndpoint(self):
+        remote_endpoint = resource.Resource()
+        remote_endpoint.putChild("a", static.Data("a" * 1024, "text/plain"))
+        remote_endpoint.putChild("b", static.Data("b" * 65536, "text/plain"))
+        remote_endpoint_listener = reactor.listenTCP(
+            0, server.Site(remote_endpoint))
+        self.addCleanup(remote_endpoint_listener.stopListening)
+        return remote_endpoint_listener
+
+    def startFakeRemoteProxy(self):
+        remote_proxy_factory = http.HTTPFactory()
+        remote_proxy_factory.protocol = proxy.Proxy
+        remote_proxy_listener = reactor.listenTCP(0, remote_proxy_factory)
+        self.addCleanup(remote_proxy_listener.stopListening)
+        return remote_proxy_listener
+
+    def startLocalProxy(self, remote_url):
+        proxy_factory = SnapProxyFactory(
+            self.buildmanager, remote_url, timeout=60)
+        proxy_listener = reactor.listenTCP(0, proxy_factory)
+        self.addCleanup(proxy_listener.stopListening)
+        return proxy_listener
+
+    @defer.inlineCallbacks
+    def assertCommandSuccess(self, command, extra_env=None):
+        env = os.environ
+        if extra_env is not None:
+            env.update(extra_env)
+        out, err, code = yield utils.getProcessOutputAndValue(
+            command[0], command[1:], env=env, path=".")
+        if code != 0:
+            self.addDetail("stdout", text_content(out))
+            self.addDetail("stderr", text_content(err))
+            self.assertEqual(0, code)
+        defer.returnValue(out)
+
+    @defer.inlineCallbacks
+    def test_fetch_via_proxy(self):
+        remote_endpoint_listener = self.startFakeRemoteEndpoint()
+        remote_endpoint_url = self.getListenerURL(remote_endpoint_listener)
+        remote_proxy_listener = self.startFakeRemoteProxy()
+        proxy_listener = self.startLocalProxy(
+            self.getListenerURL(remote_proxy_listener))
+        out = yield self.assertCommandSuccess(
+            [b"curl", remote_endpoint_url + b"a"],
+            extra_env={b"http_proxy": self.getListenerURL(proxy_listener)})
+        self.assertEqual("a" * 1024, out)
+        out = yield self.assertCommandSuccess(
+            [b"curl", remote_endpoint_url + b"b"],
+            extra_env={b"http_proxy": self.getListenerURL(proxy_listener)})
+        self.assertEqual("b" * 65536, out)
+
+    # XXX cjwatson 2017-04-13: We should really test the HTTPS case as well,
+    # but it's hard to see how to test that in a way that's independent of
+    # the code under test since the stock twisted.web.proxy doesn't support
+    # CONNECT.

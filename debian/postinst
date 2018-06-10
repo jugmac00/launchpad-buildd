@@ -14,7 +14,7 @@ BUILDDUID=${BUILDD_UID:-2001}
 
 make_buildd()
 {
- /usr/share/launchpad-buildd/buildd-genconfig --name=default --host=0.0.0.0 --port=8221 > \
+ /usr/share/launchpad-buildd/buildd-genconfig --name=default --host=0.0.0.0 --port=8221 --snap-proxy-port=8222 > \
   /etc/launchpad-buildd/default
  echo Default buildd created.
 }

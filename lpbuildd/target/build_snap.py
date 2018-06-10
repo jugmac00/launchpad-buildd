@@ -5,30 +5,11 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-import base64
 from collections import OrderedDict
 import json
 import logging
 import os.path
 import sys
-try:
-    from urllib.error import (
-        HTTPError,
-        URLError,
-        )
-    from urllib.request import (
-        Request,
-        urlopen,
-        )
-    from urllib.parse import urlparse
-except ImportError:
-    from urllib2 import (
-        HTTPError,
-        Request,
-        URLError,
-        urlopen,
-        )
-    from urlparse import urlparse
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.vcs import VCSOperationMixin
@@ -206,21 +187,6 @@ class BuildSnap(VCSOperationMixin, Operation):
             cwd=os.path.join("/build", self.args.name),
             env=env)
 
-    def revoke_token(self):
-        """Revoke builder proxy token."""
-        logger.info("Revoking proxy token...")
-        url = urlparse(self.args.proxy_url)
-        auth = '{}:{}'.format(url.username, url.password)
-        headers = {
-            'Authorization': 'Basic {}'.format(base64.b64encode(auth))
-            }
-        req = Request(self.args.revocation_endpoint, None, headers)
-        req.get_method = lambda: 'DELETE'
-        try:
-            urlopen(req)
-        except (HTTPError, URLError):
-            logger.exception('Unable to revoke token for %s', url.username)
-
     def run(self):
         try:
             self.install()
@@ -234,7 +200,4 @@ class BuildSnap(VCSOperationMixin, Operation):
         except Exception:
             logger.exception('Build failed')
             return RETCODE_FAILURE_BUILD
-        finally:
-            if self.args.revocation_endpoint is not None:
-                self.revoke_token()
         return 0
