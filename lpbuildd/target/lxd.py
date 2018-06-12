@@ -124,8 +124,7 @@ class LXD(Backend):
             return False
 
     def _convert(self, source_tarball, target_tarball):
-        first_entry = next(iter(source_tarball))
-        creation_time = first_entry.mtime
+        creation_time = source_tarball.getmember("chroot-autobuild").mtime
         metadata = {
             "architecture": self.lxc_arch,
             "creation_date": creation_time,
@@ -148,15 +147,11 @@ class LXD(Backend):
 
         # Mangle the chroot tarball into the form needed by LXD: when using
         # the combined metadata/rootfs form, the rootfs must be under
-        # rootfs/ rather than under chroot-autobuild/ or anything else.
+        # rootfs/ rather than under chroot-autobuild/.
         for entry in source_tarball:
             fileptr = None
             try:
-                orig_name_bits = entry.name.split("/", 1)
-                if len(orig_name_bits) > 1:
-                    orig_name = "/" + orig_name_bits[1]
-                else:
-                    orig_name = ""
+                orig_name = entry.name.split("chroot-autobuild", 1)[-1]
                 entry.name = "rootfs" + orig_name
 
                 if entry.isfile():
@@ -167,7 +162,8 @@ class LXD(Backend):
                 elif entry.islnk():
                     # Update hardlinks to point to the right target
                     entry.linkname = (
-                        "rootfs/" + entry.linkname.split("/", 1)[-1])
+                        "rootfs" +
+                        entry.linkname.split("chroot-autobuild", 1)[-1])
 
                 target_tarball.addfile(entry, fileobj=fileptr)
             finally:
