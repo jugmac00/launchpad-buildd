@@ -1,4 +1,4 @@
-launchpad-buildd (162) UNRELEASED; urgency=medium
+launchpad-buildd (162) xenial; urgency=medium
 
   * Set the hostname and FQDN of LXD containers to match the host system,
     though with an IP address pointing to the container (LP: #1747015).
@@ -17,7 +17,7 @@ launchpad-buildd (162) UNRELEASED; urgency=medium
   * Run tar with correct working directory when building source tarballs for
     snaps.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 08 May 2018 10:36:22 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 12 Jun 2018 08:50:40 +0100
 
 launchpad-buildd (161) xenial; urgency=medium
 
