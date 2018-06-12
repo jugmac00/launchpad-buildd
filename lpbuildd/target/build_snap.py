@@ -168,7 +168,8 @@ class BuildSnap(VCSOperationMixin, Operation):
                 ["tar", "-czf", "%s.tar.gz" % self.args.name,
                  "--format=gnu", "--sort=name", "--exclude-vcs",
                  "--numeric-owner", "--owner=0", "--group=0",
-                 self.args.name])
+                 self.args.name],
+                cwd="/build")
 
     def build(self):
         """Run all build, stage and snap phases."""

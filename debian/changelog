@@ -14,6 +14,8 @@ launchpad-buildd (162) UNRELEASED; urgency=medium
     the remote authenticated proxy.  This should allow running a wider range
     of network clients, since some of them apparently don't support
     authenticated proxies very well (LP: #1690834, #1753340).
+  * Run tar with correct working directory when building source tarballs for
+    snaps.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 08 May 2018 10:36:22 +0100
 

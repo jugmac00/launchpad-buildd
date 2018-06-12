@@ -361,7 +361,8 @@ class TestBuildSnap(TestCase):
                 ["tar", "-czf", "test-snap.tar.gz",
                  "--format=gnu", "--sort=name", "--exclude-vcs",
                  "--numeric-owner", "--owner=0", "--group=0",
-                 "test-snap"]),
+                 "test-snap"],
+                cwd="/build"),
             ]))
 
     def test_build(self):
