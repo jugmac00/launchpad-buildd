@@ -10,6 +10,12 @@ import json
 import logging
 import os.path
 import sys
+import tempfile
+from textwrap import dedent
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.vcs import VCSOperationMixin
@@ -79,6 +85,28 @@ class BuildSnap(VCSOperationMixin, Operation):
             json.dump(status, status_file)
         os.rename("%s.tmp" % status_path, status_path)
 
+    def install_svn_servers(self):
+        proxy = urlparse(self.args.proxy_url)
+        svn_servers = dedent("""\
+            [global]
+            http-proxy-host = {host}
+            http-proxy-port = {port}
+            """.format(host=proxy.hostname, port=proxy.port))
+        # We should never end up with an authenticated proxy here since
+        # lpbuildd.snap deals with it, but it's almost as easy to just
+        # handle it as to assert that we don't need to.
+        if proxy.username:
+            svn_servers += "http-proxy-username = {}\n".format(proxy.username)
+        if proxy.password:
+            svn_servers += "http-proxy-password = {}\n".format(proxy.password)
+        with tempfile.NamedTemporaryFile(mode="w+") as svn_servers_file:
+            svn_servers_file.write(svn_servers)
+            svn_servers_file.flush()
+            os.fchmod(svn_servers_file.fileno(), 0o644)
+            self.backend.run(["mkdir", "-p", "/root/.subversion"])
+            self.backend.copy_in(
+                svn_servers_file.name, "/root/.subversion/servers")
+
     def install(self):
         logger.info("Running install phase...")
         deps = []
@@ -110,6 +138,7 @@ class BuildSnap(VCSOperationMixin, Operation):
             self.backend.copy_in(
                 os.path.join(self.slavebin, "snap-git-proxy"),
                 "/usr/local/bin/snap-git-proxy")
+            self.install_svn_servers()
 
     def repo(self):
         """Collect git or bzr branch."""
