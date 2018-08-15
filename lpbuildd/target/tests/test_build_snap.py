@@ -150,10 +150,17 @@ class TestBuildSnap(TestCase):
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanAptGet("install", "git", "python3", "socat", "snapcraft"),
+            RanCommand(["mkdir", "-p", "/root/.subversion"]),
             ]))
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
             build_snap.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
+        self.assertEqual(
+            (b"[global]\n"
+             b"http-proxy-host = proxy.example\n"
+             b"http-proxy-port = 3128\n",
+             stat.S_IFREG | 0o644),
+            build_snap.backend.backend_fs["/root/.subversion/servers"])
 
     def test_install_channels(self):
         args = [
