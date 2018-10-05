@@ -1,4 +1,4 @@
-# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -10,6 +10,8 @@ from fixtures import (
     TempDir,
     )
 from testtools import TestCase
+from testtools.deferredruntest import AsynchronousDeferredRunTest
+from twisted.internet import defer
 
 from lpbuildd.target.generate_translation_templates import (
     RETCODE_FAILURE_BUILD,
@@ -39,6 +41,9 @@ class MockBuildManager(TranslationTemplatesBuildManager):
 
 class TestTranslationTemplatesBuildManagerIteration(TestCase):
     """Run TranslationTemplatesBuildManager through its iteration steps."""
+
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
+
     def setUp(self):
         super(TestTranslationTemplatesBuildManagerIteration, self).setUp()
         self.working_dir = self.useFixture(TempDir()).path
@@ -57,6 +62,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
+    @defer.inlineCallbacks
     def test_iterate(self):
         # Two iteration steps are specific to this build manager.
         url = 'lp:~my/branch'
@@ -74,7 +80,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
 
         # GENERATE: Run the slave's payload, the script that generates
         # templates.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
@@ -95,7 +101,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             outfile_path, b"I am a template tarball. Seriously.")
 
         # After generating templates, reap processes.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         expected_command = [
             'sharepath/slavebin/in-target', 'in-target',
             'scan-for-processes',
@@ -128,6 +134,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
+    @defer.inlineCallbacks
     def test_iterate_fail_GENERATE_install(self):
         # See that a GENERATE that fails at the install step is handled
         # properly.
@@ -141,7 +148,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.buildmanager._state = TranslationTemplatesBuildState.GENERATE
 
         # The buildmanager fails and reaps processes.
-        self.buildmanager.iterate(RETCODE_FAILURE_INSTALL)
+        yield self.buildmanager.iterate(RETCODE_FAILURE_INSTALL)
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
@@ -169,6 +176,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
+    @defer.inlineCallbacks
     def test_iterate_fail_GENERATE_build(self):
         # See that a GENERATE that fails at the build step is handled
         # properly.
@@ -182,7 +190,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.buildmanager._state = TranslationTemplatesBuildState.GENERATE
 
         # The buildmanager fails and reaps processes.
-        self.buildmanager.iterate(RETCODE_FAILURE_BUILD)
+        yield self.buildmanager.iterate(RETCODE_FAILURE_BUILD)
         expected_command = [
             'sharepath/slavebin/in-target', 'in-target',
             'scan-for-processes',

@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,6 +9,8 @@ import tempfile
 from textwrap import dedent
 
 from testtools import TestCase
+from testtools.deferredruntest import AsynchronousDeferredRunTest
+from twisted.internet import defer
 
 from lpbuildd.sourcepackagerecipe import (
     RETCODE_FAILURE_INSTALL_BUILD_DEPS,
@@ -35,6 +37,9 @@ class MockBuildManager(SourcePackageRecipeBuildManager):
 
 class TestSourcePackageRecipeBuildManagerIteration(TestCase):
     """Run SourcePackageRecipeBuildManager through its iteration steps."""
+
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
+
     def setUp(self):
         super(TestSourcePackageRecipeBuildManagerIteration, self).setUp()
         self.working_dir = tempfile.mkdtemp()
@@ -55,6 +60,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
+    @defer.inlineCallbacks
     def startBuild(self, git=False):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
@@ -84,7 +90,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.buildmanager._state = SourcePackageRecipeBuildState.UPDATE
 
         # BUILD_RECIPE: Run the slave's payload to build the source package.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
         expected_command = [
@@ -101,9 +107,10 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('chrootFail'))
 
+    @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
-        self.startBuild()
+        yield self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
         with open(log_path, 'w') as log:
@@ -121,7 +128,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             manifest.write("I am a manifest file.")
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         expected_command = [
             'sharepath/slavebin/in-target', 'in-target',
             'scan-for-processes',
@@ -153,9 +160,10 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
+    @defer.inlineCallbacks
     def test_iterate_BUILD_RECIPE_install_build_deps_depfail(self):
         # The build manager can detect dependency wait states.
-        self.startBuild()
+        yield self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
         with open(log_path, 'w') as log:
@@ -166,7 +174,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
                 " but it is not going to be installed.\n")
 
         # The buildmanager calls depFail correctly and reaps processes.
-        self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
+        yield self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
             'sharepath/slavebin/in-target', 'in-target',
             'scan-for-processes',
@@ -196,17 +204,18 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
+    @defer.inlineCallbacks
     def test_iterate_BUILD_RECIPE_install_build_deps_buildfail(self):
         # If the build manager cannot detect a dependency wait from a
         # build-dependency installation failure, it fails the build.
-        self.startBuild()
+        yield self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, 'buildlog')
         with open(log_path, 'w') as log:
             log.write("I am a failing build log.")
 
         # The buildmanager calls buildFail correctly and reaps processes.
-        self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
+        yield self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
             'sharepath/slavebin/in-target', 'in-target',
             'scan-for-processes',
@@ -234,8 +243,9 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
+    @defer.inlineCallbacks
     def test_iterate_git(self):
         # Starting a git-based recipe build passes the correct option.  (The
         # rest of the build is identical to bzr-based recipe builds from the
         # build manager's point of view.)
-        self.startBuild(git=True)
+        yield self.startBuild(git=True)

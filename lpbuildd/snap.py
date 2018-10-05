@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
@@ -30,7 +30,11 @@ except ImportError:
     from urlparse import urlparse
 
 from twisted.application import strports
-from twisted.internet import reactor
+from twisted.internet import (
+    defer,
+    reactor,
+    threads,
+    )
 from twisted.internet.interfaces import IHalfCloseableProtocol
 from twisted.python.compat import intToBytes
 from twisted.web import (
@@ -356,8 +360,23 @@ class SnapBuildManager(DebianBuildManager):
         self.stopProxy()
         self.revokeProxyToken()
         if retcode == RETCODE_SUCCESS:
-            self.gatherResults()
             print("Returning build status: OK")
+
+            # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once
+            # we're on Twisted >= 18.7.0
+            # (https://twistedmatrix.com/trac/ticket/4632).
+            def failed_to_gather(failure):
+                failure.trap(defer.CancelledError)
+                if not self.alreadyfailed:
+                    self._slave.log("Build cancelled unexpectedly!")
+                    self._slave.buildFail()
+                self.alreadyfailed = True
+
+            def reap(ignored):
+                self.doReapProcesses(self._state)
+
+            return threads.deferToThread(self.gatherResults).addErrback(
+                failed_to_gather).addCallback(reap)
         elif (retcode >= RETCODE_FAILURE_INSTALL and
               retcode <= RETCODE_FAILURE_BUILD):
             if not self.alreadyfailed:

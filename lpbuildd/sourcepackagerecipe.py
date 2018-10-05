@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 # pylint: disable-msg=E1002
 
@@ -7,11 +7,18 @@
 import os
 import re
 
+from twisted.internet import (
+    defer,
+    threads,
+    )
+
 from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
     get_build_path,
 )
+
+
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD_TREE = 201
@@ -98,8 +105,23 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
     def iterate_BUILD_RECIPE(self, retcode):
         """Move from BUILD_RECIPE to the next logical state."""
         if retcode == RETCODE_SUCCESS:
-            self.gatherResults()
             print("Returning build status: OK")
+
+            # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once
+            # we're on Twisted >= 18.7.0
+            # (https://twistedmatrix.com/trac/ticket/4632).
+            def failed_to_gather(failure):
+                failure.trap(defer.CancelledError)
+                if not self.alreadyfailed:
+                    self._slave.log("Build cancelled unexpectedly!")
+                    self._slave.buildFail()
+                self.alreadyfailed = True
+
+            def reap(ignored):
+                self.doReapProcesses(self._state)
+
+            return threads.deferToThread(self.gatherResults).addErrback(
+                failed_to_gather).addCallback(reap)
         elif retcode == RETCODE_FAILURE_INSTALL_BUILD_DEPS:
             if not self.alreadyfailed:
                 rx = (

@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -70,6 +70,7 @@ class TestSnapBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
+    @defer.inlineCallbacks
     def startBuild(self, args=None, options=None):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
@@ -92,7 +93,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.buildmanager._state = SnapBuildState.UPDATE
 
         # BUILD_SNAP: Run the slave's payload to build the snap package.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
@@ -119,9 +120,10 @@ class TestSnapBuildManagerIteration(TestCase):
             status_file.write('{"revision_id": "dummy"}')
         self.assertEqual({"revision_id": "dummy"}, self.buildmanager.status())
 
+    @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
-        self.startBuild()
+        yield self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -131,7 +133,7 @@ class TestSnapBuildManagerIteration(TestCase):
             "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "scan-for-processes",
@@ -159,10 +161,11 @@ class TestSnapBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
 
+    @defer.inlineCallbacks
     def test_iterate_with_manifest(self):
         # The build manager iterates a build that uploads a manifest from
         # start to finish.
-        self.startBuild()
+        yield self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -174,7 +177,7 @@ class TestSnapBuildManagerIteration(TestCase):
             "/build/test-snap/test-snap_0_all.manifest", b"I am a manifest.")
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "scan-for-processes",
@@ -203,10 +206,11 @@ class TestSnapBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
 
+    @defer.inlineCallbacks
     def test_iterate_with_build_source_tarball(self):
         # The build manager iterates a build that uploads a source tarball
         # from start to finish.
-        self.startBuild(
+        yield self.startBuild(
             {"build_source_tarball": True}, ["--build-source-tarball"])
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
@@ -219,7 +223,7 @@ class TestSnapBuildManagerIteration(TestCase):
             "/build/test-snap.tar.gz", b"I am a source tarball.")
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "scan-for-processes",
