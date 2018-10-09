@@ -49,6 +49,10 @@ class BuildLiveFS(Operation):
             "--image-format", metavar="FORMAT",
             help="produce an image in FORMAT")
         parser.add_argument(
+            "--image-target", dest="image_targets", default=[],
+            action="append", metavar="TARGET",
+            help="produce image for TARGET")
+        parser.add_argument(
             "--proposed", default=False, action="store_true",
             help="enable use of -proposed pocket")
         parser.add_argument(
@@ -124,6 +128,9 @@ class BuildLiveFS(Operation):
                 base_lb_env["SUBARCH"] = self.args.subarch
             if self.args.channel is not None:
                 base_lb_env["CHANNEL"] = self.args.channel
+            if self.args.image_targets:
+                base_lb_env["IMAGE_TARGETS"] = " ".join(
+                    self.args.image_targets)
             lb_env = base_lb_env.copy()
             lb_env["SUITE"] = self.args.series
             if self.args.datestamp is not None:

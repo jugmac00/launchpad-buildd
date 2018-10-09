@@ -1,3 +1,13 @@
+launchpad-buildd (165) UNRELEASED; urgency=medium
+
+  [ Steve Langasek, Tobias Koch ]
+  * buildlivefs: support passing an IMAGE_TARGETS variable into the
+    environment, for projects (i.e., ubuntu-cpc) that produce multiple
+    images as part of a single build, in order to be selective about what
+    builds to run.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 09 Oct 2018 11:38:07 +0200
+
 launchpad-buildd (164) xenial; urgency=medium
 
   * Configure snap proxy settings for Subversion (LP: #1668358).
