@@ -6,6 +6,9 @@ launchpad-buildd (165) UNRELEASED; urgency=medium
     images as part of a single build, in order to be selective about what
     builds to run.
 
+  [ Colin Watson ]
+  * Set SNAPCRAFT_BUILD_ENVIRONMENT=host when building snaps (LP: #1791201).
+
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 09 Oct 2018 11:38:07 +0200
 
 launchpad-buildd (164) xenial; urgency=medium
