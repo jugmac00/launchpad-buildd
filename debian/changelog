@@ -1,4 +1,4 @@
-launchpad-buildd (165) UNRELEASED; urgency=medium
+launchpad-buildd (165) xenial; urgency=medium
 
   [ Steve Langasek, Tobias Koch ]
   * buildlivefs: support passing an IMAGE_TARGETS variable into the
@@ -11,7 +11,7 @@ launchpad-buildd (165) UNRELEASED; urgency=medium
   * Call gatherResults in a different thread so that it doesn't block
     responses to XML-RPC requests (LP: #1795877).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 09 Oct 2018 11:38:07 +0200
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 19 Oct 2018 08:10:22 +0100
 
 launchpad-buildd (164) xenial; urgency=medium
 
