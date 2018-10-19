@@ -184,6 +184,7 @@ class BuildSnap(VCSOperationMixin, Operation):
         # we'll need to make this optional in some way.
         env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
+        env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
@@ -208,6 +209,7 @@ class BuildSnap(VCSOperationMixin, Operation):
         # we'll need to make this optional in some way.
         env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
+        env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url

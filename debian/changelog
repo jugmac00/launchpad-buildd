@@ -1,9 +1,17 @@
 launchpad-buildd (165) UNRELEASED; urgency=medium
 
+  [ Steve Langasek, Tobias Koch ]
+  * buildlivefs: support passing an IMAGE_TARGETS variable into the
+    environment, for projects (i.e., ubuntu-cpc) that produce multiple
+    images as part of a single build, in order to be selective about what
+    builds to run.
+
+  [ Colin Watson ]
+  * Set SNAPCRAFT_BUILD_ENVIRONMENT=host when building snaps (LP: #1791201).
   * Call gatherResults in a different thread so that it doesn't block
     responses to XML-RPC requests (LP: #1795877).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 05 Oct 2018 16:43:11 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 09 Oct 2018 11:38:07 +0200
 
 launchpad-buildd (164) xenial; urgency=medium
 
