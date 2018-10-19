@@ -1,4 +1,4 @@
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -10,6 +10,8 @@ from fixtures import (
     TempDir,
     )
 from testtools import TestCase
+from testtools.deferredruntest import AsynchronousDeferredRunTest
+from twisted.internet import defer
 
 from lpbuildd.livefs import (
     LiveFilesystemBuildManager,
@@ -35,6 +37,9 @@ class MockBuildManager(LiveFilesystemBuildManager):
 
 class TestLiveFilesystemBuildManagerIteration(TestCase):
     """Run LiveFilesystemBuildManager through its iteration steps."""
+
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
+
     def setUp(self):
         super(TestLiveFilesystemBuildManagerIteration, self).setUp()
         self.working_dir = self.useFixture(TempDir()).path
@@ -52,6 +57,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
+    @defer.inlineCallbacks
     def startBuild(self):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
@@ -71,7 +77,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.buildmanager._state = LiveFilesystemBuildState.UPDATE
 
         # BUILD_LIVEFS: Run the slave's payload to build the live filesystem.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertEqual(
             LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
         expected_command = [
@@ -85,9 +91,10 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("chrootFail"))
 
+    @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
-        self.startBuild()
+        yield self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -97,7 +104,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             "/build/livecd.ubuntu.manifest", b"I am a manifest file.")
 
         # After building the package, reap processes.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/slavebin/in-target", "in-target",
             "scan-for-processes",
@@ -126,9 +133,10 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
 
+    @defer.inlineCallbacks
     def test_omits_symlinks(self):
         # Symlinks in the build output are not included in gathered results.
-        self.startBuild()
+        yield self.startBuild()
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -139,7 +147,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.buildmanager.backend.add_link(
             "/build/livecd.ubuntu.kernel", "livefs.ubuntu.kernel-generic")
 
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertThat(self.slave, HasWaitingFiles.byEquality({
             "livecd.ubuntu.kernel-generic": b"I am a kernel.",
             }))

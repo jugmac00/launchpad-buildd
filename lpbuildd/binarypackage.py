@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function
@@ -343,14 +343,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
         """Finished the sbuild run."""
         if success == SBuildExitCodes.OK:
             print("Returning build status: OK")
-            try:
-                self.gatherResults()
-            except Exception as e:
-                self._slave.log("Failed to gather results: %s" % e)
-                self._slave.buildFail()
-                self.alreadyfailed = True
-            self.doReapProcesses(self._state)
-            return
+            return self.deferGatherResults()
 
         log_patterns = []
         stop_patterns = [["^Toolchain package versions:", re.M]]

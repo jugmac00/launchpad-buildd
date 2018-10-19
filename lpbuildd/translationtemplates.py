@@ -1,4 +1,4 @@
-# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -63,7 +63,7 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
         """Template generation finished."""
         if retcode == 0:
             # It worked! Now let's bring in the harvest.
-            self.gatherResults()
+            return self.deferGatherResults()
         else:
             if not self.alreadyfailed:
                 if retcode == RETCODE_FAILURE_INSTALL:

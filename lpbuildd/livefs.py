@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -72,8 +72,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
     def iterate_BUILD_LIVEFS(self, retcode):
         """Finished building the live filesystem."""
         if retcode == RETCODE_SUCCESS:
-            self.gatherResults()
             print("Returning build status: OK")
+            return self.deferGatherResults()
         elif (retcode >= RETCODE_FAILURE_INSTALL and
               retcode <= RETCODE_FAILURE_BUILD):
             if not self.alreadyfailed:

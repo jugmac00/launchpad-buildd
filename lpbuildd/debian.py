@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # Authors: Daniel Silverstone <daniel.silverstone@canonical.com>
@@ -13,6 +13,10 @@ import os
 import re
 import signal
 
+from twisted.internet import (
+    defer,
+    threads,
+    )
 from twisted.python import log
 
 from lpbuildd.slave import (
@@ -41,6 +45,7 @@ class DebianBuildManager(BuildManager):
         self._state = DebianBuildState.INIT
         slave.emptyLog()
         self.alreadyfailed = False
+        self._iterator = None
 
     @property
     def initial_build_state(self):
@@ -115,6 +120,27 @@ class DebianBuildManager(BuildManager):
         finally:
             chfile.close()
 
+    def deferGatherResults(self):
+        """Gather the results of the build in a thread."""
+        # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once we're
+        # on Twisted >= 18.7.0 (https://twistedmatrix.com/trac/ticket/4632).
+        def failed_to_gather(failure):
+            if failure.check(defer.CancelledError):
+                if not self.alreadyfailed:
+                    self._slave.log("Build cancelled unexpectedly!")
+                    self._slave.buildFail()
+            else:
+                self._slave.log("Failed to gather results: %s" % failure.value)
+                self._slave.buildFail()
+            self.alreadyfailed = True
+
+        def reap(ignored):
+            self.doReapProcesses(self._state)
+
+        return threads.deferToThread(self.gatherResults).addErrback(
+            failed_to_gather).addCallback(reap)
+
+    @defer.inlineCallbacks
     def iterate(self, success, quiet=False):
         # When a Twisted ProcessControl class is killed by SIGTERM,
         # which we call 'build process aborted', 'None' is returned as
@@ -129,7 +155,9 @@ class DebianBuildManager(BuildManager):
         func = getattr(self, "iterate_" + self._state, None)
         if func is None:
             raise ValueError("Unknown internal state " + self._state)
-        func(success)
+        self._iterator = func(success)
+        yield self._iterator
+        self._iterator = None
 
     def iterateReap(self, state, success):
         log.msg("Iterating with success flag %s against stage %s after "
@@ -304,6 +332,13 @@ class DebianBuildManager(BuildManager):
         Overridden here to handle state management.
         """
         self.doReapProcesses(self._state, notify=False)
+
+    def abort(self):
+        """See `BuildManager`."""
+        super(DebianBuildManager, self).abort()
+        if self._iterator is not None:
+            self._iterator.cancel()
+            self._iterator = None
 
 
 def get_build_path(home, build_id, *extra):

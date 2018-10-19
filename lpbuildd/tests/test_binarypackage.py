@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -13,6 +13,7 @@ from textwrap import dedent
 from debian.deb822 import PkgRelation
 from fixtures import MonkeyPatch
 from testtools import TestCase
+from testtools.deferredruntest import AsynchronousDeferredRunTest
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -21,6 +22,7 @@ from testtools.matchers import (
     MatchesListwise,
     Not,
     )
+from twisted.internet import defer
 from twisted.internet.task import Clock
 
 from lpbuildd.binarypackage import (
@@ -85,6 +87,9 @@ def write_file(path, content):
 
 class TestBinaryPackageBuildManagerIteration(TestCase):
     """Run BinaryPackageBuildManager through its iteration steps."""
+
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
+
     def setUp(self):
         super(TestBinaryPackageBuildManagerIteration, self).setUp()
         self.useFixture(DisableSudo())
@@ -108,6 +113,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
+    @defer.inlineCallbacks
     def startBuild(self, dscname=''):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
@@ -123,7 +129,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager._state = BinaryPackageBuildState.UPDATE
 
         # SBUILD: Build the package.
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             [
@@ -147,9 +153,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             self.assertNotEqual(
                 self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
+    @defer.inlineCallbacks
     def assertScansSanely(self, exit_code):
         # After building the package, reap processes.
-        self.buildmanager.iterate(exit_code)
+        yield self.buildmanager.iterate(exit_code)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/in-target', 'in-target',
@@ -166,9 +173,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
+    @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
-        self.startBuild()
+        yield self.startBuild()
 
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
@@ -179,7 +187,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         write_file(changes_path, "I am a changes file.")
 
         # After building the package, reap processes.
-        self.assertScansSanely(SBuildExitCodes.OK)
+        yield self.assertScansSanely(SBuildExitCodes.OK)
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertThat(self.slave, HasWaitingFiles.byEquality({
             'foo_1_i386.changes': b'I am a changes file.',
@@ -189,6 +197,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
+    @defer.inlineCallbacks
     def test_with_debug_symbols(self):
         # A build with debug symbols sets up /CurrentlyBuilding
         # appropriately, and does not pass DEB_BUILD_OPTIONS.
@@ -199,7 +208,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
              'build_debug_symbols': True})
         os.makedirs(self.chrootdir)
         self.buildmanager._state = BinaryPackageBuildState.UPDATE
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/sbuild-package', 'sbuild-package',
@@ -218,6 +227,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Build-Debug-Symbols: yes
                 """), cb.read())
 
+    @defer.inlineCallbacks
     def test_without_debug_symbols(self):
         # A build with debug symbols sets up /CurrentlyBuilding
         # appropriately, and passes DEB_BUILD_OPTIONS=noautodbgsym.
@@ -228,7 +238,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
              'build_debug_symbols': False})
         os.makedirs(self.chrootdir)
         self.buildmanager._state = BinaryPackageBuildState.UPDATE
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             ['sharepath/slavebin/sbuild-package', 'sbuild-package',
@@ -248,9 +258,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Purpose: PRIMARY
                 """), cb.read())
 
+    @defer.inlineCallbacks
     def test_abort_sbuild(self):
         # Aborting sbuild kills processes in the chroot.
-        self.startBuild()
+        yield self.startBuild()
 
         # Send an abort command.  The build manager reaps processes.
         self.buildmanager.abort()
@@ -267,10 +278,11 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
 
+    @defer.inlineCallbacks
     def test_abort_sbuild_fail(self):
         # If killing processes in the chroot hangs, the build manager does
         # its best to clean up and fails the builder.
-        self.startBuild()
+        yield self.startBuild()
         sbuild_subprocess = self.buildmanager._subprocess
 
         # Send an abort command.  The build manager reaps processes.
@@ -300,7 +312,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
         # When sbuild exits, it does not reap processes again, but proceeds
         # directly to UMOUNT.
-        self.buildmanager.iterate(128 + 9)  # SIGKILL
+        yield self.buildmanager.iterate(128 + 9)  # SIGKILL
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
             ['sharepath/slavebin/in-target', 'in-target',
@@ -308,6 +320,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
+    @defer.inlineCallbacks
     def test_abort_between_subprocesses(self):
         # If a build is aborted between subprocesses, the build manager
         # pretends that it was terminated by a signal.
@@ -324,7 +337,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
-        self.buildmanager.iterate(0)
+        yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.CLEANUP,
             ['sharepath/slavebin/in-target', 'in-target',
@@ -334,10 +347,11 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             final=True)
         self.assertFalse(self.slave.wasCalled('builderFail'))
 
+    @defer.inlineCallbacks
     def test_missing_changes(self):
         # The build manager recovers if the expected .changes file does not
         # exist, and considers it a package build failure.
-        self.startBuild()
+        yield self.startBuild()
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "I am a build log.")
@@ -348,7 +362,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             "I am a changes file.")
 
         # After building the package, reap processes.
-        self.assertScansSanely(SBuildExitCodes.OK)
+        yield self.assertScansSanely(SBuildExitCodes.OK)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertThat(self.slave, HasWaitingFiles({}))
 
@@ -564,8 +578,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 PkgRelation.parse_relations("foo <!nocheck>, bar <stage1>"),
                 {}))
 
+    @defer.inlineCallbacks
     def startDepFail(self, error, dscname=''):
-        self.startBuild(dscname=dscname)
+        yield self.startBuild(dscname=dscname)
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "The following packages have unmet dependencies:\n"
@@ -574,9 +589,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             + ("a" * 4096) + "\n"
             + "Fail-Stage: install-deps\n")
 
+    @defer.inlineCallbacks
     def assertMatchesDepfail(self, error, dep):
-        self.startDepFail(error)
-        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        yield self.startDepFail(error)
+        yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
         if dep is not None:
             self.assertFalse(self.slave.wasCalled('buildFail'))
@@ -585,27 +601,32 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             self.assertFalse(self.slave.wasCalled('depFail'))
             self.assertTrue(self.slave.wasCalled('buildFail'))
 
+    @defer.inlineCallbacks
     def test_detects_depfail(self):
         # The build manager detects dependency installation failures.
-        self.assertMatchesDepfail(
+        yield self.assertMatchesDepfail(
             "enoent but it is not installable", "enoent")
 
+    @defer.inlineCallbacks
     def test_detects_versioned_depfail(self):
         # The build manager detects dependency installation failures.
-        self.assertMatchesDepfail(
+        yield self.assertMatchesDepfail(
             "ebadver (< 2.0) but 3.0 is to be installed", "ebadver (< 2.0)")
 
+    @defer.inlineCallbacks
     def test_detects_versioned_current_depfail(self):
         # The build manager detects dependency installation failures.
-        self.assertMatchesDepfail(
+        yield self.assertMatchesDepfail(
             "ebadver (< 2.0) but 3.0 is installed", "ebadver (< 2.0)")
 
+    @defer.inlineCallbacks
     def test_strips_depfail(self):
         # The build manager strips qualifications and restrictions from
         # dependency installation failures.
-        self.assertMatchesDepfail(
+        yield self.assertMatchesDepfail(
             "ebadver:any (>= 3.0) but 2.0 is installed", "ebadver (>= 3.0)")
 
+    @defer.inlineCallbacks
     def test_uninstallable_deps_analysis_failure(self):
         # If there are uninstallable build-dependencies and analysis can't
         # find any missing direct build-dependencies, the build manager
@@ -618,7 +639,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Version: 1
                 Build-Depends: uninstallable (>= 1)
                 """))
-        self.startDepFail(
+        yield self.startDepFail(
             "uninstallable (>= 1) but it is not going to be installed",
             dscname="123")
         apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
@@ -629,11 +650,12 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Package: uninstallable
                 Version: 1
                 """))
-        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('depFail'))
         self.assertTrue(self.slave.wasCalled('buildFail'))
 
+    @defer.inlineCallbacks
     def test_uninstallable_deps_analysis_depfail(self):
         # If there are uninstallable build-dependencies and analysis reports
         # some missing direct build-dependencies, the build manager marks
@@ -645,7 +667,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Version: 1
                 Build-Depends: ebadver (>= 2)
                 """))
-        self.startDepFail(
+        yield self.startDepFail(
             "ebadver (>= 2) but it is not going to be installed",
             dscname="123")
         apt_lists = os.path.join(self.chrootdir, "var", "lib", "apt", "lists")
@@ -656,11 +678,12 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Package: ebadver
                 Version: 1
                 """))
-        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual([(("ebadver (>= 2)",), {})], self.slave.depFail.calls)
 
+    @defer.inlineCallbacks
     def test_uninstallable_deps_analysis_mixed_depfail(self):
         # If there is a mix of definite and dubious dep-wait output, then
         # the build manager analyses the situation rather than trusting just
@@ -672,7 +695,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Version: 1
                 Build-Depends: ebadver (>= 2), uninstallable
                 """))
-        self.startBuild(dscname="123")
+        yield self.startBuild(dscname="123")
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "The following packages have unmet dependencies:\n"
@@ -694,19 +717,20 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 Package: uninstallable
                 Version: 1
                 """))
-        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
         self.assertFalse(self.slave.wasCalled('buildFail'))
         self.assertEqual([(("ebadver (>= 2)",), {})], self.slave.depFail.calls)
 
+    @defer.inlineCallbacks
     def test_depfail_with_unknown_error_converted_to_packagefail(self):
         # The build manager converts a DEPFAIL to a PACKAGEFAIL if the
         # missing dependency can't be determined from the log.
-        self.startBuild()
+        yield self.startBuild()
         write_file(
             os.path.join(self.buildmanager._cachepath, 'buildlog'),
             "E: Everything is broken.\n")
 
-        self.assertScansSanely(SBuildExitCodes.GIVENBACK)
+        yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertTrue(self.slave.wasCalled('buildFail'))
         self.assertFalse(self.slave.wasCalled('depFail'))
