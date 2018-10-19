@@ -7,11 +7,6 @@
 import os
 import re
 
-from twisted.internet import (
-    defer,
-    threads,
-    )
-
 from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
@@ -106,22 +101,7 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         """Move from BUILD_RECIPE to the next logical state."""
         if retcode == RETCODE_SUCCESS:
             print("Returning build status: OK")
-
-            # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once
-            # we're on Twisted >= 18.7.0
-            # (https://twistedmatrix.com/trac/ticket/4632).
-            def failed_to_gather(failure):
-                failure.trap(defer.CancelledError)
-                if not self.alreadyfailed:
-                    self._slave.log("Build cancelled unexpectedly!")
-                    self._slave.buildFail()
-                self.alreadyfailed = True
-
-            def reap(ignored):
-                self.doReapProcesses(self._state)
-
-            return threads.deferToThread(self.gatherResults).addErrback(
-                failed_to_gather).addCallback(reap)
+            return self.deferGatherResults()
         elif retcode == RETCODE_FAILURE_INSTALL_BUILD_DEPS:
             if not self.alreadyfailed:
                 rx = (

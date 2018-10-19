@@ -17,10 +17,6 @@ from debian.deb822 import (
     PkgRelation,
     )
 from debian.debian_support import Version
-from twisted.internet import (
-    defer,
-    threads,
-    )
 
 from lpbuildd.debian import (
     DebianBuildManager,
@@ -347,26 +343,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
         """Finished the sbuild run."""
         if success == SBuildExitCodes.OK:
             print("Returning build status: OK")
-
-            # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once
-            # we're on Twisted >= 18.7.0
-            # (https://twistedmatrix.com/trac/ticket/4632).
-            def failed_to_gather(failure):
-                if failure.check(defer.CancelledError):
-                    if not self.alreadyfailed:
-                        self._slave.log("Build cancelled unexpectedly!")
-                        self._slave.buildFail()
-                else:
-                    self._slave.log(
-                        "Failed to gather results: %s" % failure.value)
-                    self._slave.buildFail()
-                self.alreadyfailed = True
-
-            def reap(ignored):
-                self.doReapProcesses(self._state)
-
-            return threads.deferToThread(self.gatherResults).addErrback(
-                failed_to_gather).addCallback(reap)
+            return self.deferGatherResults()
 
         log_patterns = []
         stop_patterns = [["^Toolchain package versions:", re.M]]
