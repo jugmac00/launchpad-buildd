@@ -65,7 +65,7 @@ setup(
     extras_require={
         'lxd': ['netaddr', 'pylxd'],
         },
-    test_suite='lpbuildd.tests',
+    test_suite='lpbuildd',
     tests_require=[
         'fixtures',
         'mock',

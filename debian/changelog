@@ -1,3 +1,9 @@
+launchpad-buildd (166) UNRELEASED; urgency=medium
+
+  * Run all tests at package build time, not just those in lpbuildd.tests.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 25 Oct 2018 10:03:14 +0100
+
 launchpad-buildd (165) xenial; urgency=medium
 
   [ Steve Langasek, Tobias Koch ]
