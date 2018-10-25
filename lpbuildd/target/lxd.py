@@ -277,16 +277,30 @@ class LXD(Backend):
             old_profile.delete()
 
         raw_lxc_config = [
-            ("lxc.aa_profile", "unconfined"),
             ("lxc.cap.drop", ""),
             ("lxc.cap.drop", "sys_time sys_module"),
             ("lxc.cgroup.devices.deny", ""),
             ("lxc.cgroup.devices.allow", ""),
             ("lxc.mount.auto", ""),
             ("lxc.mount.auto", "proc:rw sys:rw"),
-            ("lxc.network.0.ipv4", ipv4_address),
-            ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
             ]
+
+        lxc_version = self._client.host_info["environment"]["driver_version"]
+        major, minor = [int(v) for v in lxc_version.split(".")[0:2]]
+
+        if major >= 3:
+            raw_lxc_config.extend([
+                ("lxc.apparmor.profile", "unconfined"),
+                ("lxc.net.0.ipv4.address", ipv4_address),
+                ("lxc.net.0.ipv4.gateway", self.ipv4_network.ip),
+                ])
+        else:
+            raw_lxc_config.extend([
+                ("lxc.aa_profile", "unconfined"),
+                ("lxc.network.0.ipv4", ipv4_address),
+                ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
+                ])
+
         # Linux 4.4 on powerpc doesn't support all the seccomp bits that LXD
         # needs.
         if self.arch == "powerpc":
@@ -296,7 +310,7 @@ class LXD(Backend):
             "security.nesting": "true",
             "raw.lxc": "".join(
                 "{key}={value}\n".format(key=key, value=value)
-                for key, value in raw_lxc_config),
+                for key, value in sorted(raw_lxc_config)),
             }
         devices = {
             "eth0": {
@@ -306,6 +320,12 @@ class LXD(Backend):
                 "type": "nic",
                 },
             }
+        if major >= 3:
+            devices["root"] = {
+                "path": "/",
+                "pool": "default",
+                "type": "disk",
+                }
         self.client.profiles.create(self.profile_name, config, devices)
 
     def start(self):
@@ -341,7 +361,17 @@ class LXD(Backend):
             hostname_file.flush()
             os.fchmod(hostname_file.fileno(), 0o644)
             self.copy_in(hostname_file.name, "/etc/hostname")
-        self.copy_in("/etc/resolv.conf", "/etc/resolv.conf")
+
+        resolv_conf = "/etc/resolv.conf"
+
+        if os.path.islink(resolv_conf):
+            resolv_conf = os.path.realpath(resolv_conf)
+            if (resolv_conf == "/run/systemd/resolve/stub-resolv.conf" and
+                os.path.isfile("/run/systemd/resolve/resolv.conf")):
+                    resolv_conf = "/run/systemd/resolve/resolv.conf"
+
+        self.copy_in(resolv_conf, "/etc/resolv.conf")
+
         with tempfile.NamedTemporaryFile(mode="w+") as policy_rc_d_file:
             policy_rc_d_file.write(policy_rc_d)
             policy_rc_d_file.flush()
@@ -481,8 +511,8 @@ class LXD(Backend):
             data = source_file.read()
             mode = stat.S_IMODE(os.fstat(source_file.fileno()).st_mode)
             headers = {
-                "X-LXD-uid": 0,
-                "X-LXD-gid": 0,
+                "X-LXD-uid": "0",
+                "X-LXD-gid": "0",
                 "X-LXD-mode": "%#o" % mode,
                 }
             try:
