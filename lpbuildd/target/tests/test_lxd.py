@@ -155,23 +155,45 @@ class TestLXD(TestCase):
         image.add_alias.assert_called_once_with(
             "lp-xenial-amd64", "lp-xenial-amd64")
 
-    def assert_correct_profile(self, extra_raw_lxc_config=""):
+    def assert_correct_profile(self, extra_raw_lxc_config=None,
+            driver_version="2.0"):
+        if extra_raw_lxc_config is None:
+            extra_raw_lxc_config = []
+
         client = pylxd.Client()
         client.profiles.get.assert_called_once_with("lpbuildd")
+
+        raw_lxc_config = [
+            ("lxc.cap.drop", ""),
+            ("lxc.cap.drop", "sys_time sys_module"),
+            ("lxc.cgroup.devices.deny", ""),
+            ("lxc.cgroup.devices.allow", ""),
+            ("lxc.mount.auto", ""),
+            ("lxc.mount.auto", "proc:rw sys:rw"),
+            ]
+
+        major, minor = [int(v) for v in driver_version.split(".")[0:2]]
+
+        if major >= 3:
+            raw_lxc_config.extend([
+                ("lxc.apparmor.profile", "unconfined"),
+                ("lxc.net.0.ipv4.address", "10.10.10.2/24"),
+                ("lxc.net.0.ipv4.gateway", "10.10.10.1"),
+                ])
+        else:
+            raw_lxc_config.extend([
+                ("lxc.aa_profile", "unconfined"),
+                ("lxc.network.0.ipv4", "10.10.10.2/24"),
+                ("lxc.network.0.ipv4.gateway", "10.10.10.1"),
+                ])
+
+        raw_lxc_config = "".join("{key}={val}\n".format(key=key, val=val)
+                for key, val in sorted(raw_lxc_config + extra_raw_lxc_config))
+
         expected_config = {
             "security.privileged": "true",
             "security.nesting": "true",
-            "raw.lxc": dedent("""\
-                lxc.aa_profile=unconfined
-                lxc.cap.drop=
-                lxc.cap.drop=sys_time sys_module
-                lxc.cgroup.devices.deny=
-                lxc.cgroup.devices.allow=
-                lxc.mount.auto=
-                lxc.mount.auto=proc:rw sys:rw
-                lxc.network.0.ipv4=10.10.10.2/24
-                lxc.network.0.ipv4.gateway=10.10.10.1
-                """) + extra_raw_lxc_config,
+            "raw.lxc": raw_lxc_config,
             }
         expected_devices = {
             "eth0": {
@@ -181,22 +203,42 @@ class TestLXD(TestCase):
                 "type": "nic",
                 },
             }
+        if driver_version == "3.0":
+            expected_devices["root"] = {
+                "path": "/",
+                "pool": "default",
+                "type": "disk",
+                }
         client.profiles.create.assert_called_once_with(
             "lpbuildd", expected_config, expected_devices)
 
     def test_create_profile_amd64(self):
-        self.useFixture(MockPatch("pylxd.Client"))
-        client = pylxd.Client()
-        client.profiles.get.side_effect = FakeLXDAPIException
-        LXD("1", "xenial", "amd64").create_profile()
-        self.assert_correct_profile()
+        with MockPatch("pylxd.Client"):
+            for driver_version in ["2.0", "3.0"]:
+                client = pylxd.Client()
+                client.reset_mock()
+                client.profiles.get.side_effect = FakeLXDAPIException
+                client.host_info = {
+                    "environment": {"driver_version": driver_version}
+                    }
+                LXD("1", "xenial", "amd64").create_profile()
+                self.assert_correct_profile(
+                        driver_version=driver_version or "3.0")
 
     def test_create_profile_powerpc(self):
-        self.useFixture(MockPatch("pylxd.Client"))
-        client = pylxd.Client()
-        client.profiles.get.side_effect = FakeLXDAPIException
-        LXD("1", "xenial", "powerpc").create_profile()
-        self.assert_correct_profile("lxc.seccomp=\n")
+        with MockPatch("pylxd.Client"):
+            for driver_version in ["2.0", "3.0"]:
+                client = pylxd.Client()
+                client.reset_mock()
+                client.profiles.get.side_effect = FakeLXDAPIException
+                client.host_info = {
+                    "environment": {"driver_version": driver_version}
+                    }
+                LXD("1", "xenial", "powerpc").create_profile()
+                self.assert_correct_profile(
+                        extra_raw_lxc_config=[("lxc.seccomp", ""),],
+                        driver_version=driver_version or "3.0"
+                        )
 
     def test_start(self):
         fs_fixture = self.useFixture(FakeFilesystem())
@@ -213,6 +255,7 @@ class TestLXD(TestCase):
         client.profiles.get.side_effect = FakeLXDAPIException
         container = client.containers.create.return_value
         client.containers.get.return_value = container
+        client.host_info = {"environment": {"driver_version": "2.0"}}
         container.start.side_effect = (
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         files_api = container.api.files
@@ -298,19 +341,19 @@ class TestLXD(TestCase):
             data=(
                 b"127.0.0.1\tlocalhost\n\n"
                 b"127.0.1.1\texample.buildd example\n"),
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
         files_api.post.assert_any_call(
             params={"path": "/etc/hostname"},
             data=b"example\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
         files_api.post.assert_any_call(
             params={"path": "/etc/resolv.conf"},
             data=b"host resolv.conf\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
         files_api.post.assert_any_call(
             params={"path": "/usr/local/sbin/policy-rc.d"},
             data=policy_rc_d.encode("UTF-8"),
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0755"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0755"})
         files_api.session.get.assert_any_call(
             "/1.0/containers/lp-xenial-amd64/files",
             params={"path": "/etc/init/mounted-dev.conf"}, stream=True)
@@ -321,7 +364,7 @@ class TestLXD(TestCase):
         files_api.post.assert_any_call(
             params={"path": "/etc/systemd/system/snapd.service.d/no-cdn.conf"},
             data=b"[Service]\nEnvironment=SNAPPY_STORE_NO_CDN=1\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
         container.start.assert_called_once_with(wait=True)
         self.assertEqual(LXD_RUNNING, container.status_code)
 
@@ -340,6 +383,7 @@ class TestLXD(TestCase):
         client.profiles.get.side_effect = FakeLXDAPIException
         container = client.containers.create.return_value
         client.containers.get.return_value = container
+        client.host_info = {"environment": {"driver_version": "2.0"}}
         container.start.side_effect = (
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         files_api = container.api.files
@@ -360,7 +404,7 @@ class TestLXD(TestCase):
             data=(
                 fallback_hosts +
                 "\n127.0.1.1\texample.buildd example\n").encode("UTF-8"),
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
 
     def test_start_with_mounted_dev_conf(self):
         fs_fixture = self.useFixture(FakeFilesystem())
@@ -375,6 +419,7 @@ class TestLXD(TestCase):
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
+        client.host_info = {"environment": {"driver_version": "2.0"}}
         container = client.containers.create.return_value
         client.containers.get.return_value = container
         container.start.side_effect = (
@@ -406,7 +451,7 @@ class TestLXD(TestCase):
                     : # /sbin/MAKEDEV std fd ppp tun
                 end script
                 """).encode("UTF-8"),
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
 
     def test_run(self):
         processes_fixture = self.useFixture(FakeProcesses())
@@ -456,7 +501,7 @@ class TestLXD(TestCase):
         container.api.files.post.assert_called_once_with(
             params={"path": target_path},
             data=b"hello\n",
-            headers={"X-LXD-uid": 0, "X-LXD-gid": 0, "X-LXD-mode": "0644"})
+            headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
 
     def test_copy_in_error(self):
         source_dir = self.useFixture(TempDir()).path

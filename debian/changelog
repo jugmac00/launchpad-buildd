@@ -1,6 +1,10 @@
 launchpad-buildd (166) UNRELEASED; urgency=medium
 
+  [ Colin Watson ]
   * Run all tests at package build time, not just those in lpbuildd.tests.
+
+  [ Tobias Koch ]
+  * Update LXD backend to work with LXD 3.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 25 Oct 2018 10:03:14 +0100
 
