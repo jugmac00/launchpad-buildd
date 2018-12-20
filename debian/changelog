@@ -5,6 +5,9 @@ launchpad-buildd (166) UNRELEASED; urgency=medium
 
   [ Tobias Koch ]
   * Update LXD backend to work with LXD 3.
+  * buildlivefs: support passing a REPO_SNAPSHOT_STAMP variable into the
+    environment, used to generate images with identical version of Debian
+    packages during parallelized image builds.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 25 Oct 2018 10:03:14 +0100
 
