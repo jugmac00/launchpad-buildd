@@ -38,6 +38,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.extra_ppas = extra_args.get("extra_ppas", [])
         self.channel = extra_args.get("channel")
         self.image_targets = extra_args.get("image_targets", [])
+        self.cohort_key = extra_args.get("cohort-key")
         self.debug = extra_args.get("debug", False)
 
         super(LiveFilesystemBuildManager, self).initiate(
@@ -65,6 +66,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--channel", self.channel])
         for image_target in self.image_targets:
             args.extend(["--image-target", image_target])
+        if self.cohort_key:
+            args.extend(["--cohort-key", self.cohort_key])
         if self.debug:
             args.append("--debug")
         self.runTargetSubProcess("buildlivefs", *args)
