@@ -182,7 +182,9 @@ class BuildManager(object):
 
     def doUnpack(self):
         """Unpack the build chroot."""
-        self.runTargetSubProcess("unpack-chroot", self._chroottarfile)
+        self.runTargetSubProcess(
+            "unpack-chroot", "--image-type", self.image_type,
+            self._chroottarfile)
 
     def doReapProcesses(self, state, notify=True):
         """Reap any processes left lying around in the chroot."""
@@ -242,6 +244,7 @@ class BuildManager(object):
                                             self._buildid, f))
         self._chroottarfile = self._slave.cachePath(chroot)
 
+        self.image_type = extra_args.get('image_type', 'chroot')
         self.series = extra_args['series']
         self.arch_tag = extra_args.get('arch_tag', self._slave.getArch())
         self.fast_cleanup = extra_args.get('fast_cleanup', False)

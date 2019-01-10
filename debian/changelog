@@ -2,6 +2,8 @@ launchpad-buildd (166) UNRELEASED; urgency=medium
 
   [ Colin Watson ]
   * Run all tests at package build time, not just those in lpbuildd.tests.
+  * Allow the LXD backend to accept a LXD image instead of a chroot tarball,
+    skipping the conversion step.
 
   [ Tobias Koch ]
   * Update LXD backend to work with LXD 3.

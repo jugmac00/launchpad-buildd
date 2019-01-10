@@ -23,11 +23,13 @@ class Create(Operation):
     @classmethod
     def add_arguments(cls, parser):
         super(Create, cls).add_arguments(parser)
-        parser.add_argument("tarball_path", help="path to chroot tarball")
+        parser.add_argument(
+            "--image-type", default="chroot", help="base image type")
+        parser.add_argument("image_path", help="path to base image")
 
     def run(self):
         logger.info("Creating target for build %s", self.args.build_id)
-        self.backend.create(self.args.tarball_path)
+        self.backend.create(self.args.image_path, self.args.image_type)
         return 0
 
 

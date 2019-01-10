@@ -12,6 +12,7 @@ import json
 import os.path
 import tarfile
 from textwrap import dedent
+import time
 try:
     from unittest import mock
 except ImportError:
@@ -101,6 +102,32 @@ class TestLXD(TestCase):
         with tarfile.open(output_path, "w:bz2") as tar:
             tar.add(source, arcname="chroot-autobuild")
 
+    def make_lxd_image(self, output_path):
+        source = self.useFixture(TempDir()).path
+        hello = os.path.join(source, "bin", "hello")
+        os.mkdir(os.path.dirname(hello))
+        with open(hello, "w") as f:
+            f.write("hello\n")
+            os.fchmod(f.fileno(), 0o755)
+        metadata = {
+            "architecture": "x86_64",
+            "creation_date": time.time(),
+            "properties": {
+                "os": "Ubuntu",
+                "series": "xenial",
+                "architecture": "amd64",
+                "description": "Launchpad chroot for Ubuntu xenial (amd64)",
+                },
+            }
+        metadata_yaml = json.dumps(
+            metadata, sort_keys=True, indent=4, separators=(",", ": "),
+            ensure_ascii=False).encode("UTF-8") + b"\n"
+        with tarfile.open(output_path, "w:gz") as tar:
+            metadata_file = tarfile.TarInfo(name="metadata.yaml")
+            metadata_file.size = len(metadata_yaml)
+            tar.addfile(metadata_file, io.BytesIO(metadata_yaml))
+            tar.add(source, arcname="rootfs")
+
     def test_convert(self):
         tmp = self.useFixture(TempDir()).path
         source_tarball_path = os.path.join(tmp, "source.tar.bz2")
@@ -136,7 +163,7 @@ class TestLXD(TestCase):
         self.assertThat(hello, FileContains("hello\n"))
         self.assertThat(hello, HasPermissions("0755"))
 
-    def test_create(self):
+    def test_create_from_chroot(self):
         tmp = self.useFixture(TempDir()).path
         source_tarball_path = os.path.join(tmp, "source.tar.bz2")
         self.make_chroot_tarball(source_tarball_path)
@@ -145,7 +172,26 @@ class TestLXD(TestCase):
         client.images.all.return_value = []
         image = mock.MagicMock()
         client.images.create.return_value = image
-        LXD("1", "xenial", "amd64").create(source_tarball_path)
+        LXD("1", "xenial", "amd64").create(source_tarball_path, "chroot")
+
+        client.images.create.assert_called_once_with(mock.ANY, wait=True)
+        with io.BytesIO(client.images.create.call_args[0][0]) as f:
+            with tarfile.open(fileobj=f) as tar:
+                with closing(tar.extractfile("rootfs/bin/hello")) as hello:
+                    self.assertEqual("hello\n", hello.read())
+        image.add_alias.assert_called_once_with(
+            "lp-xenial-amd64", "lp-xenial-amd64")
+
+    def test_create_from_lxd(self):
+        tmp = self.useFixture(TempDir()).path
+        source_image_path = os.path.join(tmp, "source.tar.gz")
+        self.make_lxd_image(source_image_path)
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.images.all.return_value = []
+        image = mock.MagicMock()
+        client.images.create.return_value = image
+        LXD("1", "xenial", "amd64").create(source_image_path, "lxd")
 
         client.images.create.assert_called_once_with(mock.ANY, wait=True)
         with io.BytesIO(client.images.create.call_args[0][0]) as f:

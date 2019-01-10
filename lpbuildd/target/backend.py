@@ -22,8 +22,8 @@ class Backend:
         self.arch = arch
         self.build_path = os.path.join(os.environ["HOME"], "build-" + build_id)
 
-    def create(self, tarball_path):
-        """Create the backend based on a chroot tarball.
+    def create(self, image_path, image_type):
+        """Create the backend based on a base image.
 
         This puts the backend into a state where it is ready to be started.
         """

@@ -28,10 +28,13 @@ class Chroot(Backend):
         super(Chroot, self).__init__(build_id, series=series, arch=arch)
         self.chroot_path = os.path.join(self.build_path, "chroot-autobuild")
 
-    def create(self, tarball_path):
+    def create(self, image_path, image_type):
         """See `Backend`."""
-        subprocess.check_call(
-            ["sudo", "tar", "-C", self.build_path, "-xf", tarball_path])
+        if image_type == "chroot":
+            subprocess.check_call(
+                ["sudo", "tar", "-C", self.build_path, "-xf", image_path])
+        else:
+            raise ValueError("Unhandled image type: %s" % image_type)
 
     def start(self):
         """See `Backend`."""
