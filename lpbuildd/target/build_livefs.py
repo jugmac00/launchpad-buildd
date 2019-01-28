@@ -139,8 +139,8 @@ class BuildLiveFS(Operation):
                 base_lb_env["IMAGE_TARGETS"] = " ".join(
                     self.args.image_targets)
             if self.args.repo_snapshot_stamp:
-                base_lb_env["REPO_SNAPSHOT_STAMP"] = \
-                        self.args.repo_snapshot_stamp
+                base_lb_env["REPO_SNAPSHOT_STAMP"] = (
+                    self.args.repo_snapshot_stamp)
             if self.args.cohort_key:
                 base_lb_env["COHORT_KEY"] = self.args.cohort_key
             lb_env = base_lb_env.copy()
