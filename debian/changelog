@@ -1,4 +1,4 @@
-launchpad-buildd (166) UNRELEASED; urgency=medium
+launchpad-buildd (166) xenial; urgency=medium
 
   [ Colin Watson ]
   * Run all tests at package build time, not just those in lpbuildd.tests.
@@ -12,7 +12,7 @@ launchpad-buildd (166) UNRELEASED; urgency=medium
     environment, used to pre-seed images with identical versions of
     snaps during parallelized image builds.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 25 Oct 2018 10:03:14 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 28 Jan 2019 13:10:27 +0000
 
 launchpad-buildd (165) xenial; urgency=medium
 
