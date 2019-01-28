@@ -39,6 +39,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.channel = extra_args.get("channel")
         self.image_targets = extra_args.get("image_targets", [])
         self.repo_snapshot_stamp = extra_args.get("repo_snapshot_stamp")
+        self.cohort_key = extra_args.get("cohort-key")
         self.debug = extra_args.get("debug", False)
 
         super(LiveFilesystemBuildManager, self).initiate(
@@ -68,6 +69,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--image-target", image_target])
         if self.repo_snapshot_stamp:
             args.extend(["--repo-snapshot-stamp", self.repo_snapshot_stamp])
+        if self.cohort_key:
+            args.extend(["--cohort-key", self.cohort_key])
         if self.debug:
             args.append("--debug")
         self.runTargetSubProcess("buildlivefs", *args)

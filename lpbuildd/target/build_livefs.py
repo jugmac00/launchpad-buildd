@@ -57,6 +57,9 @@ class BuildLiveFS(Operation):
             metavar="TIMESTAMP",
             help="build against package repo state at TIMESTAMP")
         parser.add_argument(
+            "--cohort-key", dest="cohort_key", metavar="COHORT_KEY",
+            help="use COHORT_KEY during snap downloads")
+        parser.add_argument(
             "--proposed", default=False, action="store_true",
             help="enable use of -proposed pocket")
         parser.add_argument(
@@ -138,6 +141,8 @@ class BuildLiveFS(Operation):
             if self.args.repo_snapshot_stamp:
                 base_lb_env["REPO_SNAPSHOT_STAMP"] = \
                         self.args.repo_snapshot_stamp
+            if self.args.cohort_key:
+                base_lb_env["COHORT_KEY"] = self.args.cohort_key
             lb_env = base_lb_env.copy()
             lb_env["SUITE"] = self.args.series
             if self.args.datestamp is not None:
