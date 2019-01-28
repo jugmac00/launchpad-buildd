@@ -53,6 +53,10 @@ class BuildLiveFS(Operation):
             action="append", metavar="TARGET",
             help="produce image for TARGET")
         parser.add_argument(
+            "--repo-snapshot-stamp", dest="repo_snapshot_stamp",
+            metavar="TIMESTAMP",
+            help="build against package repo state at TIMESTAMP")
+        parser.add_argument(
             "--proposed", default=False, action="store_true",
             help="enable use of -proposed pocket")
         parser.add_argument(
@@ -131,6 +135,9 @@ class BuildLiveFS(Operation):
             if self.args.image_targets:
                 base_lb_env["IMAGE_TARGETS"] = " ".join(
                     self.args.image_targets)
+            if self.args.repo_snapshot_stamp:
+                base_lb_env["REPO_SNAPSHOT_STAMP"] = \
+                        self.args.repo_snapshot_stamp
             lb_env = base_lb_env.copy()
             lb_env["SUITE"] = self.args.series
             if self.args.datestamp is not None:
