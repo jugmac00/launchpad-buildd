@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
@@ -29,6 +29,10 @@ except ImportError:
         )
     from urlparse import urlparse
 
+from six.moves.configparser import (
+    NoOptionError,
+    NoSectionError,
+    )
 from twisted.application import strports
 from twisted.internet import reactor
 from twisted.internet.interfaces import IHalfCloseableProtocol
@@ -348,6 +352,12 @@ class SnapBuildManager(DebianBuildManager):
             args.extend(["--git-path", self.git_path])
         if self.build_source_tarball:
             args.append("--build-source-tarball")
+        try:
+            snap_store_proxy_url = self._slave._config.get(
+                "proxy", "snapstore")
+            args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
+        except (NoSectionError, NoOptionError):
+            pass
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 

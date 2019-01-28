@@ -1,4 +1,4 @@
-# Copyright 2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,11 +9,17 @@ __all__ = [
     'UncontainedBackend',
     ]
 
+from collections import defaultdict
 import hashlib
 import os
 import shutil
 import stat
 import subprocess
+
+from six.moves.configparser import (
+    NoOptionError,
+    NoSectionError,
+    )
 
 from lpbuildd.target.backend import Backend
 from lpbuildd.util import (
@@ -78,8 +84,22 @@ class FakeMethod:
 
 
 class FakeConfig:
+    def __init__(self):
+        self._overrides = defaultdict(dict)
+
     def get(self, section, key):
-        return key
+        if key in self._overrides[section]:
+            return self._overrides[section][key]
+        elif section == "proxy":
+            if not self._overrides[section]:
+                raise NoSectionError(section)
+            else:
+                raise NoOptionError(section, key)
+        else:
+            return key
+
+    def set(self, section, key, value):
+        self._overrides[section][key] = value
 
 
 class FakeSlave:

@@ -1,3 +1,10 @@
+launchpad-buildd (167) UNRELEASED; urgency=medium
+
+  * Allow configuring APT or snap store proxies via a new [proxy]
+    configuration file section.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 28 Jan 2019 14:23:16 +0000
+
 launchpad-buildd (166) xenial; urgency=medium
 
   [ Colin Watson ]

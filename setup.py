@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Canonical Ltd.  All rights reserved.
+# Copyright 2015-2019 Canonical Ltd.  All rights reserved.
 #
 # This file is part of launchpad-buildd.
 #
@@ -59,6 +59,8 @@ setup(
         # causes problems for Launchpad's build system.
         #'python-apt',
         'python-debian>=0.1.23',
+        'requests',
+        'six',
         'Twisted',
         'zope.interface',
         ],
@@ -69,6 +71,7 @@ setup(
     tests_require=[
         'fixtures',
         'mock',
+        'responses',
         'systemfixtures',
         'testtools',
         'txfixtures',

@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
@@ -18,6 +18,7 @@ except ImportError:
     from urlparse import urlparse
 
 from lpbuildd.target.operation import Operation
+from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
 
@@ -28,7 +29,7 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildSnap(VCSOperationMixin, Operation):
+class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
 
     description = "Build a snap."
 
@@ -126,6 +127,8 @@ class BuildSnap(VCSOperationMixin, Operation):
         else:
             deps.append("snapcraft")
         self.backend.run(["apt-get", "-y", "install"] + deps)
+        if self.args.backend in ("lxd", "fake"):
+            self.snap_store_set_proxy()
         if self.args.channel_core:
             self.backend.run(
                 ["snap", "install",

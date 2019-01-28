@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -251,6 +251,15 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.slave.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_snap_store_proxy(self):
+        # The build manager can be told to use a snap store proxy.
+        self.slave._config.set(
+            "proxy", "snapstore", "http://snap-store-proxy.example/")
+        expected_options = [
+            "--snap-store-proxy-url", "http://snap-store-proxy.example/"]
+        yield self.startBuild(options=expected_options)
 
     def getListenerURL(self, listener):
         port = listener.getHost().port

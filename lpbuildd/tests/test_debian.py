@@ -1,4 +1,4 @@
-# Copyright 2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2017-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -421,3 +421,33 @@ class TestDebianBuildManagerIteration(TestCase):
         self.assertTrue(self.slave.wasCalled('buildOK'))
         self.assertTrue(self.slave.wasCalled('buildComplete'))
 
+    def test_iterate_apt_proxy(self):
+        # The build manager can be configured to use an APT proxy.
+        self.slave._config.set(
+            'proxy', 'apt', 'http://apt-proxy.example:3128/')
+        extra_args = {
+            'arch_tag': 'amd64',
+            'archives': [
+                'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
+                ],
+            'series': 'xenial',
+            }
+        self.startBuild(extra_args)
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.UNPACK, self.getState())
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.MOUNT, self.getState())
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.SOURCES, self.getState())
+        self.assertEqual(
+            (['sharepath/slavebin/in-target', 'in-target',
+              'override-sources-list',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid,
+              '--apt-proxy-url', 'http://apt-proxy.example:3128/',
+              'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])

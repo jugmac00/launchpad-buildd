@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
@@ -10,6 +10,7 @@ import logging
 import os
 
 from lpbuildd.target.operation import Operation
+from lpbuildd.target.snapstore import SnapStoreOperationMixin
 
 
 RETCODE_FAILURE_INSTALL = 200
@@ -29,7 +30,7 @@ def get_build_path(build_id, *extra):
     return os.path.join(os.environ["HOME"], "build-" + build_id, *extra)
 
 
-class BuildLiveFS(Operation):
+class BuildLiveFS(SnapStoreOperationMixin, Operation):
 
     description = "Build a live file system."
 
@@ -94,6 +95,8 @@ class BuildLiveFS(Operation):
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
         self.backend.run(["apt-get", "-y", "install"] + deps)
+        if self.args.backend in ("lxd", "fake"):
+            self.snap_store_set_proxy()
         if self.args.arch == "i386":
             self.backend.run([
                 "apt-get", "-y", "--no-install-recommends", "install",

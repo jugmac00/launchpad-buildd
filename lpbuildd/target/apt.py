@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
@@ -26,6 +26,8 @@ class OverrideSourcesList(Operation):
     def add_arguments(cls, parser):
         super(OverrideSourcesList, cls).add_arguments(parser)
         parser.add_argument(
+            "--apt-proxy-url", metavar="URL", help="APT proxy URL")
+        parser.add_argument(
             "archives", metavar="ARCHIVE", nargs="+",
             help="sources.list lines")
 
@@ -37,6 +39,16 @@ class OverrideSourcesList(Operation):
             sources_list.flush()
             os.fchmod(sources_list.fileno(), 0o644)
             self.backend.copy_in(sources_list.name, "/etc/apt/sources.list")
+        if self.args.apt_proxy_url is not None:
+            with tempfile.NamedTemporaryFile() as apt_proxy_conf:
+                print(
+                    'Acquire::http::Proxy "{}";'.format(
+                        self.args.apt_proxy_url),
+                    file=apt_proxy_conf)
+                apt_proxy_conf.flush()
+                os.fchmod(apt_proxy_conf.fileno(), 0o644)
+                self.backend.copy_in(
+                    apt_proxy_conf.name, "/etc/apt/apt.conf.d/99proxy")
         return 0
 
 
