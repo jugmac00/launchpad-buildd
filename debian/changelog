@@ -1,9 +1,9 @@
-launchpad-buildd (167) UNRELEASED; urgency=medium
+launchpad-buildd (167) xenial; urgency=medium
 
   * Allow the LXD backend to accept a LXD image instead of a chroot tarball,
     skipping the conversion step (LP: #1811677).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 07 Feb 2019 11:50:07 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 07 Feb 2019 12:39:08 +0000
 
 launchpad-buildd (166) xenial; urgency=medium
 
