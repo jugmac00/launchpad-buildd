@@ -35,7 +35,7 @@ class TestChroot(TestCase):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
-        Chroot("1", "xenial", "amd64").create("/path/to/tarball")
+        Chroot("1", "xenial", "amd64").create("/path/to/tarball", "chroot")
 
         expected_args = [
             ["sudo", "tar", "-C", "/expected/home/build-1",

@@ -24,7 +24,20 @@ class TestCreate(TestCase):
         create = parse_args(args=args).operation
         self.assertEqual(0, create.run())
         self.assertEqual(
-            [(("/path/to/tarball",), {})], create.backend.create.calls)
+            [(("/path/to/tarball", "chroot"), {})],
+            create.backend.create.calls)
+
+    def test_image_type(self):
+        args = [
+            "unpack-chroot",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--image-type", "lxd", "/path/to/tarball",
+            ]
+        create = parse_args(args=args).operation
+        self.assertEqual(0, create.run())
+        self.assertEqual(
+            [(("/path/to/tarball", "lxd"), {})],
+            create.backend.create.calls)
 
 
 class TestStart(TestCase):

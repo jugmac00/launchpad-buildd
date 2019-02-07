@@ -170,22 +170,29 @@ class LXD(Backend):
                 if fileptr is not None:
                     fileptr.close()
 
-    def create(self, tarball_path):
+    def create(self, image_path, image_type):
         """See `Backend`."""
         self.remove_image()
 
         # This is a lot of data to shuffle around in Python, but there
         # doesn't currently seem to be any way to ask pylxd to ask lxd to
         # import an image from a file on disk.
-        with io.BytesIO() as target_file:
-            with tarfile.open(name=tarball_path, mode="r") as source_tarball:
-                with tarfile.open(
-                        fileobj=target_file, mode="w") as target_tarball:
-                    self._convert(source_tarball, target_tarball)
+        if image_type == "chroot":
+            with io.BytesIO() as target_file:
+                with tarfile.open(name=image_path, mode="r") as source_tarball:
+                    with tarfile.open(
+                            fileobj=target_file, mode="w") as target_tarball:
+                        self._convert(source_tarball, target_tarball)
 
-            image = self.client.images.create(
-                target_file.getvalue(), wait=True)
-            image.add_alias(self.alias, self.alias)
+                image = self.client.images.create(
+                    target_file.getvalue(), wait=True)
+        elif image_type == "lxd":
+            with open(image_path, "rb") as image_file:
+                image = self.client.images.create(image_file.read(), wait=True)
+        else:
+            raise ValueError("Unhandled image type: %s" % image_type)
+
+        image.add_alias(self.alias, self.alias)
 
     @property
     def sys_dir(self):

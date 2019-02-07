@@ -109,6 +109,7 @@ class TestDebianBuildManagerIteration(TestCase):
               'unpack-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
+              '--image-type', 'chroot',
               os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
              None),
             self.buildmanager.commands[-1])
@@ -223,6 +224,7 @@ class TestDebianBuildManagerIteration(TestCase):
               'unpack-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
+              '--image-type', 'chroot',
               os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
              None),
             self.buildmanager.commands[-1])
@@ -351,6 +353,7 @@ class TestDebianBuildManagerIteration(TestCase):
               'unpack-chroot',
               '--backend=chroot', '--series=xenial', '--arch=amd64',
               self.buildid,
+              '--image-type', 'chroot',
               os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
              None),
             self.buildmanager.commands[-1])
@@ -421,3 +424,27 @@ class TestDebianBuildManagerIteration(TestCase):
         self.assertTrue(self.slave.wasCalled('buildOK'))
         self.assertTrue(self.slave.wasCalled('buildComplete'))
 
+    def test_iterate_lxd(self):
+        # The build manager passes the image_type argument through to
+        # unpack-chroot.
+        self.buildmanager.backend_name = 'lxd'
+        extra_args = {
+            'image_type': 'lxd',
+            'arch_tag': 'amd64',
+            'series': 'xenial',
+            }
+        self.startBuild(extra_args)
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.UNPACK, self.getState())
+        self.assertEqual(
+            (['sharepath/slavebin/in-target', 'in-target',
+              'unpack-chroot',
+              '--backend=lxd', '--series=xenial', '--arch=amd64',
+              self.buildid,
+              '--image-type', 'lxd',
+              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
