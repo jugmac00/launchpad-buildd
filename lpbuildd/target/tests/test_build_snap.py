@@ -166,7 +166,8 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--channel-core=candidate", "--channel-snapcraft=edge",
+            "--channel=core=candidate", "--channel=core18=beta",
+            "--channel=snapcraft=edge",
             "--branch", "lp:foo", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
@@ -174,6 +175,7 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanAptGet("install", "bzr", "sudo"),
             RanSnap("install", "--channel=candidate", "core"),
+            RanSnap("install", "--channel=beta", "core18"),
             RanSnap("install", "--classic", "--channel=edge", "snapcraft"),
             ]))
 
