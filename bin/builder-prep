@@ -3,7 +3,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave initial preparation script
+# Buildd initial preparation script
 
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin:${PATH}
 
@@ -12,7 +12,6 @@ SUDO=sudo
 PACKAGES="launchpad-buildd python-lpbuildd sbuild bzr-builder bzr git-build-recipe git dpkg-dev python-debian"
 KERNEL=$(uname -snrvm)
 
-echo "Forking launchpad-buildd slave process..."
 echo "Kernel version: $KERNEL"
 echo -n "Buildd toolchain package versions:"
 for package in $PACKAGES; do
