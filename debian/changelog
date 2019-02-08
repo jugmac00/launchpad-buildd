@@ -1,3 +1,9 @@
+launchpad-buildd (168) UNRELEASED; urgency=medium
+
+  * Remove obsolete chroot-building instructions from README.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Feb 2019 15:09:35 +0000
+
 launchpad-buildd (167) xenial; urgency=medium
 
   * Allow the LXD backend to accept a LXD image instead of a chroot tarball,
