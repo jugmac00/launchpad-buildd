@@ -2,6 +2,8 @@ launchpad-buildd (168) UNRELEASED; urgency=medium
 
   * Remove obsolete chroot-building instructions from README.
   * Rename slave-prep to builder-prep.
+  * Generalise snap channel handling slightly, allowing channel selection
+    for core16 and core18.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Feb 2019 15:09:35 +0000
 

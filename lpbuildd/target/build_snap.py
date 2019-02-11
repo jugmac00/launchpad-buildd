@@ -5,6 +5,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+import argparse
 from collections import OrderedDict
 import json
 import logging
@@ -28,21 +29,39 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
+class SnapChannelsAction(argparse.Action):
+
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super(SnapChannelsAction, self).__init__(
+            option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if "=" not in values:
+            raise argparse.ArgumentError(
+                self, "'{}' is not of the form 'snap=channel'".format(values))
+        snap, channel = values.split("=", 1)
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, {})
+        getattr(namespace, self.dest)[snap] = channel
+
+
 class BuildSnap(VCSOperationMixin, Operation):
 
     description = "Build a snap."
+
+    core_snap_names = ["core", "core16", "core18"]
 
     @classmethod
     def add_arguments(cls, parser):
         super(BuildSnap, cls).add_arguments(parser)
         parser.add_argument(
-            "--channel-core", metavar="CHANNEL",
-            help="install core snap from CHANNEL")
-        parser.add_argument(
-            "--channel-snapcraft", metavar="CHANNEL",
-            help=(
-                "install snapcraft as a snap from CHANNEL rather than as a "
-                ".deb"))
+            "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
+            dest="channels", default={}, help=(
+                "install SNAP from CHANNEL "
+                "(supported snaps: {}, snapcraft)".format(
+                    ", ".join(cls.core_snap_names))))
         parser.add_argument(
             "--build-url", help="URL of this build on Launchpad")
         parser.add_argument("--proxy-url", help="builder proxy url")
@@ -119,21 +138,24 @@ class BuildSnap(VCSOperationMixin, Operation):
         deps.extend(self.vcs_deps)
         if self.args.proxy_url:
             deps.extend(["python3", "socat"])
-        if self.args.channel_snapcraft:
+        if "snapcraft" in self.args.channels:
             # snapcraft requires sudo in lots of places, but can't depend on
             # it when installed as a snap.
             deps.append("sudo")
         else:
             deps.append("snapcraft")
         self.backend.run(["apt-get", "-y", "install"] + deps)
-        if self.args.channel_core:
-            self.backend.run(
-                ["snap", "install",
-                 "--channel=%s" % self.args.channel_core, "core"])
-        if self.args.channel_snapcraft:
+        for snap_name in self.core_snap_names:
+            if snap_name in self.args.channels:
+                self.backend.run(
+                    ["snap", "install",
+                     "--channel=%s" % self.args.channels[snap_name],
+                     snap_name])
+        if "snapcraft" in self.args.channels:
             self.backend.run(
                 ["snap", "install", "--classic",
-                 "--channel=%s" % self.args.channel_snapcraft, "snapcraft"])
+                 "--channel=%s" % self.args.channels["snapcraft"],
+                 "snapcraft"])
         if self.args.proxy_url:
             self.backend.copy_in(
                 os.path.join(self.slavebin, "snap-git-proxy"),

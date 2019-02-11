@@ -328,7 +328,8 @@ class SnapBuildManager(DebianBuildManager):
         known_snaps = ("core", "snapcraft")
         for snap in known_snaps:
             if snap in self.channels:
-                args.extend(["--channel-%s" % snap, self.channels[snap]])
+                args.extend(
+                    ["--channel", "%s=%s" % (snap, self.channels[snap])])
         unknown_snaps = set(self.channels) - set(known_snaps)
         if unknown_snaps:
             print(
