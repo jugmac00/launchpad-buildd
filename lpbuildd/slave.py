@@ -139,7 +139,7 @@ class BuildManager(object):
         self._reactor = reactor
         self._sharepath = slave._config.get("slave", "sharepath")
         self._slavebin = os.path.join(self._sharepath, "slavebin")
-        self._preppath = os.path.join(self._slavebin, "slave-prep")
+        self._preppath = os.path.join(self._slavebin, "builder-prep")
         self._intargetpath = os.path.join(self._slavebin, "in-target")
         self._subprocess = None
         self._reaped_states = set()
@@ -260,7 +260,7 @@ class BuildManager(object):
             self.backend_name, self._buildid,
             series=self.series, arch=self.arch_tag)
 
-        self.runSubProcess(self._preppath, ["slave-prep"])
+        self.runSubProcess(self._preppath, ["builder-prep"])
 
     def status(self):
         """Return extra status for this build manager, as a dictionary.

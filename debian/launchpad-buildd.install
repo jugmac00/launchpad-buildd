@@ -1,7 +1,7 @@
+bin/builder-prep			usr/share/launchpad-buildd/slavebin
 bin/buildrecipe				usr/share/launchpad-buildd/slavebin
 bin/in-target				usr/share/launchpad-buildd/slavebin
 bin/sbuild-package			usr/share/launchpad-buildd/slavebin
-bin/slave-prep				usr/share/launchpad-buildd/slavebin
 bin/snap-git-proxy			usr/share/launchpad-buildd/slavebin
 buildd-genconfig			usr/share/launchpad-buildd
 debian/upgrade-config			usr/share/launchpad-buildd

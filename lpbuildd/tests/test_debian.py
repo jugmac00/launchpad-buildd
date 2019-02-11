@@ -86,7 +86,7 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.initiate({}, 'chroot.tar.gz', extra_args)
         self.assertEqual(DebianBuildState.INIT, self.getState())
         self.assertEqual(
-            (['sharepath/slavebin/slave-prep', 'slave-prep'], None),
+            (['sharepath/slavebin/builder-prep', 'builder-prep'], None),
             self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
