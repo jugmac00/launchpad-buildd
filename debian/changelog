@@ -4,6 +4,8 @@ launchpad-buildd (168) UNRELEASED; urgency=medium
   * Rename slave-prep to builder-prep.
   * Generalise snap channel handling slightly, allowing channel selection
     for core16 and core18.
+  * Move /usr/share/launchpad-buildd/slavebin to
+    /usr/share/launchpad-buildd/bin.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Feb 2019 15:09:35 +0000
 

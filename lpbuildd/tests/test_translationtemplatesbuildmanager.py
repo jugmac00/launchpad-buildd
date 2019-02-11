@@ -84,7 +84,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
+            'sharepath/bin/in-target', 'in-target',
             'generate-translation-templates',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
@@ -103,8 +103,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # After generating templates, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -122,8 +121,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -152,8 +150,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -167,8 +164,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -192,8 +188,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The buildmanager fails and reaps processes.
         yield self.buildmanager.iterate(RETCODE_FAILURE_BUILD)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -209,8 +204,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]

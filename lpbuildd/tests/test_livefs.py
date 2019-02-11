@@ -81,8 +81,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertEqual(
             LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "buildlivefs",
+            "sharepath/bin/in-target", "in-target", "buildlivefs",
             "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             "--project", "ubuntu",
             ]
@@ -106,8 +105,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "scan-for-processes",
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             ]
         self.assertEqual(
@@ -123,8 +121,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "umount-chroot",
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             ]
         self.assertEqual(LiveFilesystemBuildState.UMOUNT, self.getState())

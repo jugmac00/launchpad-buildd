@@ -82,5 +82,5 @@ case $SUITE in
         ;;
 esac
 
-$SBUILD "$@" | /usr/share/launchpad-buildd/slavebin/check-implicit-pointer-functions --inline $WARN
+$SBUILD "$@" | /usr/share/launchpad-buildd/bin/check-implicit-pointer-functions --inline $WARN
 exit $?

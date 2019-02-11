@@ -94,7 +94,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     def __init__(self, slave, buildid, **kwargs):
         DebianBuildManager.__init__(self, slave, buildid, **kwargs)
-        self._sbuildpath = os.path.join(self._slavebin, "sbuild-package")
+        self._sbuildpath = os.path.join(self._bin, "sbuild-package")
 
     @property
     def chroot_path(self):

@@ -93,8 +93,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(0)
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
-        expected_command = [
-            'sharepath/slavebin/buildrecipe', 'buildrecipe']
+        expected_command = ['sharepath/bin/buildrecipe', 'buildrecipe']
         if git:
             expected_command.append('--git')
         expected_command.extend([
@@ -130,8 +129,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -149,8 +147,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -176,8 +173,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls depFail correctly and reaps processes.
         yield self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -193,8 +189,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -217,8 +212,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls buildFail correctly and reaps processes.
         yield self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -233,8 +227,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
