@@ -188,11 +188,11 @@ def make_backend(name, build_id, series=None, arch=None):
         backend_factory = LXD
     elif name == "fake":
         # Only for use in tests.
-        from lpbuildd.tests.fakeslave import FakeBackend
+        from lpbuildd.tests.fakebuilder import FakeBackend
         backend_factory = FakeBackend
     elif name == "uncontained":
         # Only for use in tests.
-        from lpbuildd.tests.fakeslave import UncontainedBackend
+        from lpbuildd.tests.fakebuilder import UncontainedBackend
         backend_factory = UncontainedBackend
     else:
         raise KeyError("Unknown backend: %s" % name)
