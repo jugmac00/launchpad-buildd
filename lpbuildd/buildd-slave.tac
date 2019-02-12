@@ -1,8 +1,7 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Buildd Slave implementation
-# XXX: dsilvers: 2005/01/21: Currently everything logged in the slave gets
+# XXX: dsilvers: 2005/01/21: Currently everything logged in the builder gets
 # passed through to the twistd log too. this could get dangerous/big
 
 try:
@@ -23,9 +22,9 @@ from twisted.web import (
     )
 
 from lpbuildd.binarypackage import BinaryPackageBuildManager
+from lpbuildd.builder import XMLRPCBuilder
 from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.log import RotatableFileLogObserver
-from lpbuildd.slave import XMLRPCBuildDSlave
 from lpbuildd.snap import SnapBuildManager
 from lpbuildd.sourcepackagerecipe import SourcePackageRecipeBuildManager
 from lpbuildd.translationtemplates import TranslationTemplatesBuildManager
@@ -38,31 +37,31 @@ conffile = os.environ.get('BUILDD_SLAVE_CONFIG', 'buildd-slave-example.conf')
 
 conf = SafeConfigParser()
 conf.read(conffile)
-slave = XMLRPCBuildDSlave(conf)
+builder = XMLRPCBuilder(conf)
 
-slave.registerManager(BinaryPackageBuildManager, "binarypackage")
-slave.registerManager(SourcePackageRecipeBuildManager, "sourcepackagerecipe")
-slave.registerManager(
+builder.registerManager(BinaryPackageBuildManager, "binarypackage")
+builder.registerManager(SourcePackageRecipeBuildManager, "sourcepackagerecipe")
+builder.registerManager(
     TranslationTemplatesBuildManager, 'translation-templates')
-slave.registerManager(LiveFilesystemBuildManager, "livefs")
-slave.registerManager(SnapBuildManager, "snap")
+builder.registerManager(LiveFilesystemBuildManager, "livefs")
+builder.registerManager(SnapBuildManager, "snap")
 
-application = service.Application('BuildDSlave')
+application = service.Application('Builder')
 application.addComponent(
     RotatableFileLogObserver(options.get('logfile')), ignoreClass=1)
-builddslaveService = service.IServiceCollection(application)
-slave.slave.service = builddslaveService
+builderService = service.IServiceCollection(application)
+builder.builder.service = builderService
 
 root = resource.Resource()
-root.putChild('rpc', slave)
+root.putChild('rpc', builder)
 root.putChild('filecache', static.File(conf.get('slave', 'filecache')))
-slavesite = server.Site(root)
+buildersite = server.Site(root)
 
-strports.service("tcp:%s" % slave.slave._config.get("slave", "bindport"),
-                 slavesite).setServiceParent(builddslaveService)
+strports.service("tcp:%s" % builder.builder._config.get("slave", "bindport"),
+                 buildersite).setServiceParent(builderService)
 
-# You can interact with a running slave like this:
-# (assuming the slave is on localhost:8221)
+# You can interact with a running builder like this:
+# (assuming the builder is on localhost:8221)
 #
 # python3
 # from xmlrpc.client import ServerProxy
