@@ -133,7 +133,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             [
-            'sharepath/slavebin/sbuild-package', 'sbuild-package',
+            'sharepath/bin/sbuild-package', 'sbuild-package',
             self.buildid, 'i386', 'warty',
             '-c', 'chroot:build-' + self.buildid,
             '--arch=i386', '--dist=warty', '--nolog',
@@ -159,8 +159,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(exit_code)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
@@ -168,8 +167,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'umount-chroot',
+            ['sharepath/bin/in-target', 'in-target', 'umount-chroot',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
@@ -211,7 +209,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/sbuild-package', 'sbuild-package',
+            ['sharepath/bin/sbuild-package', 'sbuild-package',
              self.buildid, 'i386', 'warty',
              '-c', 'chroot:build-' + self.buildid,
              '--arch=i386', '--dist=warty', '--nolog',
@@ -241,7 +239,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/sbuild-package', 'sbuild-package',
+            ['sharepath/bin/sbuild-package', 'sbuild-package',
              self.buildid, 'i386', 'warty',
              '-c', 'chroot:build-' + self.buildid,
              '--arch=i386', '--dist=warty', '--nolog',
@@ -267,8 +265,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('buildFail'))
@@ -289,8 +286,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
         self.assertFalse(self.slave.wasCalled('builderFail'))
@@ -315,8 +311,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(128 + 9)  # SIGKILL
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'umount-chroot',
+            ['sharepath/bin/in-target', 'in-target', 'umount-chroot',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
@@ -332,16 +327,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.INIT,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
         yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.CLEANUP,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'remove-build',
+            ['sharepath/bin/in-target', 'in-target', 'remove-build',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid],
             final=True)

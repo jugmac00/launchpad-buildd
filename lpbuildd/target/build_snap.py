@@ -77,7 +77,7 @@ class BuildSnap(VCSOperationMixin, Operation):
 
     def __init__(self, args, parser):
         super(BuildSnap, self).__init__(args, parser)
-        self.slavebin = os.path.dirname(sys.argv[0])
+        self.bin = os.path.dirname(sys.argv[0])
 
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
@@ -158,7 +158,7 @@ class BuildSnap(VCSOperationMixin, Operation):
                  "snapcraft"])
         if self.args.proxy_url:
             self.backend.copy_in(
-                os.path.join(self.slavebin, "snap-git-proxy"),
+                os.path.join(self.bin, "snap-git-proxy"),
                 "/usr/local/bin/snap-git-proxy")
             self.install_svn_servers()
 

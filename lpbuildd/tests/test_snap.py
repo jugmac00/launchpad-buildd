@@ -96,8 +96,7 @@ class TestSnapBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(0)
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "buildsnap",
+            "sharepath/bin/in-target", "in-target", "buildsnap",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
             "--git-path", "master",
@@ -135,8 +134,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "scan-for-processes",
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
@@ -151,8 +149,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "umount-chroot",
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
@@ -179,8 +176,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "scan-for-processes",
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
@@ -196,8 +192,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "umount-chroot",
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
@@ -225,8 +220,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "scan-for-processes",
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
@@ -242,8 +236,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "umount-chroot",
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())

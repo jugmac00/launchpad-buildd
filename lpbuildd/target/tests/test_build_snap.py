@@ -141,10 +141,10 @@ class TestBuildSnap(TestCase):
             "test-snap",
             ]
         build_snap = parse_args(args=args).operation
-        build_snap.slavebin = "/slavebin"
-        self.useFixture(FakeFilesystem()).add("/slavebin")
-        os.mkdir("/slavebin")
-        with open("/slavebin/snap-git-proxy", "w") as proxy_script:
+        build_snap.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/snap-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
         build_snap.install()

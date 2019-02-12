@@ -138,9 +138,9 @@ class BuildManager(object):
             reactor = default_reactor
         self._reactor = reactor
         self._sharepath = slave._config.get("slave", "sharepath")
-        self._slavebin = os.path.join(self._sharepath, "slavebin")
-        self._preppath = os.path.join(self._slavebin, "builder-prep")
-        self._intargetpath = os.path.join(self._slavebin, "in-target")
+        self._bin = os.path.join(self._sharepath, "bin")
+        self._preppath = os.path.join(self._bin, "builder-prep")
+        self._intargetpath = os.path.join(self._bin, "in-target")
         self._subprocess = None
         self._reaped_states = set()
         self.is_archive_private = False
