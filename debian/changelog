@@ -6,6 +6,8 @@ launchpad-buildd (168) UNRELEASED; urgency=medium
     for core16 and core18.
   * Move /usr/share/launchpad-buildd/slavebin to
     /usr/share/launchpad-buildd/bin.
+  * Don't set SNAPCRAFT_BUILD_INFO=1 when building private snaps
+    (LP: #1639975).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Feb 2019 15:09:35 +0000
 

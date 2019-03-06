@@ -73,6 +73,9 @@ class BuildSnap(VCSOperationMixin, Operation):
             help=(
                 "build a tarball containing all source code, including "
                 "external dependencies"))
+        parser.add_argument(
+            "--private", default=False, action="store_true",
+            help="build a private snap")
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
@@ -202,9 +205,8 @@ class BuildSnap(VCSOperationMixin, Operation):
         env = OrderedDict()
         env["SNAPCRAFT_LOCAL_SOURCES"] = "1"
         env["SNAPCRAFT_SETUP_CORE"] = "1"
-        # XXX cjwatson 2017-11-24: Once we support building private snaps,
-        # we'll need to make this optional in some way.
-        env["SNAPCRAFT_BUILD_INFO"] = "1"
+        if not self.args.private:
+            env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
         if self.args.proxy_url:
@@ -227,9 +229,8 @@ class BuildSnap(VCSOperationMixin, Operation):
         """Run all build, stage and snap phases."""
         logger.info("Running build phase...")
         env = OrderedDict()
-        # XXX cjwatson 2017-11-24: Once we support building private snaps,
-        # we'll need to make this optional in some way.
-        env["SNAPCRAFT_BUILD_INFO"] = "1"
+        if not self.args.private:
+            env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
         if self.args.proxy_url:
