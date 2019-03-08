@@ -710,7 +710,7 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         # the reduced and optimised XMLRPC interface.
         self.protocolversion = '1.0'
         self.slave = BuildDSlave(config)
-        self._builders = {}
+        self._managers = {}
         cache = apt.Cache()
         try:
             installed = cache["python-lpbuildd"].installed
@@ -719,17 +719,17 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
             self._version = None
         log.msg("Initialized")
 
-    def registerBuilder(self, builderclass, buildertag):
-        self._builders[buildertag] = builderclass
+    def registerManager(self, managerclass, managertag):
+        self._managers[managertag] = managerclass
 
     def xmlrpc_echo(self, *args):
         """Echo the argument back."""
         return args
 
     def xmlrpc_info(self):
-        """Return the protocol version and the builder methods supported."""
+        """Return the protocol version and the manager methods supported."""
         return (self.protocolversion, self.slave.getArch(),
-                list(self._builders))
+                list(self._managers))
 
     def xmlrpc_status(self):
         """Return the status of the build daemon, as a dictionary.
@@ -802,15 +802,15 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         self.slave.clean()
         return BuilderStatus.IDLE
 
-    def xmlrpc_build(self, buildid, builder, chrootsum, filemap, args):
+    def xmlrpc_build(self, buildid, managertag, chrootsum, filemap, args):
         """Check if requested arguments are sane and initiate build procedure
 
         return a tuple containing: (<builder_status>, <info>)
 
         """
-        # check requested builder
-        if not builder in self._builders:
-            extra_info = "%s not in %r" % (builder, list(self._builders))
+        # check requested manager
+        if managertag not in self._managers:
+            extra_info = "%s not in %r" % (managertag, list(self._managers))
             return (BuilderStatus.UNKNOWNBUILDER, extra_info)
         # check requested chroot availability
         chroot_present, info = self.slave.ensurePresent(chrootsum)
@@ -838,6 +838,6 @@ class XMLRPCBuildDSlave(xmlrpc.XMLRPC):
         # builder is available, buildd is non empty,
         # filelist is consistent, chrootsum is available, let's initiate...
         self.buildid = buildid
-        self.slave.startBuild(self._builders[builder](self.slave, buildid))
+        self.slave.startBuild(self._managers[managertag](self.slave, buildid))
         self.slave.manager.initiate(filemap, chrootsum, args)
         return (BuilderStatus.BUILDING, buildid)

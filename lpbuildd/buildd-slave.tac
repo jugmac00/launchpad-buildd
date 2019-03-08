@@ -40,12 +40,12 @@ conf = SafeConfigParser()
 conf.read(conffile)
 slave = XMLRPCBuildDSlave(conf)
 
-slave.registerBuilder(BinaryPackageBuildManager, "binarypackage")
-slave.registerBuilder(SourcePackageRecipeBuildManager, "sourcepackagerecipe")
-slave.registerBuilder(
+slave.registerManager(BinaryPackageBuildManager, "binarypackage")
+slave.registerManager(SourcePackageRecipeBuildManager, "sourcepackagerecipe")
+slave.registerManager(
     TranslationTemplatesBuildManager, 'translation-templates')
-slave.registerBuilder(LiveFilesystemBuildManager, "livefs")
-slave.registerBuilder(SnapBuildManager, "snap")
+slave.registerManager(LiveFilesystemBuildManager, "livefs")
+slave.registerManager(SnapBuildManager, "snap")
 
 application = service.Application('BuildDSlave')
 application.addComponent(
