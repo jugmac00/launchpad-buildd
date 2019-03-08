@@ -4,8 +4,8 @@
 __metaclass__ = type
 __all__ = [
     'FakeBackend',
+    'FakeBuilder',
     'FakeMethod',
-    'FakeSlave',
     'UncontainedBackend',
     ]
 
@@ -82,7 +82,7 @@ class FakeConfig:
         return key
 
 
-class FakeSlave:
+class FakeBuilder:
     def __init__(self, tempdir):
         self._cachepath = tempdir
         self._config = FakeConfig()

@@ -30,7 +30,7 @@ from lpbuildd.snap import (
     SnapBuildState,
     SnapProxyFactory,
     )
-from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
 
 
@@ -56,15 +56,15 @@ class TestSnapBuildManagerIteration(TestCase):
     def setUp(self):
         super(TestSnapBuildManagerIteration, self).setUp()
         self.working_dir = self.useFixture(TempDir()).path
-        slave_dir = os.path.join(self.working_dir, "slave")
+        builder_dir = os.path.join(self.working_dir, "builder")
         home_dir = os.path.join(self.working_dir, "home")
-        for dir in (slave_dir, home_dir):
+        for dir in (builder_dir, home_dir):
             os.mkdir(dir)
         self.useFixture(EnvironmentVariable("HOME", home_dir))
-        self.slave = FakeSlave(slave_dir)
+        self.builder = FakeBuilder(builder_dir)
         self.buildid = "123"
-        self.buildmanager = MockBuildManager(self.slave, self.buildid)
-        self.buildmanager._cachepath = self.slave._cachepath
+        self.buildmanager = MockBuildManager(self.builder, self.buildid)
+        self.buildmanager._cachepath = self.builder._cachepath
 
     def getState(self):
         """Retrieve build manager's state."""
@@ -92,7 +92,7 @@ class TestSnapBuildManagerIteration(TestCase):
         # directly before BUILD_SNAP.
         self.buildmanager._state = SnapBuildState.UPDATE
 
-        # BUILD_SNAP: Run the slave's payload to build the snap package.
+        # BUILD_SNAP: Run the builder's payload to build the snap package.
         yield self.buildmanager.iterate(0)
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         expected_command = [
@@ -107,7 +107,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("chrootFail"))
+        self.assertFalse(self.builder.wasCalled("chrootFail"))
 
     def test_status(self):
         # The build manager returns saved status information on request.
@@ -141,8 +141,8 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "test-snap_0_all.snap": b"I am a snap package.",
             }))
 
@@ -156,7 +156,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
     def test_iterate_with_manifest(self):
@@ -183,8 +183,8 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "test-snap_0_all.manifest": b"I am a manifest.",
             "test-snap_0_all.snap": b"I am a snap package.",
             }))
@@ -199,7 +199,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
     def test_iterate_with_build_source_tarball(self):
@@ -227,8 +227,8 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "test-snap_0_all.snap": b"I am a snap package.",
             "test-snap.tar.gz": b"I am a source tarball.",
             }))
@@ -243,7 +243,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
 
     def getListenerURL(self, listener):
         port = listener.getHost().port

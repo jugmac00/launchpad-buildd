@@ -20,7 +20,7 @@ from testtools.matchers import (
     )
 
 from lpbuildd.target.cli import parse_args
-from lpbuildd.tests.fakeslave import FakeMethod
+from lpbuildd.tests.fakebuilder import FakeMethod
 
 
 class MockCopyIn(FakeMethod):

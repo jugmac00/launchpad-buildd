@@ -25,7 +25,7 @@ from lpbuildd.pottery.intltool import (
     generate_pots,
     get_translation_domain,
     )
-from lpbuildd.tests.fakeslave import (
+from lpbuildd.tests.fakebuilder import (
     FakeMethod,
     UncontainedBackend,
     )

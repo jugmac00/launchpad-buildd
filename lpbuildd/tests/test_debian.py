@@ -15,7 +15,7 @@ from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
     )
-from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.fakebuilder import FakeBuilder
 
 
 class MockBuildState(DebianBuildState):
@@ -46,7 +46,7 @@ class MockBuildManager(DebianBuildManager):
     def iterate_MAIN(self, success):
         if success != 0:
             if not self.alreadyfailed:
-                self._slave.buildFail()
+                self._builder.buildFail()
             self.alreadyfailed = True
         self.doReapProcesses(self._state)
 
@@ -62,17 +62,17 @@ class TestDebianBuildManagerIteration(TestCase):
         super(TestDebianBuildManagerIteration, self).setUp()
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
-        slave_dir = os.path.join(self.working_dir, 'slave')
+        builder_dir = os.path.join(self.working_dir, 'builder')
         home_dir = os.path.join(self.working_dir, 'home')
-        for dir in (slave_dir, home_dir):
+        for dir in (builder_dir, home_dir):
             os.mkdir(dir)
-        self.slave = FakeSlave(slave_dir)
+        self.builder = FakeBuilder(builder_dir)
         self.buildid = '123'
         self.clock = Clock()
         self.buildmanager = MockBuildManager(
-            self.slave, self.buildid, reactor=self.clock)
+            self.builder, self.buildid, reactor=self.clock)
         self.buildmanager.home = home_dir
-        self.buildmanager._cachepath = self.slave._cachepath
+        self.buildmanager._cachepath = self.builder._cachepath
         self.chrootdir = os.path.join(
             home_dir, 'build-%s' % self.buildid, 'chroot-autobuild')
 
@@ -190,12 +190,12 @@ class TestDebianBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
         self.buildmanager.iterate(0)
-        self.assertFalse(self.slave.wasCalled('builderFail'))
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertFalse(self.slave.wasCalled('depFail'))
-        self.assertTrue(self.slave.wasCalled('buildOK'))
-        self.assertTrue(self.slave.wasCalled('buildComplete'))
+        self.assertFalse(self.builder.wasCalled('builderFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('depFail'))
+        self.assertTrue(self.builder.wasCalled('buildOK'))
+        self.assertTrue(self.builder.wasCalled('buildComplete'))
 
     def test_iterate_trusted_keys(self):
         # The build manager iterates a build with trusted keys from start to
@@ -309,12 +309,12 @@ class TestDebianBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
         self.buildmanager.iterate(0)
-        self.assertFalse(self.slave.wasCalled('builderFail'))
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertFalse(self.slave.wasCalled('depFail'))
-        self.assertTrue(self.slave.wasCalled('buildOK'))
-        self.assertTrue(self.slave.wasCalled('buildComplete'))
+        self.assertFalse(self.builder.wasCalled('builderFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('depFail'))
+        self.assertTrue(self.builder.wasCalled('buildOK'))
+        self.assertTrue(self.builder.wasCalled('buildComplete'))
 
     def test_iterate_fast_cleanup(self):
         # The build manager can be told that it doesn't need to do the final
@@ -397,12 +397,12 @@ class TestDebianBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
 
         self.buildmanager.iterateReap(self.getState(), 0)
-        self.assertFalse(self.slave.wasCalled('builderFail'))
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertFalse(self.slave.wasCalled('depFail'))
-        self.assertTrue(self.slave.wasCalled('buildOK'))
-        self.assertTrue(self.slave.wasCalled('buildComplete'))
+        self.assertFalse(self.builder.wasCalled('builderFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('depFail'))
+        self.assertTrue(self.builder.wasCalled('buildOK'))
+        self.assertTrue(self.builder.wasCalled('buildComplete'))
 
     def test_iterate_lxd(self):
         # The build manager passes the image_type argument through to

@@ -28,7 +28,7 @@ from lpbuildd.target.build_snap import (
     RETCODE_FAILURE_INSTALL,
     )
 from lpbuildd.target.cli import parse_args
-from lpbuildd.tests.fakeslave import FakeMethod
+from lpbuildd.tests.fakebuilder import FakeMethod
 
 
 class RanCommand(MatchesListwise):
