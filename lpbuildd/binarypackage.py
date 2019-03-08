@@ -92,8 +92,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
 
     initial_build_state = BinaryPackageBuildState.SBUILD
 
-    def __init__(self, slave, buildid, **kwargs):
-        DebianBuildManager.__init__(self, slave, buildid, **kwargs)
+    def __init__(self, builder, buildid, **kwargs):
+        DebianBuildManager.__init__(self, builder, buildid, **kwargs)
         self._sbuildpath = os.path.join(self._bin, "sbuild-package")
 
     @property
@@ -334,9 +334,9 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     unsat_deps.append(or_dep)
             return self.stripDependencies(unsat_deps)
         except Exception:
-            self._slave.log("Failed to analyse dep-wait:\n")
+            self._builder.log("Failed to analyse dep-wait:\n")
             for line in traceback.format_exc().splitlines(True):
-                self._slave.log(line)
+                self._builder.log(line)
             return None
 
     def iterate_SBUILD(self, success):
@@ -400,17 +400,17 @@ class BinaryPackageBuildManager(DebianBuildManager):
             if missing_dep is not None:
                 print("Returning build status: DEPFAIL")
                 print("Dependencies: " + missing_dep)
-                self._slave.depFail(missing_dep)
+                self._builder.depFail(missing_dep)
             elif success == SBuildExitCodes.GIVENBACK:
                 print("Returning build status: GIVENBACK")
-                self._slave.giveBack()
+                self._builder.giveBack()
             elif success == SBuildExitCodes.FAILED:
                 print("Returning build status: PACKAGEFAIL")
-                self._slave.buildFail()
+                self._builder.buildFail()
             elif success >= SBuildExitCodes.BUILDERFAIL:
                 # anything else is assumed to be a buildd failure
                 print("Returning build status: BUILDERFAIL")
-                self._slave.builderFail()
+                self._builder.builderFail()
             self.alreadyfailed = True
         self.doReapProcesses(self._state)
 

@@ -237,7 +237,7 @@ class SnapProxyFactory(http.HTTPFactory):
                 'referrer': referrer,
                 'agent': agent,
                 })
-        self.manager._slave.log(line.encode("UTF-8"))
+        self.manager._builder.log(line.encode("UTF-8"))
 
 
 class SnapBuildState(DebianBuildState):
@@ -274,10 +274,10 @@ class SnapBuildManager(DebianBuildManager):
         """Start the local snap proxy, if necessary."""
         if not self.proxy_url:
             return []
-        proxy_port = self._slave._config.get("snapmanager", "proxyport")
+        proxy_port = self._builder._config.get("snapmanager", "proxyport")
         proxy_factory = SnapProxyFactory(self, self.proxy_url, timeout=60)
         self.proxy_service = strports.service(proxy_port, proxy_factory)
-        self.proxy_service.setServiceParent(self._slave.service)
+        self.proxy_service.setServiceParent(self._builder.service)
         if self.backend_name == "lxd":
             proxy_host = self.backend.ipv4_network.ip
         else:
@@ -295,7 +295,7 @@ class SnapBuildManager(DebianBuildManager):
         """Revoke builder proxy token."""
         if not self.revocation_endpoint:
             return
-        self._slave.log("Revoking proxy token...\n")
+        self._builder.log("Revoking proxy token...\n")
         url = urlparse(self.proxy_url)
         auth = "{}:{}".format(url.username, url.password)
         headers = {
@@ -306,7 +306,7 @@ class SnapBuildManager(DebianBuildManager):
         try:
             urlopen(req)
         except (HTTPError, URLError) as e:
-            self._slave.log(
+            self._builder.log(
                 "Unable to revoke token for %s: %s" % (url.username, e))
 
     def status(self):
@@ -362,12 +362,12 @@ class SnapBuildManager(DebianBuildManager):
         elif (retcode >= RETCODE_FAILURE_INSTALL and
               retcode <= RETCODE_FAILURE_BUILD):
             if not self.alreadyfailed:
-                self._slave.buildFail()
+                self._builder.buildFail()
                 print("Returning build status: Build failed.")
             self.alreadyfailed = True
         else:
             if not self.alreadyfailed:
-                self._slave.builderFail()
+                self._builder.builderFail()
                 print("Returning build status: Builder failed.")
             self.alreadyfailed = True
         self.doReapProcesses(self._state)

@@ -83,12 +83,12 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         elif (retcode >= RETCODE_FAILURE_INSTALL and
               retcode <= RETCODE_FAILURE_BUILD):
             if not self.alreadyfailed:
-                self._slave.buildFail()
+                self._builder.buildFail()
                 print("Returning build status: Build failed.")
             self.alreadyfailed = True
         else:
             if not self.alreadyfailed:
-                self._slave.builderFail()
+                self._builder.builderFail()
                 print("Returning build status: Builder failed.")
             self.alreadyfailed = True
         self.doReapProcesses(self._state)

@@ -24,14 +24,15 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
 
     This is the implementation of `TranslationTemplatesBuildJob`.  The
     latter runs on the master server; TranslationTemplatesBuildManager
-    runs on the build slave.
+    runs on the builder.
     """
 
     initial_build_state = TranslationTemplatesBuildState.GENERATE
 
-    def __init__(self, slave, buildid):
-        super(TranslationTemplatesBuildManager, self).__init__(slave, buildid)
-        self._resultname = slave._config.get(
+    def __init__(self, builder, buildid):
+        super(TranslationTemplatesBuildManager, self).__init__(
+            builder, buildid)
+        self._resultname = builder._config.get(
             "translationtemplatesmanager", "resultarchive")
 
     def initiate(self, files, chroot, extra_args):
@@ -67,11 +68,11 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
         else:
             if not self.alreadyfailed:
                 if retcode == RETCODE_FAILURE_INSTALL:
-                    self._slave.chrootFail()
+                    self._builder.chrootFail()
                 elif retcode == RETCODE_FAILURE_BUILD:
-                    self._slave.buildFail()
+                    self._builder.buildFail()
                 else:
-                    self._slave.builderFail()
+                    self._builder.builderFail()
                 self.alreadyfailed = True
         self.doReapProcesses(self._state)
 

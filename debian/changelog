@@ -6,6 +6,7 @@ launchpad-buildd (168) UNRELEASED; urgency=medium
     for core16 and core18.
   * Move /usr/share/launchpad-buildd/slavebin to
     /usr/share/launchpad-buildd/bin.
+  * Rename BuildDSlave to Builder and XMLRPCBuildDSlave to XMLRPCBuilder.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Feb 2019 15:09:35 +0000
 
