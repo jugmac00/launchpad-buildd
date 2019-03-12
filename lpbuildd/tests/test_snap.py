@@ -267,8 +267,8 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "test-snap_0_all.snap": b"I am a snap package.",
             }))
 
@@ -282,7 +282,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
 
     def getListenerURL(self, listener):
         port = listener.getHost().port
