@@ -1,8 +1,8 @@
-launchpad-buildd (169) UNRELEASED; urgency=medium
+launchpad-buildd (169) xenial; urgency=medium
 
   * Fix test failure in TestSnapBuildManagerIteration.test_iterate_private.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 12 Mar 2019 16:42:30 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 12 Mar 2019 16:42:52 +0000
 
 launchpad-buildd (168) xenial; urgency=medium
 
