@@ -266,6 +266,7 @@ class SnapBuildManager(DebianBuildManager):
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.build_source_tarball = extra_args.get(
             "build_source_tarball", False)
+        self.private = extra_args.get("private", False)
         self.proxy_service = None
 
         super(SnapBuildManager, self).initiate(files, chroot, extra_args)
@@ -349,6 +350,8 @@ class SnapBuildManager(DebianBuildManager):
             args.extend(["--git-path", self.git_path])
         if self.build_source_tarball:
             args.append("--build-source-tarball")
+        if self.private:
+            args.append("--private")
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 

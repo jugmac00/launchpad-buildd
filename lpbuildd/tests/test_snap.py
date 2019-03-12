@@ -245,6 +245,45 @@ class TestSnapBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
+    @defer.inlineCallbacks
+    def test_iterate_private(self):
+        # The build manager iterates a private build from start to finish.
+        yield self.startBuild({"private": True}, ["--private"])
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+            "test-snap_0_all.snap": b"I am a snap package.",
+            }))
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.slave.wasCalled("buildFail"))
+
     def getListenerURL(self, listener):
         port = listener.getHost().port
         return b"http://localhost:%d/" % port

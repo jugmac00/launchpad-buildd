@@ -8,6 +8,8 @@ launchpad-buildd (168) UNRELEASED; urgency=medium
     /usr/share/launchpad-buildd/bin.
   * Rename BuildDSlave to Builder and XMLRPCBuildDSlave to XMLRPCBuilder.
   * Rename FakeSlave to FakeBuilder.
+  * Don't set SNAPCRAFT_BUILD_INFO=1 when building private snaps
+    (LP: #1639975).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Feb 2019 15:09:35 +0000
 

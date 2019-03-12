@@ -377,6 +377,25 @@ class TestBuildSnap(TestCase):
                 cwd="/build"),
             ]))
 
+    def test_pull_private(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--private", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.pull()
+        env = {
+            "SNAPCRAFT_LOCAL_SOURCES": "1",
+            "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_IMAGE_INFO": "{}",
+            "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
+            }
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft", "pull"], cwd="/build/test-snap", **env),
+            ]))
+
     def test_build(self):
         args = [
             "buildsnap",
@@ -413,6 +432,20 @@ class TestBuildSnap(TestCase):
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(["snapcraft"], cwd="/build/test-snap", **env),
+            ]))
+
+    def test_build_private(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--private", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.build()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_IMAGE_INFO="{}", SNAPCRAFT_BUILD_ENVIRONMENT="host"),
             ]))
 
     # XXX cjwatson 2017-08-07: Test revoke_token.  It may be easiest to
