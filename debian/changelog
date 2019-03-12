@@ -1,4 +1,4 @@
-launchpad-buildd (168) UNRELEASED; urgency=medium
+launchpad-buildd (168) xenial; urgency=medium
 
   * Remove obsolete chroot-building instructions from README.
   * Rename slave-prep to builder-prep.
@@ -11,7 +11,7 @@ launchpad-buildd (168) UNRELEASED; urgency=medium
   * Don't set SNAPCRAFT_BUILD_INFO=1 when building private snaps
     (LP: #1639975).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Feb 2019 15:09:35 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 12 Mar 2019 16:09:06 +0000
 
 launchpad-buildd (167) xenial; urgency=medium
 
