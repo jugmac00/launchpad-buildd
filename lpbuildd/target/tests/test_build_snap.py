@@ -448,6 +448,22 @@ class TestBuildSnap(TestCase):
                 SNAPCRAFT_IMAGE_INFO="{}", SNAPCRAFT_BUILD_ENVIRONMENT="host"),
             ]))
 
+    def test_build_including_build_request_id(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-request-id", "13", "--branch", "lp:foo", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.build()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_BUILD_INFO="1",
+                SNAPCRAFT_IMAGE_INFO='{"build_request_id": "13"}',
+                SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            ]))
+
     # XXX cjwatson 2017-08-07: Test revoke_token.  It may be easiest to
     # convert it to requests first.
 
@@ -455,6 +471,7 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-request-id", "13",
             "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "test-snap",
             ]
@@ -471,13 +488,15 @@ class TestBuildSnap(TestCase):
                 SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1",
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO=(
-                    '{"build_url": "https://launchpad.example/build"}'),
+                    '{"build_request_id": "13",'
+                    ' "build_url": "https://launchpad.example/build"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host")),
             AnyMatch(RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO=(
-                    '{"build_url": "https://launchpad.example/build"}'),
+                    '{"build_request_id": "13",'
+                    ' "build_url": "https://launchpad.example/build"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host")),
             ))
 
