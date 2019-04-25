@@ -66,6 +66,9 @@ class BuildSnap(VCSOperationMixin, Operation):
             "--build-request-id",
             help="ID of the request triggering this build on Launchpad")
         parser.add_argument(
+            "--build-request-timestamp",
+            help="RFC3339 timestamp of the Launchpad build request")
+        parser.add_argument(
             "--build-url", help="URL of this build on Launchpad")
         parser.add_argument("--proxy-url", help="builder proxy url")
         parser.add_argument(
@@ -197,12 +200,14 @@ class BuildSnap(VCSOperationMixin, Operation):
 
     @property
     def image_info(self):
-        data = OrderedDict()
+        data = {}
         if self.args.build_request_id is not None:
             data["build_request_id"] = self.args.build_request_id
+        if self.args.build_request_timestamp is not None:
+            data["build_request_timestamp"] = self.args.build_request_timestamp
         if self.args.build_url is not None:
             data["build_url"] = self.args.build_url
-        return json.dumps(data)
+        return json.dumps(data, sort_keys=True)
 
     def pull(self):
         """Run pull phase."""
