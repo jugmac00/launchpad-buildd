@@ -1,10 +1,10 @@
-launchpad-buildd (171) UNRELEASED; urgency=medium
+launchpad-buildd (171) xenial; urgency=medium
 
   [ Matias Bordese ]
   * Updated build request fields in SNAPCRAFT_IMAGE_INFO to use dash as
     separator.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 26 Apr 2019 14:24:03 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 26 Apr 2019 14:24:36 +0100
 
 launchpad-buildd (170) xenial; urgency=medium
 
