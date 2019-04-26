@@ -460,7 +460,7 @@ class TestBuildSnap(TestCase):
             RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_BUILD_INFO="1",
-                SNAPCRAFT_IMAGE_INFO='{"build_request_id": "13"}',
+                SNAPCRAFT_IMAGE_INFO='{"build-request-id": "13"}',
                 SNAPCRAFT_BUILD_ENVIRONMENT="host"),
             ]))
 
@@ -478,7 +478,7 @@ class TestBuildSnap(TestCase):
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO=(
-                    '{"build_request_timestamp": "2018-04-13T14:50:02Z"}'),
+                    '{"build-request-timestamp": "2018-04-13T14:50:02Z"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host"),
             ]))
 
@@ -506,14 +506,14 @@ class TestBuildSnap(TestCase):
                 SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1",
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO=(
-                    '{"build_request_id": "13",'
+                    '{"build-request-id": "13",'
                     ' "build_url": "https://launchpad.example/build"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host")),
             AnyMatch(RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO=(
-                    '{"build_request_id": "13",'
+                    '{"build-request-id": "13",'
                     ' "build_url": "https://launchpad.example/build"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host")),
             ))
