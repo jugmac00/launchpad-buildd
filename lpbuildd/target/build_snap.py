@@ -202,7 +202,8 @@ class BuildSnap(VCSOperationMixin, Operation):
     def image_info(self):
         data = {}
         if self.args.build_request_id is not None:
-            data["build-request-id"] = self.args.build_request_id
+            data["build-request-id"] = 'lp-{}'.format(
+                self.args.build_request_id)
         if self.args.build_request_timestamp is not None:
             data["build-request-timestamp"] = self.args.build_request_timestamp
         if self.args.build_url is not None:
