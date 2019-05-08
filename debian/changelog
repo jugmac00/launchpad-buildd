@@ -1,9 +1,9 @@
-launchpad-buildd (172) UNRELEASED; urgency=medium
+launchpad-buildd (172) xenial; urgency=medium
 
   * lpbuildd.snap: Pass build_request_id and build_request_timestamp through
     to the backend.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 May 2019 11:31:10 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 May 2019 11:45:34 +0100
 
 launchpad-buildd (171) xenial; urgency=medium
 
