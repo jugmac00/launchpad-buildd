@@ -78,8 +78,6 @@ class TestSnapBuildManagerIteration(TestCase):
             "series": "xenial",
             "arch_tag": "i386",
             "name": "test-snap",
-            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
-            "git_path": "master",
             }
         if args is not None:
             extra_args.update(args)
@@ -98,8 +96,6 @@ class TestSnapBuildManagerIteration(TestCase):
         expected_command = [
             "sharepath/bin/in-target", "in-target", "buildsnap",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
-            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
-            "--git-path", "master",
             ]
         if options is not None:
             expected_command.extend(options)
@@ -122,7 +118,21 @@ class TestSnapBuildManagerIteration(TestCase):
     @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
-        yield self.startBuild()
+        args = {
+            "build_request_id": 13,
+            "build_request_timestamp": "2018-04-13T14:50:02Z",
+            "build_url": "https://launchpad.example/build",
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            }
+        expected_options = [
+            "--build-request-id", "13",
+            "--build-request-timestamp", "2018-04-13T14:50:02Z",
+            "--build-url", "https://launchpad.example/build",
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -162,7 +172,15 @@ class TestSnapBuildManagerIteration(TestCase):
     def test_iterate_with_manifest(self):
         # The build manager iterates a build that uploads a manifest from
         # start to finish.
-        yield self.startBuild()
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -205,8 +223,17 @@ class TestSnapBuildManagerIteration(TestCase):
     def test_iterate_with_build_source_tarball(self):
         # The build manager iterates a build that uploads a source tarball
         # from start to finish.
-        yield self.startBuild(
-            {"build_source_tarball": True}, ["--build-source-tarball"])
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "build_source_tarball": True,
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            "--build-source-tarball",
+            ]
+        yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -248,7 +275,17 @@ class TestSnapBuildManagerIteration(TestCase):
     @defer.inlineCallbacks
     def test_iterate_private(self):
         # The build manager iterates a private build from start to finish.
-        yield self.startBuild({"private": True}, ["--private"])
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "private": True,
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            "--private",
+            ]
+        yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
