@@ -1,3 +1,10 @@
+launchpad-buildd (173) UNRELEASED; urgency=medium
+
+  [ Matias Bordese ]
+  * Updated build-request-id tag to set lp prefix.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 May 2019 17:14:10 +0100
+
 launchpad-buildd (172) xenial; urgency=medium
 
   * lpbuildd.snap: Pass build_request_id and build_request_timestamp through
