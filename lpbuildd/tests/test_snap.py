@@ -220,6 +220,62 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
+    def test_iterate_with_channels(self):
+        # The build manager iterates a build that specifies channels from
+        # start to finish.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "channels": {
+                "core": "candidate",
+                "core18": "beta",
+                "snapcraft": "edge",
+                },
+            }
+        expected_options = [
+            "--channel", "core=candidate",
+            "--channel", "core18=beta",
+            "--channel", "snapcraft=edge",
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "test-snap_0_all.snap": b"I am a snap package.",
+            }))
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
     def test_iterate_with_build_source_tarball(self):
         # The build manager iterates a build that uploads a source tarball
         # from start to finish.
