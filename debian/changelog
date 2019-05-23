@@ -1,9 +1,9 @@
-launchpad-buildd (174) UNRELEASED; urgency=medium
+launchpad-buildd (174) xenial; urgency=medium
 
   * Fix a missing piece from the changes in launchpad-buildd 168 that were
     intended to allow channel selection for core16 and core18.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 22 May 2019 18:58:22 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 23 May 2019 17:23:26 +0100
 
 launchpad-buildd (173) xenial; urgency=medium
 
