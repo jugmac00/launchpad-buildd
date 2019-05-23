@@ -329,17 +329,8 @@ class SnapBuildManager(DebianBuildManager):
     def doRunBuild(self):
         """Run the process to build the snap."""
         args = []
-        known_snaps = ("core", "snapcraft")
-        for snap in known_snaps:
-            if snap in self.channels:
-                args.extend(
-                    ["--channel", "%s=%s" % (snap, self.channels[snap])])
-        unknown_snaps = set(self.channels) - set(known_snaps)
-        if unknown_snaps:
-            print(
-                "Channels requested for unknown snaps: %s" %
-                " ".join(sorted(unknown_snaps)),
-                file=sys.stderr)
+        for snap, channel in sorted(self.channels.items()):
+            args.extend(["--channel", "%s=%s" % (snap, channel)])
         if self.build_request_id:
             args.extend(["--build-request-id", str(self.build_request_id)])
         if self.build_request_timestamp:
