@@ -30,9 +30,9 @@ from lpbuildd.binarypackage import (
     BinaryPackageBuildState,
     SBuildExitCodes,
     )
-from lpbuildd.tests.fakeslave import (
+from lpbuildd.tests.fakebuilder import (
+    FakeBuilder,
     FakeMethod,
-    FakeSlave,
     )
 from lpbuildd.tests.matchers import HasWaitingFiles
 
@@ -95,17 +95,17 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.useFixture(DisableSudo())
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
-        slave_dir = os.path.join(self.working_dir, 'slave')
+        builder_dir = os.path.join(self.working_dir, 'builder')
         home_dir = os.path.join(self.working_dir, 'home')
-        for dir in (slave_dir, home_dir):
+        for dir in (builder_dir, home_dir):
             os.mkdir(dir)
-        self.slave = FakeSlave(slave_dir)
+        self.builder = FakeBuilder(builder_dir)
         self.buildid = '123'
         self.clock = Clock()
         self.buildmanager = MockBuildManager(
-            self.slave, self.buildid, reactor=self.clock)
+            self.builder, self.buildid, reactor=self.clock)
         self.buildmanager.home = home_dir
-        self.buildmanager._cachepath = self.slave._cachepath
+        self.buildmanager._cachepath = self.builder._cachepath
         self.chrootdir = os.path.join(
             home_dir, 'build-%s' % self.buildid, 'chroot-autobuild')
 
@@ -133,13 +133,13 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             [
-            'sharepath/slavebin/sbuild-package', 'sbuild-package',
+            'sharepath/bin/sbuild-package', 'sbuild-package',
             self.buildid, 'i386', 'warty',
             '-c', 'chroot:build-' + self.buildid,
             '--arch=i386', '--dist=warty', '--nolog',
             'foo_1.dsc',
             ], final=True)
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
 
     def assertState(self, state, command, env_matcher=None, final=False):
         self.assertEqual(state, self.getState())
@@ -159,8 +159,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(exit_code)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
@@ -168,8 +167,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'umount-chroot',
+            ['sharepath/bin/in-target', 'in-target', 'umount-chroot',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
@@ -188,14 +186,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
         # After building the package, reap processes.
         yield self.assertScansSanely(SBuildExitCodes.OK)
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             'foo_1_i386.changes': b'I am a changes file.',
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
 
     @defer.inlineCallbacks
     def test_with_debug_symbols(self):
@@ -211,13 +209,13 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/sbuild-package', 'sbuild-package',
+            ['sharepath/bin/sbuild-package', 'sbuild-package',
              self.buildid, 'i386', 'warty',
              '-c', 'chroot:build-' + self.buildid,
              '--arch=i386', '--dist=warty', '--nolog',
              'foo_1.dsc'],
             env_matcher=Not(Contains('DEB_BUILD_OPTIONS')), final=True)
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
         with open(os.path.join(self.chrootdir, 'CurrentlyBuilding')) as cb:
             self.assertEqual(dedent("""\
                 Package: foo
@@ -241,7 +239,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/sbuild-package', 'sbuild-package',
+            ['sharepath/bin/sbuild-package', 'sbuild-package',
              self.buildid, 'i386', 'warty',
              '-c', 'chroot:build-' + self.buildid,
              '--arch=i386', '--dist=warty', '--nolog',
@@ -249,7 +247,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             env_matcher=ContainsDict(
                 {'DEB_BUILD_OPTIONS': Equals('noautodbgsym')}),
             final=True)
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
         with open(os.path.join(self.chrootdir, 'CurrentlyBuilding')) as cb:
             self.assertEqual(dedent("""\
                 Package: foo
@@ -267,16 +265,15 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
 
         # If reaping completes successfully, the build manager returns
         # control to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
 
     @defer.inlineCallbacks
     def test_abort_sbuild_fail(self):
@@ -289,17 +286,16 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.SBUILD,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
-        self.assertFalse(self.slave.wasCalled('builderFail'))
+        self.assertFalse(self.builder.wasCalled('builderFail'))
         reap_subprocess = self.buildmanager._subprocess
 
         # If reaping fails, the builder is failed, sbuild is killed, and the
         # reaper is disconnected.
         self.clock.advance(120)
-        self.assertTrue(self.slave.wasCalled('builderFail'))
+        self.assertTrue(self.builder.wasCalled('builderFail'))
         self.assertEqual(
             [(('KILL',), {})], sbuild_subprocess.transport.signalProcess.calls)
         self.assertNotEqual(
@@ -315,8 +311,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(128 + 9)  # SIGKILL
         self.assertState(
             BinaryPackageBuildState.UMOUNT,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'umount-chroot',
+            ['sharepath/bin/in-target', 'in-target', 'umount-chroot',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=True)
 
@@ -332,20 +327,18 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.buildmanager.abort()
         self.assertState(
             BinaryPackageBuildState.INIT,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'scan-for-processes',
+            ['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid], final=False)
 
         yield self.buildmanager.iterate(0)
         self.assertState(
             BinaryPackageBuildState.CLEANUP,
-            ['sharepath/slavebin/in-target', 'in-target',
-             'remove-build',
+            ['sharepath/bin/in-target', 'in-target', 'remove-build',
              '--backend=chroot', '--series=warty', '--arch=i386',
              self.buildid],
             final=True)
-        self.assertFalse(self.slave.wasCalled('builderFail'))
+        self.assertFalse(self.builder.wasCalled('builderFail'))
 
     @defer.inlineCallbacks
     def test_missing_changes(self):
@@ -363,12 +356,12 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
 
         # After building the package, reap processes.
         yield self.assertScansSanely(SBuildExitCodes.OK)
-        self.assertTrue(self.slave.wasCalled('buildFail'))
-        self.assertThat(self.slave, HasWaitingFiles({}))
+        self.assertTrue(self.builder.wasCalled('buildFail'))
+        self.assertThat(self.builder, HasWaitingFiles({}))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.assertUnmountsSanely()
-        self.assertTrue(self.slave.wasCalled('buildFail'))
+        self.assertTrue(self.builder.wasCalled('buildFail'))
 
     def test_getAvailablePackages(self):
         # getAvailablePackages scans the correct set of files and returns
@@ -595,11 +588,11 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
         if dep is not None:
-            self.assertFalse(self.slave.wasCalled('buildFail'))
-            self.assertEqual([((dep,), {})], self.slave.depFail.calls)
+            self.assertFalse(self.builder.wasCalled('buildFail'))
+            self.assertEqual([((dep,), {})], self.builder.depFail.calls)
         else:
-            self.assertFalse(self.slave.wasCalled('depFail'))
-            self.assertTrue(self.slave.wasCalled('buildFail'))
+            self.assertFalse(self.builder.wasCalled('depFail'))
+            self.assertTrue(self.builder.wasCalled('buildFail'))
 
     @defer.inlineCallbacks
     def test_detects_depfail(self):
@@ -652,8 +645,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 """))
         yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
-        self.assertFalse(self.slave.wasCalled('depFail'))
-        self.assertTrue(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('depFail'))
+        self.assertTrue(self.builder.wasCalled('buildFail'))
 
     @defer.inlineCallbacks
     def test_uninstallable_deps_analysis_depfail(self):
@@ -680,8 +673,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 """))
         yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual([(("ebadver (>= 2)",), {})], self.slave.depFail.calls)
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertEqual(
+            [(("ebadver (>= 2)",), {})], self.builder.depFail.calls)
 
     @defer.inlineCallbacks
     def test_uninstallable_deps_analysis_mixed_depfail(self):
@@ -719,8 +713,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 """))
         yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
         self.assertUnmountsSanely()
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertEqual([(("ebadver (>= 2)",), {})], self.slave.depFail.calls)
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertEqual(
+            [(("ebadver (>= 2)",), {})], self.builder.depFail.calls)
 
     @defer.inlineCallbacks
     def test_depfail_with_unknown_error_converted_to_packagefail(self):
@@ -732,5 +727,5 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             "E: Everything is broken.\n")
 
         yield self.assertScansSanely(SBuildExitCodes.GIVENBACK)
-        self.assertTrue(self.slave.wasCalled('buildFail'))
-        self.assertFalse(self.slave.wasCalled('depFail'))
+        self.assertTrue(self.builder.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('depFail'))

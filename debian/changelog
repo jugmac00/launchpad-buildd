@@ -1,9 +1,74 @@
-launchpad-buildd (167) UNRELEASED; urgency=medium
+launchpad-buildd (175) UNRELEASED; urgency=medium
 
   * Allow configuring APT or snap store proxies via a new [proxy]
     configuration file section.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 28 Jan 2019 14:23:16 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 05 Jun 2019 15:06:54 +0100
+
+launchpad-buildd (174) xenial; urgency=medium
+
+  * Fix a missing piece from the changes in launchpad-buildd 168 that were
+    intended to allow channel selection for core16 and core18.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 23 May 2019 17:23:26 +0100
+
+launchpad-buildd (173) xenial; urgency=medium
+
+  [ Matias Bordese ]
+  * Updated build-request-id tag to set lp prefix.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 May 2019 17:14:37 +0100
+
+launchpad-buildd (172) xenial; urgency=medium
+
+  * lpbuildd.snap: Pass build_request_id and build_request_timestamp through
+    to the backend.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 May 2019 11:45:34 +0100
+
+launchpad-buildd (171) xenial; urgency=medium
+
+  [ Matias Bordese ]
+  * Updated build request fields in SNAPCRAFT_IMAGE_INFO to use dash as
+    separator.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 26 Apr 2019 14:24:36 +0100
+
+launchpad-buildd (170) xenial; urgency=medium
+
+  [ Matias Bordese ]
+  * Add build_request_id and build_request_timestamp to SNAPCRAFT_IMAGE_INFO
+    if provided.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 25 Apr 2019 15:24:11 +0100
+
+launchpad-buildd (169) xenial; urgency=medium
+
+  * Fix test failure in TestSnapBuildManagerIteration.test_iterate_private.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 12 Mar 2019 16:42:52 +0000
+
+launchpad-buildd (168) xenial; urgency=medium
+
+  * Remove obsolete chroot-building instructions from README.
+  * Rename slave-prep to builder-prep.
+  * Generalise snap channel handling slightly, allowing channel selection
+    for core16 and core18.
+  * Move /usr/share/launchpad-buildd/slavebin to
+    /usr/share/launchpad-buildd/bin.
+  * Rename BuildDSlave to Builder and XMLRPCBuildDSlave to XMLRPCBuilder.
+  * Rename FakeSlave to FakeBuilder.
+  * Don't set SNAPCRAFT_BUILD_INFO=1 when building private snaps
+    (LP: #1639975).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 12 Mar 2019 16:09:06 +0000
+
+launchpad-buildd (167) xenial; urgency=medium
+
+  * Allow the LXD backend to accept a LXD image instead of a chroot tarball,
+    skipping the conversion step (LP: #1811677).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 07 Feb 2019 12:39:08 +0000
 
 launchpad-buildd (166) xenial; urgency=medium
 

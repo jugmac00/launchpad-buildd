@@ -17,7 +17,7 @@ from lpbuildd.target.generate_translation_templates import (
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
     )
-from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
 from lpbuildd.translationtemplates import (
     TranslationTemplatesBuildManager,
@@ -47,14 +47,14 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
     def setUp(self):
         super(TestTranslationTemplatesBuildManagerIteration, self).setUp()
         self.working_dir = self.useFixture(TempDir()).path
-        slave_dir = os.path.join(self.working_dir, 'slave')
+        builder_dir = os.path.join(self.working_dir, 'builder')
         home_dir = os.path.join(self.working_dir, 'home')
-        for dir in (slave_dir, home_dir):
+        for dir in (builder_dir, home_dir):
             os.mkdir(dir)
         self.useFixture(EnvironmentVariable("HOME", home_dir))
-        self.slave = FakeSlave(slave_dir)
+        self.builder = FakeBuilder(builder_dir)
         self.buildid = '123'
-        self.buildmanager = MockBuildManager(self.slave, self.buildid)
+        self.buildmanager = MockBuildManager(self.builder, self.buildid)
         self.chrootdir = os.path.join(
             home_dir, 'build-%s' % self.buildid, 'chroot-autobuild')
 
@@ -78,13 +78,13 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # directly before GENERATE.
         self.buildmanager._state = TranslationTemplatesBuildState.UPDATE
 
-        # GENERATE: Run the slave's payload, the script that generates
+        # GENERATE: Run the builder's payload, the script that generates
         # templates.
         yield self.buildmanager.iterate(0)
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
+            'sharepath/bin/in-target', 'in-target',
             'generate-translation-templates',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
@@ -93,7 +93,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
 
         outfile_path = os.path.join(
             self.buildmanager.home, self.buildmanager._resultname)
@@ -103,8 +103,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # After generating templates, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -113,8 +112,8 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             self.buildmanager._resultname: (
                 b'I am a template tarball. Seriously.'),
             }))
@@ -122,8 +121,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -132,7 +130,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
 
     @defer.inlineCallbacks
     def test_iterate_fail_GENERATE_install(self):
@@ -152,23 +150,21 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(
             TranslationTemplatesBuildState.GENERATE, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertTrue(self.slave.wasCalled('chrootFail'))
+        self.assertTrue(self.builder.wasCalled('chrootFail'))
 
         # The buildmanager iterates to the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -192,8 +188,7 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         # The buildmanager fails and reaps processes.
         yield self.buildmanager.iterate(RETCODE_FAILURE_BUILD)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]
@@ -202,15 +197,14 @@ class TestTranslationTemplatesBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertTrue(self.slave.wasCalled('buildFail'))
+        self.assertTrue(self.builder.wasCalled('buildFail'))
 
         # The buildmanager iterates to the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(
             TranslationTemplatesBuildState.UMOUNT, self.getState())
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=xenial', '--arch=i386',
             self.buildid,
             ]

@@ -1,9 +1,9 @@
 include LICENSE
 include Makefile
+include bin/builder-prep
 include bin/buildrecipe
 include bin/in-target
 include bin/sbuild-package
-include bin/slave-prep
 include bin/snap-git-proxy
 include bin/test_buildd_generatetranslationtemplates
 include bin/test_buildd_recipe

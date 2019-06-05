@@ -5,6 +5,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+import argparse
 from collections import OrderedDict
 import json
 import logging
@@ -29,21 +30,45 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
+class SnapChannelsAction(argparse.Action):
+
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super(SnapChannelsAction, self).__init__(
+            option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if "=" not in values:
+            raise argparse.ArgumentError(
+                self, "'{}' is not of the form 'snap=channel'".format(values))
+        snap, channel = values.split("=", 1)
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, {})
+        getattr(namespace, self.dest)[snap] = channel
+
+
 class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
 
     description = "Build a snap."
+
+    core_snap_names = ["core", "core16", "core18"]
 
     @classmethod
     def add_arguments(cls, parser):
         super(BuildSnap, cls).add_arguments(parser)
         parser.add_argument(
-            "--channel-core", metavar="CHANNEL",
-            help="install core snap from CHANNEL")
+            "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
+            dest="channels", default={}, help=(
+                "install SNAP from CHANNEL "
+                "(supported snaps: {}, snapcraft)".format(
+                    ", ".join(cls.core_snap_names))))
         parser.add_argument(
-            "--channel-snapcraft", metavar="CHANNEL",
-            help=(
-                "install snapcraft as a snap from CHANNEL rather than as a "
-                ".deb"))
+            "--build-request-id",
+            help="ID of the request triggering this build on Launchpad")
+        parser.add_argument(
+            "--build-request-timestamp",
+            help="RFC3339 timestamp of the Launchpad build request")
         parser.add_argument(
             "--build-url", help="URL of this build on Launchpad")
         parser.add_argument("--proxy-url", help="builder proxy url")
@@ -55,11 +80,14 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             help=(
                 "build a tarball containing all source code, including "
                 "external dependencies"))
+        parser.add_argument(
+            "--private", default=False, action="store_true",
+            help="build a private snap")
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
         super(BuildSnap, self).__init__(args, parser)
-        self.slavebin = os.path.dirname(sys.argv[0])
+        self.bin = os.path.dirname(sys.argv[0])
 
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
@@ -120,7 +148,7 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         deps.extend(self.vcs_deps)
         if self.args.proxy_url:
             deps.extend(["python3", "socat"])
-        if self.args.channel_snapcraft:
+        if "snapcraft" in self.args.channels:
             # snapcraft requires sudo in lots of places, but can't depend on
             # it when installed as a snap.
             deps.append("sudo")
@@ -129,17 +157,20 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.backend in ("lxd", "fake"):
             self.snap_store_set_proxy()
-        if self.args.channel_core:
-            self.backend.run(
-                ["snap", "install",
-                 "--channel=%s" % self.args.channel_core, "core"])
-        if self.args.channel_snapcraft:
+        for snap_name in self.core_snap_names:
+            if snap_name in self.args.channels:
+                self.backend.run(
+                    ["snap", "install",
+                     "--channel=%s" % self.args.channels[snap_name],
+                     snap_name])
+        if "snapcraft" in self.args.channels:
             self.backend.run(
                 ["snap", "install", "--classic",
-                 "--channel=%s" % self.args.channel_snapcraft, "snapcraft"])
+                 "--channel=%s" % self.args.channels["snapcraft"],
+                 "snapcraft"])
         if self.args.proxy_url:
             self.backend.copy_in(
-                os.path.join(self.slavebin, "snap-git-proxy"),
+                os.path.join(self.bin, "snap-git-proxy"),
                 "/usr/local/bin/snap-git-proxy")
             self.install_svn_servers()
 
@@ -173,9 +204,14 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
     @property
     def image_info(self):
         data = {}
+        if self.args.build_request_id is not None:
+            data["build-request-id"] = 'lp-{}'.format(
+                self.args.build_request_id)
+        if self.args.build_request_timestamp is not None:
+            data["build-request-timestamp"] = self.args.build_request_timestamp
         if self.args.build_url is not None:
             data["build_url"] = self.args.build_url
-        return json.dumps(data)
+        return json.dumps(data, sort_keys=True)
 
     def pull(self):
         """Run pull phase."""
@@ -183,9 +219,8 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         env = OrderedDict()
         env["SNAPCRAFT_LOCAL_SOURCES"] = "1"
         env["SNAPCRAFT_SETUP_CORE"] = "1"
-        # XXX cjwatson 2017-11-24: Once we support building private snaps,
-        # we'll need to make this optional in some way.
-        env["SNAPCRAFT_BUILD_INFO"] = "1"
+        if not self.args.private:
+            env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
         if self.args.proxy_url:
@@ -208,9 +243,8 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         """Run all build, stage and snap phases."""
         logger.info("Running build phase...")
         env = OrderedDict()
-        # XXX cjwatson 2017-11-24: Once we support building private snaps,
-        # we'll need to make this optional in some way.
-        env["SNAPCRAFT_BUILD_INFO"] = "1"
+        if not self.args.private:
+            env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
         if self.args.proxy_url:

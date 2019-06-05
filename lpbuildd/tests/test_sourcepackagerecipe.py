@@ -17,7 +17,7 @@ from lpbuildd.sourcepackagerecipe import (
     SourcePackageRecipeBuildManager,
     SourcePackageRecipeBuildState,
     )
-from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
 
 
@@ -44,15 +44,15 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         super(TestSourcePackageRecipeBuildManagerIteration, self).setUp()
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
-        slave_dir = os.path.join(self.working_dir, 'slave')
+        builder_dir = os.path.join(self.working_dir, 'builder')
         home_dir = os.path.join(self.working_dir, 'home')
-        for dir in (slave_dir, home_dir):
+        for dir in (builder_dir, home_dir):
             os.mkdir(dir)
-        self.slave = FakeSlave(slave_dir)
+        self.builder = FakeBuilder(builder_dir)
         self.buildid = '123'
-        self.buildmanager = MockBuildManager(self.slave, self.buildid)
+        self.buildmanager = MockBuildManager(self.builder, self.buildid)
         self.buildmanager.home = home_dir
-        self.buildmanager._cachepath = self.slave._cachepath
+        self.buildmanager._cachepath = self.builder._cachepath
         self.chrootdir = os.path.join(
             home_dir, 'build-%s' % self.buildid, 'chroot-autobuild')
 
@@ -89,12 +89,11 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # directly before BUILD_RECIPE.
         self.buildmanager._state = SourcePackageRecipeBuildState.UPDATE
 
-        # BUILD_RECIPE: Run the slave's payload to build the source package.
+        # BUILD_RECIPE: Run the builder's payload to build the source package.
         yield self.buildmanager.iterate(0)
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState())
-        expected_command = [
-            'sharepath/slavebin/buildrecipe', 'buildrecipe']
+        expected_command = ['sharepath/bin/buildrecipe', 'buildrecipe']
         if git:
             expected_command.append('--git')
         expected_command.extend([
@@ -105,7 +104,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('chrootFail'))
+        self.assertFalse(self.builder.wasCalled('chrootFail'))
 
     @defer.inlineCallbacks
     def test_iterate(self):
@@ -130,8 +129,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -140,8 +138,8 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('buildFail'))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled('buildFail'))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             'foo_1_source.changes': b'I am a changes file.',
             'manifest': b'I am a manifest file.',
             }))
@@ -149,8 +147,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -158,7 +155,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
 
     @defer.inlineCallbacks
     def test_iterate_BUILD_RECIPE_install_build_deps_depfail(self):
@@ -176,8 +173,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls depFail correctly and reaps processes.
         yield self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -186,15 +182,14 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
         self.assertEqual(
-            [(("base-files (>= 1000)",), {})], self.slave.depFail.calls)
+            [(("base-files (>= 1000)",), {})], self.builder.depFail.calls)
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -202,7 +197,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('buildFail'))
 
     @defer.inlineCallbacks
     def test_iterate_BUILD_RECIPE_install_build_deps_buildfail(self):
@@ -217,8 +212,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         # The buildmanager calls buildFail correctly and reaps processes.
         yield self.buildmanager.iterate(RETCODE_FAILURE_INSTALL_BUILD_DEPS)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'scan-for-processes',
+            'sharepath/bin/in-target', 'in-target', 'scan-for-processes',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]
@@ -227,14 +221,13 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertTrue(self.slave.wasCalled('buildFail'))
-        self.assertFalse(self.slave.wasCalled('depFail'))
+        self.assertTrue(self.builder.wasCalled('buildFail'))
+        self.assertFalse(self.builder.wasCalled('depFail'))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            'sharepath/slavebin/in-target', 'in-target',
-            'umount-chroot',
+            'sharepath/bin/in-target', 'in-target', 'umount-chroot',
             '--backend=chroot', '--series=maverick', '--arch=i386',
             self.buildid,
             ]

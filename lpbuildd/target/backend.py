@@ -22,8 +22,8 @@ class Backend:
         self.arch = arch
         self.build_path = os.path.join(os.environ["HOME"], "build-" + build_id)
 
-    def create(self, tarball_path):
-        """Create the backend based on a chroot tarball.
+    def create(self, image_path, image_type):
+        """Create the backend based on a base image.
 
         This puts the backend into a state where it is ready to be started.
         """
@@ -188,11 +188,11 @@ def make_backend(name, build_id, series=None, arch=None):
         backend_factory = LXD
     elif name == "fake":
         # Only for use in tests.
-        from lpbuildd.tests.fakeslave import FakeBackend
+        from lpbuildd.tests.fakebuilder import FakeBackend
         backend_factory = FakeBackend
     elif name == "uncontained":
         # Only for use in tests.
-        from lpbuildd.tests.fakeslave import UncontainedBackend
+        from lpbuildd.tests.fakebuilder import UncontainedBackend
         backend_factory = UncontainedBackend
     else:
         raise KeyError("Unknown backend: %s" % name)

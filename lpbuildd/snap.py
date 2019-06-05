@@ -241,7 +241,7 @@ class SnapProxyFactory(http.HTTPFactory):
                 'referrer': referrer,
                 'agent': agent,
                 })
-        self.manager._slave.log(line.encode("UTF-8"))
+        self.manager._builder.log(line.encode("UTF-8"))
 
 
 class SnapBuildState(DebianBuildState):
@@ -262,6 +262,9 @@ class SnapBuildManager(DebianBuildManager):
         """Initiate a build with a given set of files and chroot."""
         self.name = extra_args["name"]
         self.channels = extra_args.get("channels", {})
+        self.build_request_id = extra_args.get("build_request_id")
+        self.build_request_timestamp = extra_args.get(
+            "build_request_timestamp")
         self.build_url = extra_args.get("build_url")
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
@@ -270,6 +273,7 @@ class SnapBuildManager(DebianBuildManager):
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.build_source_tarball = extra_args.get(
             "build_source_tarball", False)
+        self.private = extra_args.get("private", False)
         self.proxy_service = None
 
         super(SnapBuildManager, self).initiate(files, chroot, extra_args)
@@ -278,10 +282,10 @@ class SnapBuildManager(DebianBuildManager):
         """Start the local snap proxy, if necessary."""
         if not self.proxy_url:
             return []
-        proxy_port = self._slave._config.get("snapmanager", "proxyport")
+        proxy_port = self._builder._config.get("snapmanager", "proxyport")
         proxy_factory = SnapProxyFactory(self, self.proxy_url, timeout=60)
         self.proxy_service = strports.service(proxy_port, proxy_factory)
-        self.proxy_service.setServiceParent(self._slave.service)
+        self.proxy_service.setServiceParent(self._builder.service)
         if self.backend_name == "lxd":
             proxy_host = self.backend.ipv4_network.ip
         else:
@@ -299,7 +303,7 @@ class SnapBuildManager(DebianBuildManager):
         """Revoke builder proxy token."""
         if not self.revocation_endpoint:
             return
-        self._slave.log("Revoking proxy token...\n")
+        self._builder.log("Revoking proxy token...\n")
         url = urlparse(self.proxy_url)
         auth = "{}:{}".format(url.username, url.password)
         headers = {
@@ -310,7 +314,7 @@ class SnapBuildManager(DebianBuildManager):
         try:
             urlopen(req)
         except (HTTPError, URLError) as e:
-            self._slave.log(
+            self._builder.log(
                 "Unable to revoke token for %s: %s" % (url.username, e))
 
     def status(self):
@@ -329,16 +333,13 @@ class SnapBuildManager(DebianBuildManager):
     def doRunBuild(self):
         """Run the process to build the snap."""
         args = []
-        known_snaps = ("core", "snapcraft")
-        for snap in known_snaps:
-            if snap in self.channels:
-                args.extend(["--channel-%s" % snap, self.channels[snap]])
-        unknown_snaps = set(self.channels) - set(known_snaps)
-        if unknown_snaps:
-            print(
-                "Channels requested for unknown snaps: %s" %
-                " ".join(sorted(unknown_snaps)),
-                file=sys.stderr)
+        for snap, channel in sorted(self.channels.items()):
+            args.extend(["--channel", "%s=%s" % (snap, channel)])
+        if self.build_request_id:
+            args.extend(["--build-request-id", str(self.build_request_id)])
+        if self.build_request_timestamp:
+            args.extend(
+                ["--build-request-timestamp", self.build_request_timestamp])
         if self.build_url:
             args.extend(["--build-url", self.build_url])
         args.extend(self.startProxy())
@@ -352,8 +353,10 @@ class SnapBuildManager(DebianBuildManager):
             args.extend(["--git-path", self.git_path])
         if self.build_source_tarball:
             args.append("--build-source-tarball")
+        if self.private:
+            args.append("--private")
         try:
-            snap_store_proxy_url = self._slave._config.get(
+            snap_store_proxy_url = self._builder._config.get(
                 "proxy", "snapstore")
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
@@ -371,12 +374,12 @@ class SnapBuildManager(DebianBuildManager):
         elif (retcode >= RETCODE_FAILURE_INSTALL and
               retcode <= RETCODE_FAILURE_BUILD):
             if not self.alreadyfailed:
-                self._slave.buildFail()
+                self._builder.buildFail()
                 print("Returning build status: Build failed.")
             self.alreadyfailed = True
         else:
             if not self.alreadyfailed:
-                self._slave.builderFail()
+                self._builder.builderFail()
                 print("Returning build status: Builder failed.")
             self.alreadyfailed = True
         self.doReapProcesses(self._state)

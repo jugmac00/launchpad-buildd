@@ -55,14 +55,14 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
 
     initial_build_state = SourcePackageRecipeBuildState.BUILD_RECIPE
 
-    def __init__(self, slave, buildid):
+    def __init__(self, builder, buildid):
         """Constructor.
 
-        :param slave: A build slave device.
+        :param builder: A builder.
         :param buildid: The id of the build (a str).
         """
-        DebianBuildManager.__init__(self, slave, buildid)
-        self.build_recipe_path = os.path.join(self._slavebin, "buildrecipe")
+        DebianBuildManager.__init__(self, builder, buildid)
+        self.build_recipe_path = os.path.join(self._bin, "buildrecipe")
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot.
@@ -109,24 +109,24 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
                     '.*: Depends: ([^ ]*( \([^)]*\))?)')
                 _, mo = self.searchLogContents([[rx, re.M]])
                 if mo:
-                    self._slave.depFail(mo.group(1))
+                    self._builder.depFail(mo.group(1))
                     print("Returning build status: DEPFAIL")
                     print("Dependencies: " + mo.group(1))
                 else:
                     print("Returning build status: Build failed")
-                    self._slave.buildFail()
+                    self._builder.buildFail()
             self.alreadyfailed = True
         elif (
             retcode >= RETCODE_FAILURE_INSTALL and
             retcode <= RETCODE_FAILURE_BUILD_SOURCE_PACKAGE):
             # XXX AaronBentley 2009-01-13: We should handle depwait separately
             if not self.alreadyfailed:
-                self._slave.buildFail()
+                self._builder.buildFail()
                 print("Returning build status: Build failed.")
             self.alreadyfailed = True
         else:
             if not self.alreadyfailed:
-                self._slave.builderFail()
+                self._builder.builderFail()
                 print("Returning build status: Builder failed.")
             self.alreadyfailed = True
         self.doReapProcesses(self._state)
@@ -150,5 +150,5 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         The manifest is also a useful record.
         """
         DebianBuildManager.gatherResults(self)
-        self._slave.addWaitingFile(get_build_path(
+        self._builder.addWaitingFile(get_build_path(
             self.home, self._buildid, 'manifest'))

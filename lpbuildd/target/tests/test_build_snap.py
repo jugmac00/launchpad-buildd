@@ -30,7 +30,7 @@ from lpbuildd.target.build_snap import (
     RETCODE_FAILURE_INSTALL,
     )
 from lpbuildd.target.cli import parse_args
-from lpbuildd.tests.fakeslave import FakeMethod
+from lpbuildd.tests.fakebuilder import FakeMethod
 
 
 class RanCommand(MatchesListwise):
@@ -178,10 +178,10 @@ class TestBuildSnap(TestCase):
             "test-snap",
             ]
         build_snap = parse_args(args=args).operation
-        build_snap.slavebin = "/slavebin"
-        self.useFixture(FakeFilesystem()).add("/slavebin")
-        os.mkdir("/slavebin")
-        with open("/slavebin/snap-git-proxy", "w") as proxy_script:
+        build_snap.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/snap-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
         build_snap.install()
@@ -203,7 +203,8 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--channel-core=candidate", "--channel-snapcraft=edge",
+            "--channel=core=candidate", "--channel=core18=beta",
+            "--channel=snapcraft=edge",
             "--branch", "lp:foo", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
@@ -211,6 +212,7 @@ class TestBuildSnap(TestCase):
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanAptGet("install", "bzr", "sudo"),
             RanSnap("install", "--channel=candidate", "core"),
+            RanSnap("install", "--channel=beta", "core18"),
             RanSnap("install", "--classic", "--channel=edge", "snapcraft"),
             ]))
 
@@ -412,6 +414,25 @@ class TestBuildSnap(TestCase):
                 cwd="/build"),
             ]))
 
+    def test_pull_private(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--private", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.pull()
+        env = {
+            "SNAPCRAFT_LOCAL_SOURCES": "1",
+            "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_IMAGE_INFO": "{}",
+            "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
+            }
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft", "pull"], cwd="/build/test-snap", **env),
+            ]))
+
     def test_build(self):
         args = [
             "buildsnap",
@@ -450,6 +471,54 @@ class TestBuildSnap(TestCase):
             RanBuildCommand(["snapcraft"], cwd="/build/test-snap", **env),
             ]))
 
+    def test_build_private(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--private", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.build()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_IMAGE_INFO="{}", SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            ]))
+
+    def test_build_including_build_request_id(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-request-id", "13", "--branch", "lp:foo", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.build()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_BUILD_INFO="1",
+                SNAPCRAFT_IMAGE_INFO='{"build-request-id": "lp-13"}',
+                SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            ]))
+
+    def test_build_including_build_request_timestamp(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-request-timestamp", "2018-04-13T14:50:02Z",
+            "--branch", "lp:foo", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.build()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_BUILD_INFO="1",
+                SNAPCRAFT_IMAGE_INFO=(
+                    '{"build-request-timestamp": "2018-04-13T14:50:02Z"}'),
+                SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            ]))
+
     # XXX cjwatson 2017-08-07: Test revoke_token.  It may be easiest to
     # convert it to requests first.
 
@@ -457,6 +526,7 @@ class TestBuildSnap(TestCase):
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--build-request-id", "13",
             "--build-url", "https://launchpad.example/build",
             "--branch", "lp:foo", "test-snap",
             ]
@@ -473,13 +543,15 @@ class TestBuildSnap(TestCase):
                 SNAPCRAFT_LOCAL_SOURCES="1", SNAPCRAFT_SETUP_CORE="1",
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO=(
-                    '{"build_url": "https://launchpad.example/build"}'),
+                    '{"build-request-id": "lp-13",'
+                    ' "build_url": "https://launchpad.example/build"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host")),
             AnyMatch(RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO=(
-                    '{"build_url": "https://launchpad.example/build"}'),
+                    '{"build-request-id": "lp-13",'
+                    ' "build_url": "https://launchpad.example/build"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host")),
             ))
 

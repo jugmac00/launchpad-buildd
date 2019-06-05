@@ -4,8 +4,6 @@
 # Authors: Daniel Silverstone <daniel.silverstone@canonical.com>
 #      and Adam Conrad <adam.conrad@canonical.com>
 
-# Buildd Slave sbuild manager implementation
-
 __metaclass__ = type
 
 import base64
@@ -23,9 +21,7 @@ from twisted.internet import (
     )
 from twisted.python import log
 
-from lpbuildd.slave import (
-    BuildManager,
-    )
+from lpbuildd.builder import BuildManager
 
 
 class DebianBuildState:
@@ -43,11 +39,11 @@ class DebianBuildState:
 class DebianBuildManager(BuildManager):
     """Base behaviour for Debian chrooted builds."""
 
-    def __init__(self, slave, buildid, **kwargs):
-        BuildManager.__init__(self, slave, buildid, **kwargs)
-        self._cachepath = slave._config.get("slave", "filecache")
+    def __init__(self, builder, buildid, **kwargs):
+        BuildManager.__init__(self, builder, buildid, **kwargs)
+        self._cachepath = builder._config.get("slave", "filecache")
         self._state = DebianBuildState.INIT
-        slave.emptyLog()
+        builder.emptyLog()
         self.alreadyfailed = False
         self._iterator = None
 
@@ -69,7 +65,7 @@ class DebianBuildManager(BuildManager):
         """
         args = []
         try:
-            apt_proxy_url = self._slave._config.get("proxy", "apt")
+            apt_proxy_url = self._builder._config.get("proxy", "apt")
             args.extend(["--apt-proxy-url", apt_proxy_url])
         except (NoSectionError, NoOptionError):
             pass
@@ -121,12 +117,12 @@ class DebianBuildManager(BuildManager):
         The primary file we care about is the .changes file. We key from there.
         """
         path = self.getChangesFilename()
-        self._slave.addWaitingFile(path)
+        self._builder.addWaitingFile(path)
 
         chfile = open(path, "r")
         try:
             for fn in self._parseChangesFile(chfile):
-                self._slave.addWaitingFile(
+                self._builder.addWaitingFile(
                     get_build_path(self.home, self._buildid, fn))
         finally:
             chfile.close()
@@ -138,11 +134,12 @@ class DebianBuildManager(BuildManager):
         def failed_to_gather(failure):
             if failure.check(defer.CancelledError):
                 if not self.alreadyfailed:
-                    self._slave.log("Build cancelled unexpectedly!")
-                    self._slave.buildFail()
+                    self._builder.log("Build cancelled unexpectedly!")
+                    self._builder.buildFail()
             else:
-                self._slave.log("Failed to gather results: %s" % failure.value)
-                self._slave.buildFail()
+                self._builder.log(
+                    "Failed to gather results: %s" % failure.value)
+                self._builder.buildFail()
             self.alreadyfailed = True
 
         def reap(ignored):
@@ -184,7 +181,7 @@ class DebianBuildManager(BuildManager):
         if success != 0:
             if not self.alreadyfailed:
                 # The init failed, can't fathom why that would be...
-                self._slave.builderFail()
+                self._builder.builderFail()
                 self.alreadyfailed = True
             self._state = DebianBuildState.CLEANUP
             self.doCleanup()
@@ -197,7 +194,7 @@ class DebianBuildManager(BuildManager):
         if success != 0:
             if not self.alreadyfailed:
                 # The unpack failed for some reason...
-                self._slave.chrootFail()
+                self._builder.chrootFail()
                 self.alreadyfailed = True
             self._state = DebianBuildState.CLEANUP
             self.doCleanup()
@@ -209,7 +206,7 @@ class DebianBuildManager(BuildManager):
         """Just finished doing the mounts."""
         if success != 0:
             if not self.alreadyfailed:
-                self._slave.chrootFail()
+                self._builder.chrootFail()
                 self.alreadyfailed = True
             self._state = DebianBuildState.UMOUNT
             self.doUnmounting()
@@ -269,7 +266,7 @@ class DebianBuildManager(BuildManager):
         """Just finished overwriting sources.list."""
         if success != 0:
             if not self.alreadyfailed:
-                self._slave.chrootFail()
+                self._builder.chrootFail()
                 self.alreadyfailed = True
             self.doReapProcesses(self._state)
         elif self.trusted_keys:
@@ -288,7 +285,7 @@ class DebianBuildManager(BuildManager):
         """Just finished adding trusted keys."""
         if success != 0:
             if not self.alreadyfailed:
-                self._slave.chrootFail()
+                self._builder.chrootFail()
                 self.alreadyfailed = True
             self.doReapProcesses(self._state)
         else:
@@ -304,7 +301,7 @@ class DebianBuildManager(BuildManager):
         """Just finished updating the chroot."""
         if success != 0:
             if not self.alreadyfailed:
-                self._slave.chrootFail()
+                self._builder.chrootFail()
                 self.alreadyfailed = True
             self.doReapProcesses(self._state)
         else:
@@ -320,7 +317,7 @@ class DebianBuildManager(BuildManager):
         """Just finished doing the unmounting."""
         if success != 0:
             if not self.alreadyfailed:
-                self._slave.builderFail()
+                self._builder.builderFail()
                 self.alreadyfailed = True
         self._state = DebianBuildState.CLEANUP
         self.doCleanup()
@@ -329,13 +326,13 @@ class DebianBuildManager(BuildManager):
         """Just finished the cleanup."""
         if success != 0:
             if not self.alreadyfailed:
-                self._slave.builderFail()
+                self._builder.builderFail()
                 self.alreadyfailed = True
         else:
             # Successful clean
             if not self.alreadyfailed:
-                self._slave.buildOK()
-        self._slave.buildComplete()
+                self._builder.buildOK()
+        self._builder.buildComplete()
 
     def abortReap(self):
         """Abort by killing all processes in the chroot, as hard as we can.

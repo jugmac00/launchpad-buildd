@@ -18,7 +18,7 @@ import unittest
 from fixtures import EnvironmentVariable
 from txfixtures.tachandler import TacTestFixture
 
-from lpbuildd.slave import BuildDSlave
+from lpbuildd.builder import Builder
 
 
 test_conffile = os.path.join(
@@ -41,12 +41,12 @@ class BuilddTestCase(unittest.TestCase):
     """Unit tests for logtail mechanisms."""
 
     def setUp(self):
-        """Setup a BuildDSlave using the test config."""
+        """Setup a Builder using the test config."""
         conf = SafeConfigParser()
         conf.read(test_conffile)
         conf.set("slave", "filecache", tempfile.mkdtemp())
 
-        self.slave = BuildDSlave(conf)
+        self.slave = Builder(conf)
         self.slave._log = True
         self.slave.manager = MockBuildManager()
 

@@ -4,8 +4,8 @@
 __metaclass__ = type
 __all__ = [
     'FakeBackend',
+    'FakeBuilder',
     'FakeMethod',
-    'FakeSlave',
     'UncontainedBackend',
     ]
 
@@ -102,7 +102,7 @@ class FakeConfig:
         self._overrides[section][key] = value
 
 
-class FakeSlave:
+class FakeBuilder:
     def __init__(self, tempdir):
         self._cachepath = tempdir
         self._config = FakeConfig()

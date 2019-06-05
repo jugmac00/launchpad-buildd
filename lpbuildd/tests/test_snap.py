@@ -30,7 +30,7 @@ from lpbuildd.snap import (
     SnapBuildState,
     SnapProxyFactory,
     )
-from lpbuildd.tests.fakeslave import FakeSlave
+from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
 
 
@@ -56,15 +56,15 @@ class TestSnapBuildManagerIteration(TestCase):
     def setUp(self):
         super(TestSnapBuildManagerIteration, self).setUp()
         self.working_dir = self.useFixture(TempDir()).path
-        slave_dir = os.path.join(self.working_dir, "slave")
+        builder_dir = os.path.join(self.working_dir, "builder")
         home_dir = os.path.join(self.working_dir, "home")
-        for dir in (slave_dir, home_dir):
+        for dir in (builder_dir, home_dir):
             os.mkdir(dir)
         self.useFixture(EnvironmentVariable("HOME", home_dir))
-        self.slave = FakeSlave(slave_dir)
+        self.builder = FakeBuilder(builder_dir)
         self.buildid = "123"
-        self.buildmanager = MockBuildManager(self.slave, self.buildid)
-        self.buildmanager._cachepath = self.slave._cachepath
+        self.buildmanager = MockBuildManager(self.builder, self.buildid)
+        self.buildmanager._cachepath = self.builder._cachepath
 
     def getState(self):
         """Retrieve build manager's state."""
@@ -78,8 +78,6 @@ class TestSnapBuildManagerIteration(TestCase):
             "series": "xenial",
             "arch_tag": "i386",
             "name": "test-snap",
-            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
-            "git_path": "master",
             }
         if args is not None:
             extra_args.update(args)
@@ -92,15 +90,12 @@ class TestSnapBuildManagerIteration(TestCase):
         # directly before BUILD_SNAP.
         self.buildmanager._state = SnapBuildState.UPDATE
 
-        # BUILD_SNAP: Run the slave's payload to build the snap package.
+        # BUILD_SNAP: Run the builder's payload to build the snap package.
         yield self.buildmanager.iterate(0)
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "buildsnap",
+            "sharepath/bin/in-target", "in-target", "buildsnap",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
-            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
-            "--git-path", "master",
             ]
         if options is not None:
             expected_command.extend(options)
@@ -108,7 +103,7 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("chrootFail"))
+        self.assertFalse(self.builder.wasCalled("chrootFail"))
 
     def test_status(self):
         # The build manager returns saved status information on request.
@@ -123,7 +118,21 @@ class TestSnapBuildManagerIteration(TestCase):
     @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
-        yield self.startBuild()
+        args = {
+            "build_request_id": 13,
+            "build_request_timestamp": "2018-04-13T14:50:02Z",
+            "build_url": "https://launchpad.example/build",
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            }
+        expected_options = [
+            "--build-request-id", "13",
+            "--build-request-timestamp", "2018-04-13T14:50:02Z",
+            "--build-url", "https://launchpad.example/build",
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -135,37 +144,43 @@ class TestSnapBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "scan-for-processes",
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "test-snap_0_all.snap": b"I am a snap package.",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "umount-chroot",
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
     def test_iterate_with_manifest(self):
         # The build manager iterates a build that uploads a manifest from
         # start to finish.
-        yield self.startBuild()
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -179,16 +194,15 @@ class TestSnapBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "scan-for-processes",
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "test-snap_0_all.manifest": b"I am a manifest.",
             "test-snap_0_all.snap": b"I am a snap package.",
             }))
@@ -196,22 +210,86 @@ class TestSnapBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "umount-chroot",
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_with_channels(self):
+        # The build manager iterates a build that specifies channels from
+        # start to finish.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "channels": {
+                "core": "candidate",
+                "core18": "beta",
+                "snapcraft": "edge",
+                },
+            }
+        expected_options = [
+            "--channel", "core=candidate",
+            "--channel", "core18=beta",
+            "--channel", "snapcraft=edge",
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "test-snap_0_all.snap": b"I am a snap package.",
+            }))
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
     def test_iterate_with_build_source_tarball(self):
         # The build manager iterates a build that uploads a source tarball
         # from start to finish.
-        yield self.startBuild(
-            {"build_source_tarball": True}, ["--build-source-tarball"])
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "build_source_tarball": True,
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            "--build-source-tarball",
+            ]
+        yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
         with open(log_path, "w") as log:
@@ -225,16 +303,15 @@ class TestSnapBuildManagerIteration(TestCase):
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "scan-for-processes",
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
-        self.assertThat(self.slave, HasWaitingFiles.byEquality({
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "test-snap_0_all.snap": b"I am a snap package.",
             "test-snap.tar.gz": b"I am a source tarball.",
             }))
@@ -242,20 +319,68 @@ class TestSnapBuildManagerIteration(TestCase):
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/slavebin/in-target", "in-target",
-            "umount-chroot",
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         self.assertEqual(SnapBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.slave.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_private(self):
+        # The build manager iterates a private build from start to finish.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "private": True,
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            "--private",
+            ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "test-snap_0_all.snap": b"I am a snap package.",
+            }))
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
     def test_iterate_snap_store_proxy(self):
         # The build manager can be told to use a snap store proxy.
-        self.slave._config.set(
+        self.builder._config.set(
             "proxy", "snapstore", "http://snap-store-proxy.example/")
         expected_options = [
             "--snap-store-proxy-url", "http://snap-store-proxy.example/"]

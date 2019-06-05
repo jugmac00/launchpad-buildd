@@ -77,7 +77,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         if self.cohort_key:
             args.extend(["--cohort-key", self.cohort_key])
         try:
-            snap_store_proxy_url = self._slave._config.get(
+            snap_store_proxy_url = self._builder._config.get(
                 "proxy", "snapstore")
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
@@ -94,12 +94,12 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         elif (retcode >= RETCODE_FAILURE_INSTALL and
               retcode <= RETCODE_FAILURE_BUILD):
             if not self.alreadyfailed:
-                self._slave.buildFail()
+                self._builder.buildFail()
                 print("Returning build status: Build failed.")
             self.alreadyfailed = True
         else:
             if not self.alreadyfailed:
-                self._slave.builderFail()
+                self._builder.builderFail()
                 print("Returning build status: Builder failed.")
             self.alreadyfailed = True
         self.doReapProcesses(self._state)
