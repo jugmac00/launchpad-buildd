@@ -36,19 +36,7 @@ class SnapStoreOperationMixin:
         assertions_response.raise_for_status()
         self.backend.run(
             ["snap", "ack", "/dev/stdin"], input_text=assertions_response.text)
-        store_assertion = self.backend.run(
-            ["snap", "known", "store", "url={}".format(canonical_url)],
-            get_output=True)
-        # Very cheap parser.  Not at all robust, but snapd has already
-        # handled validation for us, and if we get more than one assertion
-        # back from "snap known" despite filtering then we only care about
-        # the first.
-        for line in store_assertion.split("\n\n")[0].splitlines():
-            if line.startswith("store: "):
-                store_id = line[len("store: "):]
-                break
-        else:
-            store_id = None
+        store_id = assertions_response.headers.get("X-Assertion-Store-Id")
         if store_id is not None:
             self.backend.run(
                 ["snap", "set", "core", "proxy.store={}".format(store_id)])

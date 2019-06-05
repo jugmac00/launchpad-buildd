@@ -147,15 +147,12 @@ class TestBuildSnap(TestCase):
             body
             """)
 
-        class SnapCommands(FakeMethod):
-            def __call__(self, run_args, *args, **kwargs):
-                super(SnapCommands, self).__call__(run_args, *args, **kwargs)
-                if run_args[0] == "snap" and run_args[1] == "known":
-                    return store_assertion
+        def respond(request):
+            return 200, {"X-Assertion-Store-Id": "store-id"}, store_assertion
 
-        responses.add(
+        responses.add_callback(
             "GET", "http://snap-store-proxy.example/v2/auth/store/assertions",
-            body=store_assertion)
+            callback=respond)
         args = [
             "buildsnap",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
@@ -164,16 +161,11 @@ class TestBuildSnap(TestCase):
             "test-snap",
             ]
         build_snap = parse_args(args=args).operation
-        build_snap.backend.run = SnapCommands()
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanAptGet("install", "git", "snapcraft"),
             RanCommand(
                 ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
-            RanCommand(
-                ["snap", "known", "store",
-                 "url=http://snap-store-proxy.example"],
-                get_output=True),
             RanCommand(["snap", "set", "core", "proxy.store=store-id"]),
             ]))
 
