@@ -1,9 +1,14 @@
-# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import os
+
+from six.moves.configparser import (
+    NoOptionError,
+    NoSectionError,
+    )
 
 from lpbuildd.debian import (
     DebianBuildManager,
@@ -71,6 +76,12 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--repo-snapshot-stamp", self.repo_snapshot_stamp])
         if self.cohort_key:
             args.extend(["--cohort-key", self.cohort_key])
+        try:
+            snap_store_proxy_url = self._builder._config.get(
+                "proxy", "snapstore")
+            args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
+        except (NoSectionError, NoOptionError):
+            pass
         if self.debug:
             args.append("--debug")
         self.runTargetSubProcess("buildlivefs", *args)

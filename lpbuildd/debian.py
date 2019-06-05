@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # Authors: Daniel Silverstone <daniel.silverstone@canonical.com>
@@ -11,6 +11,10 @@ import os
 import re
 import signal
 
+from six.moves.configparser import (
+    NoOptionError,
+    NoSectionError,
+    )
 from twisted.internet import (
     defer,
     threads,
@@ -59,7 +63,14 @@ class DebianBuildManager(BuildManager):
 
         Mainly used for PPA builds.
         """
-        self.runTargetSubProcess("override-sources-list", *self.sources_list)
+        args = []
+        try:
+            apt_proxy_url = self._builder._config.get("proxy", "apt")
+            args.extend(["--apt-proxy-url", apt_proxy_url])
+        except (NoSectionError, NoOptionError):
+            pass
+        args.extend(self.sources_list)
+        self.runTargetSubProcess("override-sources-list", *args)
 
     def doTrustedKeys(self):
         """Add trusted keys."""

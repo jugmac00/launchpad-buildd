@@ -1,4 +1,4 @@
-# Copyright 2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2017-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -52,6 +52,27 @@ class TestOverrideSourcesList(TestCase):
                 deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
                 """).encode("UTF-8"), stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs["/etc/apt/sources.list"])
+
+    def test_apt_proxy(self):
+        args = [
+            "override-sources-list",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--apt-proxy-url", "http://apt-proxy.example:3128/",
+            "deb http://archive.ubuntu.com/ubuntu xenial main",
+            ]
+        override_sources_list = parse_args(args=args).operation
+        self.assertEqual(0, override_sources_list.run())
+        self.assertEqual(
+            (dedent("""\
+                deb http://archive.ubuntu.com/ubuntu xenial main
+                """).encode("UTF-8"), stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs["/etc/apt/sources.list"])
+        self.assertEqual(
+            (dedent("""\
+                Acquire::http::Proxy "http://apt-proxy.example:3128/";
+                """).encode("UTF-8"), stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99proxy"])
 
 
 class TestAddTrustedKeys(TestCase):

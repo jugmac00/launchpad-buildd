@@ -1,11 +1,13 @@
-# Copyright 2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2017-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import subprocess
+from textwrap import dedent
 
 from fixtures import FakeLogger
+import responses
 from testtools import TestCase
 from testtools.matchers import (
     AnyMatch,
@@ -26,12 +28,17 @@ from lpbuildd.tests.fakebuilder import FakeMethod
 
 class RanCommand(MatchesListwise):
 
-    def __init__(self, args, echo=None, cwd=None, **env):
+    def __init__(self, args, echo=None, cwd=None, input_text=None,
+                 get_output=None, **env):
         kwargs_matcher = {}
         if echo is not None:
             kwargs_matcher["echo"] = Is(echo)
         if cwd:
             kwargs_matcher["cwd"] = Equals(cwd)
+        if input_text:
+            kwargs_matcher["input_text"] = Equals(input_text)
+        if get_output is not None:
+            kwargs_matcher["get_output"] = Is(get_output)
         if env:
             kwargs_matcher["env"] = MatchesDict(
                 {key: Equals(value) for key, value in env.items()})
@@ -111,6 +118,36 @@ class TestBuildLiveFS(TestCase):
             RanAptGet("install", "livecd-rootfs"),
             RanAptGet(
                 "--install-recommends", "install", "ubuntu-defaults-builder"),
+            ]))
+
+    @responses.activate
+    def test_install_snap_store_proxy(self):
+        store_assertion = dedent("""\
+            type: store
+            store: store-id
+            url: http://snap-store-proxy.example
+
+            body
+            """)
+
+        def respond(request):
+            return 200, {"X-Assertion-Store-Id": "store-id"}, store_assertion
+
+        responses.add_callback(
+            "GET", "http://snap-store-proxy.example/v2/auth/store/assertions",
+            callback=respond)
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--snap-store-proxy-url", "http://snap-store-proxy.example/",
+            ]
+        build_livefs = parse_args(args=args).operation
+        build_livefs.install()
+        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "livecd-rootfs"),
+            RanCommand(
+                ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
+            RanCommand(["snap", "set", "core", "proxy.store=store-id"]),
             ]))
 
     def test_build(self):

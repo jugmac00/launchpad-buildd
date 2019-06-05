@@ -1,4 +1,4 @@
-# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -58,7 +58,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         return self.buildmanager._state
 
     @defer.inlineCallbacks
-    def startBuild(self):
+    def startBuild(self, options=None):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         extra_args = {
@@ -85,6 +85,8 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
             "--project", "ubuntu",
             ]
+        if options is not None:
+            expected_command.extend(options)
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
@@ -129,6 +131,15 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_snap_store_proxy(self):
+        # The build manager can be told to use a snap store proxy.
+        self.builder._config.set(
+            "proxy", "snapstore", "http://snap-store-proxy.example/")
+        expected_options = [
+            "--snap-store-proxy-url", "http://snap-store-proxy.example/"]
+        yield self.startBuild(options=expected_options)
 
     @defer.inlineCallbacks
     def test_omits_symlinks(self):
