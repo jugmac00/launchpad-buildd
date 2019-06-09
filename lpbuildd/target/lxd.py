@@ -20,6 +20,7 @@ import time
 import netaddr
 import pylxd
 from pylxd.exceptions import LXDAPIException
+import six
 
 from lpbuildd.target.backend import (
     Backend,
@@ -490,6 +491,10 @@ class LXD(Backend):
         if echo:
             print("Running in container: %s" % ' '.join(
                 shell_escape(arg) for arg in args))
+        if six.PY2:
+            # The behaviour of non-bytes subprocess arguments in Python 2
+            # depends on the interpreter's startup locale.
+            args = [arg.encode("UTF-8") for arg in args]
         # pylxd's Container.execute doesn't support sending stdin, and it's
         # tedious to implement ourselves.
         cmd = ["lxc", "exec", self.name] + env_params + ["--"] + args
