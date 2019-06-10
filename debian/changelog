@@ -1,11 +1,11 @@
-launchpad-buildd (175) UNRELEASED; urgency=medium
+launchpad-buildd (175) xenial; urgency=medium
 
   * Allow configuring APT or snap store proxies via a new [proxy]
     configuration file section.
   * Encode non-bytes subprocess arguments on Python 2 to avoid crashing on
     non-ASCII file names under LC_CTYPE=C (LP: #1832072).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 05 Jun 2019 15:06:54 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 10 Jun 2019 14:00:31 +0100
 
 launchpad-buildd (174) xenial; urgency=medium
 
