@@ -134,11 +134,11 @@ class DebianBuildManager(BuildManager):
         def failed_to_gather(failure):
             if failure.check(defer.CancelledError):
                 if not self.alreadyfailed:
-                    self._builder.log("Build cancelled unexpectedly!")
+                    self._builder.log("Build cancelled unexpectedly!\n")
                     self._builder.buildFail()
             else:
                 self._builder.log(
-                    "Failed to gather results: %s" % failure.value)
+                    "Failed to gather results: %s\n" % failure.value)
                 self._builder.buildFail()
             self.alreadyfailed = True
 
