@@ -13,6 +13,7 @@ from fixtures import (
     EnvironmentVariable,
     TempDir,
     )
+import six
 from systemfixtures import (
     FakeFilesystem,
     FakeProcesses,
@@ -112,6 +113,22 @@ class TestChroot(TestCase):
             ["sudo", "/usr/sbin/chroot",
              "/expected/home/build-1/chroot-autobuild",
              "linux64", "echo", "hello"],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_run_non_ascii_arguments(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        arg = u"\N{SNOWMAN}"
+        Chroot("1", "xenial", "amd64").run(["echo", arg])
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "echo", arg.encode("UTF-8") if six.PY2 else arg],
             ]
         self.assertEqual(
             expected_args,

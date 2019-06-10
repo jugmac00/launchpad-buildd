@@ -25,6 +25,7 @@ from fixtures import (
     )
 import pylxd
 from pylxd.exceptions import LXDAPIException
+import six
 from systemfixtures import (
     FakeFilesystem,
     FakeProcesses,
@@ -525,6 +526,20 @@ class TestLXD(TestCase):
         expected_args = [
             ["lxc", "exec", "lp-xenial-amd64", "--",
              "linux64", "echo", "hello"],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
+    def test_run_non_ascii_arguments(self):
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="lxc")
+        arg = u"\N{SNOWMAN}"
+        LXD("1", "xenial", "amd64").run(["echo", arg])
+
+        expected_args = [
+            ["lxc", "exec", "lp-xenial-amd64", "--",
+             "linux64", "echo", arg.encode("UTF-8") if six.PY2 else arg],
             ]
         self.assertEqual(
             expected_args,
