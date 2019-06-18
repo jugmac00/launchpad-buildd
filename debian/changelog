@@ -1,8 +1,8 @@
-launchpad-buildd (176) UNRELEASED; urgency=medium
+launchpad-buildd (176) xenial; urgency=medium
 
   * Don't rely on /CurrentlyBuilding existing in base images.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 18 Jun 2019 16:26:28 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 18 Jun 2019 17:53:55 +0100
 
 launchpad-buildd (175) xenial; urgency=medium
 
