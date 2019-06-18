@@ -1,3 +1,9 @@
+launchpad-buildd (176) UNRELEASED; urgency=medium
+
+  * Don't rely on /CurrentlyBuilding existing in base images.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 18 Jun 2019 16:26:28 +0100
+
 launchpad-buildd (175) xenial; urgency=medium
 
   * Allow configuring APT or snap store proxies via a new [proxy]

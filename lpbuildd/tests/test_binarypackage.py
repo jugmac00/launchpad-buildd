@@ -6,6 +6,7 @@ __metaclass__ = type
 from functools import partial
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 from textwrap import dedent
@@ -199,6 +200,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
     def test_with_debug_symbols(self):
         # A build with debug symbols sets up /CurrentlyBuilding
         # appropriately, and does not pass DEB_BUILD_OPTIONS.
+        self.addCleanup(
+            setattr, self.buildmanager, 'backend_name',
+            self.buildmanager.backend_name)
+        self.buildmanager.backend_name = 'fake'
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
             {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
@@ -216,19 +221,24 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
              'foo_1.dsc'],
             env_matcher=Not(Contains('DEB_BUILD_OPTIONS')), final=True)
         self.assertFalse(self.builder.wasCalled('chrootFail'))
-        with open(os.path.join(self.chrootdir, 'CurrentlyBuilding')) as cb:
-            self.assertEqual(dedent("""\
+        self.assertEqual(
+            (dedent("""\
                 Package: foo
                 Component: main
                 Suite: warty
                 Purpose: PRIMARY
                 Build-Debug-Symbols: yes
-                """), cb.read())
+                """).encode('UTF-8'), stat.S_IFREG | 0o644),
+            self.buildmanager.backend.backend_fs['/CurrentlyBuilding'])
 
     @defer.inlineCallbacks
     def test_without_debug_symbols(self):
         # A build with debug symbols sets up /CurrentlyBuilding
         # appropriately, and passes DEB_BUILD_OPTIONS=noautodbgsym.
+        self.addCleanup(
+            setattr, self.buildmanager, 'backend_name',
+            self.buildmanager.backend_name)
+        self.buildmanager.backend_name = 'fake'
         self.buildmanager.initiate(
             {'foo_1.dsc': ''}, 'chroot.tar.gz',
             {'distribution': 'ubuntu', 'series': 'warty', 'suite': 'warty',
@@ -248,13 +258,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 {'DEB_BUILD_OPTIONS': Equals('noautodbgsym')}),
             final=True)
         self.assertFalse(self.builder.wasCalled('chrootFail'))
-        with open(os.path.join(self.chrootdir, 'CurrentlyBuilding')) as cb:
-            self.assertEqual(dedent("""\
+        self.assertEqual(
+            (dedent("""\
                 Package: foo
                 Component: main
                 Suite: warty
                 Purpose: PRIMARY
-                """), cb.read())
+                """).encode('UTF-8'), stat.S_IFREG | 0o644),
+            self.buildmanager.backend.backend_fs['/CurrentlyBuilding'])
 
     @defer.inlineCallbacks
     def test_abort_sbuild(self):
