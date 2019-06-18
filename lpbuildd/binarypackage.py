@@ -146,8 +146,6 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 ['sudo', 'install', '-o', 'root', '-g', 'root', '-m', '0644',
                  schroot_file.name, self.schroot_config_path])
 
-        currently_building_path = os.path.join(
-            self.chroot_path, 'CurrentlyBuilding')
         currently_building_contents = (
             'Package: %s\n'
             'Component: %s\n'
@@ -157,8 +155,11 @@ class BinaryPackageBuildManager(DebianBuildManager):
                self.archive_purpose))
         if self.build_debug_symbols:
             currently_building_contents += 'Build-Debug-Symbols: yes\n'
-        with open(currently_building_path, 'w') as currently_building:
+        with tempfile.NamedTemporaryFile(mode='w+') as currently_building:
             currently_building.write(currently_building_contents)
+            currently_building.flush()
+            os.fchmod(currently_building.fileno(), 0o644)
+            self.backend.copy_in(currently_building.name, '/CurrentlyBuilding')
 
         args = ["sbuild-package", self._buildid, self.arch_tag]
         args.append(self.suite)
