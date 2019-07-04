@@ -1,3 +1,9 @@
+launchpad-buildd (177) UNRELEASED; urgency=medium
+
++  * Prototype Docker image building support.
+
+  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 05 Jun 2019 15:06:54 +0100
+
 launchpad-buildd (176) xenial; urgency=medium
 
   * Don't rely on /CurrentlyBuilding existing in base images.
@@ -726,7 +732,7 @@ launchpad-buildd (116) hardy; urgency=low
     memory at once (LP: #1227086).
 
   [ Adam Conrad ]
-  * Tidy up log formatting of the "Already reaped..." message. 
+  * Tidy up log formatting of the "Already reaped..." message.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 27 Sep 2013 13:08:59 +0100
 
@@ -911,7 +917,7 @@ launchpad-buildd (99) hardy; urgency=low
 launchpad-buildd (98) hardy; urgency=low
 
   * Add launchpad-buildd dependency on python-apt, as an accomodation for it
-    being only a Recommends but actually required by python-debian.  
+    being only a Recommends but actually required by python-debian.
     LP: #890834
 
  -- Martin Pool <mbp@canonical.com>  Wed, 16 Nov 2011 10:28:48 +1100
@@ -965,7 +971,7 @@ launchpad-buildd (91) hardy; urgency=low
 
 launchpad-buildd (90) hardy; urgency=low
 
-  * debhelper is a Build-Depends because it is needed to run 'clean'. 
+  * debhelper is a Build-Depends because it is needed to run 'clean'.
   * python-lpbuildd conflicts with launchpad-buildd << 88.
   * Add and adjust build-arch, binary-arch, build-indep to match policy.
   * Complies with stardards version 3.9.2.

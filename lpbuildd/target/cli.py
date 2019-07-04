@@ -14,6 +14,7 @@ from lpbuildd.target.apt import (
     OverrideSourcesList,
     Update,
     )
+from lpbuildd.target.build_docker import BuildDocker
 from lpbuildd.target.build_livefs import BuildLiveFS
 from lpbuildd.target.build_snap import BuildSnap
 from lpbuildd.target.generate_translation_templates import (
@@ -49,6 +50,7 @@ def configure_logging():
 
 operations = {
     "add-trusted-keys": AddTrustedKeys,
+    "build-docker": BuildDocker,
     "buildlivefs": BuildLiveFS,
     "buildsnap": BuildSnap,
     "generate-translation-templates": GenerateTranslationTemplates,
