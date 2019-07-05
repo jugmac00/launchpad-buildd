@@ -92,7 +92,6 @@ class TestDockerBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("chrootFail"))
 
-    """
     @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
@@ -110,8 +109,7 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        #self.buildmanager.backend.add_file(
-        #    "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+        self.buildmanager.backend.add_file("/build/manifest.json", b"[]")
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
@@ -124,9 +122,9 @@ class TestDockerBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
-        #self.assertThat(self.builder, HasWaitingFiles.byEquality({
-        #    "test-snap_0_all.snap": b"I am a snap package.",
-        #    }))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "manifest.json": b"[]",
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
@@ -160,8 +158,7 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        #self.buildmanager.backend.add_file(
-        #    "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+        self.buildmanager.backend.add_file("/build/manifest.json", b"[]")
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
@@ -174,9 +171,9 @@ class TestDockerBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
-        #self.assertThat(self.builder, HasWaitingFiles.byEquality({
-        #    "test-snap_0_all.snap": b"I am a snap package.",
-        #    }))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "manifest.json": b"[]",
+            }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
@@ -198,4 +195,3 @@ class TestDockerBuildManagerIteration(TestCase):
         expected_options = [
             "--snap-store-proxy-url", "http://snap-store-proxy.example/"]
         yield self.startBuild(options=expected_options)
-"""
