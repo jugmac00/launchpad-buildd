@@ -114,7 +114,8 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         # extract the saved image
         extract_args = [
             "tar", "-xf", "/build/{name}.tar".format(name=self.args.name),
-            "-C", "/build/"]
+            "-C", "/build/"
+            ]
         self.run_build_command(extract_args)
 
         # Tar each layer separately
@@ -124,9 +125,7 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             if not self.backend.isdir(content_path):
                 continue
             tar_path = '/build/{}.tar'.format(content)
-            tar_args = [
-                'tar', '-cvf', tar_path, content_path
-            ]
+            tar_args = ['tar', '-cvf', tar_path, content_path]
             self.run_build_command(tar_args)
 
     def run(self):
