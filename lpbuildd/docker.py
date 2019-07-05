@@ -159,8 +159,6 @@ class DockerBuildManager(DebianBuildManager):
             with open(manifest_path.name) as manifest_fp:
                 manifest = json.load(manifest_fp)
 
-        print(manifest)
-
         for section in manifest:
             layers = section['Layers']
             for layer in layers:
