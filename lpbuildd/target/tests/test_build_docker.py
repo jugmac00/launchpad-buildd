@@ -68,10 +68,10 @@ class RanBuildCommand(RanCommand):
 
     def __init__(self, args, **kwargs):
         kwargs.setdefault("LANG", "C.UTF-8")
-        kwargs.setdefault("SHELL", "/bin/bash")
+        kwargs.setdefault("SHELL", "/bin/sh")
         super(RanBuildCommand, self).__init__(args, **kwargs)
 
-"""
+
 class TestBuildDocker(TestCase):
 
     def test_run_build_command_no_env(self):
@@ -129,13 +129,13 @@ class TestBuildDocker(TestCase):
 
     @responses.activate
     def test_install_snap_store_proxy(self):
-        store_assertion = dedent(\
+        store_assertion = dedent("""\
             type: store
             store: store-id
             url: http://snap-store-proxy.example
 
             body
-            )
+            """)
 
         def respond(request):
             return 200, {"X-Assertion-Store-Id": "store-id"}, store_assertion
@@ -290,11 +290,21 @@ class TestBuildDocker(TestCase):
             "--branch", "lp:foo", "test-image",
             ]
         build_docker = parse_args(args=args).operation
+        build_docker.backend.add_dir('/build/test-directory')
         build_docker.build()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "/home/buildd/test-image"]),
+            RanCommand(["mkdir", "-p", "/home/buildd/test-image-extract"]),
+            RanBuildCommand([
+                '/bin/bash', '-c',
+                'docker save test-image > /build/test-image.tar']),
+            RanBuildCommand([
+                'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
+            RanBuildCommand([
+                'tar', '-cvf', '/build/test-directory.tar',
+                '/build/test-directory']),
             ]))
 
     def test_build_with_file(self):
@@ -305,11 +315,21 @@ class TestBuildDocker(TestCase):
             "test-image",
             ]
         build_docker = parse_args(args=args).operation
+        build_docker.backend.add_dir('/build/test-directory')
         build_docker.build()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "--file", "build-aux/Dockerfile", "/home/buildd/test-image"]),
+            RanCommand(["mkdir", "-p", "/home/buildd/test-image-extract"]),
+            RanBuildCommand([
+                '/bin/bash', '-c',
+                'docker save test-image > /build/test-image.tar']),
+            RanBuildCommand([
+                'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
+            RanBuildCommand([
+                'tar', '-cvf', '/build/test-directory.tar',
+                '/build/test-directory']),
             ]))
 
     def test_build_proxy(self):
@@ -320,6 +340,7 @@ class TestBuildDocker(TestCase):
             "test-image",
             ]
         build_docker = parse_args(args=args).operation
+        build_docker.backend.add_dir('/build/test-directory')
         build_docker.build()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -327,8 +348,16 @@ class TestBuildDocker(TestCase):
                  "--build-arg", "http_proxy=http://proxy.example:3128/",
                  "--build-arg", "https_proxy=http://proxy.example:3128/",
                  "--tag", "test-image", "/home/buildd/test-image"]),
+            RanCommand(["mkdir", "-p", "/home/buildd/test-image-extract"]),
+            RanBuildCommand([
+                '/bin/bash', '-c',
+                'docker save test-image > /build/test-image.tar']),
+            RanBuildCommand([
+                'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
+            RanBuildCommand([
+                'tar', '-cvf', '/build/test-directory.tar',
+                '/build/test-directory']),
             ]))
-
 
     def test_run_succeeds(self):
         args = [
@@ -402,4 +431,3 @@ class TestBuildDocker(TestCase):
         build_docker.backend.build_path = self.useFixture(TempDir()).path
         build_docker.backend.run = FailBuild()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_docker.run())
-"""

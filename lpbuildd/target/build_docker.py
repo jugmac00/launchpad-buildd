@@ -49,7 +49,7 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         """
         full_env = OrderedDict()
         full_env["LANG"] = "C.UTF-8"
-        full_env["SHELL"] = "/bin/bash"
+        full_env["SHELL"] = "/bin/sh"
         if env:
             full_env.update(env)
         return self.backend.run(args, env=full_env, **kwargs)
@@ -100,9 +100,6 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             args.extend(["--file", self.args.file])
         args.append(os.path.join("/home/buildd", self.args.name))
         self.run_build_command(args)
-
-        list_args = ["docker", "images"]
-        self.run_build_command(list_args)
 
         # Make extraction directy
         self.backend.run(["mkdir", "-p", "/home/buildd/{}-extract".format(
