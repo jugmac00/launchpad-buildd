@@ -303,7 +303,7 @@ class TestBuildDocker(TestCase):
             RanBuildCommand([
                 'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
             RanBuildCommand([
-                'tar', '-cvf', '/build/test-directory.tar',
+                'tar', '-czvf', '/build/test-directory.tar.gz',
                 '/build/test-directory']),
             ]))
 
@@ -328,7 +328,7 @@ class TestBuildDocker(TestCase):
             RanBuildCommand([
                 'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
             RanBuildCommand([
-                'tar', '-cvf', '/build/test-directory.tar',
+                'tar', '-czvf', '/build/test-directory.tar.gz',
                 '/build/test-directory']),
             ]))
 
@@ -355,7 +355,7 @@ class TestBuildDocker(TestCase):
             RanBuildCommand([
                 'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
             RanBuildCommand([
-                'tar', '-cvf', '/build/test-directory.tar',
+                'tar', '-czvf', '/build/test-directory.tar.gz',
                 '/build/test-directory']),
             ]))
 

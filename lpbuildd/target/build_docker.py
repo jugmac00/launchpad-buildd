@@ -13,6 +13,7 @@ import sys
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
+from lpbuildd.util import shell_escape
 
 
 RETCODE_FAILURE_INSTALL = 200
@@ -107,7 +108,7 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
 
         # save the newly built image
         docker_save = "docker save {name} > /build/{name}.tar".format(
-            name=self.args.name)
+            name=shell_escape(self.args.name))
         save_args = ["/bin/bash", "-c", docker_save]
         self.run_build_command(save_args)
 
@@ -124,8 +125,8 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             content_path = os.path.join('/build/', content)
             if not self.backend.isdir(content_path):
                 continue
-            tar_path = '/build/{}.tar'.format(content)
-            tar_args = ['tar', '-cvf', tar_path, content_path]
+            tar_path = '/build/{}.tar.gz'.format(content)
+            tar_args = ['tar', '-czvf', tar_path, content_path]
             self.run_build_command(tar_args)
 
     def run(self):
