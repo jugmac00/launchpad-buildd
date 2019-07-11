@@ -163,5 +163,5 @@ class DockerBuildManager(DebianBuildManager):
             layers = section['Layers']
             for layer in layers:
                 layer_name = layer.split('/')[0]
-                layer_path = os.path.join('/build/', layer_name + '.tar')
+                layer_path = os.path.join('/build/', layer_name + '.tar.gz')
                 self.addWaitingFileFromBackend(layer_path)
