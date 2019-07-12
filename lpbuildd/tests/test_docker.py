@@ -109,7 +109,12 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        self.buildmanager.backend.add_file("/build/manifest.json", b"[]")
+        self.buildmanager.backend.add_file(
+            "/build/manifest.json",
+            b'[{"Config": "test.json", "Layers": ["test1"]}]')
+        self.buildmanager.backend.add_file("/build/test.json", b"[]")
+        self.buildmanager.backend.add_file("/build/repositories", b"[]")
+        self.buildmanager.backend.add_file("/build/test1.tar.gz", b"test")
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
@@ -123,7 +128,10 @@ class TestDockerBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
         self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "manifest.json": b"[]",
+            "manifest.json": b'[{"Config": "test.json", "Layers": ["test1"]}]',
+            "test.json": b"[]",
+            "repositories": b"[]",
+            "test1.tar.gz": b"test",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
@@ -158,7 +166,12 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        self.buildmanager.backend.add_file("/build/manifest.json", b"[]")
+        self.buildmanager.backend.add_file(
+            "/build/manifest.json",
+            b'[{"Config": "test.json", "Layers": ["test1"]}]')
+        self.buildmanager.backend.add_file("/build/test.json", b"[]")
+        self.buildmanager.backend.add_file("/build/repositories", b"[]")
+        self.buildmanager.backend.add_file("/build/test1.tar.gz", b"test")
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
@@ -172,7 +185,10 @@ class TestDockerBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
         self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "manifest.json": b"[]",
+            "manifest.json": b'[{"Config": "test.json", "Layers": ["test1"]}]',
+            "test.json": b"[]",
+            "repositories": b"[]",
+            "test1.tar.gz": b"test",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.

@@ -74,6 +74,7 @@ class RanBuildCommand(RanCommand):
 
 class TestBuildDocker(TestCase):
 
+
     def test_run_build_command_no_env(self):
         args = [
             "build-docker",
@@ -108,7 +109,7 @@ class TestBuildDocker(TestCase):
         build_docker = parse_args(args=args).operation
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "bzr"),
+            RanAptGet("install", "python3", "bzr"),
             RanSnap("install", "docker"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -122,7 +123,7 @@ class TestBuildDocker(TestCase):
         build_docker = parse_args(args=args).operation
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git"),
+            RanAptGet("install", "python3", "git"),
             RanSnap("install", "docker"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -153,7 +154,7 @@ class TestBuildDocker(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git"),
+            RanAptGet("install", "python3", "git"),
             RanSnap("ack", "/dev/stdin", input_text=store_assertion),
             RanSnap("set", "core", "proxy.store=store-id"),
             RanSnap("install", "docker"),
@@ -177,7 +178,7 @@ class TestBuildDocker(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git", "python3", "socat"),
+            RanAptGet("install", "python3", "git", "socat"),
             RanSnap("install", "docker"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -282,7 +283,6 @@ class TestBuildDocker(TestCase):
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image", **env),
             ]))
-
     def test_build(self):
         args = [
             "build-docker",
@@ -296,15 +296,9 @@ class TestBuildDocker(TestCase):
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "/home/buildd/test-image"]),
-            RanCommand(["mkdir", "-p", "/home/buildd/test-image-extract"]),
             RanBuildCommand([
-                '/bin/bash', '-c',
-                'docker save test-image > /build/test-image.tar']),
-            RanBuildCommand([
-                'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
-            RanBuildCommand([
-                'tar', '-czvf', '/build/test-directory.tar.gz',
-                '/build/test-directory']),
+                '/usr/bin/python3', '/home/buildd/save_file.py',
+                'test-image']),
             ]))
 
     def test_build_with_file(self):
@@ -321,15 +315,9 @@ class TestBuildDocker(TestCase):
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "--file", "build-aux/Dockerfile", "/home/buildd/test-image"]),
-            RanCommand(["mkdir", "-p", "/home/buildd/test-image-extract"]),
             RanBuildCommand([
-                '/bin/bash', '-c',
-                'docker save test-image > /build/test-image.tar']),
-            RanBuildCommand([
-                'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
-            RanBuildCommand([
-                'tar', '-czvf', '/build/test-directory.tar.gz',
-                '/build/test-directory']),
+                '/usr/bin/python3', '/home/buildd/save_file.py',
+                'test-image']),
             ]))
 
     def test_build_proxy(self):
@@ -348,15 +336,9 @@ class TestBuildDocker(TestCase):
                  "--build-arg", "http_proxy=http://proxy.example:3128/",
                  "--build-arg", "https_proxy=http://proxy.example:3128/",
                  "--tag", "test-image", "/home/buildd/test-image"]),
-            RanCommand(["mkdir", "-p", "/home/buildd/test-image-extract"]),
             RanBuildCommand([
-                '/bin/bash', '-c',
-                'docker save test-image > /build/test-image.tar']),
-            RanBuildCommand([
-                'tar', '-xf', '/build/test-image.tar', '-C', '/build/']),
-            RanBuildCommand([
-                'tar', '-czvf', '/build/test-directory.tar.gz',
-                '/build/test-directory']),
+                '/usr/bin/python3', '/home/buildd/save_file.py',
+                'test-image']),
             ]))
 
     def test_run_succeeds(self):
@@ -370,7 +352,7 @@ class TestBuildDocker(TestCase):
         build_docker.backend.run = FakeMethod()
         self.assertEqual(0, build_docker.run())
         self.assertThat(build_docker.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "bzr")),
+            AnyMatch(RanAptGet("install", "python3", "bzr")),
             AnyMatch(RanSnap("install", "docker")),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"],

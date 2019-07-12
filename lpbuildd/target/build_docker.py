@@ -9,11 +9,13 @@ from collections import OrderedDict
 import logging
 import os.path
 import sys
+import tarfile
+import tempfile
+from textwrap import dedent
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
-from lpbuildd.util import shell_escape
 
 
 RETCODE_FAILURE_INSTALL = 200
@@ -57,7 +59,7 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
 
     def install(self):
         logger.info("Running install phase...")
-        deps = []
+        deps = ['python3']
         if self.args.backend == "lxd":
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.
@@ -66,7 +68,7 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
                     deps.append(dep)
         deps.extend(self.vcs_deps)
         if self.args.proxy_url:
-            deps.extend(["python3", "socat"])
+            deps.extend(["socat"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.backend in ("lxd", "fake"):
             self.snap_store_set_proxy()
@@ -78,6 +80,46 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         # The docker snap can't see /build, so we have to do our work under
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])
+
+        # Copy in the save script, this has to run on the backend
+        # in order to save the files to the correct location, otherwise
+        # they end up outside the lxd.
+        with tempfile.NamedTemporaryFile(mode="w+") as save_file:
+            print(dedent("""\
+                import os
+                from subprocess import Popen, PIPE
+                import sys
+                import tarfile
+
+                p = Popen(
+                    ['docker', 'save', sys.argv[1]], stdin=PIPE, stdout=PIPE)
+                tar = tarfile.open(fileobj=p.stdout, mode="r|")
+
+                current_dir = ''
+                directory_tar = None
+                extract_path = '/build/'
+                for file in tar:
+                    print(file.name)
+                    if file.isdir():
+                        current_dir = file.name
+                        if directory_tar:
+                            directory_tar.close()
+                        directory_tar = tarfile.open(
+                            os.path.join(
+                                extract_path, '{}.tar.gz'.format(file.name)),
+                            'w|gz')
+                    elif current_dir and file.name.startswith(current_dir):
+                        directory_tar.addfile(file, tar.extractfile(file))
+                    else:
+                        tar.extract(file, extract_path)
+
+                """), file=save_file, end="")
+            save_file.flush()
+            os.fchmod(save_file.fileno(), 0o644)
+            self.backend.copy_in(
+                save_file.name,
+                '/home/buildd/save_file.py'
+            )
 
     def repo(self):
         """Collect git or bzr branch."""
@@ -99,35 +141,12 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         args.extend(["--tag", self.args.name])
         if self.args.file is not None:
             args.extend(["--file", self.args.file])
-        args.append(os.path.join("/home/buildd", self.args.name))
+        buildd_path = os.path.join("/home/buildd", self.args.name)
+        args.append(buildd_path)
         self.run_build_command(args)
 
-        # Make extraction directy
-        self.backend.run(["mkdir", "-p", "/home/buildd/{}-extract".format(
-            self.args.name)])
-
-        # save the newly built image
-        docker_save = "docker save {name} > /build/{name}.tar".format(
-            name=shell_escape(self.args.name))
-        save_args = ["/bin/bash", "-c", docker_save]
-        self.run_build_command(save_args)
-
-        # extract the saved image
-        extract_args = [
-            "tar", "-xf", "/build/{name}.tar".format(name=self.args.name),
-            "-C", "/build/"
-            ]
-        self.run_build_command(extract_args)
-
-        # Tar each layer separately
-        build_dir_contents = self.backend.listdir('/build')
-        for content in build_dir_contents:
-            content_path = os.path.join('/build/', content)
-            if not self.backend.isdir(content_path):
-                continue
-            tar_path = '/build/{}.tar.gz'.format(content)
-            tar_args = ['tar', '-czvf', tar_path, content_path]
-            self.run_build_command(tar_args)
+        self.run_build_command(
+            ["/usr/bin/python3", "/home/buildd/save_file.py", self.args.name])
 
     def run(self):
         try:

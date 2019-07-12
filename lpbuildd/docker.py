@@ -153,6 +153,8 @@ class DockerBuildManager(DebianBuildManager):
 
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
+        self.addWaitingFileFromBackend('/build/repositories')
+
         self.addWaitingFileFromBackend('/build/manifest.json')
         with tempfile.NamedTemporaryFile() as manifest_path:
             self.backend.copy_out('/build/manifest.json', manifest_path.name)
@@ -160,6 +162,8 @@ class DockerBuildManager(DebianBuildManager):
                 manifest = json.load(manifest_fp)
 
         for section in manifest:
+            self.addWaitingFileFromBackend(
+                os.path.join('/build/', section["Config"]))
             layers = section['Layers']
             for layer in layers:
                 layer_name = layer.split('/')[0]
