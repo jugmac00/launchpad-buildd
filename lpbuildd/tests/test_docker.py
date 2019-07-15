@@ -3,7 +3,9 @@
 
 __metaclass__ = type
 
+import io
 import os
+from textwrap import dedent
 
 from fixtures import (
     EnvironmentVariable,
@@ -33,6 +35,14 @@ class MockBuildManager(DockerBuildManager):
             iterate = self.iterate
         self.iterators.append(iterate)
         return 0
+
+
+class MockDockerTarSave():
+    @property
+    def stdout(self):
+        return io.open(os.path.join(
+            os.path.dirname(__file__),
+            './test-docker-image.tar'), 'rb')
 
 
 class TestDockerBuildManagerIteration(TestCase):
@@ -109,12 +119,7 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        self.buildmanager.backend.add_file(
-            "/build/manifest.json",
-            b'[{"Config": "test.json", "Layers": ["test1"]}]')
-        self.buildmanager.backend.add_file("/build/test.json", b"[]")
-        self.buildmanager.backend.add_file("/build/repositories", b"[]")
-        self.buildmanager.backend.add_file("/build/test1.tar.gz", b"test")
+        self.buildmanager.backend.run.result = MockDockerTarSave()
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
@@ -128,10 +133,14 @@ class TestDockerBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
         self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "manifest.json": b'[{"Config": "test.json", "Layers": ["test1"]}]',
-            "test.json": b"[]",
-            "repositories": b"[]",
-            "test1.tar.gz": b"test",
+            "manifest.json":
+                dedent(
+                    b"""[{"Config": "config.json", """
+                    b""""Layers": ["layer-1/layer.tar"]}]
+                """),
+            "config.json": b"[]\n",
+            "repositories": b"[]\n",
+            "layer-1.tar.gz": b"",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
@@ -166,12 +175,7 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        self.buildmanager.backend.add_file(
-            "/build/manifest.json",
-            b'[{"Config": "test.json", "Layers": ["test1"]}]')
-        self.buildmanager.backend.add_file("/build/test.json", b"[]")
-        self.buildmanager.backend.add_file("/build/repositories", b"[]")
-        self.buildmanager.backend.add_file("/build/test1.tar.gz", b"test")
+        self.buildmanager.backend.run.result = MockDockerTarSave()
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
@@ -185,10 +189,14 @@ class TestDockerBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
         self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "manifest.json": b'[{"Config": "test.json", "Layers": ["test1"]}]',
-            "test.json": b"[]",
-            "repositories": b"[]",
-            "test1.tar.gz": b"test",
+            "manifest.json":
+                dedent(
+                    b"""[{"Config": "config.json", """
+                    b""""Layers": ["layer-1/layer.tar"]}]
+                """),
+            "config.json": b"[]\n",
+            "repositories": b"[]\n",
+            "layer-1.tar.gz": b"",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.

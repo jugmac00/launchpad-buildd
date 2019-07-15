@@ -9,9 +9,6 @@ from collections import OrderedDict
 import logging
 import os.path
 import sys
-import tarfile
-import tempfile
-from textwrap import dedent
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
@@ -81,46 +78,6 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])
 
-        # Copy in the save script, this has to run on the backend
-        # in order to save the files to the correct location, otherwise
-        # they end up outside the lxd.
-        with tempfile.NamedTemporaryFile(mode="w+") as save_file:
-            print(dedent("""\
-                import os
-                from subprocess import Popen, PIPE
-                import sys
-                import tarfile
-
-                p = Popen(
-                    ['docker', 'save', sys.argv[1]], stdin=PIPE, stdout=PIPE)
-                tar = tarfile.open(fileobj=p.stdout, mode="r|")
-
-                current_dir = ''
-                directory_tar = None
-                extract_path = '/build/'
-                for file in tar:
-                    print(file.name)
-                    if file.isdir():
-                        current_dir = file.name
-                        if directory_tar:
-                            directory_tar.close()
-                        directory_tar = tarfile.open(
-                            os.path.join(
-                                extract_path, '{}.tar.gz'.format(file.name)),
-                            'w|gz')
-                    elif current_dir and file.name.startswith(current_dir):
-                        directory_tar.addfile(file, tar.extractfile(file))
-                    else:
-                        tar.extract(file, extract_path)
-
-                """), file=save_file, end="")
-            save_file.flush()
-            os.fchmod(save_file.fileno(), 0o644)
-            self.backend.copy_in(
-                save_file.name,
-                '/home/buildd/save_file.py'
-            )
-
     def repo(self):
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
@@ -144,9 +101,6 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         buildd_path = os.path.join("/home/buildd", self.args.name)
         args.append(buildd_path)
         self.run_build_command(args)
-
-        self.run_build_command(
-            ["/usr/bin/python3", "/home/buildd/save_file.py", self.args.name])
 
     def run(self):
         try:

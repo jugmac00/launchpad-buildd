@@ -5,31 +5,21 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-import base64
 import json
 import os
+import tarfile
 import tempfile
 
 from six.moves.configparser import (
     NoOptionError,
     NoSectionError,
     )
-from six.moves.urllib.error import (
-    HTTPError,
-    URLError,
-    )
-from six.moves.urllib.parse import urlparse
-from six.moves.urllib.request import (
-    Request,
-    urlopen,
-    )
-from twisted.application import strports
 
 from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
     )
-from lpbuildd.snap import SnapProxyFactory
+from lpbuildd.snap import SnapBuildProxyMixin
 
 
 RETCODE_SUCCESS = 0
@@ -41,7 +31,7 @@ class DockerBuildState(DebianBuildState):
     BUILD_DOCKER = "BUILD_DOCKER"
 
 
-class DockerBuildManager(DebianBuildManager):
+class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
     """Build a snap."""
 
     backend_name = "lxd"
@@ -63,45 +53,6 @@ class DockerBuildManager(DebianBuildManager):
         self.proxy_service = None
 
         super(DockerBuildManager, self).initiate(files, chroot, extra_args)
-
-    def startProxy(self):
-        """Start the local snap proxy, if necessary."""
-        if not self.proxy_url:
-            return []
-        proxy_port = self._builder._config.get("snapmanager", "proxyport")
-        proxy_factory = SnapProxyFactory(self, self.proxy_url, timeout=60)
-        self.proxy_service = strports.service(proxy_port, proxy_factory)
-        self.proxy_service.setServiceParent(self._builder.service)
-        if self.backend_name == "lxd":
-            proxy_host = self.backend.ipv4_network.ip
-        else:
-            proxy_host = "localhost"
-        return ["--proxy-url", "http://{}:{}/".format(proxy_host, proxy_port)]
-
-    def stopProxy(self):
-        """Stop the local snap proxy, if necessary."""
-        if self.proxy_service is None:
-            return
-        self.proxy_service.disownServiceParent()
-        self.proxy_service = None
-
-    def revokeProxyToken(self):
-        """Revoke builder proxy token."""
-        if not self.revocation_endpoint:
-            return
-        self._builder.log("Revoking proxy token...\n")
-        url = urlparse(self.proxy_url)
-        auth = "{}:{}".format(url.username, url.password)
-        headers = {
-            "Authorization": "Basic {}".format(base64.b64encode(auth))
-            }
-        req = Request(self.revocation_endpoint, None, headers)
-        req.get_method = lambda: "DELETE"
-        try:
-            urlopen(req)
-        except (HTTPError, URLError) as e:
-            self._builder.log(
-                "Unable to revoke token for %s: %s" % (url.username, e))
 
     def doRunBuild(self):
         """Run the process to build the snap."""
@@ -153,19 +104,54 @@ class DockerBuildManager(DebianBuildManager):
 
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
-        self.addWaitingFileFromBackend('/build/repositories')
+        extract_path = tempfile.mkdtemp(prefix=self.name)
+        proc = self.backend.run(
+            ['docker', 'save', self.name],
+            get_output=True, universal_newlines=False, return_process=True)
+        tar = tarfile.open(fileobj=proc.stdout, mode="r|")
 
-        self.addWaitingFileFromBackend('/build/manifest.json')
-        with tempfile.NamedTemporaryFile() as manifest_path:
-            self.backend.copy_out('/build/manifest.json', manifest_path.name)
-            with open(manifest_path.name) as manifest_fp:
-                manifest = json.load(manifest_fp)
+        current_dir = ''
+        directory_tar = None
+        # The tarfile is a stream and must be processed in order
+        for file in tar:
+            # Directories are just nodes, you can't extract the children
+            # directly, so keep track of what dir we're in.
+            if file.isdir():
+                current_dir = file.name
+                # Close the old directory if we have one
+                if directory_tar:
+                    directory_tar.close()
+                # Extract each directory to a new tar, streaming in from
+                # the image tar
+                directory_tar = tarfile.open(
+                    os.path.join(
+                        extract_path, '{}.tar.gz'.format(file.name)),
+                    'w|gz')
+            # If this is a file, and it's in a directory, save it to
+            # the new tar file
+            elif current_dir and file.name.startswith(current_dir):
+                directory_tar.addfile(file, tar.extractfile(file))
+            # If it's not in a directory, just save it to the root
+            else:
+                tar.extract(file, extract_path)
+
+        # This always exists
+        self._builder.addWaitingFile(
+            os.path.join(extract_path, 'repositories'))
+        # Parse the manifest for the other files we need
+        manifest_path = os.path.join(extract_path, 'manifest.json')
+        self._builder.addWaitingFile(manifest_path)
+        with open(manifest_path) as manifest_fp:
+            manifest = json.load(manifest_fp)
 
         for section in manifest:
-            self.addWaitingFileFromBackend(
-                os.path.join('/build/', section["Config"]))
+            # This has an ID as it's filename, specified in the manifest
+            self._builder.addWaitingFile(
+                os.path.join(extract_path, section["Config"]))
             layers = section['Layers']
+            # We've extracted the layers to their own tar files, so add them
+            # based on the layer ID/filename
             for layer in layers:
                 layer_name = layer.split('/')[0]
-                layer_path = os.path.join('/build/', layer_name + '.tar.gz')
-                self.addWaitingFileFromBackend(layer_path)
+                layer_path = os.path.join(extract_path, layer_name + '.tar.gz')
+                self._builder.addWaitingFile(layer_path)

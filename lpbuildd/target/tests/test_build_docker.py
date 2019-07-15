@@ -74,7 +74,6 @@ class RanBuildCommand(RanCommand):
 
 class TestBuildDocker(TestCase):
 
-
     def test_run_build_command_no_env(self):
         args = [
             "build-docker",
@@ -283,6 +282,7 @@ class TestBuildDocker(TestCase):
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image", **env),
             ]))
+
     def test_build(self):
         args = [
             "build-docker",
@@ -296,9 +296,6 @@ class TestBuildDocker(TestCase):
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "/home/buildd/test-image"]),
-            RanBuildCommand([
-                '/usr/bin/python3', '/home/buildd/save_file.py',
-                'test-image']),
             ]))
 
     def test_build_with_file(self):
@@ -315,9 +312,6 @@ class TestBuildDocker(TestCase):
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "--file", "build-aux/Dockerfile", "/home/buildd/test-image"]),
-            RanBuildCommand([
-                '/usr/bin/python3', '/home/buildd/save_file.py',
-                'test-image']),
             ]))
 
     def test_build_proxy(self):
@@ -336,9 +330,6 @@ class TestBuildDocker(TestCase):
                  "--build-arg", "http_proxy=http://proxy.example:3128/",
                  "--build-arg", "https_proxy=http://proxy.example:3128/",
                  "--tag", "test-image", "/home/buildd/test-image"]),
-            RanBuildCommand([
-                '/usr/bin/python3', '/home/buildd/save_file.py',
-                'test-image']),
             ]))
 
     def test_run_succeeds(self):
