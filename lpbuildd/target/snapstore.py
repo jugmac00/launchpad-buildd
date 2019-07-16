@@ -5,6 +5,8 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+import os
+
 import requests
 from six.moves.urllib.parse import (
     urljoin,
@@ -40,3 +42,24 @@ class SnapStoreOperationMixin:
         if store_id is not None:
             self.backend.run(
                 ["snap", "set", "core", "proxy.store={}".format(store_id)])
+
+
+class SnapStoreProxyMixin:
+
+    @classmethod
+    def add_arguments(cls, parser):
+        super(SnapStoreProxyMixin, cls).add_arguments(parser)
+        parser.add_argument("--proxy-url", help="builder proxy url")
+        parser.add_argument(
+            "--revocation-endpoint",
+            help="builder proxy token revocation endpoint")
+
+    def install(self):
+        deps = []
+        if self.args.proxy_url:
+            deps.extend(["python3", "socat"])
+        if self.args.proxy_url:
+            self.backend.copy_in(
+                os.path.join(self.bin, "snap-git-proxy"),
+                "/usr/local/bin/snap-git-proxy")
+        return deps

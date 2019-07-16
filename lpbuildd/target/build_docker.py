@@ -11,7 +11,10 @@ import os.path
 import sys
 
 from lpbuildd.target.operation import Operation
-from lpbuildd.target.snapstore import SnapStoreOperationMixin
+from lpbuildd.target.snapstore import (
+    SnapStoreOperationMixin,
+    SnapStoreProxyMixin,
+)
 from lpbuildd.target.vcs import VCSOperationMixin
 
 
@@ -22,17 +25,14 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
+class BuildDocker(SnapStoreProxyMixin, VCSOperationMixin,
+                  SnapStoreOperationMixin, Operation):
 
     description = "Build a Docker image."
 
     @classmethod
     def add_arguments(cls, parser):
         super(BuildDocker, cls).add_arguments(parser)
-        parser.add_argument("--proxy-url", help="builder proxy url")
-        parser.add_argument(
-            "--revocation-endpoint",
-            help="builder proxy token revocation endpoint")
         parser.add_argument("--file", help="path to Dockerfile in branch")
         parser.add_argument("name", help="name of snap to build")
 
@@ -56,7 +56,7 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
 
     def install(self):
         logger.info("Running install phase...")
-        deps = ['python3']
+        deps = super(BuildDocker, self).install()
         if self.args.backend == "lxd":
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.
@@ -64,16 +64,10 @@ class BuildDocker(VCSOperationMixin, SnapStoreOperationMixin, Operation):
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
         deps.extend(self.vcs_deps)
-        if self.args.proxy_url:
-            deps.extend(["socat"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.backend in ("lxd", "fake"):
             self.snap_store_set_proxy()
         self.backend.run(["snap", "install", "docker"])
-        if self.args.proxy_url:
-            self.backend.copy_in(
-                os.path.join(self.bin, "snap-git-proxy"),
-                "/usr/local/bin/snap-git-proxy")
         # The docker snap can't see /build, so we have to do our work under
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])

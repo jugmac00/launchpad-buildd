@@ -108,7 +108,7 @@ class TestBuildDocker(TestCase):
         build_docker = parse_args(args=args).operation
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "python3", "bzr"),
+            RanAptGet("install", "bzr"),
             RanSnap("install", "docker"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -122,7 +122,7 @@ class TestBuildDocker(TestCase):
         build_docker = parse_args(args=args).operation
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "python3", "git"),
+            RanAptGet("install", "git"),
             RanSnap("install", "docker"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -153,7 +153,7 @@ class TestBuildDocker(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "python3", "git"),
+            RanAptGet("install", "git"),
             RanSnap("ack", "/dev/stdin", input_text=store_assertion),
             RanSnap("set", "core", "proxy.store=store-id"),
             RanSnap("install", "docker"),
@@ -177,7 +177,7 @@ class TestBuildDocker(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "python3", "git", "socat"),
+            RanAptGet("install", "python3", "socat", "git"),
             RanSnap("install", "docker"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -343,7 +343,7 @@ class TestBuildDocker(TestCase):
         build_docker.backend.run = FakeMethod()
         self.assertEqual(0, build_docker.run())
         self.assertThat(build_docker.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "python3", "bzr")),
+            AnyMatch(RanAptGet("install", "bzr")),
             AnyMatch(RanSnap("install", "docker")),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"],
