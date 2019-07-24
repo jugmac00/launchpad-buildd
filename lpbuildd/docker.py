@@ -102,6 +102,35 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()
 
+    def _gatherManifestSection(self, section, extract_path, sha_directory):
+        config_file_path = os.path.join(extract_path, section["Config"])
+        self._builder.addWaitingFile(config_file_path)
+        with open(config_file_path, 'r') as config_fp:
+            config = json.load(config_fp)
+        diff_ids = config["rootfs"]["diff_ids"]
+        digest_diff_map = {}
+        for diff_id, layer_id in zip(diff_ids, section['Layers']):
+            layer_id = layer_id.split('/')[0]
+            diff_file = os.path.join(sha_directory, diff_id.split(':')[1])
+            if not os.path.exists(diff_file):
+                self._builder.addWaitingFile(
+                    os.path.join(
+                        extract_path,
+                        "{}.tar.gz".format(layer_id)
+                    )
+                )
+                continue
+            with open(diff_file, 'r') as diff_fp:
+                diff = json.load(diff_fp)
+                # We should be able to just take the first occurence,
+                # as that will be the 'most parent' image
+                digest = diff[0]["Digest"]
+                digest_diff_map[diff_id] = {
+                    "digest": digest,
+                    "source": diff[0]["SourceRepository"],
+                }
+        return digest_diff_map
+
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
         extract_path = tempfile.mkdtemp(prefix=self.name)
@@ -118,40 +147,51 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             # directly, so keep track of what dir we're in.
             if file.isdir():
                 current_dir = file.name
-                # Close the old directory if we have one
                 if directory_tar:
+                    # Close the old directory if we have one
                     directory_tar.close()
-                # Extract each directory to a new tar, streaming in from
-                # the image tar
+                # We're going to add the layer.tar to a gzip
                 directory_tar = tarfile.open(
                     os.path.join(
                         extract_path, '{}.tar.gz'.format(file.name)),
                     'w|gz')
-            # If this is a file, and it's in a directory, save it to
-            # the new tar file
-            elif current_dir and file.name.startswith(current_dir):
+            if current_dir and file.name.endswith('layer.tar'):
+                # This is the actual layer data, we want to add it to
+                # the directory gzip
+                file.name = file.name.split('/')[1]
                 directory_tar.addfile(file, tar.extractfile(file))
-            # If it's not in a directory, just save it to the root
+            elif current_dir and file.name.startswith(current_dir):
+                # Other files that are in the layer directories,
+                # we don't care about
+                continue
             else:
+                # If it's not in a directory, we need that
                 tar.extract(file, extract_path)
 
-        # This always exists
-        self._builder.addWaitingFile(
-            os.path.join(extract_path, 'repositories'))
+        # We need these mapping files
+        sha_directory = tempfile.mkdtemp()
+        sha_path = ('/var/snap/docker/common/var-lib-docker/image/'
+                    'aufs/distribution/v2metadata-by-diffid/sha256/')
+        sha_files = [x for x in self.backend.listdir(sha_path)
+                     if not x.startswith('.')]
+        for file in sha_files:
+            self.backend.copy_out(
+                os.path.join(sha_path, file),
+                os.path.join(sha_directory, file)
+            )
+
         # Parse the manifest for the other files we need
         manifest_path = os.path.join(extract_path, 'manifest.json')
         self._builder.addWaitingFile(manifest_path)
         with open(manifest_path) as manifest_fp:
             manifest = json.load(manifest_fp)
 
+        digest_maps = []
         for section in manifest:
-            # This has an ID as it's filename, specified in the manifest
-            self._builder.addWaitingFile(
-                os.path.join(extract_path, section["Config"]))
-            layers = section['Layers']
-            # We've extracted the layers to their own tar files, so add them
-            # based on the layer ID/filename
-            for layer in layers:
-                layer_name = layer.split('/')[0]
-                layer_path = os.path.join(extract_path, layer_name + '.tar.gz')
-                self._builder.addWaitingFile(layer_path)
+            digest_maps.append(
+                self._gatherManifestSection(section, extract_path,
+                                            sha_directory))
+        digest_map_file = os.path.join(extract_path, 'digests.json')
+        with open(digest_map_file, 'w') as digest_map_fp:
+            json.dump(digest_maps, digest_map_fp)
+        self._builder.addWaitingFile(digest_map_file)

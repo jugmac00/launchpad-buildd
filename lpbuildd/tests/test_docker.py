@@ -121,6 +121,12 @@ class TestDockerBuildManagerIteration(TestCase):
 
         self.buildmanager.backend.run.result = MockDockerTarSave()
 
+        self.buildmanager.backend.add_file(
+            '/var/snap/docker/common/var-lib-docker/image/'
+            'aufs/distribution/v2metadata-by-diffid/sha256/diff1',
+            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
+        )
+
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
@@ -136,11 +142,14 @@ class TestDockerBuildManagerIteration(TestCase):
             "manifest.json":
                 dedent(
                     b"""[{"Config": "config.json", """
-                    b""""Layers": ["layer-1/layer.tar"]}]
+                    b""""Layers": ["layer-1/layer.tar", "layer-2/layer.tar"]}]
                 """),
-            "config.json": b"[]\n",
-            "repositories": b"[]\n",
-            "layer-1.tar.gz": b"",
+            "config.json": b"""{"rootfs": {"diff_ids": """
+                           b"""["sha256:diff1", "sha256:diff2"]}}\n""",
+            "layer-2.tar.gz": b"",
+            "digests.json": b"""[{"sha256:diff1": """
+                            b"""{"source": "test", """
+                            b""""digest": "test_digest"}}]""",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
@@ -177,6 +186,12 @@ class TestDockerBuildManagerIteration(TestCase):
 
         self.buildmanager.backend.run.result = MockDockerTarSave()
 
+        self.buildmanager.backend.add_file(
+            '/var/snap/docker/common/var-lib-docker/image/'
+            'aufs/distribution/v2metadata-by-diffid/sha256/diff1',
+            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
+        )
+
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
@@ -192,11 +207,14 @@ class TestDockerBuildManagerIteration(TestCase):
             "manifest.json":
                 dedent(
                     b"""[{"Config": "config.json", """
-                    b""""Layers": ["layer-1/layer.tar"]}]
+                    b""""Layers": ["layer-1/layer.tar", "layer-2/layer.tar"]}]
                 """),
-            "config.json": b"[]\n",
-            "repositories": b"[]\n",
-            "layer-1.tar.gz": b"",
+            "config.json": b"""{"rootfs": {"diff_ids": """
+                           b"""["sha256:diff1", "sha256:diff2"]}}\n""",
+            "layer-2.tar.gz": b"",
+            "digests.json": b"""[{"sha256:diff1": """
+                            b"""{"source": "test", """
+                            b""""digest": "test_digest"}}]""",
             }))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
