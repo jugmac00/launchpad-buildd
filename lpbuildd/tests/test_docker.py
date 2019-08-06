@@ -4,14 +4,15 @@
 __metaclass__ = type
 
 import io
+import json
 import os
-from textwrap import dedent
 
 from fixtures import (
     EnvironmentVariable,
     TempDir,
     )
 from testtools import TestCase
+from testtools.matchers import Contains
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
@@ -20,7 +21,6 @@ from lpbuildd.docker import (
     DockerBuildState,
     )
 from lpbuildd.tests.fakebuilder import FakeBuilder
-from lpbuildd.tests.matchers import HasWaitingFiles
 
 
 class MockBuildManager(DockerBuildManager):
@@ -138,20 +138,32 @@ class TestDockerBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
-        self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "manifest.json":
-                dedent(
-                    b"""[{"Config": "config.json", """
-                    b""""Layers": ["layer-1/layer.tar", "layer-2/layer.tar"]}]
-                """),
-            "config.json": b"""{"rootfs": {"diff_ids": """
-                           b"""["sha256:diff1", "sha256:diff2"]}}\n""",
-            "layer-2.tar.gz": b"",
-            "digests.json": b"""[{"sha256:diff1": """
-                            b"""{"source": "test", """
-                            b""""digest": "test_digest"}}]""",
-            }))
+        expected_files = [
+            'manifest.json',
+            'layer-1.tar.gz',
+            'layer-2.tar.gz',
+            'digests.json',
+            'config.json',
+            ]
+        for expected in expected_files:
+            self.assertThat(self.builder.waitingfiles, Contains(expected))
 
+        cache_path = self.builder.cachePath(
+            self.builder.waitingfiles['digests.json'])
+        with open(cache_path, "rb") as f:
+            digests_contents = f.read()
+        digests_expected = [{
+            "sha256:diff1": {
+                "source": "test",
+                "digest": "test_digest",
+            },
+            "sha256:diff2": {
+                "source": "",
+                "digest": "e3b0c44298fc1c149afbf4c8996fb9"
+                          "2427ae41e4649b934ca495991b7852b855",
+            }
+        }]
+        self.assertEqual(digests_contents, json.dumps(digests_expected))
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
@@ -203,19 +215,32 @@ class TestDockerBuildManagerIteration(TestCase):
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
-        self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "manifest.json":
-                dedent(
-                    b"""[{"Config": "config.json", """
-                    b""""Layers": ["layer-1/layer.tar", "layer-2/layer.tar"]}]
-                """),
-            "config.json": b"""{"rootfs": {"diff_ids": """
-                           b"""["sha256:diff1", "sha256:diff2"]}}\n""",
-            "layer-2.tar.gz": b"",
-            "digests.json": b"""[{"sha256:diff1": """
-                            b"""{"source": "test", """
-                            b""""digest": "test_digest"}}]""",
-            }))
+        expected_files = [
+            'manifest.json',
+            'layer-1.tar.gz',
+            'layer-2.tar.gz',
+            'digests.json',
+            'config.json',
+            ]
+        for expected in expected_files:
+            self.assertThat(self.builder.waitingfiles, Contains(expected))
+
+        cache_path = self.builder.cachePath(
+            self.builder.waitingfiles['digests.json'])
+        with open(cache_path, "rb") as f:
+            digests_contents = f.read()
+        digests_expected = [{
+            "sha256:diff1": {
+                "source": "test",
+                "digest": "test_digest",
+            },
+            "sha256:diff2": {
+                "source": "",
+                "digest": "e3b0c44298fc1c149afbf4c8996fb9"
+                          "2427ae41e4649b934ca495991b7852b855",
+            }
+        }]
+        self.assertEqual(digests_contents, json.dumps(digests_expected))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)

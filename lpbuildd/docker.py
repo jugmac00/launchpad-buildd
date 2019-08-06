@@ -5,6 +5,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+import hashlib
 import json
 import os
 import tarfile
@@ -112,23 +113,30 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         for diff_id, layer_id in zip(diff_ids, section['Layers']):
             layer_id = layer_id.split('/')[0]
             diff_file = os.path.join(sha_directory, diff_id.split(':')[1])
-            if not os.path.exists(diff_file):
-                self._builder.addWaitingFile(
-                    os.path.join(
-                        extract_path,
-                        "{}.tar.gz".format(layer_id)
-                    )
-                )
-                continue
-            with open(diff_file, 'r') as diff_fp:
-                diff = json.load(diff_fp)
-                # We should be able to just take the first occurence,
-                # as that will be the 'most parent' image
-                digest = diff[0]["Digest"]
-                digest_diff_map[diff_id] = {
-                    "digest": digest,
-                    "source": diff[0]["SourceRepository"],
-                }
+            layer_path = os.path.join(
+                extract_path, "{}.tar.gz".format(layer_id))
+            self._builder.addWaitingFile(layer_path)
+            if os.path.exists(diff_file):
+                with open(diff_file, 'r') as diff_fp:
+                    diff = json.load(diff_fp)
+                    # We should be able to just take the first occurence,
+                    # as that will be the 'most parent' image
+                    digest = diff[0]["Digest"]
+                    digest_diff_map[diff_id] = {
+                        "digest": digest,
+                        "source": diff[0]["SourceRepository"],
+                    }
+            else:
+                with open(layer_path, 'rb') as layer_tar:
+                    sha256_hash = hashlib.sha256()
+                    for byte_block in iter(lambda: layer_tar.read(4096), b""):
+                        sha256_hash.update(byte_block)
+                    sha = sha256_hash.hexdigest()
+                    digest_diff_map[diff_id] = {
+                        "digest": sha,
+                        "source": ""
+                    }
+
         return digest_diff_map
 
     def gatherResults(self):
