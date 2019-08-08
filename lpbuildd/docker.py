@@ -116,26 +116,30 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             layer_path = os.path.join(
                 extract_path, "{}.tar.gz".format(layer_id))
             self._builder.addWaitingFile(layer_path)
+            # If we have a mapping between diff and existing digest,
+            # this means this layer has been pulled from a remote.
+            # We should maintain the same digest to achieve layer reuse
             if os.path.exists(diff_file):
                 with open(diff_file, 'r') as diff_fp:
                     diff = json.load(diff_fp)
                     # We should be able to just take the first occurence,
                     # as that will be the 'most parent' image
                     digest = diff[0]["Digest"]
-                    digest_diff_map[diff_id] = {
-                        "digest": digest,
-                        "source": diff[0]["SourceRepository"],
-                    }
+                    source = diff[0]["SourceRepository"]
+            # If the layer has been build locally, we need to generate the
+            # digest and then set the source to empty
             else:
                 with open(layer_path, 'rb') as layer_tar:
                     sha256_hash = hashlib.sha256()
                     for byte_block in iter(lambda: layer_tar.read(4096), b""):
                         sha256_hash.update(byte_block)
-                    sha = sha256_hash.hexdigest()
-                    digest_diff_map[diff_id] = {
-                        "digest": sha,
-                        "source": ""
-                    }
+                    digest = sha256_hash.hexdigest()
+                    source = ""
+            digest_diff_map[diff_id] = {
+                "digest": digest,
+                "source": source,
+                "layer_id": layer_id
+            }
 
         return digest_diff_map
 

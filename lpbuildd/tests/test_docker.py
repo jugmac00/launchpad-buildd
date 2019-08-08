@@ -156,11 +156,13 @@ class TestDockerBuildManagerIteration(TestCase):
             "sha256:diff1": {
                 "source": "test",
                 "digest": "test_digest",
+                "layer_id": "layer-1"
             },
             "sha256:diff2": {
                 "source": "",
                 "digest": "e3b0c44298fc1c149afbf4c8996fb9"
                           "2427ae41e4649b934ca495991b7852b855",
+                "layer_id": "layer-2"
             }
         }]
         self.assertEqual(digests_contents, json.dumps(digests_expected))
@@ -233,11 +235,13 @@ class TestDockerBuildManagerIteration(TestCase):
             "sha256:diff1": {
                 "source": "test",
                 "digest": "test_digest",
+                "layer_id": "layer-1"
             },
             "sha256:diff2": {
                 "source": "",
                 "digest": "e3b0c44298fc1c149afbf4c8996fb9"
                           "2427ae41e4649b934ca495991b7852b855",
+                "layer_id": "layer-2"
             }
         }]
         self.assertEqual(digests_contents, json.dumps(digests_expected))
