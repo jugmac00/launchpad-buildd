@@ -1,5 +1,5 @@
 #!/usr/bin/python -u
-# Copyright 2010, 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A script that builds a package from a recipe and a chroot."""
@@ -286,8 +286,7 @@ class RecipeBuilder:
             print("Running in chroot: %s" %
                   ' '.join("'%s'" % arg for arg in args))
             sys.stdout.flush()
-        return call([
-            '/usr/bin/sudo', '/usr/sbin/chroot', self.chroot_path] + args)
+        return call(['sudo', '/usr/sbin/chroot', self.chroot_path] + args)
 
     def buildSourcePackage(self):
         """Build the source package.
