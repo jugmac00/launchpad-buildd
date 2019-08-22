@@ -12,6 +12,7 @@ from optparse import OptionParser
 import os
 import pwd
 import socket
+import stat
 from subprocess import (
     PIPE,
     Popen,
@@ -20,6 +21,7 @@ from subprocess import (
     check_output,
     )
 import sys
+import tempfile
 from textwrap import dedent
 
 from debian.deb822 import Deb822
@@ -260,8 +262,6 @@ class RecipeBuilder:
     def installBuildDeps(self):
         """Install the build-depends of the source tree."""
         package = self.getPackageName()
-        currently_building_path = os.path.join(
-            self.chroot_path, 'CurrentlyBuilding')
         currently_building_contents = (
             'Package: %s\n'
             'Suite: %s\n'
@@ -269,9 +269,11 @@ class RecipeBuilder:
             'Purpose: %s\n'
             'Build-Debug-Symbols: no\n' %
             (package, self.suite, self.component, self.archive_purpose))
-        currently_building = open(currently_building_path, 'w')
-        currently_building.write(currently_building_contents)
-        currently_building.close()
+        with tempfile.NamedTemporaryFile(mode='w+') as currently_building:
+            currently_building.write(currently_building_contents)
+            currently_building.flush()
+            os.fchmod(currently_building.fileno(), 0o644)
+            self.copy_in(currently_building.name, '/CurrentlyBuilding')
         self.setUpAptArchive(package)
         return self.chroot(
             ['apt-get', 'build-dep', '-y', '--only-source', package])
@@ -287,6 +289,28 @@ class RecipeBuilder:
                   ' '.join("'%s'" % arg for arg in args))
             sys.stdout.flush()
         return call(['sudo', '/usr/sbin/chroot', self.chroot_path] + args)
+
+    def copy_in(self, source_path, target_path):
+        """Copy a file into the target environment.
+
+        The target file will be owned by root/root and have the same
+        permission mode as the source file.
+
+        :param source_path: the path to the file that should be copied from
+            the host system.
+        :param target_path: the path where the file should be installed
+            inside the target environment, relative to the target
+            environment's root.
+        """
+        # Use install(1) so that we can end up with root/root ownership with
+        # a minimum of subprocess calls; the buildd user may not make sense
+        # in the target.
+        mode = stat.S_IMODE(os.stat(source_path).st_mode)
+        full_target_path = os.path.join(
+            self.chroot_path, target_path.lstrip("/"))
+        check_call(
+            ["sudo", "install", "-o", "root", "-g", "root", "-m", "%o" % mode,
+             source_path, full_target_path])
 
     def buildSourcePackage(self):
         """Build the source package.

@@ -9,10 +9,12 @@ from contextlib import contextmanager
 import imp
 import os
 import shutil
+import stat
 import sys
 import tempfile
 from textwrap import dedent
 
+from fixtures import MockPatchObject
 import six
 from systemfixtures import FakeProcesses
 from testtools import TestCase
@@ -170,6 +172,15 @@ class TestRecipeBuilder(TestCase):
     def test_installBuildDeps(self):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
+        copies = {}
+
+        def mock_copy_in(source_path, target_path):
+            with open(source_path, "rb") as source:
+                copies[target_path] = (
+                    source.read(), os.fstat(source.fileno()).st_mode)
+
+        self.useFixture(
+            MockPatchObject(self.builder, "copy_in", mock_copy_in))
         self.builder.source_dir_relative = os.path.join(
             self.builder.work_dir_relative, "tree", "foo")
         changelog_path = os.path.join(
@@ -208,18 +219,15 @@ class TestRecipeBuilder(TestCase):
                     self.home_dir, "apt-get",
                     "build-dep", "-y", "--only-source", "foo"),
                 ]))
-        with open(os.path.join(
-                self.builder.chroot_path,
-                "CurrentlyBuilding")) as currently_building:
-            self.assertEqual(
-                dedent("""\
-                    Package: foo
-                    Suite: grumpy
-                    Component: main
-                    Purpose: PPA
-                    Build-Debug-Symbols: no
-                    """),
-                currently_building.read())
+        self.assertEqual(
+            (dedent("""\
+                Package: foo
+                Suite: grumpy
+                Component: main
+                Purpose: PPA
+                Build-Debug-Symbols: no
+                """).encode("UTF-8"), stat.S_IFREG | 0o644),
+            copies["/CurrentlyBuilding"])
         # This is still in the temporary location, since we mocked the "sudo
         # mv" command.
         with open(os.path.join(
