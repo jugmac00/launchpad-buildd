@@ -1,4 +1,4 @@
-# Copyright 2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
@@ -9,11 +9,20 @@ from contextlib import contextmanager
 import imp
 import os
 import shutil
+import stat
 import sys
 import tempfile
 from textwrap import dedent
 
+from fixtures import MockPatchObject
+import six
+from systemfixtures import FakeProcesses
 from testtools import TestCase
+from testtools.matchers import (
+    Equals,
+    MatchesListwise,
+    StartsWith,
+    )
 
 
 @contextmanager
@@ -28,6 +37,23 @@ def disable_bytecode():
 with disable_bytecode():
     RecipeBuilder = imp.load_source(
         "buildrecipe", "bin/buildrecipe").RecipeBuilder
+
+
+class RanCommand(MatchesListwise):
+
+    def __init__(self, *args):
+        args_matchers = [
+            Equals(arg) if isinstance(arg, six.string_types) else arg
+            for arg in args]
+        super(RanCommand, self).__init__(args_matchers)
+
+
+class RanInChroot(RanCommand):
+
+    def __init__(self, home_dir, *args):
+        super(RanInChroot, self).__init__(
+            "sudo", "/usr/sbin/chroot",
+            os.path.join(home_dir, "build-1", "chroot-autobuild"), *args)
 
 
 class TestRecipeBuilder(TestCase):
@@ -143,6 +169,71 @@ class TestRecipeBuilder(TestCase):
             self.assertIn(
                 "Build-Depends: debhelper (>= 9~), libfoo-dev\n", sources_text)
 
-    # XXX cjwatson 2015-06-15: We should unit-test enableAptArchive and
-    # installBuildDeps too, but it involves a lot of mocks.  For now,
-    # integration testing is probably more useful.
+    def test_installBuildDeps(self):
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        copies = {}
+
+        def mock_copy_in(source_path, target_path):
+            with open(source_path, "rb") as source:
+                copies[target_path] = (
+                    source.read(), os.fstat(source.fileno()).st_mode)
+
+        self.useFixture(
+            MockPatchObject(self.builder, "copy_in", mock_copy_in))
+        self.builder.source_dir_relative = os.path.join(
+            self.builder.work_dir_relative, "tree", "foo")
+        changelog_path = os.path.join(
+            self.builder.work_dir, "tree", "foo", "debian", "changelog")
+        control_path = os.path.join(
+            self.builder.work_dir, "tree", "foo", "debian", "control")
+        os.makedirs(os.path.dirname(changelog_path))
+        with open(changelog_path, "w") as changelog:
+            # Not a valid changelog, but only the first line matters here.
+            print("foo (1.0-1) bionic; urgency=medium", file=changelog)
+        with open(control_path, "w") as control:
+            print(dedent("""\
+                Source: foo
+                Build-Depends: debhelper (>= 9~), libfoo-dev
+
+                Package: foo
+                Depends: ${shlibs:Depends}"""),
+                file=control)
+        self.assertEqual(0, self.builder.installBuildDeps())
+        self.assertThat(
+            [proc._args["args"] for proc in processes_fixture.procs],
+            MatchesListwise([
+                RanInChroot(
+                    self.home_dir, "apt-get",
+                    "-o", StartsWith("Dir::Etc::sourcelist="),
+                    "-o", "APT::Get::List-Cleanup=false",
+                    "update"),
+                RanCommand(
+                    "sudo", "mv",
+                    os.path.join(
+                        self.builder.apt_dir, "buildrecipe-archive.list"),
+                    os.path.join(
+                        self.builder.apt_sources_list_dir,
+                        "buildrecipe-archive.list")),
+                RanInChroot(
+                    self.home_dir, "apt-get",
+                    "build-dep", "-y", "--only-source", "foo"),
+                ]))
+        self.assertEqual(
+            (dedent("""\
+                Package: foo
+                Suite: grumpy
+                Component: main
+                Purpose: PPA
+                Build-Debug-Symbols: no
+                """).encode("UTF-8"), stat.S_IFREG | 0o644),
+            copies["/CurrentlyBuilding"])
+        # This is still in the temporary location, since we mocked the "sudo
+        # mv" command.
+        with open(os.path.join(
+                self.builder.apt_dir,
+                "buildrecipe-archive.list")) as tmp_list:
+            self.assertEqual(
+                "deb-src [trusted=yes] file://%s ./\n" %
+                self.builder.apt_dir_relative,
+                tmp_list.read())
