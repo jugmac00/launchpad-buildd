@@ -1,9 +1,9 @@
-launchpad-buildd (177) UNRELEASED; urgency=medium
+launchpad-buildd (177) xenial; urgency=medium
 
   * Fix recipe building to not rely on /CurrentlyBuilding existing in base
     images (LP: #1841075).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 22 Aug 2019 17:16:24 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 23 Aug 2019 10:57:13 +0100
 
 launchpad-buildd (176) xenial; urgency=medium
 
