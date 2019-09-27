@@ -42,7 +42,7 @@ class DebianBuildManager(BuildManager):
 
     def __init__(self, builder, buildid, **kwargs):
         BuildManager.__init__(self, builder, buildid, **kwargs)
-        self._cachepath = builder._config.get("slave", "filecache")
+        self._cachepath = builder._config.get("builder", "filecache")
         self._state = DebianBuildState.INIT
         builder.emptyLog()
         self.alreadyfailed = False

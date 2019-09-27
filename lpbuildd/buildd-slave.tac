@@ -56,10 +56,10 @@ builder.builder.service = builderService
 
 root = resource.Resource()
 root.putChild(b'rpc', builder)
-root.putChild(b'filecache', static.File(conf.get('slave', 'filecache')))
+root.putChild(b'filecache', static.File(conf.get('builder', 'filecache')))
 buildersite = server.Site(root)
 
-strports.service("tcp:%s" % builder.builder._config.get("slave", "bindport"),
+strports.service("tcp:%s" % builder.builder._config.get("builder", "bindport"),
                  buildersite).setServiceParent(builderService)
 
 # You can interact with a running builder like this:

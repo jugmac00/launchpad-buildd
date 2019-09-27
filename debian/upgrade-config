@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2009, 2010, 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Upgrade a launchpad-buildd configuration file."""
@@ -208,6 +208,17 @@ def upgrade_to_162():
                 "\n[snapmanager]\n"
                 "proxyport = 8222\n")
 
+def upgrade_to_190():
+    print("Upgrading %s to version 190" % conf_file)
+    os.rename(conf_file, conf_file + "-prev190~")
+
+    with open(conf_file + "-prev190~", "r") as in_file:
+        with open(conf_file, "w") as out_file:
+            for line in in_file:
+                if line.strip() == "[slave]":
+                    line = "[builder]\n"
+                out_file.write(line)
+
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
     if apt_pkg.version_compare(old_version, "12") < 0:
@@ -236,3 +247,5 @@ if __name__ == "__main__":
         upgrade_to_127()
     if apt_pkg.version_compare(old_version, "162") < 0:
         upgrade_to_162()
+    if apt_pkg.version_compare(old_version, "190") < 0:
+        upgrade_to_190()
