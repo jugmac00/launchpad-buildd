@@ -2,7 +2,7 @@
 launchpad-buildd
 ****************
 
-This project is the buildd slave daemon used by Launchpad's package-building
+This project is the build daemon used by Launchpad's package-building
 infrastructure.
 
 It is licenced under the GNU Affero General Public Licence, version 3 (see the

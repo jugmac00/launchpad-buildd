@@ -4,7 +4,7 @@
 # Authors: Daniel Silverstone <daniel.silverstone@canonical.com>
 #      and Adam Conrad <adam.conrad@canonical.com>
 
-# Buildd Slave implementation
+# The basic builder implementation.
 
 __metaclass__ = type
 

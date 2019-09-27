@@ -33,7 +33,7 @@ def disable_bytecode():
     sys.dont_write_bytecode = original
 
 
-# By-hand import to avoid having to put .py suffixes on slave binaries.
+# By-hand import to avoid having to put .py suffixes on builder binaries.
 with disable_bytecode():
     RecipeBuilder = imp.load_source(
         "buildrecipe", "bin/buildrecipe").RecipeBuilder
