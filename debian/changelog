@@ -1,3 +1,10 @@
+launchpad-buildd (178) UNRELEASED; urgency=medium
+
+  * Accept an "extra_snaps" entry in livefs arguments, which is passed to
+    livecd-rootfs to configure ubuntu-image to include additional snaps.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 02 Oct 2019 11:26:45 +0100
+
 launchpad-buildd (177) xenial; urgency=medium
 
   * Fix recipe building to not rely on /CurrentlyBuilding existing in base
