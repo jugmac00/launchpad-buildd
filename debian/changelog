@@ -1,9 +1,9 @@
-launchpad-buildd (178) UNRELEASED; urgency=medium
+launchpad-buildd (178) xenial; urgency=medium
 
   * Accept an "extra_snaps" entry in livefs arguments, which is passed to
     livecd-rootfs to configure ubuntu-image to include additional snaps.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 02 Oct 2019 11:26:45 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 02 Oct 2019 12:59:03 +0100
 
 launchpad-buildd (177) xenial; urgency=medium
 
