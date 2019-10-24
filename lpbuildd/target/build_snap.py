@@ -52,7 +52,7 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
 
     description = "Build a snap."
 
-    core_snap_names = ["core", "core16", "core18"]
+    core_snap_names = ["core", "core16", "core18", "core20"]
 
     @classmethod
     def add_arguments(cls, parser):
