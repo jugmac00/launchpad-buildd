@@ -19,15 +19,10 @@ import difflib
 import os
 import shutil
 import tempfile
-try:
-    from urllib.request import HTTPBasicAuthHandler
-except ImportError:
-    from urllib2 import HTTPBasicAuthHandler
 import unittest
-try:
-    from xmlrpc.client import ServerProxy
-except ImportError:
-    from xmlrpclib import ServerProxy
+
+from six.moves.urllib.request import HTTPBasicAuthHandler
+from six.moves.xmlrpc_client import ServerProxy
 
 from lpbuildd.tests.harness import (
     BuilddSlaveTestSetup,

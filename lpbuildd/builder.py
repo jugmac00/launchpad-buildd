@@ -14,26 +14,15 @@ import os
 import re
 import shutil
 import tempfile
-try:
-    from urllib.request import (
-        build_opener,
-        HTTPBasicAuthHandler,
-        HTTPPasswordMgrWithDefaultRealm,
-        urlopen,
-        )
-except ImportError:
-    from urllib2 import (
-        build_opener,
-        HTTPBasicAuthHandler,
-        HTTPPasswordMgrWithDefaultRealm,
-        urlopen,
-        )
-try:
-    from xmlrpc.client import Binary
-except ImportError:
-    from xmlrpclib import Binary
 
 import apt
+from six.moves.urllib.request import (
+    build_opener,
+    HTTPBasicAuthHandler,
+    HTTPPasswordMgrWithDefaultRealm,
+    urlopen,
+    )
+from six.moves.xmlrpc_client import Binary
 from twisted.internet import protocol
 from twisted.internet import reactor as default_reactor
 from twisted.internet import process

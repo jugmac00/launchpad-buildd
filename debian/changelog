@@ -1,6 +1,10 @@
 launchpad-buildd (179) UNRELEASED; urgency=medium
 
+  [ Dimitri John Ledkov ]
   * Add core20 to the list of supported core_snap_names. LP: #1849687
+
+  [ Colin Watson ]
+  * Simplify most conditional Python 2/3 imports using six.
 
  -- Dimitri John Ledkov <xnox@ubuntu.com>  Thu, 24 Oct 2019 17:02:49 +0100
 
