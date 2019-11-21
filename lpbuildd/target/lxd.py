@@ -447,7 +447,7 @@ class LXD(Backend):
                  "b", "7", str(minor)])
 
         # Create dm-# devices.  On focal kpartx looks for dm devices and hangs
-        # in their absense.
+        # in their absence.
         for minor in range(8):
             self.run(
                 ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
