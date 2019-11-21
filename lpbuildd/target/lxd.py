@@ -446,6 +446,13 @@ class LXD(Backend):
                 ["mknod", "-m", "0660", "/dev/loop%d" % minor,
                  "b", "7", str(minor)])
 
+        # Create dm-# devices.  On focal kpartx looks for dm devices and hangs
+        # in their absense.
+        for minor in range(8):
+            self.run(
+                ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
+                 "b", "251", str(minor)])
+
         # XXX cjwatson 2017-09-07: With LXD < 2.2 we can't create the
         # directory until the container has started.  We can get away with
         # this for the time being because snapd isn't in the buildd chroots.

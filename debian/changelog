@@ -1,3 +1,9 @@
+launchpad-buildd (181) UNRELEASED; urgency=medium
+
+  * LXD: Create dm-X devices to address kpartx hangs (LP: #1852518)
+
+ -- Robert C Jennings <robert.jennings@canonical.com>  Wed, 13 Nov 2019 18:07:32 -0800
+
 launchpad-buildd (180) xenial; urgency=medium
 
   * No-change release to work around production upgrade problem.
