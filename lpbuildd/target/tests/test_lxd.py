@@ -363,6 +363,12 @@ class TestLXD(TestCase):
                     lxc +
                     ["mknod", "-m", "0660", "/dev/loop%d" % minor,
                      "b", "7", str(minor)]))
+        for minor in range(8):
+            expected_args.append(
+                Equals(
+                    lxc +
+                    ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
+                     "b", "251", str(minor)]))
         expected_args.extend([
             Equals(
                 lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
