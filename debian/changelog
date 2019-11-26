@@ -1,3 +1,10 @@
+launchpad-buildd (182) UNRELEASED; urgency=medium
+
+  * Do not make assumptions about what device major number the device mapper
+    is using. (LP: #1852518) 
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Tue, 26 Nov 2019 13:07:24 +1300
+
 launchpad-buildd (181) xenial; urgency=medium
 
   [ Robert C Jennings ]
