@@ -10,6 +10,7 @@ from contextlib import closing
 import io
 import json
 import os
+import random
 import stat
 import tarfile
 from textwrap import dedent
@@ -94,6 +95,7 @@ class FakeHostname:
 
 
 class FakeFilesystem(FakeFilesystem):
+    # Add support for os.mknod to the upstream implementation.
 
     def _setUp(self):
         super(FakeFilesystem, self)._setUp()
@@ -310,13 +312,11 @@ class TestLXD(TestCase):
                         driver_version=driver_version or "3.0"
                         )
 
-    def fakeFS(self, create_dm0=True):
+    def fakeFS(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
         fs_fixture.add("/dev")
         os.mkdir("/dev")
-        if create_dm0:
-            os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(251, 0))
         fs_fixture.add("/run")
         os.makedirs("/run/launchpad-buildd")
         fs_fixture.add("/etc")
@@ -326,7 +326,10 @@ class TestLXD(TestCase):
         os.chmod("/etc/resolv.conf", 0o644)
 
     def test_start(self, with_dm0=True):
-        self.fakeFS(with_dm0)
+        self.fakeFS()
+        DM_BLOCK_MAJOR = random.randrange(128, 255)
+        if with_dm0:
+            os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(DM_BLOCK_MAJOR, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -346,7 +349,7 @@ class TestLXD(TestCase):
         def fake_dmsetup(args):
             command = args['args'][1]
             if command == 'create':
-                os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(251, 0))
+                os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(DM_BLOCK_MAJOR, 0))
             elif command == 'remove':
                 os.remove("/dev/dm-0")
             else:
@@ -413,7 +416,7 @@ class TestLXD(TestCase):
                 Equals(
                     lxc +
                     ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
-                     "b", "251", str(minor)]))
+                     "b", str(DM_BLOCK_MAJOR), str(minor)]))
         expected_args.extend([
             Equals(
                 lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
@@ -471,6 +474,7 @@ class TestLXD(TestCase):
 
     def test_start_missing_etc_hosts(self):
         self.fakeFS()
+        os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(250, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -501,6 +505,7 @@ class TestLXD(TestCase):
 
     def test_start_with_mounted_dev_conf(self):
         self.fakeFS()
+        os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(250, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
