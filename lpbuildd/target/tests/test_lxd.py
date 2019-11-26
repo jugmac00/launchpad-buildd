@@ -106,13 +106,13 @@ class FakeFilesystem(_FakeFilesystem):
     def _stat(self, real, path, *args, **kwargs):
         r = super(FakeFilesystem, self)._stat(real, path, *args, **kwargs)
         if path in self._devices:
-            r = os.stat_result(list(r), {'st_rdev': self._devices[path]})
+            r = os.stat_result(list(r), {"st_rdev": self._devices[path]})
         return r
 
     def _mknod(self, real, path, mode=0o600, device=None):
-        fd = os.open(path, os.O_CREAT|os.O_EXCL, mode&0o777)
+        fd = os.open(path, os.O_CREAT | os.O_EXCL, mode & 0o777)
         os.close(fd)
-        if mode & (stat.S_IFBLK|stat.S_IFCHR):
+        if mode & (stat.S_IFBLK | stat.S_IFCHR):
             self._devices[path] = device
 
 
@@ -329,7 +329,9 @@ class TestLXD(TestCase):
         self.fakeFS()
         DM_BLOCK_MAJOR = random.randrange(128, 255)
         if with_dm0:
-            os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(DM_BLOCK_MAJOR, 0))
+            os.mknod(
+                "/dev/dm-0", 0o660 | stat.S_IFBLK,
+                os.makedev(DM_BLOCK_MAJOR, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -346,15 +348,19 @@ class TestLXD(TestCase):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
+
         def fake_dmsetup(args):
-            command = args['args'][1]
-            if command == 'create':
-                os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(DM_BLOCK_MAJOR, 0))
-            elif command == 'remove':
+            command = args["args"][1]
+            if command == "create":
+                os.mknod(
+                    "/dev/dm-0", 0o660 | stat.S_IFBLK,
+                    os.makedev(DM_BLOCK_MAJOR, 0))
+            elif command == "remove":
                 os.remove("/dev/dm-0")
             else:
-                self.fail("unexpected dmsetup command %r"%(command,))
+                self.fail("unexpected dmsetup command %r" % (command,))
             return {}
+
         processes_fixture.add(fake_dmsetup, name="dmsetup")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
@@ -408,8 +414,8 @@ class TestLXD(TestCase):
                      "b", "7", str(minor)]))
         if not with_dm0:
             expected_args.extend([
-                Equals(['dmsetup', 'create', 'tmpdevice', '--notable']),
-                Equals(['dmsetup', 'remove', 'tmpdevice']),
+                Equals(["dmsetup", "create", "tmpdevice", "--notable"]),
+                Equals(["dmsetup", "remove", "tmpdevice"]),
                 ])
         for minor in range(8):
             expected_args.append(
@@ -474,7 +480,7 @@ class TestLXD(TestCase):
 
     def test_start_missing_etc_hosts(self):
         self.fakeFS()
-        os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(250, 0))
+        os.mknod("/dev/dm-0", 0o660 | stat.S_IFBLK, os.makedev(250, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -505,7 +511,7 @@ class TestLXD(TestCase):
 
     def test_start_with_mounted_dev_conf(self):
         self.fakeFS()
-        os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(250, 0))
+        os.mknod("/dev/dm-0", 0o660 | stat.S_IFBLK, os.makedev(250, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
