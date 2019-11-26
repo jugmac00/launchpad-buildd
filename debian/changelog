@@ -1,3 +1,10 @@
+launchpad-buildd (183) UNRELEASED; urgency=medium
+
+  * Invoke dmsetup with sudo when calculating the device major number for
+    device mapper.
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Wed, 27 Nov 2019 09:24:27 +1300
+
 launchpad-buildd (182) xenial; urgency=medium
 
   [ Michael Hudson-Doyle ]
