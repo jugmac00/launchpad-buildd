@@ -35,6 +35,23 @@ from lpbuildd.util import (
 LXD_RUNNING = 103
 
 
+def get_device_mapper_major():
+    """Return the major device number used by the devicemapper on this system.
+
+    This is not consistent across kernel versions, sadly.
+    """
+    created = False
+    if not os.path.exists("/dev/dm-0"):
+        created = True
+        subprocess.check_call(
+            ["dmsetup", "create", "tmpdevice", "--notable"])
+    major = os.major(os.stat("/dev/dm-0").st_rdev)
+    if created:
+        subprocess.check_call(
+            ["dmsetup", "remove", "tmpdevice"])
+    return major
+
+
 fallback_hosts = dedent("""\
     127.0.0.1\tlocalhost
     ::1\tlocalhost ip6-localhost ip6-loopback
@@ -448,10 +465,11 @@ class LXD(Backend):
 
         # Create dm-# devices.  On focal kpartx looks for dm devices and hangs
         # in their absence.
+        major = get_device_mapper_major()
         for minor in range(8):
             self.run(
                 ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
-                 "b", "251", str(minor)])
+                 "b", str(major), str(minor)])
 
         # XXX cjwatson 2017-09-07: With LXD < 2.2 we can't create the
         # directory until the container has started.  We can get away with

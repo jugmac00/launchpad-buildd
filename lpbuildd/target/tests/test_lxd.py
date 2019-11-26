@@ -9,7 +9,9 @@ import argparse
 from contextlib import closing
 import io
 import json
-import os.path
+import os
+import random
+import stat
 import tarfile
 from textwrap import dedent
 import time
@@ -27,9 +29,10 @@ import pylxd
 from pylxd.exceptions import LXDAPIException
 import six
 from systemfixtures import (
-    FakeFilesystem,
+    FakeFilesystem as _FakeFilesystem,
     FakeProcesses,
     )
+from systemfixtures._overlay import Overlay
 from testtools import TestCase
 from testtools.matchers import (
     DirContains,
@@ -89,6 +92,28 @@ class FakeHostname:
         args = parser.parse_args(proc_args["args"][1:])
         output = self.fqdn if args.fqdn else self.hostname
         return {"stdout": io.BytesIO((output + "\n").encode("UTF-8"))}
+
+
+class FakeFilesystem(_FakeFilesystem):
+    # Add support for os.mknod to the upstream implementation.
+
+    def _setUp(self):
+        super(FakeFilesystem, self)._setUp()
+        self._devices = {}
+        self.useFixture(
+            Overlay("os.mknod", self._mknod, self._is_fake_path))
+
+    def _stat(self, real, path, *args, **kwargs):
+        r = super(FakeFilesystem, self)._stat(real, path, *args, **kwargs)
+        if path in self._devices:
+            r = os.stat_result(list(r), {"st_rdev": self._devices[path]})
+        return r
+
+    def _mknod(self, real, path, mode=0o600, device=None):
+        fd = os.open(path, os.O_CREAT | os.O_EXCL, mode & 0o777)
+        os.close(fd)
+        if mode & (stat.S_IFBLK | stat.S_IFCHR):
+            self._devices[path] = device
 
 
 class TestLXD(TestCase):
@@ -287,9 +312,11 @@ class TestLXD(TestCase):
                         driver_version=driver_version or "3.0"
                         )
 
-    def test_start(self):
+    def fakeFS(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
+        fs_fixture.add("/dev")
+        os.mkdir("/dev")
         fs_fixture.add("/run")
         os.makedirs("/run/launchpad-buildd")
         fs_fixture.add("/etc")
@@ -297,6 +324,14 @@ class TestLXD(TestCase):
         with open("/etc/resolv.conf", "w") as f:
             print("host resolv.conf", file=f)
         os.chmod("/etc/resolv.conf", 0o644)
+
+    def test_start(self, with_dm0=True):
+        self.fakeFS()
+        DM_BLOCK_MAJOR = random.randrange(128, 255)
+        if with_dm0:
+            os.mknod(
+                "/dev/dm-0", 0o660 | stat.S_IFBLK,
+                os.makedev(DM_BLOCK_MAJOR, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -313,6 +348,20 @@ class TestLXD(TestCase):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
+
+        def fake_dmsetup(args):
+            command = args["args"][1]
+            if command == "create":
+                os.mknod(
+                    "/dev/dm-0", 0o660 | stat.S_IFBLK,
+                    os.makedev(DM_BLOCK_MAJOR, 0))
+            elif command == "remove":
+                os.remove("/dev/dm-0")
+            else:
+                self.fail("unexpected dmsetup command %r" % (command,))
+            return {}
+
+        processes_fixture.add(fake_dmsetup, name="dmsetup")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
         LXD("1", "xenial", "amd64").start()
@@ -363,12 +412,17 @@ class TestLXD(TestCase):
                     lxc +
                     ["mknod", "-m", "0660", "/dev/loop%d" % minor,
                      "b", "7", str(minor)]))
+        if not with_dm0:
+            expected_args.extend([
+                Equals(["dmsetup", "create", "tmpdevice", "--notable"]),
+                Equals(["dmsetup", "remove", "tmpdevice"]),
+                ])
         for minor in range(8):
             expected_args.append(
                 Equals(
                     lxc +
                     ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
-                     "b", "251", str(minor)]))
+                     "b", str(DM_BLOCK_MAJOR), str(minor)]))
         expected_args.extend([
             Equals(
                 lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
@@ -421,16 +475,12 @@ class TestLXD(TestCase):
         container.start.assert_called_once_with(wait=True)
         self.assertEqual(LXD_RUNNING, container.status_code)
 
+    def test_start_no_dm0(self):
+        self.test_start(False)
+
     def test_start_missing_etc_hosts(self):
-        fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/sys")
-        fs_fixture.add("/run")
-        os.makedirs("/run/launchpad-buildd")
-        fs_fixture.add("/etc")
-        os.mkdir("/etc")
-        with open("/etc/resolv.conf", "w") as f:
-            print("host resolv.conf", file=f)
-        os.chmod("/etc/resolv.conf", 0o644)
+        self.fakeFS()
+        os.mknod("/dev/dm-0", 0o660 | stat.S_IFBLK, os.makedev(250, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -460,15 +510,8 @@ class TestLXD(TestCase):
             headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
 
     def test_start_with_mounted_dev_conf(self):
-        fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/sys")
-        fs_fixture.add("/run")
-        os.makedirs("/run/launchpad-buildd")
-        fs_fixture.add("/etc")
-        os.mkdir("/etc")
-        with open("/etc/resolv.conf", "w") as f:
-            print("host resolv.conf", file=f)
-        os.chmod("/etc/resolv.conf", 0o644)
+        self.fakeFS()
+        os.mknod("/dev/dm-0", 0o660 | stat.S_IFBLK, os.makedev(250, 0))
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
