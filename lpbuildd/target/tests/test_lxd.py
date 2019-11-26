@@ -112,7 +112,7 @@ class FakeFilesystem(FakeFilesystem):
     def _mknod(self, real, path, mode=0o600, device=None):
         fd = os.open(path, os.O_CREAT|os.O_EXCL, mode&0x777)
         os.close(fd)
-        if device & (stat.S_IFBLK|stat.S_IFCHR):
+        if mode & (stat.S_IFBLK|stat.S_IFCHR):
             self._devices[path] = device
 
 
