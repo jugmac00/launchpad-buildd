@@ -108,7 +108,7 @@ class FakeFilesystem(FakeFilesystem):
         return r
 
     def _mknod(self, real, path, mode=0o600, device=None):
-        fd = os.open(path, os.O_CREAT|os.O_WRONLY, mode&0x777)
+        fd = os.open(path, os.O_CREAT|os.O_EXCL, mode&0x777)
         os.close(fd)
         if device & (stat.S_IFBLK|stat.S_IFCHR):
             self._devices[path] = device
@@ -310,12 +310,13 @@ class TestLXD(TestCase):
                         driver_version=driver_version or "3.0"
                         )
 
-    def fakeFS(self):
+    def fakeFS(self, create_dm0=True):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
         fs_fixture.add("/dev")
         os.mkdir("/dev")
-        os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(251, 0))
+        if create_dm0:
+            os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(251, 0))
         fs_fixture.add("/run")
         os.makedirs("/run/launchpad-buildd")
         fs_fixture.add("/etc")
@@ -324,8 +325,8 @@ class TestLXD(TestCase):
             print("host resolv.conf", file=f)
         os.chmod("/etc/resolv.conf", 0o644)
 
-    def test_start(self):
-        self.fakeFS()
+    def test_start(self, with_dm0=True):
+        self.fakeFS(with_dm0)
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -342,6 +343,16 @@ class TestLXD(TestCase):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
+        def fake_dmsetup(args):
+            command = args['args'][1]
+            if command == 'create':
+                os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(251, 0))
+            elif command == 'remove':
+                os.remove("/dev/dm-0")
+            else:
+                self.fail("unexpected dmsetup command %r"%(command,))
+            return {}
+        processes_fixture.add(fake_dmsetup, name="dmsetup")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
         LXD("1", "xenial", "amd64").start()
@@ -392,6 +403,11 @@ class TestLXD(TestCase):
                     lxc +
                     ["mknod", "-m", "0660", "/dev/loop%d" % minor,
                      "b", "7", str(minor)]))
+        if not with_dm0:
+            expected_args.extend([
+                Equals(['dmsetup', 'create', 'tmpdevice', '--notable']),
+                Equals(['dmsetup', 'remove', 'tmpdevice']),
+                ])
         for minor in range(8):
             expected_args.append(
                 Equals(
@@ -449,6 +465,9 @@ class TestLXD(TestCase):
             headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
         container.start.assert_called_once_with(wait=True)
         self.assertEqual(LXD_RUNNING, container.status_code)
+
+    def test_start_no_dm0(self):
+        self.test_start(False)
 
     def test_start_missing_etc_hosts(self):
         self.fakeFS()
