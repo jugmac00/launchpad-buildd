@@ -346,11 +346,12 @@ class TestLXD(TestCase):
             "/etc/hosts": [b"127.0.0.1\tlocalhost\n"],
             })
         processes_fixture = self.useFixture(FakeProcesses())
-        processes_fixture.add(lambda _: {}, name="sudo")
-        processes_fixture.add(lambda _: {}, name="lxc")
 
-        def fake_dmsetup(args):
-            command = args["args"][1]
+        def fake_sudo(args):
+            exe = args["args"][1]
+            if exe != "dmsetup":
+                return {}
+            command = args["args"][2]
             if command == "create":
                 os.mknod(
                     "/dev/dm-0", 0o660 | stat.S_IFBLK,
@@ -360,8 +361,8 @@ class TestLXD(TestCase):
             else:
                 self.fail("unexpected dmsetup command %r" % (command,))
             return {}
-
-        processes_fixture.add(fake_dmsetup, name="dmsetup")
+        processes_fixture.add(fake_sudo, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
         LXD("1", "xenial", "amd64").start()
@@ -414,8 +415,8 @@ class TestLXD(TestCase):
                      "b", "7", str(minor)]))
         if not with_dm0:
             expected_args.extend([
-                Equals(["dmsetup", "create", "tmpdevice", "--notable"]),
-                Equals(["dmsetup", "remove", "tmpdevice"]),
+                Equals(["sudo", "dmsetup", "create", "tmpdevice", "--notable"]),
+                Equals(["sudo", "dmsetup", "remove", "tmpdevice"]),
                 ])
         for minor in range(8):
             expected_args.append(
