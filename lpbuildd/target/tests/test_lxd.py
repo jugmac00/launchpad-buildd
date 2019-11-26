@@ -29,7 +29,7 @@ import pylxd
 from pylxd.exceptions import LXDAPIException
 import six
 from systemfixtures import (
-    FakeFilesystem,
+    FakeFilesystem as _FakeFilesystem,
     FakeProcesses,
     )
 from systemfixtures._overlay import Overlay
@@ -94,7 +94,7 @@ class FakeHostname:
         return {"stdout": io.BytesIO((output + "\n").encode("UTF-8"))}
 
 
-class FakeFilesystem(FakeFilesystem):
+class FakeFilesystem(_FakeFilesystem):
     # Add support for os.mknod to the upstream implementation.
 
     def _setUp(self):
