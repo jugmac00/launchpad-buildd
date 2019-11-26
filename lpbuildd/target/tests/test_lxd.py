@@ -287,16 +287,31 @@ class TestLXD(TestCase):
                         driver_version=driver_version or "3.0"
                         )
 
-    def test_start(self):
+    def fakeFS(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/sys")
+        fs_fixture.add("/dev")
+        os.mkdir("/dev")
+        open("/dev/dm-0", "w").close()
         fs_fixture.add("/run")
+        fs_stat = os.stat
+        def _stat(path):
+            if path == "/dev/dm-0":
+                class C:
+                    pass
+                C.st_rdev = 251<<8
+                return C
+            return fs_stat(path)
+        self.useFixture(MockPatch("os.stat", side_effect=_stat))
         os.makedirs("/run/launchpad-buildd")
         fs_fixture.add("/etc")
         os.mkdir("/etc")
         with open("/etc/resolv.conf", "w") as f:
             print("host resolv.conf", file=f)
         os.chmod("/etc/resolv.conf", 0o644)
+
+    def test_start(self):
+        self.fakeFS()
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -422,15 +437,7 @@ class TestLXD(TestCase):
         self.assertEqual(LXD_RUNNING, container.status_code)
 
     def test_start_missing_etc_hosts(self):
-        fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/sys")
-        fs_fixture.add("/run")
-        os.makedirs("/run/launchpad-buildd")
-        fs_fixture.add("/etc")
-        os.mkdir("/etc")
-        with open("/etc/resolv.conf", "w") as f:
-            print("host resolv.conf", file=f)
-        os.chmod("/etc/resolv.conf", 0o644)
+        self.fakeFS()
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
@@ -460,15 +467,7 @@ class TestLXD(TestCase):
             headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
 
     def test_start_with_mounted_dev_conf(self):
-        fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/sys")
-        fs_fixture.add("/run")
-        os.makedirs("/run/launchpad-buildd")
-        fs_fixture.add("/etc")
-        os.mkdir("/etc")
-        with open("/etc/resolv.conf", "w") as f:
-            print("host resolv.conf", file=f)
-        os.chmod("/etc/resolv.conf", 0o644)
+        self.fakeFS()
         self.useFixture(MockPatch("pylxd.Client"))
         client = pylxd.Client()
         client.profiles.get.side_effect = FakeLXDAPIException
