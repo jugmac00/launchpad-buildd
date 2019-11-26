@@ -9,7 +9,8 @@ import argparse
 from contextlib import closing
 import io
 import json
-import os.path
+import os
+import stat
 import tarfile
 from textwrap import dedent
 import time
@@ -30,6 +31,7 @@ from systemfixtures import (
     FakeFilesystem,
     FakeProcesses,
     )
+from systemfixtures._overlay import Overlay
 from testtools import TestCase
 from testtools.matchers import (
     DirContains,
@@ -89,6 +91,27 @@ class FakeHostname:
         args = parser.parse_args(proc_args["args"][1:])
         output = self.fqdn if args.fqdn else self.hostname
         return {"stdout": io.BytesIO((output + "\n").encode("UTF-8"))}
+
+
+class FakeFilesystem(FakeFilesystem):
+
+    def _setUp(self):
+        super(FakeFilesystem, self)._setUp()
+        self._devices = {}
+        self.useFixture(
+            Overlay("os.mknod", self._mknod, self._is_fake_path))
+
+    def _stat(self, real, path, *args, **kwargs):
+        r = super(FakeFilesystem, self)._stat(real, path, *args, **kwargs)
+        if path in self._devices:
+            r = os.stat_result(list(r), {'st_rdev': self._devices[path]})
+        return r
+
+    def _mknod(self, real, path, mode=0o600, device=None):
+        fd = os.open(path, os.O_CREAT|os.O_WRONLY, mode&0x777)
+        os.close(fd)
+        if device & (stat.S_IFBLK|stat.S_IFCHR):
+            self._devices[path] = device
 
 
 class TestLXD(TestCase):
@@ -292,17 +315,8 @@ class TestLXD(TestCase):
         fs_fixture.add("/sys")
         fs_fixture.add("/dev")
         os.mkdir("/dev")
-        open("/dev/dm-0", "w").close()
+        os.mknod("/dev/dm-0", 0o660|stat.S_IFBLK, os.makedev(251, 0))
         fs_fixture.add("/run")
-        fs_stat = os.stat
-        def _stat(path):
-            if path == "/dev/dm-0":
-                class C:
-                    pass
-                C.st_rdev = 251<<8
-                return C
-            return fs_stat(path)
-        self.useFixture(MockPatch("os.stat", side_effect=_stat))
         os.makedirs("/run/launchpad-buildd")
         fs_fixture.add("/etc")
         os.mkdir("/etc")
