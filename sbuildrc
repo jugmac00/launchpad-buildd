@@ -6,6 +6,9 @@ my $fqdn=`hostname --fqdn`;
 chomp $fqdn;
 $maintainer_name="Launchpad Build Daemon <buildd\@$fqdn>";
 
+# Don't build architecture-independent packages unless explicitly requested.
+$build_arch_all = 0;
+
 # launchpad-buildd does this before sbuild.
 $apt_update = 0;
 $apt_distupgrade = 0;
@@ -41,5 +44,9 @@ $purge_build_deps = 'never';
 # Activity
 # is measured by output to the log file.
 $stalled_pkg_timeout = 150;
+
+# Disable some interactive niceties.
+$run_lintian = 0;
+$bd_uninstallable_explainer = '';
 
 $sbuild_mode="buildd";
