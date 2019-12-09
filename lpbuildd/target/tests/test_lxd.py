@@ -190,6 +190,11 @@ class TestLXD(TestCase):
         self.assertThat(hello, HasPermissions("0755"))
 
     def test_create_from_chroot(self):
+        fs_fixture = self.useFixture(FakeFilesystem())
+        fs_fixture.add("/var/lib/lxd")
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         tmp = self.useFixture(TempDir()).path
         source_tarball_path = os.path.join(tmp, "source.tar.bz2")
         self.make_chroot_tarball(source_tarball_path)
@@ -200,6 +205,12 @@ class TestLXD(TestCase):
         client.images.create.return_value = image
         LXD("1", "xenial", "amd64").create(source_tarball_path, "chroot")
 
+        self.assertThat(
+            [proc._args["args"] for proc in processes_fixture.procs],
+            MatchesListwise([
+                Equals(["sudo", "lxd", "init", "--auto"]),
+                Equals(["lxc", "list"]),
+                ]))
         client.images.create.assert_called_once_with(mock.ANY, wait=True)
         with io.BytesIO(client.images.create.call_args[0][0]) as f:
             with tarfile.open(fileobj=f) as tar:
@@ -209,6 +220,11 @@ class TestLXD(TestCase):
             "lp-xenial-amd64", "lp-xenial-amd64")
 
     def test_create_from_lxd(self):
+        fs_fixture = self.useFixture(FakeFilesystem())
+        fs_fixture.add("/var/lib/lxd")
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
         tmp = self.useFixture(TempDir()).path
         source_image_path = os.path.join(tmp, "source.tar.gz")
         self.make_lxd_image(source_image_path)
@@ -219,6 +235,38 @@ class TestLXD(TestCase):
         client.images.create.return_value = image
         LXD("1", "xenial", "amd64").create(source_image_path, "lxd")
 
+        self.assertThat(
+            [proc._args["args"] for proc in processes_fixture.procs],
+            MatchesListwise([
+                Equals(["sudo", "lxd", "init", "--auto"]),
+                Equals(["lxc", "list"]),
+                ]))
+        client.images.create.assert_called_once_with(mock.ANY, wait=True)
+        with io.BytesIO(client.images.create.call_args[0][0]) as f:
+            with tarfile.open(fileobj=f) as tar:
+                with closing(tar.extractfile("rootfs/bin/hello")) as hello:
+                    self.assertEqual("hello\n", hello.read())
+        image.add_alias.assert_called_once_with(
+            "lp-xenial-amd64", "lp-xenial-amd64")
+
+    def test_create_with_already_initialized_lxd(self):
+        fs_fixture = self.useFixture(FakeFilesystem())
+        fs_fixture.add("/var/lib/lxd")
+        os.makedirs("/var/lib/lxd")
+        with open("/var/lib/lxd/server.key", "w"):
+            pass
+        processes_fixture = self.useFixture(FakeProcesses())
+        tmp = self.useFixture(TempDir()).path
+        source_image_path = os.path.join(tmp, "source.tar.gz")
+        self.make_lxd_image(source_image_path)
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.images.all.return_value = []
+        image = mock.MagicMock()
+        client.images.create.return_value = image
+        LXD("1", "xenial", "amd64").create(source_image_path, "lxd")
+
+        self.assertEqual([], processes_fixture.procs)
         client.images.create.assert_called_once_with(mock.ANY, wait=True)
         with io.BytesIO(client.images.create.call_args[0][0]) as f:
             with tarfile.open(fileobj=f) as tar:

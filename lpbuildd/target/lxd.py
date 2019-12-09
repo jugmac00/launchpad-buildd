@@ -188,8 +188,17 @@ class LXD(Backend):
                 if fileptr is not None:
                     fileptr.close()
 
+    def _init(self):
+        """Configure LXD if necessary."""
+        if not os.path.exists("/var/lib/lxd/server.key"):
+            subprocess.check_call(["sudo", "lxd", "init", "--auto"])
+            # Generate a LXD client certificate for the buildd user.
+            with open("/dev/null", "w") as devnull:
+                subprocess.call(["lxc", "list"], stdout=devnull)
+
     def create(self, image_path, image_type):
         """See `Backend`."""
+        self._init()
         self.remove_image()
 
         # This is a lot of data to shuffle around in Python, but there
