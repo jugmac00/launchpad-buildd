@@ -1,3 +1,10 @@
+launchpad-buildd (184) UNRELEASED; urgency=medium
+
+  * Adjust sbuildrc to handle various changes in bionic's sbuild.
+  * Configure LXD when creating a target rather than in the postinst.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 09 Dec 2019 10:58:32 +0000
+
 launchpad-buildd (183) xenial; urgency=medium
 
   [ Michael Hudson-Doyle ]

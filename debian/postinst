@@ -106,12 +106,6 @@ EOF
 	    fi
 	fi
 
-	# Configure LXD if necessary
-	if [ ! -e /var/lib/lxd/server.key ]; then
-	    lxd init --auto || true
-	    sudo -Hu "$USER" lxc list >/dev/null || true
-	fi
-
 	;;
     abort-upgrade|abort-remove|abort-deconfigure)
 
