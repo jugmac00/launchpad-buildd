@@ -100,11 +100,6 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.backend in ("lxd", "fake"):
             self.snap_store_set_proxy()
-        if self.args.arch == "i386":
-            self.backend.run([
-                "apt-get", "-y", "--no-install-recommends", "install",
-                "ltsp-server",
-                ])
         if self.args.locale is not None:
             self.backend.run([
                 "apt-get", "-y", "--install-recommends", "install",

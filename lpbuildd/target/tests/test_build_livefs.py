@@ -94,18 +94,6 @@ class TestBuildLiveFS(TestCase):
             RanAptGet("install", "livecd-rootfs"),
             ]))
 
-    def test_install_i386(self):
-        args = [
-            "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=i386", "1",
-            ]
-        build_livefs = parse_args(args=args).operation
-        build_livefs.install()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "livecd-rootfs"),
-            RanAptGet("--no-install-recommends", "install", "ltsp-server"),
-            ]))
-
     def test_install_locale(self):
         args = [
             "buildlivefs",
