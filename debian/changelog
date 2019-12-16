@@ -1,3 +1,11 @@
+launchpad-buildd (185) UNRELEASED; urgency=medium
+
+  * Stop installing ltsp-server for i386 livefs-builders. Edubuntu product
+    that used that is long dead, and the package itself is now removed
+    from focal.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Mon, 16 Dec 2019 19:22:41 +0000
+
 launchpad-buildd (184) xenial; urgency=medium
 
   * Adjust sbuildrc to handle various changes in bionic's sbuild.
