@@ -47,6 +47,11 @@ $stalled_pkg_timeout = 150;
 
 # Disable some interactive niceties.
 $run_lintian = 0;
-$bd_uninstallable_explainer = '';
+# $bd_uninstallable_explainer isn't a defined variable in xenial's sbuild,
+# so disable strictness.
+{
+    no strict 'vars';
+    $bd_uninstallable_explainer = '';
+}
 
 $sbuild_mode="buildd";

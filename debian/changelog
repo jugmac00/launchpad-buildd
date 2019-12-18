@@ -1,3 +1,9 @@
+launchpad-buildd (186) UNRELEASED; urgency=medium
+
+  * Fix sbuildrc compatibility with xenial's sbuild.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 18 Dec 2019 22:34:45 +0000
+
 launchpad-buildd (185) xenial; urgency=medium
 
   [ Dimitri John Ledkov ]
