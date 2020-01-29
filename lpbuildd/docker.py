@@ -182,8 +182,8 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
 
         # We need these mapping files
         sha_directory = tempfile.mkdtemp()
-        sha_path = ('/var/snap/docker/common/var-lib-docker/image/'
-                    'aufs/distribution/v2metadata-by-diffid/sha256/')
+        sha_path = ('/var/lib/docker/image/'
+                    'overlay2/distribution/v2metadata-by-diffid/sha256/')
         sha_files = [x for x in self.backend.listdir(sha_path)
                      if not x.startswith('.')]
         for file in sha_files:

@@ -108,8 +108,8 @@ class TestBuildDocker(TestCase):
         build_docker = parse_args(args=args).operation
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "bzr"),
-            RanSnap("install", "docker"),
+            RanAptGet("install", "bzr", "docker.io"),
+            RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 
@@ -122,41 +122,8 @@ class TestBuildDocker(TestCase):
         build_docker = parse_args(args=args).operation
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git"),
-            RanSnap("install", "docker"),
-            RanCommand(["mkdir", "-p", "/home/buildd"]),
-            ]))
-
-    @responses.activate
-    def test_install_snap_store_proxy(self):
-        store_assertion = dedent("""\
-            type: store
-            store: store-id
-            url: http://snap-store-proxy.example
-
-            body
-            """)
-
-        def respond(request):
-            return 200, {"X-Assertion-Store-Id": "store-id"}, store_assertion
-
-        responses.add_callback(
-            "GET", "http://snap-store-proxy.example/v2/auth/store/assertions",
-            callback=respond)
-        args = [
-            "build-docker",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", "lp:foo",
-            "--snap-store-proxy-url", "http://snap-store-proxy.example/",
-            "test-image",
-            ]
-        build_snap = parse_args(args=args).operation
-        build_snap.install()
-        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git"),
-            RanSnap("ack", "/dev/stdin", input_text=store_assertion),
-            RanSnap("set", "core", "proxy.store=store-id"),
-            RanSnap("install", "docker"),
+            RanAptGet("install", "git", "docker.io"),
+            RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 
@@ -177,8 +144,8 @@ class TestBuildDocker(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_docker.install()
         self.assertThat(build_docker.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "python3", "socat", "git"),
-            RanSnap("install", "docker"),
+            RanAptGet("install", "python3", "socat", "git", "docker.io"),
+            RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
         self.assertEqual(
@@ -343,8 +310,7 @@ class TestBuildDocker(TestCase):
         build_docker.backend.run = FakeMethod()
         self.assertEqual(0, build_docker.run())
         self.assertThat(build_docker.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "bzr")),
-            AnyMatch(RanSnap("install", "docker")),
+            AnyMatch(RanAptGet("install", "bzr", "docker.io")),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"],
                 cwd="/home/buildd")),

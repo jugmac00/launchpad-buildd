@@ -57,17 +57,10 @@ class BuildDocker(SnapStoreProxyMixin, VCSOperationMixin,
     def install(self):
         logger.info("Running install phase...")
         deps = super(BuildDocker, self).install()
-        if self.args.backend == "lxd":
-            # udev is installed explicitly to work around
-            # https://bugs.launchpad.net/snapd/+bug/1731519.
-            for dep in "snapd", "fuse", "squashfuse", "udev":
-                if self.backend.is_package_available(dep):
-                    deps.append(dep)
         deps.extend(self.vcs_deps)
+        deps.extend(["docker.io"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
-        if self.args.backend in ("lxd", "fake"):
-            self.snap_store_set_proxy()
-        self.backend.run(["snap", "install", "docker"])
+        self.backend.run(["systemctl", "restart", "docker"])
         # The docker snap can't see /build, so we have to do our work under
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])

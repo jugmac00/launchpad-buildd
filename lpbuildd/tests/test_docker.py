@@ -122,8 +122,8 @@ class TestDockerBuildManagerIteration(TestCase):
         self.buildmanager.backend.run.result = MockDockerTarSave()
 
         self.buildmanager.backend.add_file(
-            '/var/snap/docker/common/var-lib-docker/image/'
-            'aufs/distribution/v2metadata-by-diffid/sha256/diff1',
+            '/var/lib/docker/image/'
+            'overlay2/distribution/v2metadata-by-diffid/sha256/diff1',
             b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
         )
 
@@ -201,8 +201,8 @@ class TestDockerBuildManagerIteration(TestCase):
         self.buildmanager.backend.run.result = MockDockerTarSave()
 
         self.buildmanager.backend.add_file(
-            '/var/snap/docker/common/var-lib-docker/image/'
-            'aufs/distribution/v2metadata-by-diffid/sha256/diff1',
+            '/var/lib/docker/image/'
+            'overlay2/distribution/v2metadata-by-diffid/sha256/diff1',
             b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
         )
 
