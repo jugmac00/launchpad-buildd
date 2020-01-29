@@ -24,7 +24,7 @@ from testtools.matchers import (
     MatchesListwise,
     )
 
-from lpbuildd.target.build_docker import (
+from lpbuildd.target.build_oci import (
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
     )
@@ -72,42 +72,42 @@ class RanBuildCommand(RanCommand):
         super(RanBuildCommand, self).__init__(args, **kwargs)
 
 
-class TestBuildDocker(TestCase):
+class TestBuildOCI(TestCase):
 
     def test_run_build_command_no_env(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.run_build_command(["echo", "hello world"])
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.run_build_command(["echo", "hello world"])
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(["echo", "hello world"]),
             ]))
 
     def test_run_build_command_env(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.run_build_command(
+        build_oci = parse_args(args=args).operation
+        build_oci.run_build_command(
             ["echo", "hello world"], env={"FOO": "bar baz"})
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(["echo", "hello world"], FOO="bar baz"),
             ]))
 
     def test_install_bzr(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image"
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.install()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.install()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanAptGet("install", "bzr", "docker.io"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
@@ -115,13 +115,13 @@ class TestBuildDocker(TestCase):
 
     def test_install_git(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo", "test-image"
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.install()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.install()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanAptGet("install", "git", "docker.io"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
@@ -129,55 +129,55 @@ class TestBuildDocker(TestCase):
 
     def test_install_proxy(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo",
             "--proxy-url", "http://proxy.example:3128/",
             "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.bin = "/builderbin"
+        build_oci = parse_args(args=args).operation
+        build_oci.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
         with open("/builderbin/snap-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
-        build_docker.install()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci.install()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanAptGet("install", "python3", "socat", "git", "docker.io"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_docker.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
+            build_oci.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
 
     def test_repo_bzr(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.build_path = self.useFixture(TempDir()).path
-        build_docker.backend.run = FakeMethod()
-        build_docker.repo()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.build_path = self.useFixture(TempDir()).path
+        build_oci.backend.run = FakeMethod()
+        build_oci.repo()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"], cwd="/home/buildd"),
             ]))
 
     def test_repo_git(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.build_path = self.useFixture(TempDir()).path
-        build_docker.backend.run = FakeMethod()
-        build_docker.repo()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.build_path = self.useFixture(TempDir()).path
+        build_oci.backend.run = FakeMethod()
+        build_oci.repo()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["git", "clone", "lp:foo", "test-image"], cwd="/home/buildd"),
             RanBuildCommand(
@@ -187,15 +187,15 @@ class TestBuildDocker(TestCase):
 
     def test_repo_git_with_path(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo", "--git-path", "next", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.build_path = self.useFixture(TempDir()).path
-        build_docker.backend.run = FakeMethod()
-        build_docker.repo()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.build_path = self.useFixture(TempDir()).path
+        build_oci.backend.run = FakeMethod()
+        build_oci.repo()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["git", "clone", "-b", "next", "lp:foo", "test-image"],
                 cwd="/home/buildd"),
@@ -206,16 +206,16 @@ class TestBuildDocker(TestCase):
 
     def test_repo_git_with_tag_path(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo", "--git-path", "refs/tags/1.0",
             "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.build_path = self.useFixture(TempDir()).path
-        build_docker.backend.run = FakeMethod()
-        build_docker.repo()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.build_path = self.useFixture(TempDir()).path
+        build_oci.backend.run = FakeMethod()
+        build_oci.repo()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["git", "clone", "-b", "1.0", "lp:foo", "test-image"],
                 cwd="/home/buildd"),
@@ -226,22 +226,22 @@ class TestBuildDocker(TestCase):
 
     def test_repo_proxy(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo",
             "--proxy-url", "http://proxy.example:3128/",
             "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.build_path = self.useFixture(TempDir()).path
-        build_docker.backend.run = FakeMethod()
-        build_docker.repo()
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.build_path = self.useFixture(TempDir()).path
+        build_oci.backend.run = FakeMethod()
+        build_oci.repo()
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
             }
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["git", "clone", "lp:foo", "test-image"],
                 cwd="/home/buildd", **env),
@@ -252,14 +252,14 @@ class TestBuildDocker(TestCase):
 
     def test_build(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.add_dir('/build/test-directory')
-        build_docker.build()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        build_oci.build()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "/home/buildd/test-image"]),
@@ -267,15 +267,15 @@ class TestBuildDocker(TestCase):
 
     def test_build_with_file(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "--file", "build-aux/Dockerfile",
             "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.add_dir('/build/test-directory')
-        build_docker.build()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        build_oci.build()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "--file", "build-aux/Dockerfile", "/home/buildd/test-image"]),
@@ -283,15 +283,15 @@ class TestBuildDocker(TestCase):
 
     def test_build_proxy(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
             "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.add_dir('/build/test-directory')
-        build_docker.build()
-        self.assertThat(build_docker.backend.run.calls, MatchesListwise([
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        build_oci.build()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache",
                  "--build-arg", "http_proxy=http://proxy.example:3128/",
@@ -301,15 +301,15 @@ class TestBuildDocker(TestCase):
 
     def test_run_succeeds(self):
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.build_path = self.useFixture(TempDir()).path
-        build_docker.backend.run = FakeMethod()
-        self.assertEqual(0, build_docker.run())
-        self.assertThat(build_docker.backend.run.calls, MatchesAll(
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.build_path = self.useFixture(TempDir()).path
+        build_oci.backend.run = FakeMethod()
+        self.assertEqual(0, build_oci.run())
+        self.assertThat(build_oci.backend.run.calls, MatchesAll(
             AnyMatch(RanAptGet("install", "bzr", "docker.io")),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"],
@@ -328,13 +328,13 @@ class TestBuildDocker(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.run = FailInstall()
-        self.assertEqual(RETCODE_FAILURE_INSTALL, build_docker.run())
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.run = FailInstall()
+        self.assertEqual(RETCODE_FAILURE_INSTALL, build_oci.run())
 
     def test_run_repo_fails(self):
         class FailRepo(FakeMethod):
@@ -345,13 +345,13 @@ class TestBuildDocker(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.run = FailRepo()
-        self.assertEqual(RETCODE_FAILURE_BUILD, build_docker.run())
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.run = FailRepo()
+        self.assertEqual(RETCODE_FAILURE_BUILD, build_oci.run())
 
     def test_run_build_fails(self):
         class FailBuild(FakeMethod):
@@ -362,11 +362,11 @@ class TestBuildDocker(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
-            "build-docker",
+            "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--branch", "lp:foo", "test-image",
             ]
-        build_docker = parse_args(args=args).operation
-        build_docker.backend.build_path = self.useFixture(TempDir()).path
-        build_docker.backend.run = FailBuild()
-        self.assertEqual(RETCODE_FAILURE_BUILD, build_docker.run())
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.build_path = self.useFixture(TempDir()).path
+        build_oci.backend.run = FailBuild()
+        self.assertEqual(RETCODE_FAILURE_BUILD, build_oci.run())

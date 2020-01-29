@@ -16,14 +16,14 @@ from testtools.matchers import Contains
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
-from lpbuildd.docker import (
-    DockerBuildManager,
-    DockerBuildState,
+from lpbuildd.oci import (
+    OCIBuildManager,
+    OCIBuildState,
     )
 from lpbuildd.tests.fakebuilder import FakeBuilder
 
 
-class MockBuildManager(DockerBuildManager):
+class MockBuildManager(OCIBuildManager):
     def __init__(self, *args, **kwargs):
         super(MockBuildManager, self).__init__(*args, **kwargs)
         self.commands = []
@@ -37,21 +37,21 @@ class MockBuildManager(DockerBuildManager):
         return 0
 
 
-class MockDockerTarSave():
+class MockOCITarSave():
     @property
     def stdout(self):
         return io.open(os.path.join(
             os.path.dirname(__file__),
-            './test-docker-image.tar'), 'rb')
+            './test-oci-image.tar'), 'rb')
 
 
-class TestDockerBuildManagerIteration(TestCase):
-    """Run DockerBuildManager through its iteration steps."""
+class TestOCIBuildManagerIteration(TestCase):
+    """Run OCIBuildManager through its iteration steps."""
 
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
-        super(TestDockerBuildManagerIteration, self).setUp()
+        super(TestOCIBuildManagerIteration, self).setUp()
         self.working_dir = self.useFixture(TempDir()).path
         builder_dir = os.path.join(self.working_dir, "builder")
         home_dir = os.path.join(self.working_dir, "home")
@@ -84,14 +84,14 @@ class TestDockerBuildManagerIteration(TestCase):
         self.buildmanager.backend_name = original_backend_name
 
         # Skip states that are done in DebianBuildManager to the state
-        # directly before BUILD_DOCKER.
-        self.buildmanager._state = DockerBuildState.UPDATE
+        # directly before BUILD_OCI.
+        self.buildmanager._state = OCIBuildState.UPDATE
 
-        # BUILD_DOCKER: Run the builder's payload to build the snap package.
+        # BUILD_OCI: Run the builder's payload to build the snap package.
         yield self.buildmanager.iterate(0)
-        self.assertEqual(DockerBuildState.BUILD_DOCKER, self.getState())
+        self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
         expected_command = [
-            "sharepath/bin/in-target", "in-target", "build-docker",
+            "sharepath/bin/in-target", "in-target", "build-oci",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
         if options is not None:
@@ -119,7 +119,7 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        self.buildmanager.backend.run.result = MockDockerTarSave()
+        self.buildmanager.backend.run.result = MockOCITarSave()
 
         self.buildmanager.backend.add_file(
             '/var/lib/docker/image/'
@@ -133,7 +133,7 @@ class TestDockerBuildManagerIteration(TestCase):
             "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
-        self.assertEqual(DockerBuildState.BUILD_DOCKER, self.getState())
+        self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
@@ -172,7 +172,7 @@ class TestDockerBuildManagerIteration(TestCase):
             "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
-        self.assertEqual(DockerBuildState.UMOUNT, self.getState())
+        self.assertEqual(OCIBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
@@ -198,7 +198,7 @@ class TestDockerBuildManagerIteration(TestCase):
         with open(log_path, "w") as log:
             log.write("I am a build log.")
 
-        self.buildmanager.backend.run.result = MockDockerTarSave()
+        self.buildmanager.backend.run.result = MockOCITarSave()
 
         self.buildmanager.backend.add_file(
             '/var/lib/docker/image/'
@@ -212,7 +212,7 @@ class TestDockerBuildManagerIteration(TestCase):
             "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
-        self.assertEqual(DockerBuildState.BUILD_DOCKER, self.getState())
+        self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
@@ -252,7 +252,7 @@ class TestDockerBuildManagerIteration(TestCase):
             "sharepath/bin/in-target", "in-target", "umount-chroot",
             "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
             ]
-        self.assertEqual(DockerBuildState.UMOUNT, self.getState())
+        self.assertEqual(OCIBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])

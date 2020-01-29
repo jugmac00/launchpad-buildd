@@ -28,15 +28,15 @@ RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
 
 
-class DockerBuildState(DebianBuildState):
-    BUILD_DOCKER = "BUILD_DOCKER"
+class OCIBuildState(DebianBuildState):
+    BUILD_OCI = "BUILD_OCI"
 
 
-class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
-    """Build a snap."""
+class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
+    """Build an OCI Image."""
 
     backend_name = "lxd"
-    initial_build_state = DockerBuildState.BUILD_DOCKER
+    initial_build_state = OCIBuildState.BUILD_OCI
 
     @property
     def needs_sanitized_logs(self):
@@ -53,7 +53,7 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.proxy_service = None
 
-        super(DockerBuildManager, self).initiate(files, chroot, extra_args)
+        super(OCIBuildManager, self).initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the process to build the snap."""
@@ -76,10 +76,10 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         except (NoSectionError, NoOptionError):
             pass
         args.append(self.name)
-        self.runTargetSubProcess("build-docker", *args)
+        self.runTargetSubProcess("build-oci", *args)
 
-    def iterate_BUILD_DOCKER(self, retcode):
-        """Finished building the Docker image."""
+    def iterate_BUILD_OCI(self, retcode):
+        """Finished building the OCI image."""
         self.stopProxy()
         self.revokeProxyToken()
         if retcode == RETCODE_SUCCESS:
@@ -98,8 +98,8 @@ class DockerBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             self.alreadyfailed = True
         self.doReapProcesses(self._state)
 
-    def iterateReap_BUILD_DOCKER(self, retcode):
-        """Finished reaping after building the Docker image."""
+    def iterateReap_BUILD_OCI(self, retcode):
+        """Finished reaping after building the OCI image."""
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()
 

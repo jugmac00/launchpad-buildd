@@ -25,19 +25,19 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildDocker(SnapStoreProxyMixin, VCSOperationMixin,
+class BuildOCI(SnapStoreProxyMixin, VCSOperationMixin,
                   SnapStoreOperationMixin, Operation):
 
-    description = "Build a Docker image."
+    description = "Build an OCI image."
 
     @classmethod
     def add_arguments(cls, parser):
-        super(BuildDocker, cls).add_arguments(parser)
+        super(BuildOCI, cls).add_arguments(parser)
         parser.add_argument("--file", help="path to Dockerfile in branch")
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
-        super(BuildDocker, self).__init__(args, parser)
+        super(BuildOCI, self).__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
 
     def run_build_command(self, args, env=None, **kwargs):
@@ -56,7 +56,7 @@ class BuildDocker(SnapStoreProxyMixin, VCSOperationMixin,
 
     def install(self):
         logger.info("Running install phase...")
-        deps = super(BuildDocker, self).install()
+        deps = super(BuildOCI, self).install()
         deps.extend(self.vcs_deps)
         deps.extend(["docker.io"])
         self.backend.run(["apt-get", "-y", "install"] + deps)

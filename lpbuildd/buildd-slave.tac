@@ -23,7 +23,7 @@ from twisted.web import (
 
 from lpbuildd.binarypackage import BinaryPackageBuildManager
 from lpbuildd.builder import XMLRPCBuilder
-from lpbuildd.docker import DockerBuildManager
+from lpbuildd.oci import OCIBuildManager
 from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.log import RotatableFileLogObserver
 from lpbuildd.snap import SnapBuildManager
@@ -46,7 +46,7 @@ builder.registerManager(
     TranslationTemplatesBuildManager, 'translation-templates')
 builder.registerManager(LiveFilesystemBuildManager, "livefs")
 builder.registerManager(SnapBuildManager, "snap")
-builder.registerManager(DockerBuildManager, "docker")
+builder.registerManager(OCIBuildManager, "oci")
 
 application = service.Application('Builder')
 application.addComponent(
