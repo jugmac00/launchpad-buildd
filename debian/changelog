@@ -78,7 +78,6 @@ launchpad-buildd (177) xenial; urgency=medium
     images (LP: #1841075).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 23 Aug 2019 10:57:13 +0100
->>>>>>> MERGE-SOURCE
 
 launchpad-buildd (176) xenial; urgency=medium
 
