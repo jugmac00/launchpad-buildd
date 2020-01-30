@@ -127,6 +127,38 @@ class TestBuildOCI(TestCase):
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 
+    @responses.activate
+    def test_install_snap_store_proxy(self):
+        store_assertion = dedent("""\
+            type: store
+            store: store-id
+            url: http://snap-store-proxy.example
+
+            body
+            """)
+
+        def respond(request):
+            return 200, {"X-Assertion-Store-Id": "store-id"}, store_assertion
+
+        responses.add_callback(
+            "GET", "http://snap-store-proxy.example/v2/auth/store/assertions",
+            callback=respond)
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo",
+            "--snap-store-proxy-url", "http://snap-store-proxy.example/",
+            "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.install()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "git", "snapcraft"),
+            RanCommand(
+                ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
+            RanCommand(["snap", "set", "core", "proxy.store=store-id"]),
+            ]))
+
     def test_install_proxy(self):
         args = [
             "build-oci",

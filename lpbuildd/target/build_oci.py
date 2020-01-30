@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class BuildOCI(SnapStoreProxyMixin, VCSOperationMixin,
-                  SnapStoreOperationMixin, Operation):
+               SnapStoreOperationMixin, Operation):
 
     description = "Build an OCI image."
 
@@ -60,6 +60,8 @@ class BuildOCI(SnapStoreProxyMixin, VCSOperationMixin,
         deps.extend(self.vcs_deps)
         deps.extend(["docker.io"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
+        if self.args.backend in ("lxd", "fake"):
+            self.snap_store_set_proxy()
         self.backend.run(["systemctl", "restart", "docker"])
         # The docker snap can't see /build, so we have to do our work under
         # /home/buildd instead.  Make sure it exists.

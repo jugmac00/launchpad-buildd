@@ -10,28 +10,19 @@ import io
 import json
 import os
 import sys
-try:
-    from urllib.error import (
-        HTTPError,
-        URLError,
-        )
-    from urllib.parse import urlparse
-    from urllib.request import (
-        Request,
-        urlopen,
-        )
-except ImportError:
-    from urllib2 import (
-        HTTPError,
-        Request,
-        URLError,
-        urlopen,
-        )
-    from urlparse import urlparse
 
 from six.moves.configparser import (
     NoOptionError,
     NoSectionError,
+    )
+from six.moves.urllib.error import (
+    HTTPError,
+    URLError,
+    )
+from six.moves.urllib.parse import urlparse
+from six.moves.urllib.request import (
+    Request,
+    urlopen,
     )
 from twisted.application import strports
 from twisted.internet import reactor

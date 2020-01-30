@@ -94,18 +94,6 @@ class TestBuildLiveFS(TestCase):
             RanAptGet("install", "livecd-rootfs"),
             ]))
 
-    def test_install_i386(self):
-        args = [
-            "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=i386", "1",
-            ]
-        build_livefs = parse_args(args=args).operation
-        build_livefs.install()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "livecd-rootfs"),
-            RanAptGet("--no-install-recommends", "install", "ltsp-server"),
-            ]))
-
     def test_install_locale(self):
         args = [
             "buildlivefs",
@@ -189,6 +177,38 @@ class TestBuildLiveFS(TestCase):
             RanBuildCommand(
                 ["ubuntu-defaults-image", "--locale", "zh_CN",
                  "--arch", "amd64", "--release", "xenial"]),
+            ]))
+
+    def test_build_extra_ppas_and_snaps(self):
+        args = [
+            "buildlivefs",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--project=ubuntu-core",
+            "--extra-ppa=owner1/name1", "--extra-ppa=owner2/name2",
+            "--extra-snap=snap1", "--extra-snap=snap2",
+            ]
+        build_livefs = parse_args(args=args).operation
+        build_livefs.build()
+        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
+            RanBuildCommand(["rm", "-rf", "auto", "local"]),
+            RanBuildCommand(["mkdir", "-p", "auto"]),
+            RanBuildCommand(
+                ["ln", "-s",
+                 "/usr/share/livecd-rootfs/live-build/auto/config", "auto/"]),
+            RanBuildCommand(
+                ["ln", "-s",
+                 "/usr/share/livecd-rootfs/live-build/auto/build", "auto/"]),
+            RanBuildCommand(
+                ["ln", "-s",
+                 "/usr/share/livecd-rootfs/live-build/auto/clean", "auto/"]),
+            RanBuildCommand(["lb", "clean", "--purge"]),
+            RanBuildCommand(
+                ["lb", "config"],
+                PROJECT="ubuntu-core", ARCH="amd64", SUITE="xenial",
+                EXTRA_PPAS="owner1/name1 owner2/name2",
+                EXTRA_SNAPS="snap1 snap2"),
+            RanBuildCommand(
+                ["lb", "build"], PROJECT="ubuntu-core", ARCH="amd64"),
             ]))
 
     def test_build_debug(self):

@@ -1,8 +1,84 @@
-launchpad-buildd (177) UNRELEASED; urgency=medium
+launchpad-buildd (187) UNRELEASED; urgency=medium
 
-+  * Prototype Docker image building support.
+  * Prototype Docker image building support.
 
   -- Colin Watson <cjwatson@ubuntu.com>  Wed, 05 Jun 2019 15:06:54 +0100
+
+launchpad-buildd (186) xenial; urgency=medium
+
+  * Fix sbuildrc compatibility with xenial's sbuild.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 06 Jan 2020 15:03:00 +0000
+
+launchpad-buildd (185) xenial; urgency=medium
+
+  [ Dimitri John Ledkov ]
+  * Stop installing ltsp-server for i386 livefs-builders. Edubuntu product
+    that used that is long dead, and the package itself is now removed
+    from focal.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Dec 2019 21:47:28 +0000
+
+launchpad-buildd (184) xenial; urgency=medium
+
+  * Adjust sbuildrc to handle various changes in bionic's sbuild.
+  * Configure LXD when creating a target rather than in the postinst.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 12 Dec 2019 13:03:26 +0000
+
+launchpad-buildd (183) xenial; urgency=medium
+
+  [ Michael Hudson-Doyle ]
+  * Invoke dmsetup with sudo when calculating the device major number for
+    device mapper.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 26 Nov 2019 20:43:38 +0000
+
+launchpad-buildd (182) xenial; urgency=medium
+
+  [ Michael Hudson-Doyle ]
+  * Do not make assumptions about what device major number the device mapper
+    is using. (LP: #1852518)
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 26 Nov 2019 12:22:37 +0000
+
+launchpad-buildd (181) xenial; urgency=medium
+
+  [ Robert C Jennings ]
+  * LXD: Create dm-X devices to address kpartx hangs (LP: #1852518)
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 22 Nov 2019 11:14:04 +0000
+
+launchpad-buildd (180) xenial; urgency=medium
+
+  * No-change release to work around production upgrade problem.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 06 Nov 2019 11:11:43 +0000
+
+launchpad-buildd (179) xenial; urgency=medium
+
+  [ Dimitri John Ledkov ]
+  * Add core20 to the list of supported core_snap_names. LP: #1849687
+
+  [ Colin Watson ]
+  * Simplify most conditional Python 2/3 imports using six.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 30 Oct 2019 14:26:42 +0000
+
+launchpad-buildd (178) xenial; urgency=medium
+
+  * Accept an "extra_snaps" entry in livefs arguments, which is passed to
+    livecd-rootfs to configure ubuntu-image to include additional snaps.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 02 Oct 2019 12:59:03 +0100
+
+launchpad-buildd (177) xenial; urgency=medium
+
+  * Fix recipe building to not rely on /CurrentlyBuilding existing in base
+    images (LP: #1841075).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 23 Aug 2019 10:57:13 +0100
+>>>>>>> MERGE-SOURCE
 
 launchpad-buildd (176) xenial; urgency=medium
 
@@ -732,7 +808,7 @@ launchpad-buildd (116) hardy; urgency=low
     memory at once (LP: #1227086).
 
   [ Adam Conrad ]
-  * Tidy up log formatting of the "Already reaped..." message. 
+  * Tidy up log formatting of the "Already reaped..." message.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 27 Sep 2013 13:08:59 +0100
 
@@ -917,7 +993,7 @@ launchpad-buildd (99) hardy; urgency=low
 launchpad-buildd (98) hardy; urgency=low
 
   * Add launchpad-buildd dependency on python-apt, as an accomodation for it
-    being only a Recommends but actually required by python-debian.  
+    being only a Recommends but actually required by python-debian.
     LP: #890834
 
  -- Martin Pool <mbp@canonical.com>  Wed, 16 Nov 2011 10:28:48 +1100
@@ -971,7 +1047,7 @@ launchpad-buildd (91) hardy; urgency=low
 
 launchpad-buildd (90) hardy; urgency=low
 
-  * debhelper is a Build-Depends because it is needed to run 'clean'. 
+  * debhelper is a Build-Depends because it is needed to run 'clean'.
   * python-lpbuildd conflicts with launchpad-buildd << 88.
   * Add and adjust build-arch, binary-arch, build-indep to match policy.
   * Complies with stardards version 3.9.2.

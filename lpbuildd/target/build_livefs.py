@@ -70,6 +70,9 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
             "--extra-ppa", dest="extra_ppas", default=[], action="append",
             help="use this additional PPA")
         parser.add_argument(
+            "--extra-snap", dest="extra_snaps", default=[], action="append",
+            help="use this additional snap")
+        parser.add_argument(
             "--channel", metavar="CHANNEL",
             help="pull snaps from channel CHANNEL for ubuntu-core image")
         parser.add_argument(
@@ -97,11 +100,6 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.backend in ("lxd", "fake"):
             self.snap_store_set_proxy()
-        if self.args.arch == "i386":
-            self.backend.run([
-                "apt-get", "-y", "--no-install-recommends", "install",
-                "ltsp-server",
-                ])
         if self.args.locale is not None:
             self.backend.run([
                 "apt-get", "-y", "--install-recommends", "install",
@@ -156,6 +154,8 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
                 lb_env["PROPOSED"] = "1"
             if self.args.extra_ppas:
                 lb_env["EXTRA_PPAS"] = " ".join(self.args.extra_ppas)
+            if self.args.extra_snaps:
+                lb_env["EXTRA_SNAPS"] = " ".join(self.args.extra_snaps)
             if self.args.http_proxy:
                 proxy_dict = {
                     "http_proxy": self.args.http_proxy,

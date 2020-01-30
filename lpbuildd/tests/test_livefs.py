@@ -58,7 +58,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         return self.buildmanager._state
 
     @defer.inlineCallbacks
-    def startBuild(self, options=None):
+    def startBuild(self, args=None, options=None):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         extra_args = {
@@ -67,6 +67,8 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             "pocket": "release",
             "arch_tag": "i386",
             }
+        if args is not None:
+            extra_args.update(args)
         original_backend_name = self.buildmanager.backend_name
         self.buildmanager.backend_name = "fake"
         self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
@@ -131,6 +133,22 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_extra_ppas_and_snaps(self):
+        # The build manager can be told to pass requests for extra PPAs and
+        # snaps through to the backend.
+        yield self.startBuild(
+            args={
+                "extra_ppas": ["owner1/name1", "owner2/name2"],
+                "extra_snaps": ["snap1", "snap2"],
+                },
+            options=[
+                "--extra-ppa", "owner1/name1",
+                "--extra-ppa", "owner2/name2",
+                "--extra-snap", "snap1",
+                "--extra-snap", "snap2",
+                ])
 
     @defer.inlineCallbacks
     def test_iterate_snap_store_proxy(self):

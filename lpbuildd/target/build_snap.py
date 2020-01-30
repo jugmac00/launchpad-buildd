@@ -13,10 +13,8 @@ import os.path
 import sys
 import tempfile
 from textwrap import dedent
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+
+from six.moves.urllib.parse import urlparse
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapstore import (
@@ -56,7 +54,7 @@ class BuildSnap(SnapStoreProxyMixin, VCSOperationMixin,
 
     description = "Build a snap."
 
-    core_snap_names = ["core", "core16", "core18"]
+    core_snap_names = ["core", "core16", "core18", "core20"]
 
     @classmethod
     def add_arguments(cls, parser):

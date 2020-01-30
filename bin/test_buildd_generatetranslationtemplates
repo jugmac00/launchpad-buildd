@@ -9,10 +9,7 @@ from __future__ import print_function
 
 import sys
 
-try:
-    from xmlrpc.client import ServerProxy
-except ImportError:
-    from xmlrpclib import ServerProxy
+from six.moves.xmlrpc_client import ServerProxy
 
 if len(sys.argv) != 2:
     print("Usage: %s <chroot_sha1>" % sys.argv[0])

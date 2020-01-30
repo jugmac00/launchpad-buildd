@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Buildd Slave tests.
+"""Builder tests.
 
 This file contains the following tests:
 
@@ -19,15 +19,10 @@ import difflib
 import os
 import shutil
 import tempfile
-try:
-    from urllib.request import HTTPBasicAuthHandler
-except ImportError:
-    from urllib2 import HTTPBasicAuthHandler
 import unittest
-try:
-    from xmlrpc.client import ServerProxy
-except ImportError:
-    from xmlrpclib import ServerProxy
+
+from six.moves.urllib.request import HTTPBasicAuthHandler
+from six.moves.xmlrpc_client import ServerProxy
 
 from lpbuildd.tests.harness import (
     BuilddSlaveTestSetup,
@@ -73,14 +68,14 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # This is where the buildlog file lives.
         log_path = self.slave.cachePath('buildlog')
 
-        # This is where the slave leaves the original/unsanitized
+        # This is where the builder leaves the original/unsanitized
         # buildlog file after scrubbing.
         unsanitized_path = self.slave.cachePath('buildlog.unsanitized')
 
         # Copy the fake buildlog file to the cache path.
         shutil.copy(os.path.join(self.here, 'buildlog'), log_path)
 
-        # Invoke the slave's buildlog scrubbing method.
+        # Invoke the builder's buildlog scrubbing method.
         self.slave.sanitizeBuildlog(log_path)
 
         # Read the unsanitized original content.
@@ -104,7 +99,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         self.assertEqual(differences, expected)
 
     def testLogtailScrubbing(self):
-        """Test the scrubbing of the slave's getLogTail() output."""
+        """Test the scrubbing of the builder's getLogTail() output."""
 
         # This is where the buildlog file lives.
         log_path = self.slave.cachePath('buildlog')
@@ -119,7 +114,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         self.slave.manager.is_archive_private = False
         unsanitized = self.slave.getLogTail().splitlines()
 
-        # Make the slave believe we are building in a private archive to
+        # Make the builder believe we are building in a private archive to
         # obtain the scrubbed log tail output.
         self.slave.manager.is_archive_private = True
         clean = self.slave.getLogTail().splitlines()
@@ -167,8 +162,8 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
     def testLogtailWhenLogFileVanishes(self):
         """Slave.getLogTail doesn't get hurt if the logfile has vanished.
 
-        This is a common race-condition in our slaves, since they get
-        pooled all the time when they are building.
+        This is a common race-condition in our builders, since they get
+        polled all the time when they are building.
 
         Sometimes the getLogTail calls coincides with the job
         cleanup/sanitization, so there is no buildlog to inspect and thus

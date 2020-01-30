@@ -41,6 +41,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.image_format = extra_args.get("image_format")
         self.locale = extra_args.get("locale")
         self.extra_ppas = extra_args.get("extra_ppas", [])
+        self.extra_snaps = extra_args.get("extra_snaps", [])
         self.channel = extra_args.get("channel")
         self.image_targets = extra_args.get("image_targets", [])
         self.repo_snapshot_stamp = extra_args.get("repo_snapshot_stamp")
@@ -68,6 +69,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--locale", self.locale])
         for ppa in self.extra_ppas:
             args.extend(["--extra-ppa", ppa])
+        for snap in self.extra_snaps:
+            args.extend(["--extra-snap", snap])
         if self.channel:
             args.extend(["--channel", self.channel])
         for image_target in self.image_targets:

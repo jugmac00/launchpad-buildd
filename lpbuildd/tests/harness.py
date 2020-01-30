@@ -64,7 +64,7 @@ class BuilddTestCase(unittest.TestCase):
 
 
 class BuilddSlaveTestSetup(TacTestFixture):
-    r"""Setup BuildSlave for use by functional tests
+    r"""Setup Builder for use by functional tests
 
     >>> fixture = BuilddSlaveTestSetup()
     >>> fixture.setUp()
