@@ -13,10 +13,8 @@ import tempfile
 from textwrap import dedent
 
 from lpbuildd.target.operation import Operation
-from lpbuildd.target.snapstore import (
-    SnapStoreOperationMixin,
-    SnapStoreProxyMixin,
-)
+from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
+from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
 
@@ -27,7 +25,7 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildOCI(SnapStoreProxyMixin, VCSOperationMixin,
+class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                SnapStoreOperationMixin, Operation):
 
     description = "Build an OCI image."
@@ -94,11 +92,7 @@ class BuildOCI(SnapStoreProxyMixin, VCSOperationMixin,
     def repo(self):
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
-        env = OrderedDict()
-        if self.args.proxy_url:
-            env["http_proxy"] = self.args.proxy_url
-            env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
 
     def build(self):
