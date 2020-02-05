@@ -9,6 +9,8 @@ from collections import OrderedDict
 import logging
 import os.path
 import sys
+import tempfile
+from textwrap import dedent
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapstore import (
@@ -57,6 +59,28 @@ class BuildOCI(SnapStoreProxyMixin, VCSOperationMixin,
     def install(self):
         logger.info("Running install phase...")
         deps = super(BuildOCI, self).install()
+        # Add any proxy settings that are needed
+        if self.args.proxy_url:
+            self.backend.run(
+                ["mkdir", "-p", "/etc/systemd/system/docker.service.d"])
+            with tempfile.NamedTemporaryFile(mode="w+") as http_file:
+                http_contents = dedent("""[Service]
+                Environment="HTTP_PROXY={}"
+                """.format(self.args.proxy_url))
+                http_file.write(http_contents)
+                http_file.flush()
+                self.backend.copy_in(
+                    http_file.name,
+                    "/etc/systemd/system/docker.service.d/http-proxy.conf")
+            with tempfile.NamedTemporaryFile(mode="w+") as https_file:
+                https_contents = dedent("""[Service]
+                Environment="HTTPS_PROXY={}"
+                """.format(self.args.proxy_url))
+                https_file.write(https_contents)
+                https_file.flush()
+                self.backend.copy_in(
+                    https_file.name,
+                    "/etc/systemd/system/docker.service.d/https-proxy.conf")
         deps.extend(self.vcs_deps)
         deps.extend(["docker.io"])
         self.backend.run(["apt-get", "-y", "install"] + deps)

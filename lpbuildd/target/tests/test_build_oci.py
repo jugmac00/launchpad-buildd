@@ -176,6 +176,8 @@ class TestBuildOCI(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_oci.install()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanCommand(
+                ["mkdir", "-p", "/etc/systemd/system/docker.service.d"]),
             RanAptGet("install", "python3", "socat", "git", "docker.io"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),

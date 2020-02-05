@@ -123,7 +123,7 @@ class TestOCIBuildManagerIteration(TestCase):
 
         self.buildmanager.backend.add_file(
             '/var/lib/docker/image/'
-            'overlay2/distribution/v2metadata-by-diffid/sha256/diff1',
+            'vfs/distribution/v2metadata-by-diffid/sha256/diff1',
             b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
         )
 
@@ -202,7 +202,7 @@ class TestOCIBuildManagerIteration(TestCase):
 
         self.buildmanager.backend.add_file(
             '/var/lib/docker/image/'
-            'overlay2/distribution/v2metadata-by-diffid/sha256/diff1',
+            'vfs/distribution/v2metadata-by-diffid/sha256/diff1',
             b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
         )
 
