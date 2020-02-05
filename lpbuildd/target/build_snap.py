@@ -134,7 +134,10 @@ class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
 
     def install(self):
         logger.info("Running install phase...")
-        deps = super(BuildSnap, self).install()
+        deps = []
+        if self.args.proxy_url:
+            deps.extend(self.proxy_deps)
+            self.install_git_proxy()
         if self.args.backend == "lxd":
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.

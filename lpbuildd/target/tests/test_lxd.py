@@ -276,7 +276,7 @@ class TestLXD(TestCase):
             "lp-xenial-amd64", "lp-xenial-amd64")
 
     def assert_correct_profile(self, extra_raw_lxc_config=None,
-            driver_version="2.0"):
+                               driver_version="2.0"):
         if extra_raw_lxc_config is None:
             extra_raw_lxc_config = []
 
@@ -356,7 +356,7 @@ class TestLXD(TestCase):
                     }
                 LXD("1", "xenial", "powerpc").create_profile()
                 self.assert_correct_profile(
-                        extra_raw_lxc_config=[("lxc.seccomp", ""),],
+                        extra_raw_lxc_config=[("lxc.seccomp", ""), ],
                         driver_version=driver_version or "3.0"
                         )
 
@@ -463,7 +463,8 @@ class TestLXD(TestCase):
                      "b", "7", str(minor)]))
         if not with_dm0:
             expected_args.extend([
-                Equals(["sudo", "dmsetup", "create", "tmpdevice", "--notable"]),
+                Equals(
+                    ["sudo", "dmsetup", "create", "tmpdevice", "--notable"]),
                 Equals(["sudo", "dmsetup", "remove", "tmpdevice"]),
                 ])
         for minor in range(8):
