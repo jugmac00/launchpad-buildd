@@ -6,9 +6,14 @@ __metaclass__ = type
 import io
 import json
 import os
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from fixtures import (
     EnvironmentVariable,
+    MockPatch,
     TempDir,
     )
 from testtools import TestCase
@@ -21,6 +26,7 @@ from lpbuildd.oci import (
     OCIBuildState,
     )
 from lpbuildd.tests.fakebuilder import FakeBuilder
+from lpbuildd.tests.oci_tarball import OCITarball
 
 
 class MockBuildManager(OCIBuildManager):
@@ -40,9 +46,7 @@ class MockBuildManager(OCIBuildManager):
 class MockOCITarSave():
     @property
     def stdout(self):
-        return io.open(os.path.join(
-            os.path.dirname(__file__),
-            './test-oci-image.tar'), 'rb')
+        return io.open(OCITarball().build_tar_file(), 'rb')
 
 
 class TestOCIBuildManagerIteration(TestCase):
@@ -104,6 +108,11 @@ class TestOCIBuildManagerIteration(TestCase):
 
     @defer.inlineCallbacks
     def test_iterate(self):
+        # This sha would change as it includes file attributes in the
+        # tar file. Fix it so we can test against a known value.
+        sha_mock = self.useFixture(
+            MockPatch('lpbuildd.oci.OCIBuildManager._calculateLayerSha'))
+        sha_mock.mock.return_value = "testsha"
         # The build manager iterates a normal build from start to finish.
         args = {
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
@@ -160,8 +169,7 @@ class TestOCIBuildManagerIteration(TestCase):
             },
             "sha256:diff2": {
                 "source": "",
-                "digest": "e3b0c44298fc1c149afbf4c8996fb9"
-                          "2427ae41e4649b934ca495991b7852b855",
+                "digest": "testsha",
                 "layer_id": "layer-2"
             }
         }]
@@ -180,6 +188,11 @@ class TestOCIBuildManagerIteration(TestCase):
 
     @defer.inlineCallbacks
     def test_iterate_with_file(self):
+        # This sha would change as it includes file attributes in the
+        # tar file. Fix it so we can test against a known value.
+        sha_mock = self.useFixture(
+            MockPatch('lpbuildd.oci.OCIBuildManager._calculateLayerSha'))
+        sha_mock.mock.return_value = "testsha"
         # The build manager iterates a build that specifies a non-default
         # Dockerfile location from start to finish.
         args = {
@@ -239,8 +252,7 @@ class TestOCIBuildManagerIteration(TestCase):
             },
             "sha256:diff2": {
                 "source": "",
-                "digest": "e3b0c44298fc1c149afbf4c8996fb9"
-                          "2427ae41e4649b934ca495991b7852b855",
+                "digest": "testsha",
                 "layer_id": "layer-2"
             }
         }]

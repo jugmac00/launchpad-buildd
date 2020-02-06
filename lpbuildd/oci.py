@@ -103,6 +103,14 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()
 
+    def _calculateLayerSha(self, layer_path):
+        with open(layer_path, 'rb') as layer_tar:
+            sha256_hash = hashlib.sha256()
+            for byte_block in iter(lambda: layer_tar.read(4096), b""):
+                sha256_hash.update(byte_block)
+            digest = sha256_hash.hexdigest()
+            return digest
+
     def _gatherManifestSection(self, section, extract_path, sha_directory):
         config_file_path = os.path.join(extract_path, section["Config"])
         self._builder.addWaitingFile(config_file_path)
@@ -129,12 +137,8 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             # If the layer has been build locally, we need to generate the
             # digest and then set the source to empty
             else:
-                with open(layer_path, 'rb') as layer_tar:
-                    sha256_hash = hashlib.sha256()
-                    for byte_block in iter(lambda: layer_tar.read(4096), b""):
-                        sha256_hash.update(byte_block)
-                    digest = sha256_hash.hexdigest()
-                    source = ""
+                source = ""
+                digest = self._calculateLayerSha(layer_path)
             digest_diff_map[diff_id] = {
                 "digest": digest,
                 "source": source,
@@ -149,36 +153,42 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         proc = self.backend.run(
             ['docker', 'save', self.name],
             get_output=True, universal_newlines=False, return_process=True)
-        tar = tarfile.open(fileobj=proc.stdout, mode="r|")
+        try:
+            tar = tarfile.open(fileobj=proc.stdout, mode="r|")
+        except Exception as e:
+            print(e)
 
         current_dir = ''
         directory_tar = None
-        # The tarfile is a stream and must be processed in order
-        for file in tar:
-            # Directories are just nodes, you can't extract the children
-            # directly, so keep track of what dir we're in.
-            if file.isdir():
-                current_dir = file.name
-                if directory_tar:
-                    # Close the old directory if we have one
-                    directory_tar.close()
-                # We're going to add the layer.tar to a gzip
-                directory_tar = tarfile.open(
-                    os.path.join(
-                        extract_path, '{}.tar.gz'.format(file.name)),
-                    'w|gz')
-            if current_dir and file.name.endswith('layer.tar'):
-                # This is the actual layer data, we want to add it to
-                # the directory gzip
-                file.name = file.name.split('/')[1]
-                directory_tar.addfile(file, tar.extractfile(file))
-            elif current_dir and file.name.startswith(current_dir):
-                # Other files that are in the layer directories,
-                # we don't care about
-                continue
-            else:
-                # If it's not in a directory, we need that
-                tar.extract(file, extract_path)
+        try:
+            # The tarfile is a stream and must be processed in order
+            for file in tar:
+                # Directories are just nodes, you can't extract the children
+                # directly, so keep track of what dir we're in.
+                if file.isdir():
+                    current_dir = file.name
+                    if directory_tar:
+                        # Close the old directory if we have one
+                        directory_tar.close()
+                    # We're going to add the layer.tar to a gzip
+                    directory_tar = tarfile.open(
+                        os.path.join(
+                            extract_path, '{}.tar.gz'.format(file.name)),
+                        'w|gz')
+                if current_dir and file.name.endswith('layer.tar'):
+                    # This is the actual layer data, we want to add it to
+                    # the directory gzip
+                    file.name = file.name.split('/')[1]
+                    directory_tar.addfile(file, tar.extractfile(file))
+                elif current_dir and file.name.startswith(current_dir):
+                    # Other files that are in the layer directories,
+                    # we don't care about
+                    continue
+                else:
+                    # If it's not in a directory, we need that
+                    tar.extract(file, extract_path)
+        except Exception as e:
+            print(e)
 
         # We need these mapping files
         sha_directory = tempfile.mkdtemp()
@@ -199,11 +209,14 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             manifest = json.load(manifest_fp)
 
         digest_maps = []
-        for section in manifest:
-            digest_maps.append(
-                self._gatherManifestSection(section, extract_path,
-                                            sha_directory))
-        digest_map_file = os.path.join(extract_path, 'digests.json')
-        with open(digest_map_file, 'w') as digest_map_fp:
-            json.dump(digest_maps, digest_map_fp)
-        self._builder.addWaitingFile(digest_map_file)
+        try:
+            for section in manifest:
+                digest_maps.append(
+                    self._gatherManifestSection(section, extract_path,
+                                                sha_directory))
+            digest_map_file = os.path.join(extract_path, 'digests.json')
+            with open(digest_map_file, 'w') as digest_map_fp:
+                json.dump(digest_maps, digest_map_fp)
+            self._builder.addWaitingFile(digest_map_file)
+        except Exception as e:
+            print(e)
