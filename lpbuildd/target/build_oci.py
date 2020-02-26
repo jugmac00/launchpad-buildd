@@ -33,7 +33,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
     @classmethod
     def add_arguments(cls, parser):
         super(BuildOCI, cls).add_arguments(parser)
-        parser.add_argument("--file", help="path to Dockerfile in branch")
+        parser.add_argument(
+            "--build-file", help="path to Dockerfile in branch")
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
@@ -104,8 +105,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 args.extend(
                     ["--build-arg", "{}={}".format(var, self.args.proxy_url)])
         args.extend(["--tag", self.args.name])
-        if self.args.file is not None:
-            args.extend(["--file", self.args.file])
+        if self.args.build_file is not None:
+            args.extend(["--file", self.args.build_file])
         buildd_path = os.path.join("/home/buildd", self.args.name)
         args.append(buildd_path)
         self.run_build_command(args)

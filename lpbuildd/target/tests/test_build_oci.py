@@ -303,7 +303,7 @@ class TestBuildOCI(TestCase):
         args = [
             "build-oci",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--branch", "lp:foo", "--file", "build-aux/Dockerfile",
+            "--branch", "lp:foo", "--build-file", "build-aux/Dockerfile",
             "test-image",
             ]
         build_oci = parse_args(args=args).operation
@@ -312,7 +312,8 @@ class TestBuildOCI(TestCase):
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "--file", "build-aux/Dockerfile", "/home/buildd/test-image"]),
+                 "--file", "build-aux/Dockerfile",
+                 "/home/buildd/test-image"]),
             ]))
 
     def test_build_proxy(self):

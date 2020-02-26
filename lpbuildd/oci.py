@@ -48,7 +48,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
-        self.file = extra_args.get("file")
+        self.build_file = extra_args.get("build_file")
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.proxy_service = None
@@ -67,8 +67,8 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             args.extend(["--git-repository", self.git_repository])
         if self.git_path is not None:
             args.extend(["--git-path", self.git_path])
-        if self.file is not None:
-            args.extend(["--file", self.file])
+        if self.build_file is not None:
+            args.extend(["--build-file", self.build_file])
         try:
             snap_store_proxy_url = self._builder._config.get(
                 "proxy", "snapstore")

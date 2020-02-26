@@ -198,12 +198,12 @@ class TestOCIBuildManagerIteration(TestCase):
         args = {
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
             "git_path": "master",
-            "file": "build-aux/Dockerfile",
+            "build_file": "build-aux/Dockerfile",
             }
         expected_options = [
             "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
             "--git-path", "master",
-            "--file", "build-aux/Dockerfile",
+            "--build-file", "build-aux/Dockerfile",
             ]
         yield self.startBuild(args, expected_options)
 
