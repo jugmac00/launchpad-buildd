@@ -1,3 +1,10 @@
+launchpad-buildd (187) UNRELEASED; urgency=medium
+
+  * Make lpbuildd.snap compatible with Twisted >= 17.1.0, which drops
+    support for passing an unqualified port to strports.service.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Mar 2020 11:45:28 +0000
+
 launchpad-buildd (186) xenial; urgency=medium
 
   * Fix sbuildrc compatibility with xenial's sbuild.
