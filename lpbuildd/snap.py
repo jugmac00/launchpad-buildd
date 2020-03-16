@@ -275,7 +275,8 @@ class SnapBuildManager(DebianBuildManager):
             return []
         proxy_port = self._builder._config.get("snapmanager", "proxyport")
         proxy_factory = SnapProxyFactory(self, self.proxy_url, timeout=60)
-        self.proxy_service = strports.service(proxy_port, proxy_factory)
+        self.proxy_service = strports.service(
+            "tcp:%s" % proxy_port, proxy_factory)
         self.proxy_service.setServiceParent(self._builder.service)
         if self.backend_name == "lxd":
             proxy_host = self.backend.ipv4_network.ip
