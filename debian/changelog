@@ -1,4 +1,4 @@
-launchpad-buildd (187) UNRELEASED; urgency=medium
+launchpad-buildd (187) xenial; urgency=medium
 
   [ Colin Watson ]
   * Make lpbuildd.snap compatible with Twisted >= 17.1.0, which drops
@@ -7,7 +7,7 @@ launchpad-buildd (187) UNRELEASED; urgency=medium
   [ Tom Wardill ]
   * Prototype Docker image building support.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 16 Mar 2020 11:45:28 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 18 Mar 2020 14:22:03 +0000
 
 launchpad-buildd (186) xenial; urgency=medium
 
