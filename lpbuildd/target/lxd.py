@@ -504,7 +504,8 @@ class LXD(Backend):
              "/etc/systemd/system/snapd.refresh.timer"])
 
     def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
-            echo=False, **kwargs):
+            echo=False, return_process=False, universal_newlines=True,
+            **kwargs):
         """See `Backend`."""
         env_params = []
         if env:
@@ -538,7 +539,10 @@ class LXD(Backend):
             if get_output:
                 kwargs["stdout"] = subprocess.PIPE
             proc = subprocess.Popen(
-                cmd, stdin=subprocess.PIPE, universal_newlines=True, **kwargs)
+                cmd, stdin=subprocess.PIPE,
+                universal_newlines=universal_newlines, **kwargs)
+            if return_process:
+                return proc
             output, _ = proc.communicate(input_text)
             if proc.returncode:
                 raise subprocess.CalledProcessError(proc.returncode, cmd)

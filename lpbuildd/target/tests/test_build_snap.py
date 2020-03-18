@@ -186,7 +186,7 @@ class TestBuildSnap(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git", "python3", "socat", "snapcraft"),
+            RanAptGet("install", "python3", "socat", "git", "snapcraft"),
             RanCommand(["mkdir", "-p", "/root/.subversion"]),
             ]))
         self.assertEqual(

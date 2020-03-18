@@ -239,35 +239,7 @@ class SnapBuildState(DebianBuildState):
     BUILD_SNAP = "BUILD_SNAP"
 
 
-class SnapBuildManager(DebianBuildManager):
-    """Build a snap."""
-
-    backend_name = "lxd"
-    initial_build_state = SnapBuildState.BUILD_SNAP
-
-    @property
-    def needs_sanitized_logs(self):
-        return True
-
-    def initiate(self, files, chroot, extra_args):
-        """Initiate a build with a given set of files and chroot."""
-        self.name = extra_args["name"]
-        self.channels = extra_args.get("channels", {})
-        self.build_request_id = extra_args.get("build_request_id")
-        self.build_request_timestamp = extra_args.get(
-            "build_request_timestamp")
-        self.build_url = extra_args.get("build_url")
-        self.branch = extra_args.get("branch")
-        self.git_repository = extra_args.get("git_repository")
-        self.git_path = extra_args.get("git_path")
-        self.proxy_url = extra_args.get("proxy_url")
-        self.revocation_endpoint = extra_args.get("revocation_endpoint")
-        self.build_source_tarball = extra_args.get(
-            "build_source_tarball", False)
-        self.private = extra_args.get("private", False)
-        self.proxy_service = None
-
-        super(SnapBuildManager, self).initiate(files, chroot, extra_args)
+class SnapBuildProxyMixin():
 
     def startProxy(self):
         """Start the local snap proxy, if necessary."""
@@ -308,6 +280,37 @@ class SnapBuildManager(DebianBuildManager):
         except (HTTPError, URLError) as e:
             self._builder.log(
                 "Unable to revoke token for %s: %s" % (url.username, e))
+
+
+class SnapBuildManager(SnapBuildProxyMixin, DebianBuildManager):
+    """Build a snap."""
+
+    backend_name = "lxd"
+    initial_build_state = SnapBuildState.BUILD_SNAP
+
+    @property
+    def needs_sanitized_logs(self):
+        return True
+
+    def initiate(self, files, chroot, extra_args):
+        """Initiate a build with a given set of files and chroot."""
+        self.name = extra_args["name"]
+        self.channels = extra_args.get("channels", {})
+        self.build_request_id = extra_args.get("build_request_id")
+        self.build_request_timestamp = extra_args.get(
+            "build_request_timestamp")
+        self.build_url = extra_args.get("build_url")
+        self.branch = extra_args.get("branch")
+        self.git_repository = extra_args.get("git_repository")
+        self.git_path = extra_args.get("git_path")
+        self.proxy_url = extra_args.get("proxy_url")
+        self.revocation_endpoint = extra_args.get("revocation_endpoint")
+        self.build_source_tarball = extra_args.get(
+            "build_source_tarball", False)
+        self.private = extra_args.get("private", False)
+        self.proxy_service = None
+
+        super(SnapBuildManager, self).initiate(files, chroot, extra_args)
 
     def status(self):
         status_path = get_build_path(self.home, self._buildid, "status")

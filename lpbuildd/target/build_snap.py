@@ -17,6 +17,7 @@ from textwrap import dedent
 from six.moves.urllib.parse import urlparse
 
 from lpbuildd.target.operation import Operation
+from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
@@ -46,7 +47,8 @@ class SnapChannelsAction(argparse.Action):
         getattr(namespace, self.dest)[snap] = channel
 
 
-class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
+class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
+                SnapStoreOperationMixin, Operation):
 
     description = "Build a snap."
 
@@ -69,10 +71,6 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             help="RFC3339 timestamp of the Launchpad build request")
         parser.add_argument(
             "--build-url", help="URL of this build on Launchpad")
-        parser.add_argument("--proxy-url", help="builder proxy url")
-        parser.add_argument(
-            "--revocation-endpoint",
-            help="builder proxy token revocation endpoint")
         parser.add_argument(
             "--build-source-tarball", default=False, action="store_true",
             help=(
@@ -137,6 +135,9 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
     def install(self):
         logger.info("Running install phase...")
         deps = []
+        if self.args.proxy_url:
+            deps.extend(self.proxy_deps)
+            self.install_git_proxy()
         if self.args.backend == "lxd":
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.
@@ -144,8 +145,6 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
         deps.extend(self.vcs_deps)
-        if self.args.proxy_url:
-            deps.extend(["python3", "socat"])
         if "snapcraft" in self.args.channels:
             # snapcraft requires sudo in lots of places, but can't depend on
             # it when installed as a snap.
@@ -167,19 +166,12 @@ class BuildSnap(VCSOperationMixin, SnapStoreOperationMixin, Operation):
                  "--channel=%s" % self.args.channels["snapcraft"],
                  "snapcraft"])
         if self.args.proxy_url:
-            self.backend.copy_in(
-                os.path.join(self.bin, "snap-git-proxy"),
-                "/usr/local/bin/snap-git-proxy")
             self.install_svn_servers()
 
     def repo(self):
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
-        env = OrderedDict()
-        if self.args.proxy_url:
-            env["http_proxy"] = self.args.proxy_url
-            env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(self.args.name, cwd="/build", env=env)
         status = {}
         if self.args.branch is not None:
