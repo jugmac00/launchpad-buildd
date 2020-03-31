@@ -1,3 +1,9 @@
+launchpad-buildd (188) UNRELEASED; urgency=medium
+
+  * Fix cwd for OCI builds, allows Dockerfile parameter. 
+
+ -- Tom Wardill <tom.wardill@canonical.com>  Tue, 31 Mar 2020 10:13:58 +0000
+
 launchpad-buildd (187) xenial; urgency=medium
 
   [ Colin Watson ]

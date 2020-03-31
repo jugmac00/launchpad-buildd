@@ -25,6 +25,7 @@ from testtools.matchers import (
     )
 
 from lpbuildd.target.build_oci import (
+    InvalidBuildFilePath,
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
     )
@@ -83,7 +84,9 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.run_build_command(["echo", "hello world"])
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["echo", "hello world"]),
+            RanBuildCommand(
+                ["echo", "hello world"],
+                cwd="/home/buildd/test-image"),
             ]))
 
     def test_run_build_command_env(self):
@@ -96,7 +99,10 @@ class TestBuildOCI(TestCase):
         build_oci.run_build_command(
             ["echo", "hello world"], env={"FOO": "bar baz"})
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["echo", "hello world"], FOO="bar baz"),
+            RanBuildCommand(
+                ["echo", "hello world"],
+                FOO="bar baz",
+                cwd="/home/buildd/test-image")
             ]))
 
     def test_install_bzr(self):
@@ -296,7 +302,8 @@ class TestBuildOCI(TestCase):
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "/home/buildd/test-image"]),
+                 "/home/buildd/test-image"],
+                cwd="/home/buildd/test-image"),
             ]))
 
     def test_build_with_file(self):
@@ -313,7 +320,8 @@ class TestBuildOCI(TestCase):
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
                  "--file", "build-aux/Dockerfile",
-                 "/home/buildd/test-image"]),
+                 "/home/buildd/test-image"],
+                cwd="/home/buildd/test-image"),
             ]))
 
     def test_build_proxy(self):
@@ -331,7 +339,8 @@ class TestBuildOCI(TestCase):
                 ["docker", "build", "--no-cache",
                  "--build-arg", "http_proxy=http://proxy.example:3128/",
                  "--build-arg", "https_proxy=http://proxy.example:3128/",
-                 "--tag", "test-image", "/home/buildd/test-image"]),
+                 "--tag", "test-image", "/home/buildd/test-image"],
+                cwd="/home/buildd/test-image"),
             ]))
 
     def test_run_succeeds(self):
@@ -351,7 +360,8 @@ class TestBuildOCI(TestCase):
                 cwd="/home/buildd")),
             AnyMatch(RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "/home/buildd/test-image"])),
+                 "/home/buildd/test-image"],
+                cwd="/home/buildd/test-image")),
             ))
 
     def test_run_install_fails(self):
@@ -405,3 +415,39 @@ class TestBuildOCI(TestCase):
         build_oci.backend.build_path = self.useFixture(TempDir()).path
         build_oci.backend.run = FailBuild()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_oci.run())
+
+    def test_build_with_invalid_file_path_parent(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "../build-aux/Dockerfile",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
+
+    def test_build_with_invalid_file_path_absolute(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "/etc/Dockerfile",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
+
+    def test_build_with_invalid_file_path_symlink(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "Dockerfile",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.buildd_path = self.useFixture(TempDir()).path
+        os.symlink(
+            '/etc/hosts',
+            os.path.join(build_oci.buildd_path, 'Dockerfile'))
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)

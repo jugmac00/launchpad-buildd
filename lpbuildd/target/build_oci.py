@@ -25,6 +25,10 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
+class InvalidBuildFilePath(Exception):
+    pass
+
+
 class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                SnapStoreOperationMixin, Operation):
 
@@ -40,6 +44,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
     def __init__(self, args, parser):
         super(BuildOCI, self).__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
+        self.buildd_path = os.path.join("/home/buildd", self.args.name)
 
     def _add_docker_engine_proxy_settings(self):
         """Add systemd file for docker proxy settings."""
@@ -59,6 +64,14 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 systemd_file.flush()
                 self.backend.copy_in(systemd_file.name, file_path)
 
+    def _check_build_file_escape(self):
+        """Check the build file path doesn't escape the build directory."""
+        build_file_path = os.path.realpath(
+            os.path.join(self.buildd_path, self.args.build_file))
+        common_path = os.path.commonprefix((build_file_path, self.buildd_path))
+        if common_path != self.buildd_path:
+            raise InvalidBuildFilePath("Invalid build file path.")
+
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
 
@@ -71,7 +84,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         full_env["SHELL"] = "/bin/sh"
         if env:
             full_env.update(env)
-        return self.backend.run(args, env=full_env, **kwargs)
+        return self.backend.run(
+            args, cwd=self.buildd_path, env=full_env, **kwargs)
 
     def install(self):
         logger.info("Running install phase...")
@@ -106,9 +120,9 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                     ["--build-arg", "{}={}".format(var, self.args.proxy_url)])
         args.extend(["--tag", self.args.name])
         if self.args.build_file is not None:
+            self._check_build_file_escape()
             args.extend(["--file", self.args.build_file])
-        buildd_path = os.path.join("/home/buildd", self.args.name)
-        args.append(buildd_path)
+        args.append(self.buildd_path)
         self.run_build_command(args)
 
     def run(self):
