@@ -25,6 +25,10 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
+class InvalidBuildFilePath(Exception):
+    pass
+
+
 class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                SnapStoreOperationMixin, Operation):
 
@@ -65,8 +69,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         build_file_path = os.path.realpath(
             os.path.join(self.buildd_path, self.args.build_file))
         common_path = os.path.commonprefix((build_file_path, self.buildd_path))
-        if not common_path == self.buildd_path:
-            raise Exception("Invalid build file path.")
+        if common_path != self.buildd_path:
+            raise InvalidBuildFilePath("Invalid build file path.")
 
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
