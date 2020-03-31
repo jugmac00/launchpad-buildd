@@ -1,9 +1,8 @@
-launchpad-buildd (188) xenial; urgency=medium
+launchpad-buildd (188) UNRELEASED; urgency=medium
 
-  [ Tom Wardill ]
-  * Fix Dockerfile location passing.
+  * Fix cwd for OCI builds, allows Dockerfile parameter. 
 
-  - Tom Wardill <tom.wardill@canonical.com>  Tue, 31 Mar 2020 10:19:03 +0000
+ -- Tom Wardill <tom.wardill@canonical.com>  Tue, 31 Mar 2020 10:13:58 +0000
 
 launchpad-buildd (187) xenial; urgency=medium
 
