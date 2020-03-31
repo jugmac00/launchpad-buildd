@@ -40,6 +40,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
     def __init__(self, args, parser):
         super(BuildOCI, self).__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
+        self.buildd_path = os.path.join("/home/buildd", self.args.name)
 
     def _add_docker_engine_proxy_settings(self):
         """Add systemd file for docker proxy settings."""
@@ -71,7 +72,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         full_env["SHELL"] = "/bin/sh"
         if env:
             full_env.update(env)
-        return self.backend.run(args, env=full_env, **kwargs)
+        return self.backend.run(
+            args, cwd=self.buildd_path, env=full_env, **kwargs)
 
     def install(self):
         logger.info("Running install phase...")
@@ -99,7 +101,6 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
 
     def build(self):
         logger.info("Running build phase...")
-        buildd_path = os.path.join("/home/buildd", self.args.name)
         args = ["docker", "build", "--no-cache"]
         if self.args.proxy_url:
             for var in ("http_proxy", "https_proxy"):
@@ -107,9 +108,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                     ["--build-arg", "{}={}".format(var, self.args.proxy_url)])
         args.extend(["--tag", self.args.name])
         if self.args.build_file is not None:
-            build_file_path = os.path.join(buildd_path, self.args.build_file)
-            args.extend(["--file", build_file_path])
-        args.append(buildd_path)
+            args.extend(["--file", self.args.build_file])
+        args.append(self.buildd_path)
         self.run_build_command(args)
 
     def run(self):
