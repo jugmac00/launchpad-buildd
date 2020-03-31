@@ -25,9 +25,9 @@ from testtools.matchers import (
     )
 
 from lpbuildd.target.build_oci import (
+    InvalidBuildFilePath,
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
-    InvalidBuildFilePath,
     )
 from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakebuilder import FakeMethod
