@@ -27,6 +27,7 @@ from testtools.matchers import (
 from lpbuildd.target.build_oci import (
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
+    InvalidBuildFilePath,
     )
 from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakebuilder import FakeMethod
@@ -424,7 +425,7 @@ class TestBuildOCI(TestCase):
             ]
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
-        self.assertRaises(Exception, build_oci.build)
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
 
     def test_build_with_invalid_file_path_absolute(self):
         args = [
@@ -435,4 +436,18 @@ class TestBuildOCI(TestCase):
             ]
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
-        self.assertRaises(Exception, build_oci.build)
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
+
+    def test_build_with_invalid_file_path_symlink(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "Dockerfile",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.buildd_path = self.useFixture(TempDir()).path
+        os.symlink(
+            '/etc/hosts',
+            os.path.join(build_oci.buildd_path, 'Dockerfile'))
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
