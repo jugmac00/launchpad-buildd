@@ -1,3 +1,10 @@
+launchpad-buildd (188) xenial; urgency=medium
+
+  [ Tom Wardill ]
+  * Fix Dockerfile location passing.
+
+  - Tom Wardill <tom.wardill@canonical.com>  Tue, 31 Mar 2020 10:19:03 +0000
+
 launchpad-buildd (187) xenial; urgency=medium
 
   [ Colin Watson ]

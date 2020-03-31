@@ -312,7 +312,7 @@ class TestBuildOCI(TestCase):
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "--file", "build-aux/Dockerfile",
+                 "--file", "/home/buildd/test-image/build-aux/Dockerfile",
                  "/home/buildd/test-image"]),
             ]))
 
