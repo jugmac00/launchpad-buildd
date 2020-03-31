@@ -60,6 +60,14 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 systemd_file.flush()
                 self.backend.copy_in(systemd_file.name, file_path)
 
+    def _check_build_file_escape(self):
+        """Check the build file path doesn't escape the build directory."""
+        build_file_path = os.path.realpath(
+            os.path.join(self.buildd_path, self.args.build_file))
+        common_path = os.path.commonprefix((build_file_path, self.buildd_path))
+        if not common_path == self.buildd_path:
+            raise Exception("Invalid build file path.")
+
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
 
@@ -108,6 +116,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                     ["--build-arg", "{}={}".format(var, self.args.proxy_url)])
         args.extend(["--tag", self.args.name])
         if self.args.build_file is not None:
+            self._check_build_file_escape()
             args.extend(["--file", self.args.build_file])
         args.append(self.buildd_path)
         self.run_build_command(args)

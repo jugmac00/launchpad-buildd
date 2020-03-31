@@ -414,3 +414,25 @@ class TestBuildOCI(TestCase):
         build_oci.backend.build_path = self.useFixture(TempDir()).path
         build_oci.backend.run = FailBuild()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_oci.run())
+
+    def test_build_with_invalid_file_path_parent(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "../build-aux/Dockerfile",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        self.assertRaises(Exception, build_oci.build)
+
+    def test_build_with_invalid_file_path_absolute(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "/etc/Dockerfile",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        self.assertRaises(Exception, build_oci.build)
