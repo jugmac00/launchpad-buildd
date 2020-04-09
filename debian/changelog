@@ -1,8 +1,8 @@
-launchpad-buildd (189) UNRELEASED; urgency=medium
+launchpad-buildd (189) xenial; urgency=medium
 
   * Fix closing tar files in OCI builds
 
- -- Tom Wardill <tom.wardill@canonical.com>  Wed, 08 Apr 2020 16:50:47 +0000
+ -- Tom Wardill <tom.wardill@canonical.com>  Thu, 09 Apr 2020 10:38:47 +0000
 
 launchpad-buildd (188) xenial; urgency=medium
 
