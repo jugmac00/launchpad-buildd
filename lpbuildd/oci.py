@@ -189,6 +189,9 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                     tar.extract(file, extract_path)
         except Exception as e:
             print(e)
+        finally:
+            if directory_tar is not None:
+                directory_tar.close()
 
         # We need these mapping files
         sha_directory = tempfile.mkdtemp()
