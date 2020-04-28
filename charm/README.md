@@ -44,7 +44,7 @@ make deploy-with-packages
 
 Either way, this should eventually give you a running builder.  Find out its
 host name (e.g. `juju-XXXXXX-0.lxd`) and [add it to your local Launchpad
-instance](https://launchpad.dev/builders/+new) (e.g.
+instance](https://launchpad.test/builders/+new) (e.g.
 `http://juju-XXXXXX-0.lxd:8221/`).
 
 # Notes
