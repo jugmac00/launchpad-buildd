@@ -29,6 +29,8 @@ Build-Depends: apt-utils,
 # build-time pybuild fails if it's not available.
                python-ws4py,
                python-zope.interface,
+Vcs-Git: https://git.launchpad.net/launchpad-buildd
+Vcs-Browser: https://git.launchpad.net/launchpad-buildd
 
 Package: launchpad-buildd
 Section: misc
