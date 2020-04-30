@@ -1,6 +1,7 @@
 launchpad-buildd (190) UNRELEASED; urgency=medium
 
   * Switch to git; add Vcs-* fields.
+  * Always call Resource.putChild with path as bytes.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 

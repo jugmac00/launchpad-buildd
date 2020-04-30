@@ -55,8 +55,8 @@ builderService = service.IServiceCollection(application)
 builder.builder.service = builderService
 
 root = resource.Resource()
-root.putChild('rpc', builder)
-root.putChild('filecache', static.File(conf.get('slave', 'filecache')))
+root.putChild(b'rpc', builder)
+root.putChild(b'filecache', static.File(conf.get('slave', 'filecache')))
 buildersite = server.Site(root)
 
 strports.service("tcp:%s" % builder.builder._config.get("slave", "bindport"),
