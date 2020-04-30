@@ -15,7 +15,6 @@ from fixtures import (
     )
 import six
 from systemfixtures import (
-    FakeFilesystem,
     FakeProcesses,
     FakeTime,
     )
@@ -25,6 +24,7 @@ from testtools.matchers import DirContains
 from lpbuildd.target.backend import BackendException
 from lpbuildd.target.chroot import Chroot
 from lpbuildd.target.tests.testfixtures import (
+    FakeFilesystem,
     KillFixture,
     SudoUmount,
     )
@@ -317,6 +317,7 @@ class TestChroot(TestCase):
         fs_fixture.add("/expected")
         os.makedirs("/expected/home/build-1/chroot-autobuild")
         fs_fixture.add("/proc")
+        fs_fixture.remove("/proc/self/fd")
         os.mkdir("/proc")
         os.mkdir("/proc/1")
         os.symlink("/", "/proc/1/root")
@@ -345,6 +346,7 @@ class TestChroot(TestCase):
     def _make_initial_proc_mounts(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/proc")
+        fs_fixture.remove("/proc/self/fd")
         os.mkdir("/proc")
         with open("/proc/mounts", "w") as mounts_file:
             mounts_file.write(dedent("""\
