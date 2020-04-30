@@ -173,7 +173,7 @@ class TestOCIBuildManagerIteration(TestCase):
                 "layer_id": "layer-2"
             }
         }]
-        self.assertEqual(digests_contents, json.dumps(digests_expected))
+        self.assertEqual(digests_expected, json.loads(digests_contents))
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
@@ -256,7 +256,7 @@ class TestOCIBuildManagerIteration(TestCase):
                 "layer_id": "layer-2"
             }
         }]
-        self.assertEqual(digests_contents, json.dumps(digests_expected))
+        self.assertEqual(digests_expected, json.loads(digests_contents))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
