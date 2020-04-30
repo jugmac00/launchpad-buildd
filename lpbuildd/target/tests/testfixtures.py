@@ -4,9 +4,11 @@
 __metaclass__ = type
 
 import argparse
+import os
 import shutil
 
 from fixtures import MonkeyPatch
+from systemfixtures import FakeFilesystem as _FakeFilesystem
 
 
 class SudoUmount:
@@ -68,3 +70,34 @@ class KillFixture(MonkeyPatch):
     @property
     def kills(self):
         return self.new_value.kills
+
+
+class FakeFilesystem(_FakeFilesystem):
+    """A FakeFilesystem that can exclude subpaths.
+
+    Adding /proc to the overlay filesystem behaves badly on Python 3,
+    because FakeFilesystem uses /proc/self/fd for its own purposes when
+    dealing with file-descriptor-based operations.  Being able to remove
+    /proc/self/fd lets us work around this.
+    """
+
+    def _setUp(self):
+        super(FakeFilesystem, self)._setUp()
+        self._excludes = set()
+
+    def remove(self, path):
+        """Remove a path from the overlay filesystem.
+
+        Any filesystem operation involving this path or any sub-paths of it
+        will not be redirected, even if one of its parent directories is in
+        the overlay filesystem.
+        """
+        if not path.startswith(os.sep):
+            raise ValueError("Non-absolute path '{}'".format(path))
+        self._excludes.add(path.rstrip(os.sep))
+
+    def _is_fake_path(self, path, *args, **kwargs):
+        for prefix in self._excludes:
+            if path.startswith(prefix):
+                return False
+        return super(FakeFilesystem, self)._is_fake_path(path, *args, **kwargs)
