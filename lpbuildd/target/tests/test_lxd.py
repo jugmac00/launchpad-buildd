@@ -91,7 +91,7 @@ class FakeHostname:
         parser.add_argument("--fqdn", action="store_true", default=False)
         args = parser.parse_args(proc_args["args"][1:])
         output = self.fqdn if args.fqdn else self.hostname
-        return {"stdout": io.BytesIO((output + "\n").encode("UTF-8"))}
+        return {"stdout": io.StringIO(output + u"\n")}
 
 
 class FakeFilesystem(_FakeFilesystem):

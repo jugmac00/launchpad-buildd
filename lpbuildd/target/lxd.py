@@ -379,12 +379,12 @@ class LXD(Backend):
             ["hostname"], universal_newlines=True).rstrip("\n")
         fqdn = subprocess.check_output(
             ["hostname", "--fqdn"], universal_newlines=True).rstrip("\n")
-        with tempfile.NamedTemporaryFile(mode="w+b") as hosts_file:
+        with tempfile.NamedTemporaryFile(mode="w+") as hosts_file:
             try:
                 self.copy_out("/etc/hosts", hosts_file.name)
             except LXDException:
                 hosts_file.seek(0, os.SEEK_SET)
-                hosts_file.write(fallback_hosts.encode("UTF-8"))
+                hosts_file.write(fallback_hosts)
             hosts_file.seek(0, os.SEEK_END)
             print("\n127.0.1.1\t%s %s" % (fqdn, hostname), file=hosts_file)
             hosts_file.flush()

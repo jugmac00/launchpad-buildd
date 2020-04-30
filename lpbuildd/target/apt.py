@@ -33,14 +33,14 @@ class OverrideSourcesList(Operation):
 
     def run(self):
         logger.info("Overriding sources.list in build-%s", self.args.build_id)
-        with tempfile.NamedTemporaryFile() as sources_list:
+        with tempfile.NamedTemporaryFile(mode="w+") as sources_list:
             for archive in self.args.archives:
                 print(archive, file=sources_list)
             sources_list.flush()
             os.fchmod(sources_list.fileno(), 0o644)
             self.backend.copy_in(sources_list.name, "/etc/apt/sources.list")
         if self.args.apt_proxy_url is not None:
-            with tempfile.NamedTemporaryFile() as apt_proxy_conf:
+            with tempfile.NamedTemporaryFile(mode="w+") as apt_proxy_conf:
                 print(
                     'Acquire::http::Proxy "{}";'.format(
                         self.args.apt_proxy_url),
