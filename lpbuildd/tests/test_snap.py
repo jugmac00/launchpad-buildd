@@ -392,8 +392,8 @@ class TestSnapBuildManagerIteration(TestCase):
 
     def startFakeRemoteEndpoint(self):
         remote_endpoint = resource.Resource()
-        remote_endpoint.putChild("a", static.Data("a" * 1024, "text/plain"))
-        remote_endpoint.putChild("b", static.Data("b" * 65536, "text/plain"))
+        remote_endpoint.putChild(b"a", static.Data(b"a" * 1024, "text/plain"))
+        remote_endpoint.putChild(b"b", static.Data(b"b" * 65536, "text/plain"))
         remote_endpoint_listener = reactor.listenTCP(
             0, server.Site(remote_endpoint))
         self.addCleanup(remote_endpoint_listener.stopListening)
