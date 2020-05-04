@@ -6,10 +6,6 @@ __metaclass__ = type
 import io
 import json
 import os
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 
 from fixtures import (
     EnvironmentVariable,
