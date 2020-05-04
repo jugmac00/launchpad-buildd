@@ -225,10 +225,13 @@ class ConfigFile:
 
     def __init__(self, file_or_name):
         if isinstance(file_or_name, str):
-            with open(file_or_name) as conf_file:
-                self.content = conf_file.read()
+            with open(file_or_name, "rb") as conf_file:
+                content = conf_file.read()
         else:
-            self.content = file_or_name.read()
+            content = file_or_name.read()
+        if isinstance(content, bytes):
+            content = content.decode("UTF-8", "replace")
+        self.content = content
 
     def _stripQuotes(self, identifier):
         """Strip surrounding quotes from `identifier`, if present.
