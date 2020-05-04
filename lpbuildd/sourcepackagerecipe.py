@@ -105,8 +105,8 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         elif retcode == RETCODE_FAILURE_INSTALL_BUILD_DEPS:
             if not self.alreadyfailed:
                 rx = (
-                    'The following packages have unmet dependencies:\n'
-                    '.*: Depends: ([^ ]*( \([^)]*\))?)')
+                    r'The following packages have unmet dependencies:\n'
+                    r'.*: Depends: ([^ ]*( \([^)]*\))?)')
                 _, mo = self.searchLogContents([[rx, re.M]])
                 if mo:
                     self._builder.depFail(mo.group(1))

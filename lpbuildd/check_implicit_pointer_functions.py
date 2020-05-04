@@ -38,19 +38,19 @@ import re
 import sys
 
 implicit_pattern = re.compile(
-    "([^:]*):(\d+):(\d+:)? warning: implicit declaration "
-    "of function [`']([^']*)'")
+    r"([^:]*):(\d+):(\d+:)? warning: implicit declaration "
+    r"of function [`']([^']*)'")
 pointer_pattern = re.compile(
-    "([^:]*):(\d+):(\d+:)? warning: "
-    + "("
-    +  "(assignment"
-    +  "|initialization"
-    +  "|return"
-    +  "|passing arg \d+ of `[^']*'"
-    +  "|passing arg \d+ of pointer to function"
-    +  ") makes pointer from integer without a cast"
-    + "|"
-    + "cast to pointer from integer of different size)")
+    r"([^:]*):(\d+):(\d+:)? warning: "
+    r"("
+     r"(assignment"
+     r"|initialization"
+     r"|return"
+     r"|passing arg \d+ of `[^']*'"
+     r"|passing arg \d+ of pointer to function"
+     r") makes pointer from integer without a cast"
+    r"|"
+    r"cast to pointer from integer of different size)")
 
 def main():
     last_implicit_filename = ""

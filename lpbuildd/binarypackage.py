@@ -34,33 +34,33 @@ class SBuildExitCodes:
 
 
 APT_MISSING_DEP_PATTERNS = [
-    'but [^ ]* is to be installed',
-    'but [^ ]* is installed',
-    'but it is not installable',
-    'but it is a virtual package',
+    r'but [^ ]* is to be installed',
+    r'but [^ ]* is installed',
+    r'but it is not installable',
+    r'but it is a virtual package',
     ]
 
 
 APT_DUBIOUS_DEP_PATTERNS = [
-    'but it is not installed',
-    'but it is not going to be installed',
+    r'but it is not installed',
+    r'but it is not going to be installed',
     ]
 
 
 class BuildLogRegexes:
     """Build log regexes for performing actions based on regexes, and extracting dependencies for auto dep-waits"""
     GIVENBACK = [
-        ("^E: There are problems and -y was used without --force-yes"),
+        (r"^E: There are problems and -y was used without --force-yes"),
         ]
     MAYBEDEPFAIL = [
-        'The following packages have unmet dependencies:\n'
-        '.* Depends: [^ ]*( \([^)]*\))? (%s)\n'
-        % '|'.join(APT_DUBIOUS_DEP_PATTERNS),
+        r'The following packages have unmet dependencies:\n'
+        r'.* Depends: [^ ]*( \([^)]*\))? (%s)\n'
+        % r'|'.join(APT_DUBIOUS_DEP_PATTERNS),
         ]
     DEPFAIL = {
-        'The following packages have unmet dependencies:\n'
-        '.* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
-        % '|'.join(APT_MISSING_DEP_PATTERNS): "\g<p>",
+        r'The following packages have unmet dependencies:\n'
+        r'.* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
+        % r'|'.join(APT_MISSING_DEP_PATTERNS): r"\g<p>",
         }
 
 
@@ -347,7 +347,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
             return self.deferGatherResults()
 
         log_patterns = []
-        stop_patterns = [["^Toolchain package versions:", re.M]]
+        stop_patterns = [[r"^Toolchain package versions:", re.M]]
 
         # We don't distinguish attempted and failed.
         if success == SBuildExitCodes.ATTEMPTED:
@@ -365,7 +365,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 except IOError:
                     pass
                 tail = log.read(4096)
-            if re.search("^Fail-Stage: install-deps$", tail, re.M):
+            if re.search(r"^Fail-Stage: install-deps$", tail, re.M):
                 for rx in BuildLogRegexes.MAYBEDEPFAIL:
                     log_patterns.append([rx, re.M | re.S])
                 for rx in BuildLogRegexes.DEPFAIL:
