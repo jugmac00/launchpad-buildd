@@ -11,6 +11,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Treat build logs as binary files.
   * Treat build output files as binary files.
   * Treat intltool-related files as binary files.
+  * Fix bytes/text handling in backends and their tests.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 

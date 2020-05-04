@@ -215,7 +215,7 @@ class TestLXD(TestCase):
         with io.BytesIO(client.images.create.call_args[0][0]) as f:
             with tarfile.open(fileobj=f) as tar:
                 with closing(tar.extractfile("rootfs/bin/hello")) as hello:
-                    self.assertEqual("hello\n", hello.read())
+                    self.assertEqual(b"hello\n", hello.read())
         image.add_alias.assert_called_once_with(
             "lp-xenial-amd64", "lp-xenial-amd64")
 
@@ -245,7 +245,7 @@ class TestLXD(TestCase):
         with io.BytesIO(client.images.create.call_args[0][0]) as f:
             with tarfile.open(fileobj=f) as tar:
                 with closing(tar.extractfile("rootfs/bin/hello")) as hello:
-                    self.assertEqual("hello\n", hello.read())
+                    self.assertEqual(b"hello\n", hello.read())
         image.add_alias.assert_called_once_with(
             "lp-xenial-amd64", "lp-xenial-amd64")
 
@@ -271,7 +271,7 @@ class TestLXD(TestCase):
         with io.BytesIO(client.images.create.call_args[0][0]) as f:
             with tarfile.open(fileobj=f) as tar:
                 with closing(tar.extractfile("rootfs/bin/hello")) as hello:
-                    self.assertEqual("hello\n", hello.read())
+                    self.assertEqual(b"hello\n", hello.read())
         image.add_alias.assert_called_once_with(
             "lp-xenial-amd64", "lp-xenial-amd64")
 
@@ -573,14 +573,14 @@ class TestLXD(TestCase):
         files_api = container.api.files
         files_api._api_endpoint = "/1.0/containers/lp-trusty-amd64/files"
         files_api.session.get.side_effect = FakeSessionGet({
-            "/etc/init/mounted-dev.conf": dedent("""\
+            "/etc/init/mounted-dev.conf": [dedent("""\
                 start on mounted MOUNTPOINT=/dev
                 script
                     [ -e /dev/shm ] || ln -s /run/shm /dev/shm
                     /sbin/MAKEDEV std fd ppp tun
                 end script
                 task
-                """)})
+                """).encode("UTF-8")]})
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
@@ -618,7 +618,7 @@ class TestLXD(TestCase):
         processes_fixture.add(
             lambda _: {"stdout": io.BytesIO(b"hello\n")}, name="lxc")
         self.assertEqual(
-            "hello\n",
+            b"hello\n",
             LXD("1", "xenial", "amd64").run(
                 ["echo", "hello"], get_output=True))
 
@@ -827,9 +827,9 @@ class TestLXD(TestCase):
     def test_is_package_available(self):
         processes_fixture = self.useFixture(FakeProcesses())
         test_proc_infos = iter([
-            {"stdout": io.BytesIO(b"Package: snapd\n")},
+            {"stdout": io.StringIO(u"Package: snapd\n")},
             {"returncode": 100},
-            {"stderr": io.BytesIO(b"N: No packages found\n")},
+            {"stderr": io.StringIO(u"N: No packages found\n")},
             ])
         processes_fixture.add(lambda _: next(test_proc_infos), name="lxc")
         self.assertTrue(

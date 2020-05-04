@@ -105,7 +105,7 @@ class TestChroot(TestCase):
         processes_fixture.add(
             lambda _: {"stdout": io.BytesIO(b"hello\n")}, name="sudo")
         self.assertEqual(
-            "hello\n",
+            b"hello\n",
             Chroot("1", "xenial", "amd64").run(
                 ["echo", "hello"], get_output=True))
 
@@ -289,9 +289,9 @@ class TestChroot(TestCase):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
         test_proc_infos = iter([
-            {"stdout": io.BytesIO(b"Package: snapd\n")},
+            {"stdout": io.StringIO(u"Package: snapd\n")},
             {"returncode": 100},
-            {"stderr": io.BytesIO(b"N: No packages found\n")},
+            {"stderr": io.StringIO(u"N: No packages found\n")},
             ])
         processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
         self.assertTrue(
