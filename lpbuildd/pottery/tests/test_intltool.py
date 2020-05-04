@@ -5,11 +5,11 @@ __metaclass__ = type
 
 import errno
 import os
-from StringIO import StringIO
 import tarfile
 from textwrap import dedent
 
 from fixtures import TempDir
+from six import StringIO
 from testtools import TestCase
 from testtools.matchers import (
     Equals,

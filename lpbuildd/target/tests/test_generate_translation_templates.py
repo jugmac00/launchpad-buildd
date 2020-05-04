@@ -111,7 +111,7 @@ class TestGenerateTranslationTemplates(TestCase):
         self.useFixture(EnvironmentVariable('BZR_EMAIL'))
         self.useFixture(EnvironmentVariable('EMAIL'))
 
-        marker_text = "Ceci n'est pas cet branch."
+        marker_text = b"Ceci n'est pas cet branch."
         branch_url = self._createBranch({'marker.txt': marker_text})
 
         args = [
@@ -123,7 +123,7 @@ class TestGenerateTranslationTemplates(TestCase):
         generator._getBranch()
 
         marker_path = os.path.join(generator.branch_dir, 'marker.txt')
-        with open(marker_path) as marker_file:
+        with open(marker_path, "rb") as marker_file:
             self.assertEqual(marker_text, marker_file.read())
 
     def test_templates_tarball(self):
@@ -163,9 +163,9 @@ class TestGenerateTranslationTemplates(TestCase):
             branch_url, self.result_name,
             ]
         generator = parse_args(args=args).operation
-        generator.backend.add_file(os.path.join(po_dir, "POTFILES.in"), "")
+        generator.backend.add_file(os.path.join(po_dir, "POTFILES.in"), b"")
         generator.backend.add_file(
-            os.path.join(po_dir, "Makevars"), "DOMAIN = test\n")
+            os.path.join(po_dir, "Makevars"), b"DOMAIN = test\n")
         generator.run()
         self.assertThat(generator.backend.run.calls, MatchesListwise([
             MatchesCall(["apt-get", "-y", "install", "bzr", "intltool"]),
