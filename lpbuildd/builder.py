@@ -36,24 +36,24 @@ from lpbuildd.util import shell_escape
 devnull = open("/dev/null", "r")
 
 
-def _sanitizeURLs(text_seq):
-    """A generator that deletes URL passwords from a string sequence.
+def _sanitizeURLs(bytes_seq):
+    """A generator that deletes URL passwords from a bytes sequence.
 
     This generator removes user/password data from URLs if embedded
     in the latter as follows: scheme://user:passwd@netloc/path.
 
-    :param text_seq: A sequence of strings (that may contain URLs).
+    :param bytes_seq: A sequence of byte strings (that may contain URLs).
     :return: A (sanitized) line stripped of authentication credentials.
     """
     # This regular expression will be used to remove authentication
     # credentials from URLs.
-    password_re = re.compile(r'://([^:]+:[^@]+@)(\S+)')
+    password_re = re.compile(br'://([^:]+:[^@]+@)(\S+)')
     # Snap proxy passwords are UUIDs.
-    snap_proxy_auth_re = re.compile(r',proxyauth=[^:]+:[A-Za-z0-9-]+')
+    snap_proxy_auth_re = re.compile(br',proxyauth=[^:]+:[A-Za-z0-9-]+')
 
-    for line in text_seq:
-        sanitized_line = password_re.sub(r'://\2', line)
-        sanitized_line = snap_proxy_auth_re.sub('', sanitized_line)
+    for line in bytes_seq:
+        sanitized_line = password_re.sub(br'://\2', line)
+        sanitized_line = snap_proxy_auth_re.sub(b'', sanitized_line)
         yield sanitized_line
 
 
@@ -512,8 +512,12 @@ class Builder(object):
     def log(self, data):
         """Write the provided data to the log."""
         if self._log is not None:
-            self._log.write(data)
+            data_bytes = (
+                data if isinstance(data, bytes) else data.encode("UTF-8"))
+            self._log.write(data_bytes)
             self._log.flush()
+        if not isinstance(data, str):
+            data = data.decode("UTF-8", "replace")
         if data.endswith("\n"):
             data = data[:-1]
         log.msg("Build log: " + data)
@@ -522,27 +526,27 @@ class Builder(object):
         """Return the tail of the log.
 
         If the buildlog is not yet opened for writing (self._log is None),
-        return a empty string.
+        return an empty bytes object.
 
         It safely tries to open the 'buildlog', if it doesn't exist, due to
         job cleanup or buildlog sanitization race-conditions, it also returns
-        an empty string.
+        an empty bytes object.
 
-        When the 'buildlog' is present it return up to 2 KiB character of
-        the end of the file.
+        When the 'buildlog' is present it returns up to 2 KiB bytes of the
+        end of the file.
 
         The returned content will be 'sanitized', see `_sanitizeURLs` for
         further information.
         """
         if self._log is None:
-            return ""
+            return b""
 
         rlog = None
         try:
             try:
-                rlog = open(self.cachePath("buildlog"), "r")
+                rlog = open(self.cachePath("buildlog"), "rb")
             except IOError:
-                ret = ""
+                ret = b""
             else:
                 # We rely on good OS practices that keep the file handler
                 # usable once it's opened. So, if open() is ok, a subsequent
@@ -567,7 +571,7 @@ class Builder(object):
             # excerpt to be scrubbed) because it may be cut off thus
             # thwarting the detection of embedded passwords.
             clean_content_iter = _sanitizeURLs(log_lines[1:])
-            ret = '\n'.join(clean_content_iter)
+            ret = b'\n'.join(clean_content_iter)
 
         return ret
 
@@ -584,7 +588,7 @@ class Builder(object):
         """Empty the log and start again."""
         if self._log is not None:
             self._log.close()
-        self._log = open(self.cachePath("buildlog"), "w")
+        self._log = open(self.cachePath("buildlog"), "wb")
 
     def builderFail(self):
         """Cease building because the builder has a problem."""
@@ -667,14 +671,14 @@ class Builder(object):
         os.rename(log_path, unsanitized_path)
 
         # Open the unsanitized buildlog file for reading.
-        unsanitized_file = open(unsanitized_path)
+        unsanitized_file = open(unsanitized_path, 'rb')
 
         # Open the file that will hold the resulting, sanitized buildlog
         # content for writing.
         sanitized_file = None
 
         try:
-            sanitized_file = open(log_path, 'w')
+            sanitized_file = open(log_path, 'wb')
 
             # Scrub the buildlog file line by line
             clean_content_iter = _sanitizeURLs(unsanitized_file)
