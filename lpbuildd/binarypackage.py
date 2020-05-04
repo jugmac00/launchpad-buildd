@@ -359,12 +359,12 @@ class BinaryPackageBuildManager(DebianBuildManager):
             # Check the last 4KiB for the Fail-Stage. If it failed
             # during install-deps, search for the missing dependency
             # string.
-            with open(os.path.join(self._cachepath, "buildlog")) as log:
+            with open(os.path.join(self._cachepath, "buildlog"), "rb") as log:
                 try:
                     log.seek(-4096, os.SEEK_END)
                 except IOError:
                     pass
-                tail = log.read(4096)
+                tail = log.read(4096).decode("UTF-8", "replace")
             if re.search(r"^Fail-Stage: install-deps$", tail, re.M):
                 for rx in BuildLogRegexes.MAYBEDEPFAIL:
                     log_patterns.append([rx, re.M | re.S])
@@ -389,9 +389,11 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     success = SBuildExitCodes.FAILED
             elif rx in BuildLogRegexes.DEPFAIL:
                 # A depwait match forces depwait.
-                missing_dep = mo.expand(BuildLogRegexes.DEPFAIL[rx])
+                missing_dep = mo.expand(
+                    BuildLogRegexes.DEPFAIL[rx].encode("UTF-8"))
                 missing_dep = self.stripDependencies(
-                    PkgRelation.parse_relations(missing_dep))
+                    PkgRelation.parse_relations(
+                        missing_dep.decode("UTF-8", "replace")))
             else:
                 # Otherwise it was a givenback pattern, so leave it
                 # in givenback.

@@ -109,9 +109,10 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
                     r'.*: Depends: ([^ ]*( \([^)]*\))?)')
                 _, mo = self.searchLogContents([[rx, re.M]])
                 if mo:
-                    self._builder.depFail(mo.group(1))
+                    missing_dep = mo.group(1).decode("UTF-8", "replace")
+                    self._builder.depFail(missing_dep)
                     print("Returning build status: DEPFAIL")
-                    print("Dependencies: " + mo.group(1))
+                    print("Dependencies: " + missing_dep)
                 else:
                     print("Returning build status: Build failed")
                     self._builder.buildFail()

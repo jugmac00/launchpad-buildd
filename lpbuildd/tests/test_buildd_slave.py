@@ -112,12 +112,12 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # behaviour because the BuildManager's 'is_archive_private'
         # property is initialized to False).
         self.slave.manager.is_archive_private = False
-        unsanitized = self.slave.getLogTail().splitlines()
+        unsanitized = self.slave.getLogTail().decode('UTF-8').splitlines()
 
         # Make the builder believe we are building in a private archive to
         # obtain the scrubbed log tail output.
         self.slave.manager.is_archive_private = True
-        clean = self.slave.getLogTail().splitlines()
+        clean = self.slave.getLogTail().decode('UTF-8').splitlines()
 
         # Get the differences ..
         differences = '\n'.join(difflib.unified_diff(unsanitized, clean))

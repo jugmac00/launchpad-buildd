@@ -237,29 +237,27 @@ class DebianBuildManager(BuildManager):
         """
         chunk_size = 256 * 1024
         regexes = [
-            re.compile(pattern, flags)
+            re.compile(pattern.encode("UTF-8"), flags)
             for pattern, flags in patterns_and_flags]
         stop_regexes = [
-            re.compile(pattern, flags)
+            re.compile(pattern.encode("UTF-8"), flags)
             for pattern, flags in stop_patterns_and_flags]
-        buildlog = open(os.path.join(self._cachepath, "buildlog"))
-        try:
-            window = ""
+        buildlog_path = os.path.join(self._cachepath, "buildlog")
+        with open(buildlog_path, "rb") as buildlog:
+            window = b""
             chunk = buildlog.read(chunk_size)
             while chunk:
                 window += chunk
                 for regex in regexes:
                     match = regex.search(window)
                     if match is not None:
-                        return regex.pattern, match
+                        return regex.pattern.decode("UTF-8"), match
                 for regex in stop_regexes:
                     if regex.search(window) is not None:
                         return None, None
                 if len(window) > chunk_size:
                     window = window[chunk_size:]
                 chunk = buildlog.read(chunk_size)
-        finally:
-            buildlog.close()
         return None, None
 
     def iterate_SOURCES(self, success):
