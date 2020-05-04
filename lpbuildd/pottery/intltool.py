@@ -255,7 +255,7 @@ class ConfigFile:
     def getVariable(self, name):
         """Search the file for a variable definition with this name."""
         pattern = re.compile(
-            "^%s[ \t]*=[ \t]*([^\s]*)" % re.escape(name), re.M)
+            r"^%s[ \t]*=[ \t]*([^\s]*)" % re.escape(name), re.M)
         result = pattern.search(self.content)
         if result is None:
             return None
@@ -264,7 +264,7 @@ class ConfigFile:
     def getFunctionParams(self, name):
         """Search file for a function call with this name, return parameters.
         """
-        pattern = re.compile("^%s\(([^)]*)\)" % re.escape(name), re.M)
+        pattern = re.compile(r"^%s\(([^)]*)\)" % re.escape(name), re.M)
         result = pattern.search(self.content)
         if result is None:
             return None
@@ -288,8 +288,8 @@ class Substitution(object):
     about the substitution style that is being used.
     """
 
-    autoconf_pattern = re.compile("@([^@]+)@")
-    makefile_pattern = re.compile("\$\(?([^\s\)]+)\)?")
+    autoconf_pattern = re.compile(r"@([^@]+)@")
+    makefile_pattern = re.compile(r"\$\(?([^\s\)]+)\)?")
 
     @staticmethod
     def get(variabletext):
