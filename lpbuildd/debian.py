@@ -7,6 +7,7 @@
 __metaclass__ = type
 
 import base64
+import io
 import os
 import re
 import signal
@@ -119,13 +120,10 @@ class DebianBuildManager(BuildManager):
         path = self.getChangesFilename()
         self._builder.addWaitingFile(path)
 
-        chfile = open(path, "r")
-        try:
+        with io.open(path, "r", errors="replace") as chfile:
             for fn in self._parseChangesFile(chfile):
                 self._builder.addWaitingFile(
                     get_build_path(self.home, self._buildid, fn))
-        finally:
-            chfile.close()
 
     def deferGatherResults(self):
         """Gather the results of the build in a thread."""
