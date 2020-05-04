@@ -434,10 +434,10 @@ class Builder(object):
                     extra_info = 'Error accessing Librarian: %s' % info
                     self.log(extra_info)
                 else:
-                    of = open(cachefile + '.tmp', "w")
+                    of = open(cachefile + '.tmp', "wb")
                     # Upped for great justice to 256k
                     check_sum = hashlib.sha1()
-                    for chunk in iter(lambda: f.read(256*1024), ''):
+                    for chunk in iter(lambda: f.read(256*1024), b''):
                         of.write(chunk)
                         check_sum.update(chunk)
                     of.close()
@@ -453,12 +453,12 @@ class Builder(object):
 
     def storeFile(self, path):
         """Store the content of the provided path in the file cache."""
-        f = open(path)
+        f = open(path, "rb")
         tmppath = self.cachePath("storeFile.tmp")
-        of = open(tmppath, "w")
+        of = open(tmppath, "wb")
         try:
             sha1 = hashlib.sha1()
-            for chunk in iter(lambda: f.read(256*1024), ''):
+            for chunk in iter(lambda: f.read(256*1024), b''):
                 sha1.update(chunk)
                 of.write(chunk)
             sha1sum = sha1.hexdigest()
