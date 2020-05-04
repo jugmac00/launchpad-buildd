@@ -7,6 +7,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Adjust tests to avoid making assumptions about dict iteration order.
   * Open temporary files in text mode in more cases.
   * Ensure that regex patterns with \-escapes are raw strings.
+  * Adjust X-LXD-mode header construction for Python 3.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 

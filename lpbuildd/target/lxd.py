@@ -563,7 +563,10 @@ class LXD(Backend):
             headers = {
                 "X-LXD-uid": "0",
                 "X-LXD-gid": "0",
-                "X-LXD-mode": "%#o" % mode,
+                # Go (and hence LXD) only supports 0o prefixes for octal
+                # numbers as of Go 1.13, and it's not clear that we can
+                # assume this.  Use plain 0 prefixes instead.
+                "X-LXD-mode": "0%o" % mode if mode else "0",
                 }
             try:
                 container.api.files.post(
