@@ -170,8 +170,8 @@ class RecipeBuilder:
             # internally, since that only handles real tag files and not the
             # slightly more permissive syntax of debian/control which also
             # allows comments.
-            return Deb822.iter_paragraphs(
-                control_file, use_apt_pkg=False).next()
+            return next(Deb822.iter_paragraphs(
+                control_file, use_apt_pkg=False))
 
     def makeDummyDsc(self, package):
         control = self.getSourceControl()
