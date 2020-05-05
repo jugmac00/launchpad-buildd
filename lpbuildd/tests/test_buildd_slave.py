@@ -18,11 +18,13 @@ __all__ = ['LaunchpadBuilddSlaveTests']
 import difflib
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 
 from six.moves.urllib.request import HTTPBasicAuthHandler
 from six.moves.xmlrpc_client import ServerProxy
+import twisted
 
 from lpbuildd.tests.harness import (
     BuilddSlaveTestSetup,
@@ -213,6 +215,10 @@ class XMLRPCBuildDSlaveTests(unittest.TestCase):
         self.slave.tearDown()
         super(XMLRPCBuildDSlaveTests, self).tearDown()
 
+    @unittest.skipIf(
+        sys.version >= '3' and
+        (twisted.version.major, twisted.version.minor) < (16, 4),
+        'twistd fails to daemonise on Python 3 before Twisted 16.4.0')
     def test_build_unknown_builder(self):
         # If a bogus builder name is passed into build, it returns an
         # appropriate error message and not just 'None'.
