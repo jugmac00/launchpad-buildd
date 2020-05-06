@@ -126,7 +126,7 @@ class BuildManager(object):
         if reactor is None:
             reactor = default_reactor
         self._reactor = reactor
-        self._sharepath = builder._config.get("slave", "sharepath")
+        self._sharepath = builder._config.get("builder", "sharepath")
         self._bin = os.path.join(self._sharepath, "bin")
         self._preppath = os.path.join(self._bin, "builder-prep")
         self._intargetpath = os.path.join(self._bin, "in-target")
@@ -371,7 +371,7 @@ class Builder(object):
         object.__init__(self)
         self._config = config
         self.builderstatus = BuilderStatus.IDLE
-        self._cachepath = self._config.get("slave","filecache")
+        self._cachepath = self._config.get("builder", "filecache")
         self.buildstatus = BuildStatus.OK
         self.waitingfiles = {}
         self.builddependencies = ""
@@ -383,7 +383,7 @@ class Builder(object):
 
     def getArch(self):
         """Return the Architecture tag for the builder."""
-        return self._config.get("slave","architecturetag")
+        return self._config.get("builder", "architecturetag")
 
     def cachePath(self, file):
         """Return the path in the cache of the file specified."""

@@ -44,7 +44,7 @@ class BuilddTestCase(unittest.TestCase):
         """Setup a Builder using the test config."""
         conf = SafeConfigParser()
         conf.read(test_conffile)
-        conf.set("slave", "filecache", tempfile.mkdtemp())
+        conf.set("builder", "filecache", tempfile.mkdtemp())
 
         self.slave = Builder(conf)
         self.slave._log = True
