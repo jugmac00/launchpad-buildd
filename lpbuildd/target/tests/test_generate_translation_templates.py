@@ -127,7 +127,7 @@ class TestGenerateTranslationTemplates(TestCase):
 
     def test_fetch_bzr(self):
         # fetch can retrieve branch contents from a Bazaar branch.
-        marker_text = "Ceci n'est pas cet branch."
+        marker_text = b"Ceci n'est pas cet branch."
         branch_path = self.make_branch_contents({'marker.txt': marker_text})
         self.make_bzr_branch(branch_path)
 
@@ -140,7 +140,7 @@ class TestGenerateTranslationTemplates(TestCase):
         generator.fetch(quiet=True)
 
         marker_path = os.path.join(generator.branch_dir, 'marker.txt')
-        with open(marker_path) as marker_file:
+        with open(marker_path, "rb") as marker_file:
             self.assertEqual(marker_text, marker_file.read())
 
     def test_fetch_git(self):
@@ -221,9 +221,9 @@ class TestGenerateTranslationTemplates(TestCase):
             "--branch", branch_url, self.result_name,
             ]
         generator = parse_args(args=args).operation
-        generator.backend.add_file(os.path.join(po_dir, "POTFILES.in"), "")
+        generator.backend.add_file(os.path.join(po_dir, "POTFILES.in"), b"")
         generator.backend.add_file(
-            os.path.join(po_dir, "Makevars"), "DOMAIN = test\n")
+            os.path.join(po_dir, "Makevars"), b"DOMAIN = test\n")
         generator.run()
         self.assertThat(generator.backend.run.calls, MatchesListwise([
             RanAptGet("install", "intltool", "bzr"),
