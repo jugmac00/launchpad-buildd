@@ -388,12 +388,12 @@ class TestSnapBuildManagerIteration(TestCase):
 
     def getListenerURL(self, listener):
         port = listener.getHost().port
-        return b"http://localhost:%d/" % port
+        return "http://localhost:%d/" % port
 
     def startFakeRemoteEndpoint(self):
         remote_endpoint = resource.Resource()
-        remote_endpoint.putChild(b"a", static.Data(b"a" * 1024, "text/plain"))
-        remote_endpoint.putChild(b"b", static.Data(b"b" * 65536, "text/plain"))
+        remote_endpoint.putChild(b"x", static.Data(b"x" * 1024, "text/plain"))
+        remote_endpoint.putChild(b"y", static.Data(b"y" * 65536, "text/plain"))
         remote_endpoint_listener = reactor.listenTCP(
             0, server.Site(remote_endpoint))
         self.addCleanup(remote_endpoint_listener.stopListening)
@@ -421,8 +421,10 @@ class TestSnapBuildManagerIteration(TestCase):
         out, err, code = yield utils.getProcessOutputAndValue(
             command[0], command[1:], env=env, path=".")
         if code != 0:
-            self.addDetail("stdout", text_content(out))
-            self.addDetail("stderr", text_content(err))
+            self.addDetail(
+                "stdout", text_content(out.decode("UTF-8", "replace")))
+            self.addDetail(
+                "stderr", text_content(err.decode("UTF-8", "replace")))
             self.assertEqual(0, code)
         defer.returnValue(out)
 
@@ -434,13 +436,13 @@ class TestSnapBuildManagerIteration(TestCase):
         proxy_listener = self.startLocalProxy(
             self.getListenerURL(remote_proxy_listener))
         out = yield self.assertCommandSuccess(
-            [b"curl", remote_endpoint_url + b"a"],
-            extra_env={b"http_proxy": self.getListenerURL(proxy_listener)})
-        self.assertEqual("a" * 1024, out)
+            [b"curl", remote_endpoint_url.encode("UTF-8") + b"x"],
+            extra_env={"http_proxy": self.getListenerURL(proxy_listener)})
+        self.assertEqual(b"x" * 1024, out)
         out = yield self.assertCommandSuccess(
-            [b"curl", remote_endpoint_url + b"b"],
-            extra_env={b"http_proxy": self.getListenerURL(proxy_listener)})
-        self.assertEqual("b" * 65536, out)
+            [b"curl", remote_endpoint_url.encode("UTF-8") + b"y"],
+            extra_env={"http_proxy": self.getListenerURL(proxy_listener)})
+        self.assertEqual(b"y" * 65536, out)
 
     # XXX cjwatson 2017-04-13: We should really test the HTTPS case as well,
     # but it's hard to see how to test that in a way that's independent of
