@@ -21,7 +21,7 @@ def get_arch_bits(arch):
         env.pop("DEB_HOST_ARCH_BITS", None)
         bits = subprocess.check_output(
             ["dpkg-architecture", "-a%s" % arch, "-qDEB_HOST_ARCH_BITS"],
-            env=env).rstrip("\n")
+            env=env, universal_newlines=True).rstrip("\n")
         if bits == "32":
             return 32
         elif bits == "64":
