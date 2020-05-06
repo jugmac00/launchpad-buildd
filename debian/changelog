@@ -12,6 +12,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Treat build output files as binary files.
   * Treat intltool-related files as binary files.
   * Fix bytes/text handling in backends and their tests.
+  * Fix OCI tests on Python 3.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 

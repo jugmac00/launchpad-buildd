@@ -1,6 +1,6 @@
+import io
 import json
 import os
-import StringIO
 import tempfile
 import tarfile
 
@@ -9,10 +9,10 @@ class OCITarball:
     """Create a tarball for use in tests with OCI."""
 
     def _makeFile(self, contents, name):
-        json_contents = json.dumps(contents)
+        json_contents = json.dumps(contents).encode("UTF-8")
         tarinfo = tarfile.TarInfo(name)
         tarinfo.size = len(json_contents)
-        return tarinfo, StringIO.StringIO(json_contents)
+        return tarinfo, io.BytesIO(json_contents)
 
     @property
     def config(self):
@@ -35,7 +35,7 @@ class OCITarball:
         contents = "{}-contents".format(layer_name)
         tarinfo = tarfile.TarInfo(contents)
         tarinfo.size = len(contents)
-        layer_contents = StringIO.StringIO(contents)
+        layer_contents = io.BytesIO(contents.encode("UTF-8"))
         layer_tar_path = os.path.join(
             directory, '{}.tar.gz'.format(layer_name))
         layer_tar = tarfile.open(layer_tar_path, 'w:gz')

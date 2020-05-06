@@ -6,10 +6,6 @@ __metaclass__ = type
 import io
 import json
 import os
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 
 from fixtures import (
     EnvironmentVariable,
@@ -159,7 +155,7 @@ class TestOCIBuildManagerIteration(TestCase):
 
         cache_path = self.builder.cachePath(
             self.builder.waitingfiles['digests.json'])
-        with open(cache_path, "rb") as f:
+        with open(cache_path) as f:
             digests_contents = f.read()
         digests_expected = [{
             "sha256:diff1": {
@@ -242,7 +238,7 @@ class TestOCIBuildManagerIteration(TestCase):
 
         cache_path = self.builder.cachePath(
             self.builder.waitingfiles['digests.json'])
-        with open(cache_path, "rb") as f:
+        with open(cache_path) as f:
             digests_contents = f.read()
         digests_expected = [{
             "sha256:diff1": {
