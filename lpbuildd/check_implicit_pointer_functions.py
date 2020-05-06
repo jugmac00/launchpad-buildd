@@ -3,7 +3,7 @@
 #
 # Copyright (c) 2004 Hewlett-Packard Development Company, L.P.
 #       David Mosberger <davidm@hpl.hp.com>
-# Copyright 2010 Canonical Ltd.
+# Copyright 2010-2020 Canonical Ltd.
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -52,28 +52,19 @@ pointer_pattern = re.compile(
     r"|"
     r"cast to pointer from integer of different size)")
 
-def main():
+
+def filter_log(in_file, out_file, in_line=False):
     last_implicit_filename = ""
     last_implicit_linenum = -1
     last_implicit_func = ""
 
-    errlist = ""
+    errlist = []
 
-    in_line = False
-    warn_only = False
-
-    for arg in sys.argv[1:]:
-        if arg == '--inline':
-            in_line = True
-        elif arg == '--warnonly':
-            warn_only = True
-
-    rv = 0
     while True:
-        line = sys.stdin.readline()
+        line = in_file.readline()
         if in_line:
-            sys.stdout.write(line)
-            sys.stdout.flush()
+            out_file.write(line)
+            out_file.flush()
         if line == '':
             break
         m = implicit_pattern.match(line)
@@ -91,15 +82,13 @@ def main():
                     err = "Function `%s' implicitly converted to pointer at " \
                           "%s:%d" % (last_implicit_func, last_implicit_filename,
                                      last_implicit_linenum)
-                    errlist += err+"\n"
-                    print(err)
-                    if not warn_only:
-                        rv = 2
+                    errlist.append(err)
+                    out_file.write(err + "\n")
 
-    if len(errlist):
+    if errlist:
         if in_line:
-            print(errlist)
-            print("""
+            out_file.write("\n".join(errlist) + "\n\n")
+            out_file.write("""
 
 Our automated build log filter detected the problem(s) above that will
 likely cause your package to segfault on architectures where the size of
@@ -114,7 +103,4 @@ More information can be found at:
 http://wiki.debian.org/ImplicitPointerConversions
 
     """)
-    sys.exit(rv)
-
-if __name__ == '__main__':
-    main()
+    return len(errlist)

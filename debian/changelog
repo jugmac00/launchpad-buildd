@@ -21,6 +21,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Rename [slave] configuration section to [builder].
   * Convert translation templates builds to the VCS mixin, thereby adding
     git support.
+  * Add a proper wrapper for check-implicit-pointer-functions.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 
