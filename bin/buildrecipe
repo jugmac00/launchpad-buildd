@@ -8,6 +8,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+import io
 from optparse import OptionParser
 import os
 import pwd
@@ -64,7 +65,9 @@ class RecipeBuilder:
             bzr-based recipe.
         """
         self.build_id = build_id
-        self.author_name = author_name.decode('utf-8')
+        if isinstance(author_name, bytes):
+            author_name = author_name.decode('utf-8')
+        self.author_name = author_name
         self.author_email = author_email
         self.archive_purpose = archive_purpose
         self.component = component
@@ -159,19 +162,24 @@ class RecipeBuilder:
         source_dir = os.path.join(
             self.chroot_path, self.source_dir_relative.lstrip('/'))
         changelog = os.path.join(source_dir, 'debian/changelog')
-        return open(changelog, 'r').readline().split(' ')[0]
+        return io.open(
+            changelog, 'r', errors='replace').readline().split(' ')[0]
 
     def getSourceControl(self):
         """Return the parsed source control stanza from the source tree."""
         source_dir = os.path.join(
             self.chroot_path, self.source_dir_relative.lstrip('/'))
-        with open(os.path.join(source_dir, 'debian/control')) as control_file:
+        # Open as bytes to allow debian.deb822 to apply its own encoding
+        # handling.  We'll get text back from it.
+        with open(
+                os.path.join(source_dir, 'debian/control'),
+                'rb') as control_file:
             # Don't let Deb822.iter_paragraphs use apt_pkg.TagFile
             # internally, since that only handles real tag files and not the
             # slightly more permissive syntax of debian/control which also
             # allows comments.
-            return Deb822.iter_paragraphs(
-                control_file, use_apt_pkg=False).next()
+            return next(Deb822.iter_paragraphs(
+                control_file, use_apt_pkg=False))
 
     def makeDummyDsc(self, package):
         control = self.getSourceControl()
