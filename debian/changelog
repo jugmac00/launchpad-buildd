@@ -22,6 +22,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Convert translation templates builds to the VCS mixin, thereby adding
     git support.
   * Add a proper wrapper for check-implicit-pointer-functions.
+  * Add a python3-lpbuildd binary package.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 

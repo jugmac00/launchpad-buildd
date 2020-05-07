@@ -30,6 +30,24 @@ Build-Depends: apt-utils,
 # build-time pybuild fails if it's not available.
                python-ws4py,
                python-zope.interface,
+               python3 (>= 3.3),
+               python3-apt,
+               python3-debian,
+               python3-fixtures,
+               python3-netaddr,
+               python3-pylxd,
+               python3-requests,
+               python3-responses,
+               python3-setuptools,
+               python3-six,
+               python3-systemfixtures,
+               python3-testtools,
+               python3-twisted,
+               python3-txfixtures,
+# We don't use the bits of pylxd that require this at run-time, but at
+# build-time pybuild fails if it's not available.
+               python3-ws4py,
+               python3-zope.interface,
 Vcs-Git: https://git.launchpad.net/launchpad-buildd
 Vcs-Browser: https://git.launchpad.net/launchpad-buildd
 
@@ -55,6 +73,8 @@ Depends: adduser,
          schroot,
          sudo,
          ${misc:Depends},
+Breaks: python-lpbuildd (<< 190)
+Replaces: python-lpbuildd (<< 190)
 Description: Launchpad buildd slave
  This is the launchpad buildd slave package. It contains everything needed to
  get a launchpad buildd going apart from the database manipulation required to
@@ -76,5 +96,20 @@ Depends: apt-utils,
          ${python:Depends},
 Breaks: launchpad-buildd (<< 88)
 Replaces: launchpad-buildd (<< 88)
-Description: Python libraries for a Launchpad buildd slave
- This contains the Python libraries that control the Launchpad buildd slave.
+Description: Python 2 libraries for a Launchpad buildd slave
+ This contains the Python 2 libraries that control the Launchpad buildd slave.
+
+Package: python3-lpbuildd
+Section: python
+Architecture: all
+Depends: apt-utils,
+         procps,
+         python3-apt,
+         python3-netaddr,
+         python3-pylxd,
+# Work around missing dependency in python3-pbr.
+         python3-setuptools,
+         ${misc:Depends},
+         ${python3:Depends},
+Description: Python 3 libraries for a Launchpad buildd slave
+ This contains the Python 3 libraries that control the Launchpad buildd slave.
