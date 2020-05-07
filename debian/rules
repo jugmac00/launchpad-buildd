@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright 2009-2017 Canonical Ltd.  
+# Copyright 2009-2020 Canonical Ltd.  
 # 
 # This software is licensed under the GNU Affero General Public License version
 # 3 (see the file LICENSE).
@@ -17,11 +17,6 @@ override_dh_auto_build:
 	python buildd-genconfig --template=template-buildd-slave.conf \
 	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
 		> buildd-slave-example.conf
-
-override_dh_auto_install:
-	dh_auto_install
-	# This should be split into a testable library and a wrapper.
-	chmod +x debian/python-lpbuildd/$(LIBDIR)/lpbuildd/check_implicit_pointer_functions.py
 
 override_dh_builddeb:
 	dh_builddeb -- -Zgzip

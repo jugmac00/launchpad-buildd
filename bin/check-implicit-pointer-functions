@@ -1,0 +1,33 @@
+#! /usr/bin/python -u
+#
+# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Scan for compiler warnings that are likely to cause 64-bit problems."""
+
+from __future__ import print_function
+
+from argparse import ArgumentParser
+import sys
+
+from lpbuildd.check_implicit_pointer_functions import filter_log
+
+
+def main():
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--inline", default=False, action="store_true",
+        help="Pass through input, inserting errors in-line")
+    parser.add_argument(
+        "--warnonly", default=False, action="store_true",
+        help="Exit zero even if problems are found")
+    args = parser.parse_args()
+    problems = filter_log(sys.stdin, sys.stdout, in_line=args.inline)
+    if problems and not args.warnonly:
+        return 2
+    else:
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

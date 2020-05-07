@@ -1,5 +1,6 @@
 bin/builder-prep			usr/share/launchpad-buildd/bin
 bin/buildrecipe				usr/share/launchpad-buildd/bin
+bin/check-implicit-pointer-functions	usr/share/launchpad-buildd/bin
 bin/in-target				usr/share/launchpad-buildd/bin
 bin/sbuild-package			usr/share/launchpad-buildd/bin
 bin/snap-git-proxy			usr/share/launchpad-buildd/bin
