@@ -7,16 +7,37 @@
 
 export PYBUILD_NAME := lpbuildd
 
-export LIBDIR := $(shell python -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib())')
+ifeq (ok,$(shell debian/check-python3-twisted && echo ok))
+    export LPBUILDD_PYTHON_PREFIX := python3
+    export LIBDIR := $(shell python3 -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib())')
+else
+    export LPBUILDD_PYTHON_PREFIX := python
+    export LIBDIR := $(shell python2 -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib())')
+endif
 
 %:
 	dh $@ --with=python2,python3 --buildsystem=pybuild
 
 override_dh_auto_build:
 	dh_auto_build
-	python buildd-genconfig --template=template-buildd-slave.conf \
+	python3 buildd-genconfig --template=template-buildd-slave.conf \
 	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
 		> buildd-slave-example.conf
+
+ifeq ($(LPBUILDD_PYTHON_PREFIX),python)
+override_dh_install:
+	dh_install
+	find debian/launchpad-buildd -type f | xargs grep -l '#!.*python3' | \
+		xargs -r sed -i 's/\(#!.*\)python3/\1python2/'
+
+override_dh_installinit:
+	dh_installinit
+	sed -i 's/twistd3/twistd/' \
+		debian/launchpad-buildd/etc/init.d/launchpad-buildd
+endif
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vlpbuildd-python-prefix=$(LPBUILDD_PYTHON_PREFIX)
 
 override_dh_builddeb:
 	dh_builddeb -- -Zgzip

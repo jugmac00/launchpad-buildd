@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 # Copyright 2015-2019 Canonical Ltd.  All rights reserved.
 #
