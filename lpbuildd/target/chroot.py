@@ -96,7 +96,10 @@ class Chroot(Backend):
             if get_output:
                 if echo:
                     print("Output:")
-                    print(output)
+                    output_text = output
+                    if isinstance(output_text, bytes):
+                        output_text = output_text.decode("UTF-8", "replace")
+                    print(output_text)
                 return output
 
     def copy_in(self, source_path, target_path):

@@ -178,7 +178,7 @@ class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
             status["revision_id"] = self.run_build_command(
                 ["bzr", "revno"],
                 cwd=os.path.join("/build", self.args.name),
-                get_output=True).rstrip("\n")
+                get_output=True, universal_newlines=True).rstrip("\n")
         else:
             rev = (
                 self.args.git_path
@@ -188,7 +188,7 @@ class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 # recursively until we get an actual commit.
                 ["git", "rev-parse", rev + "^{}"],
                 cwd=os.path.join("/build", self.args.name),
-                get_output=True).rstrip("\n")
+                get_output=True, universal_newlines=True).rstrip("\n")
         self.save_status(status)
 
     @property

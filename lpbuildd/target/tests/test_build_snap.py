@@ -36,7 +36,7 @@ from lpbuildd.tests.fakebuilder import FakeMethod
 class RanCommand(MatchesListwise):
 
     def __init__(self, args, echo=None, cwd=None, input_text=None,
-                 get_output=None, **env):
+                 get_output=None, universal_newlines=None, **env):
         kwargs_matcher = {}
         if echo is not None:
             kwargs_matcher["echo"] = Is(echo)
@@ -46,6 +46,8 @@ class RanCommand(MatchesListwise):
             kwargs_matcher["input_text"] = Equals(input_text)
         if get_output is not None:
             kwargs_matcher["get_output"] = Is(get_output)
+        if universal_newlines is not None:
+            kwargs_matcher["universal_newlines"] = Is(universal_newlines)
         if env:
             kwargs_matcher["env"] = MatchesDict(
                 {key: Equals(value) for key, value in env.items()})
@@ -230,7 +232,9 @@ class TestBuildSnap(TestCase):
             RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-snap"], cwd="/build"),
             RanBuildCommand(
-                ["bzr", "revno"], cwd="/build/test-snap", get_output=True),
+                ["bzr", "revno"],
+                cwd="/build/test-snap", get_output=True,
+                universal_newlines=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -254,7 +258,8 @@ class TestBuildSnap(TestCase):
                 cwd="/build/test-snap"),
             RanBuildCommand(
                 ["git", "rev-parse", "HEAD^{}"],
-                cwd="/build/test-snap", get_output=True),
+                cwd="/build/test-snap",
+                get_output=True, universal_newlines=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -279,7 +284,8 @@ class TestBuildSnap(TestCase):
                 cwd="/build/test-snap"),
             RanBuildCommand(
                 ["git", "rev-parse", "next^{}"],
-                cwd="/build/test-snap", get_output=True),
+                cwd="/build/test-snap", get_output=True,
+                universal_newlines=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -305,7 +311,8 @@ class TestBuildSnap(TestCase):
                 cwd="/build/test-snap"),
             RanBuildCommand(
                 ["git", "rev-parse", "refs/tags/1.0^{}"],
-                cwd="/build/test-snap", get_output=True),
+                cwd="/build/test-snap", get_output=True,
+                universal_newlines=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:
@@ -336,7 +343,8 @@ class TestBuildSnap(TestCase):
                 cwd="/build/test-snap", **env),
             RanBuildCommand(
                 ["git", "rev-parse", "HEAD^{}"],
-                cwd="/build/test-snap", get_output=True),
+                cwd="/build/test-snap", get_output=True,
+                universal_newlines=True),
             ]))
         status_path = os.path.join(build_snap.backend.build_path, "status")
         with open(status_path) as status:

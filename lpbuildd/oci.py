@@ -152,7 +152,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         extract_path = tempfile.mkdtemp(prefix=self.name)
         proc = self.backend.run(
             ['docker', 'save', self.name],
-            get_output=True, universal_newlines=False, return_process=True)
+            get_output=True, return_process=True)
         try:
             tar = tarfile.open(fileobj=proc.stdout, mode="r|")
         except Exception as e:
