@@ -49,6 +49,7 @@ from lpbuildd.target.lxd import (
     fallback_hosts,
     policy_rc_d,
     )
+from lpbuildd.target.tests.testfixtures import CarefulFakeProcessFixture
 
 
 LXD_RUNNING = 103
@@ -117,6 +118,10 @@ class FakeFilesystem(_FakeFilesystem):
 
 
 class TestLXD(TestCase):
+
+    def setUp(self):
+        super(TestLXD, self).setUp()
+        self.useFixture(CarefulFakeProcessFixture())
 
     def make_chroot_tarball(self, output_path):
         source = self.useFixture(TempDir()).path

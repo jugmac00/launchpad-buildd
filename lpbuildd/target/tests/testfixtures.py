@@ -4,10 +4,13 @@
 __metaclass__ = type
 
 import argparse
+import io
 import os
 import shutil
 
 from fixtures import MonkeyPatch
+from fixtures._fixtures import popen
+import six
 from systemfixtures import FakeFilesystem as _FakeFilesystem
 
 
@@ -101,3 +104,37 @@ class FakeFilesystem(_FakeFilesystem):
             if path.startswith(prefix):
                 return False
         return super(FakeFilesystem, self)._is_fake_path(path, *args, **kwargs)
+
+
+class CarefulFakeProcess(popen.FakeProcess):
+    """A version of FakeProcess that is more careful about text mode."""
+
+    def __init__(self, *args, **kwargs):
+        super(CarefulFakeProcess, self).__init__(*args, **kwargs)
+        text_mode = bool(self._args.get("universal_newlines"))
+        if not self.stdout:
+            self.stdout = io.StringIO() if text_mode else io.BytesIO()
+        if not self.stderr:
+            self.stderr = io.StringIO() if text_mode else io.BytesIO()
+
+    def communicate(self, *args, **kwargs):
+        out, err = super(CarefulFakeProcess, self).communicate(*args, **kwargs)
+        if self._args.get("universal_newlines"):
+            if isinstance(out, bytes):
+                raise TypeError("Process stdout is bytes, expecting text")
+            if isinstance(err, bytes):
+                raise TypeError("Process stderr is bytes, expecting text")
+        else:
+            if isinstance(out, six.text_type):
+                raise TypeError("Process stdout is text, expecting bytes")
+            if isinstance(err, six.text_type):
+                raise TypeError("Process stderr is text, expecting bytes")
+        return out, err
+
+
+class CarefulFakeProcessFixture(MonkeyPatch):
+    """Patch the Popen fixture to be more careful about text mode."""
+
+    def __init__(self):
+        super(CarefulFakeProcessFixture, self).__init__(
+            "fixtures._fixtures.popen.FakeProcess", CarefulFakeProcess)

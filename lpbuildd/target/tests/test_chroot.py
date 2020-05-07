@@ -24,6 +24,7 @@ from testtools.matchers import DirContains
 from lpbuildd.target.backend import BackendException
 from lpbuildd.target.chroot import Chroot
 from lpbuildd.target.tests.testfixtures import (
+    CarefulFakeProcessFixture,
     FakeFilesystem,
     KillFixture,
     SudoUmount,
@@ -31,6 +32,10 @@ from lpbuildd.target.tests.testfixtures import (
 
 
 class TestChroot(TestCase):
+
+    def setUp(self):
+        super(TestChroot, self).setUp()
+        self.useFixture(CarefulFakeProcessFixture())
 
     def test_create(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
