@@ -73,8 +73,8 @@ Depends: adduser,
          schroot,
          sudo,
          ${misc:Depends},
-Breaks: python-lpbuildd (<< 190)
-Replaces: python-lpbuildd (<< 190)
+Breaks: python-lpbuildd (<< 190~)
+Replaces: python-lpbuildd (<< 190~)
 Description: Launchpad buildd slave
  This is the launchpad buildd slave package. It contains everything needed to
  get a launchpad buildd going apart from the database manipulation required to
