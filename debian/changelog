@@ -1,5 +1,6 @@
 launchpad-buildd (190) UNRELEASED; urgency=medium
 
+  [ Colin Watson ]
   * Switch to git; add Vcs-* fields.
   * Always call Resource.putChild with path as bytes.
   * Switch RotatableFileLogObserver from class advice to a class decorator.
@@ -25,6 +26,9 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Add a python3-lpbuildd binary package.
   * Fix LXD.run to not default to universal_newlines=True.
   * Run on Python 3 when built for >= bionic.
+
+  [ Dimitri John Ledkov ]
+  * lxd: Add riscv64 to arch table.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 
