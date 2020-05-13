@@ -101,8 +101,8 @@ class LXD(Backend):
         "i386": "i686",
         "powerpc": "ppc",
         "ppc64el": "ppc64le",
-        "s390x": "s390x",
         "riscv64": "riscv64",
+        "s390x": "s390x",
         }
 
     profile_name = "lpbuildd"
