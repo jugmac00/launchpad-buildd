@@ -26,6 +26,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Add a python3-lpbuildd binary package.
   * Fix LXD.run to not default to universal_newlines=True.
   * Run on Python 3 when built for >= bionic.
+  * Add some notes on the production deployment.
 
   [ Dimitri John Ledkov ]
   * lxd: Add riscv64 to arch table.
