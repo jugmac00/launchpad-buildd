@@ -177,6 +177,34 @@ class BinaryPackageBuildManager(DebianBuildManager):
             env["DEB_BUILD_OPTIONS"] = "noautodbgsym"
         self.runSubProcess(self._sbuildpath, args, env=env)
 
+    def getAptLists(self):
+        """Yield each of apt's Packages files in turn as a file object."""
+        apt_helper = "/usr/lib/apt/apt-helper"
+        if os.path.exists(os.path.join(self.chroot_path, apt_helper[1:])):
+            paths = subprocess.check_output(
+                ["sudo", "chroot", self.chroot_path,
+                 "apt-get", "indextargets", "--format", "$(FILENAME)",
+                 "Created-By: Packages"],
+                universal_newlines=True).splitlines()
+            for path in paths:
+                helper = subprocess.Popen(
+                    ["sudo", "chroot", self.chroot_path,
+                     apt_helper, "cat-file", path],
+                    stdout=subprocess.PIPE)
+                try:
+                    yield helper.stdout
+                finally:
+                    helper.stdout.read()
+                    helper.wait()
+        else:
+            apt_lists = os.path.join(
+                self.chroot_path, "var", "lib", "apt", "lists")
+            for name in sorted(os.listdir(apt_lists)):
+                if name.endswith("_Packages"):
+                    path = os.path.join(apt_lists, name)
+                    with open(path, "rb") as packages_file:
+                        yield packages_file
+
     def getAvailablePackages(self):
         """Return the available binary packages in the chroot.
 
@@ -184,27 +212,21 @@ class BinaryPackageBuildManager(DebianBuildManager):
             available versions of each package.
         """
         available = defaultdict(set)
-        apt_lists = os.path.join(
-            self.chroot_path, "var", "lib", "apt", "lists")
-        for name in sorted(os.listdir(apt_lists)):
-            if name.endswith("_Packages"):
-                path = os.path.join(apt_lists, name)
-                with open(path, "rb") as packages_file:
-                    for section in apt_pkg.TagFile(packages_file):
-                        available[section["package"]].add(section["version"])
-                        if "provides" in section:
-                            provides = apt_pkg.parse_depends(
-                                section["provides"])
-                            for provide in provides:
-                                # Disjunctions are currently undefined here.
-                                if len(provide) > 1:
-                                    continue
-                                # Virtual packages may only provide an exact
-                                # version or none.
-                                if provide[0][1] and provide[0][2] != "=":
-                                    continue
-                                available[provide[0][0]].add(
-                                    provide[0][1] if provide[0][1] else None)
+        for packages_file in self.getAptLists():
+            for section in apt_pkg.TagFile(packages_file):
+                available[section["package"]].add(section["version"])
+                if "provides" in section:
+                    provides = apt_pkg.parse_depends(section["provides"])
+                    for provide in provides:
+                        # Disjunctions are currently undefined here.
+                        if len(provide) > 1:
+                            continue
+                        # Virtual packages may only provide an exact version
+                        # or none.
+                        if provide[0][1] and provide[0][2] != "=":
+                            continue
+                        available[provide[0][0]].add(
+                            provide[0][1] if provide[0][1] else None)
         return available
 
     def getBuildDepends(self, dscpath, arch_indep):
