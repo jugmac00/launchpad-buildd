@@ -649,6 +649,21 @@ class TestLXD(TestCase):
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])
 
+    def test_run_env_shell_metacharacters(self):
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="lxc")
+        LXD("1", "xenial", "amd64").run(
+            ["echo", "hello"], env={"OBJECT": "{'foo': 'bar'}"})
+
+        expected_args = [
+            ["lxc", "exec", "lp-xenial-amd64",
+             "--env", "OBJECT={'foo': 'bar'}", "--",
+             "linux64", "echo", "hello"],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
     def test_copy_in(self):
         source_dir = self.useFixture(TempDir()).path
         self.useFixture(MockPatch("pylxd.Client"))
