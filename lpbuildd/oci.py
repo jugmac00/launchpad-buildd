@@ -150,19 +150,21 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
         extract_path = tempfile.mkdtemp(prefix=self.name)
-        proc = self.backend.run(
-            ['docker', 'save', self.name],
-            get_output=True, return_process=True)
         try:
+            proc = self.backend.run(
+                ['docker', 'save', self.name],
+                get_output=True, return_process=True)
             tar = tarfile.open(fileobj=proc.stdout, mode="r|")
         except Exception as e:
-            print(e)
+            self._builder.log("Unable to save image: {}".format(e))
+            raise
 
         current_dir = ''
         directory_tar = None
         try:
             # The tarfile is a stream and must be processed in order
             for file in tar:
+                self._builder.log("Processing tar file: {}".format(file.name))
                 # Directories are just nodes, you can't extract the children
                 # directly, so keep track of what dir we're in.
                 if file.isdir():
@@ -188,13 +190,17 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                     # If it's not in a directory, we need that
                     tar.extract(file, extract_path)
         except Exception as e:
-            print(e)
+            self._builder.log("Tar file processing failed: {}".format(e))
+            raise
         finally:
             if directory_tar is not None:
                 directory_tar.close()
 
         # We need these mapping files
         sha_directory = tempfile.mkdtemp()
+        # This can change depending on the kernel options / docker package
+        # used. This is correct for bionic buildd image
+        # with apt installed docker.
         sha_path = ('/var/lib/docker/image/'
                     'vfs/distribution/v2metadata-by-diffid/sha256/')
         sha_files = [x for x in self.backend.listdir(sha_path)
@@ -222,4 +228,5 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                 json.dump(digest_maps, digest_map_fp)
             self._builder.addWaitingFile(digest_map_file)
         except Exception as e:
-            print(e)
+            self._builder.log("Failed to parse manifest: {}".format(e))
+            raise
