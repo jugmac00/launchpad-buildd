@@ -30,6 +30,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * lpbuildd/binarypackage.py: Use "apt-get indextargets" and "apt-helper
     cat-file" where they exist to read Packages files, rather than looking
     in /var/lib/apt/lists/ directly.
+  * Fix environment variable quoting in chroot backend (LP: #1884936).
 
   [ Dimitri John Ledkov ]
   * lxd: Add riscv64 to arch table.

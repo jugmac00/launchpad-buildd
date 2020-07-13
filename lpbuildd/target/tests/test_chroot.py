@@ -139,6 +139,22 @@ class TestChroot(TestCase):
             expected_args,
             [proc._args["args"] for proc in processes_fixture.procs])
 
+    def test_run_env_shell_metacharacters(self):
+        self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        Chroot("1", "xenial", "amd64").run(
+            ["echo", "hello"], env={"OBJECT": "{'foo': 'bar'}"})
+
+        expected_args = [
+            ["sudo", "/usr/sbin/chroot",
+             "/expected/home/build-1/chroot-autobuild",
+             "linux64", "env", "OBJECT={'foo': 'bar'}", "echo", "hello"],
+            ]
+        self.assertEqual(
+            expected_args,
+            [proc._args["args"] for proc in processes_fixture.procs])
+
     def test_copy_in(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         source_dir = self.useFixture(TempDir()).path

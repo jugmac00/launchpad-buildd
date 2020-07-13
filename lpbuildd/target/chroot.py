@@ -62,8 +62,7 @@ class Chroot(Backend):
         """See `Backend`."""
         if env:
             args = ["env"] + [
-                "%s=%s" % (key, shell_escape(value))
-                for key, value in env.items()] + args
+                "%s=%s" % (key, value) for key, value in env.items()] + args
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         if cwd is not None:
