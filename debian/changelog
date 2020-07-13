@@ -34,6 +34,9 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   [ Dimitri John Ledkov ]
   * lxd: Add riscv64 to arch table.
 
+  [ Tom Wardill ]
+  * Improve error logging in OCI post-build 
+
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 
 launchpad-buildd (189) xenial; urgency=medium
