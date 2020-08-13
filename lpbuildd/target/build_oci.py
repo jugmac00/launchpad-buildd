@@ -39,6 +39,9 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         super(BuildOCI, cls).add_arguments(parser)
         parser.add_argument(
             "--build-file", help="path to Dockerfile in branch")
+        parser.add_argument(
+            "--build-path", default=".",
+            help="context directory for docker build")
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
@@ -64,10 +67,10 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 systemd_file.flush()
                 self.backend.copy_in(systemd_file.name, file_path)
 
-    def _check_build_file_escape(self):
+    def _check_path_escape(self, path_to_check):
         """Check the build file path doesn't escape the build directory."""
         build_file_path = os.path.realpath(
-            os.path.join(self.buildd_path, self.args.build_file))
+            os.path.join(self.buildd_path, path_to_check))
         common_path = os.path.commonprefix((build_file_path, self.buildd_path))
         if common_path != self.buildd_path:
             raise InvalidBuildFilePath("Invalid build file path.")
@@ -120,9 +123,14 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                     ["--build-arg", "{}={}".format(var, self.args.proxy_url)])
         args.extend(["--tag", self.args.name])
         if self.args.build_file is not None:
-            self._check_build_file_escape()
-            args.extend(["--file", self.args.build_file])
-        args.append(self.buildd_path)
+            build_file_path = os.path.join(
+                self.args.build_path, self.args.build_file)
+            self._check_path_escape(build_file_path)
+            args.extend(["--file", build_file_path])
+        build_context_path = os.path.join(
+            self.buildd_path, self.args.build_path)
+        self._check_path_escape(build_context_path)
+        args.append(build_context_path)
         self.run_build_command(args)
 
     def run(self):

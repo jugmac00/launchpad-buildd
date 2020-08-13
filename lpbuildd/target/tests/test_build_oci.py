@@ -302,7 +302,7 @@ class TestBuildOCI(TestCase):
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "/home/buildd/test-image"],
+                 "/home/buildd/test-image/."],
                 cwd="/home/buildd/test-image"),
             ]))
 
@@ -319,8 +319,44 @@ class TestBuildOCI(TestCase):
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "--file", "build-aux/Dockerfile",
-                 "/home/buildd/test-image"],
+                 "--file", "./build-aux/Dockerfile",
+                 "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_build_with_path(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "a-sub-directory/",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        build_oci.build()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "/home/buildd/test-image/a-sub-directory/"],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_build_with_file_and_path(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "build-aux/Dockerfile",
+            "--build-path", "test-build-path",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        build_oci.build()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "--file", "test-build-path/build-aux/Dockerfile",
+                 "/home/buildd/test-image/test-build-path"],
                 cwd="/home/buildd/test-image"),
             ]))
 
@@ -339,7 +375,7 @@ class TestBuildOCI(TestCase):
                 ["docker", "build", "--no-cache",
                  "--build-arg", "http_proxy=http://proxy.example:3128/",
                  "--build-arg", "https_proxy=http://proxy.example:3128/",
-                 "--tag", "test-image", "/home/buildd/test-image"],
+                 "--tag", "test-image", "/home/buildd/test-image/."],
                 cwd="/home/buildd/test-image"),
             ]))
 
@@ -360,7 +396,7 @@ class TestBuildOCI(TestCase):
                 cwd="/home/buildd")),
             AnyMatch(RanBuildCommand(
                 ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "/home/buildd/test-image"],
+                 "/home/buildd/test-image/."],
                 cwd="/home/buildd/test-image")),
             ))
 
@@ -450,4 +486,40 @@ class TestBuildOCI(TestCase):
         os.symlink(
             '/etc/hosts',
             os.path.join(build_oci.buildd_path, 'Dockerfile'))
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
+
+    def test_build_with_invalid_build_path_parent(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "../",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
+
+    def test_build_with_invalid_build_path_absolute(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "/etc",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        self.assertRaises(InvalidBuildFilePath, build_oci.build)
+
+    def test_build_with_invalid_build_path_symlink(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "build/",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.buildd_path = self.useFixture(TempDir()).path
+        os.symlink(
+            '/etc/hosts',
+            os.path.join(build_oci.buildd_path, 'build'))
         self.assertRaises(InvalidBuildFilePath, build_oci.build)
