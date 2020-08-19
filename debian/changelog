@@ -1,4 +1,4 @@
-launchpad-buildd (190) UNRELEASED; urgency=medium
+launchpad-buildd (190) bionic; urgency=medium
 
   [ Colin Watson ]
   * Switch to git; add Vcs-* fields.
@@ -39,7 +39,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
   * Improve error logging in OCI post-build 
   * Add build_path directory context for OCI builds 
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
+ -- Tom Wardill <tom.wardill@canonical.com>  Wed, 19 Aug 2020 16:53:12 +0000
 
 launchpad-buildd (189) xenial; urgency=medium
 
