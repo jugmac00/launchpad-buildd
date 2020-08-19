@@ -37,6 +37,7 @@ launchpad-buildd (190) UNRELEASED; urgency=medium
 
   [ Tom Wardill ]
   * Improve error logging in OCI post-build 
+  * Add build_path directory context for OCI builds 
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 28 Apr 2020 10:19:27 +0100
 
