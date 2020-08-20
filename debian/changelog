@@ -1,3 +1,9 @@
+launchpad-buildd (191) UNRELEASED; urgency=medium
+
+  * Fix version checks for deployments using Python 3.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 20 Aug 2020 12:21:28 +0100
+
 launchpad-buildd (190) bionic; urgency=medium
 
   [ Colin Watson ]

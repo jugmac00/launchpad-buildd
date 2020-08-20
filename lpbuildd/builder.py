@@ -705,7 +705,7 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         self._managers = {}
         cache = apt.Cache()
         try:
-            installed = cache["python-lpbuildd"].installed
+            installed = cache["launchpad-buildd"].installed
             self._version = installed.version if installed else None
         except KeyError:
             self._version = None
