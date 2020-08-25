@@ -459,8 +459,8 @@ class TestSnapBuildManagerIteration(TestCase):
         self.buildmanager.proxy_url = "http://username:password@proxy_url"
         self.buildmanager.revokeProxyToken()
         self.assertEqual(1, urlopen_mock.call_count)
-        request = urlopen_mock.call_args_list[0][0][0]
+        request = urlopen_mock.call_args[0][0]
         self.assertEqual(
-            request.headers,
-            {'Authorization': "Basic dXNlcm5hbWU6cGFzc3dvcmQ="})
-        self.assertEqual(request.get_full_url(), 'http://revoke_endpoint')
+            {'Authorization': "Basic dXNlcm5hbWU6cGFzc3dvcmQ="},
+            request.headers)
+        self.assertEqual('http://revoke_endpoint', request.get_full_url())
