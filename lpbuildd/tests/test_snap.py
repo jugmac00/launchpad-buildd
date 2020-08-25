@@ -4,6 +4,10 @@
 __metaclass__ = type
 
 import os
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from fixtures import (
     EnvironmentVariable,
@@ -448,3 +452,15 @@ class TestSnapBuildManagerIteration(TestCase):
     # but it's hard to see how to test that in a way that's independent of
     # the code under test since the stock twisted.web.proxy doesn't support
     # CONNECT.
+
+    @mock.patch('lpbuildd.snap.urlopen')
+    def test_revokeProxyToken(self, urlopen_mock):
+        self.buildmanager.revocation_endpoint = "http://revoke_endpoint"
+        self.buildmanager.proxy_url = "http://username:password@proxy_url"
+        self.buildmanager.revokeProxyToken()
+        self.assertEqual(1, urlopen_mock.call_count)
+        request = urlopen_mock.call_args[0][0]
+        self.assertEqual(
+            {'Authorization': "Basic dXNlcm5hbWU6cGFzc3dvcmQ="},
+            request.headers)
+        self.assertEqual('http://revoke_endpoint', request.get_full_url())
