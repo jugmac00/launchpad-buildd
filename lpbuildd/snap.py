@@ -272,7 +272,7 @@ class SnapBuildProxyMixin():
         auth = "{}:{}".format(url.username, url.password)
         headers = {
             "Authorization": "Basic {}".format(
-                base64.b64encode(auth.encode('utf-8')))
+                base64.b64encode(auth.encode('utf-8')).decode('utf-8'))
             }
         req = Request(self.revocation_endpoint, None, headers)
         req.get_method = lambda: "DELETE"
