@@ -8,6 +8,7 @@ __metaclass__ = type
 import hashlib
 import json
 import os
+import pipes
 import tarfile
 import tempfile
 
@@ -49,6 +50,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
         self.build_file = extra_args.get("build_file")
+        self.build_args = extra_args.get("build_args", {})
         self.build_path = extra_args.get("build_path")
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
@@ -70,6 +72,10 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             args.extend(["--git-path", self.git_path])
         if self.build_file is not None:
             args.extend(["--build-file", self.build_file])
+        if self.build_args:
+            for k, v in self.build_args.items():
+                args.extend([
+                    "--build-arg=%s=%s" % (pipes.quote(k), pipes.quote(v))])
         if self.build_path is not None:
             args.extend(["--build-path", self.build_path])
         try:

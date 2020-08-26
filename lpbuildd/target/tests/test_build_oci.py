@@ -360,6 +360,27 @@ class TestBuildOCI(TestCase):
                 cwd="/home/buildd/test-image"),
             ]))
 
+    def test_build_with_args(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-file", "build-aux/Dockerfile",
+            "--build-path", "test-build-path",
+            "--build-arg=VAR1=xxx", "--build-arg=VAR2=yyy",
+            "test-image",
+            ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.add_dir('/build/test-directory')
+        build_oci.build()
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "--file", "test-build-path/build-aux/Dockerfile",
+                 "--build-arg=VAR1=xxx", "--build-arg=VAR2=yyy",
+                 "/home/buildd/test-image/test-build-path"],
+                cwd="/home/buildd/test-image"),
+            ]))
+
     def test_build_proxy(self):
         args = [
             "build-oci",

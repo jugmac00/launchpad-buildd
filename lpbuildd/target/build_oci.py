@@ -42,6 +42,11 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         parser.add_argument(
             "--build-path", default=".",
             help="context directory for docker build")
+        parser.add_argument(
+            "--build-arg", default=[], action='append',
+            help="A docker build ARG in the format of key=value. "
+                 "This option can be repeated many times. For example: "
+                 "--build-arg VAR1=A --build-arg VAR2=B")
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
@@ -127,6 +132,12 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 self.args.build_path, self.args.build_file)
             self._check_path_escape(build_file_path)
             args.extend(["--file", build_file_path])
+
+        # Keep this at the end, so we give the user a chance to override any
+        # build-arg we set automatically (like http_proxy).
+        for arg in self.args.build_arg:
+            args.extend(["--build-arg=%s" % arg])
+
         build_context_path = os.path.join(
             self.buildd_path, self.args.build_path)
         self._check_path_escape(build_context_path)

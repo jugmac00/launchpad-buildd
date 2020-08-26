@@ -183,7 +183,7 @@ class TestOCIBuildManagerIteration(TestCase):
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
-    def test_iterate_with_file(self):
+    def test_iterate_with_file_and_args(self):
         # This sha would change as it includes file attributes in the
         # tar file. Fix it so we can test against a known value.
         sha_mock = self.useFixture(
@@ -195,12 +195,15 @@ class TestOCIBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
             "git_path": "master",
             "build_file": "build-aux/Dockerfile",
+            "build_args": {"VAR1": "xxx", "VAR2": "yyy"}
             }
         expected_options = [
             "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
             "--git-path", "master",
             "--build-file", "build-aux/Dockerfile",
-            ]
+            "--build-arg=VAR1=xxx",
+            "--build-arg=VAR2=yyy",
+        ]
         yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
