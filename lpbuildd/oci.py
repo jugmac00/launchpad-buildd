@@ -8,7 +8,6 @@ __metaclass__ = type
 import hashlib
 import json
 import os
-import pipes
 import tarfile
 import tempfile
 
@@ -22,6 +21,7 @@ from lpbuildd.debian import (
     DebianBuildState,
     )
 from lpbuildd.snap import SnapBuildProxyMixin
+from lpbuildd.util import shell_escape
 
 
 RETCODE_SUCCESS = 0
@@ -75,7 +75,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         if self.build_args:
             for k, v in self.build_args.items():
                 args.extend([
-                    "--build-arg=%s=%s" % (pipes.quote(k), pipes.quote(v))])
+                    "--build-arg=%s=%s" % (shell_escape(k), shell_escape(v))])
         if self.build_path is not None:
             args.extend(["--build-path", self.build_path])
         try:
