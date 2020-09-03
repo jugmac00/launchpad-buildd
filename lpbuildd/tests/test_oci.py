@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+from collections import OrderedDict
 import io
 import json
 import os
@@ -195,7 +196,7 @@ class TestOCIBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
             "git_path": "master",
             "build_file": "build-aux/Dockerfile",
-            "build_args": {"VAR1": "xxx", "VAR2": "yyy"}
+            "build_args": OrderedDict([("VAR1", "xxx"), ("VAR2", "yyy")]),
             }
         expected_options = [
             "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
