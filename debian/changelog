@@ -1,4 +1,4 @@
-launchpad-buildd (191) UNRELEASED; urgency=medium
+launchpad-buildd (191) bionic; urgency=medium
 
   [ Colin Watson ]
   * Fix version checks for deployments using Python 3.
@@ -9,7 +9,7 @@ launchpad-buildd (191) UNRELEASED; urgency=medium
   [ Thiago F. Pappacena ]
   * Add support for --build-arg when building OCI images (LP: #1892351).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 20 Aug 2020 12:21:28 +0100
+ -- Tom Wardill <tom.wardill@canonical.com>  Thu, 17 Sep 2020 16:08:58 +0100
 
 launchpad-buildd (190) bionic; urgency=medium
 
