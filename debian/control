@@ -1,7 +1,9 @@
 Source: launchpad-buildd
 Section: admin
 Priority: extra
-Maintainer: Adam Conrad <adconrad@ubuntu.com>
+Maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+Uploaders: Colin Watson <cjwatson@ubuntu.com>,
+           Tom Wardill <tom.wardill@canonical.com>,
 Standards-Version: 3.9.5
 Build-Depends: apt-utils,
                bzr,
