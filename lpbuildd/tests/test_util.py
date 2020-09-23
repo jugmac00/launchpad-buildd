@@ -23,6 +23,11 @@ class TestShellEscape(TestCase):
     def test_single_quotes(self):
         self.assertEqual("'shell'\"'\"'s great'", shell_escape("shell's great"))
 
+    def test_bytes(self):
+        self.assertEqual(
+            u"'\N{SNOWMAN}'".encode("UTF-8"),
+            shell_escape(u"\N{SNOWMAN}".encode("UTF-8")))
+
 
 class TestGetArchBits(TestCase):
 

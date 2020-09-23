@@ -1,6 +1,7 @@
 launchpad-buildd (192) UNRELEASED; urgency=medium
 
   * Update Maintainer to launchpad-dev.
+  * Handle bytes in shell_escape, fixing recipe builds on Python 3.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 22 Sep 2020 01:03:24 +0100
 

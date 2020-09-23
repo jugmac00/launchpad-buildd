@@ -5,10 +5,21 @@ __metaclass__ = type
 
 import os
 try:
-    from shlex import quote as shell_escape
+    from shlex import quote
 except ImportError:
-    from pipes import quote as shell_escape
+    from pipes import quote
 import subprocess
+import sys
+
+
+def shell_escape(s):
+    # It's sometimes necessary to pass arguments as bytes to avoid
+    # locale-dependent problems, but Python 3's shlex.quote doesn't like
+    # that, so work around it.
+    if sys.version_info[0] >= 3 and isinstance(s, bytes):
+        return quote(s.decode("UTF-8")).encode("UTF-8")
+    else:
+        return quote(s)
 
 
 def get_arch_bits(arch):
