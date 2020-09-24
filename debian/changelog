@@ -1,3 +1,9 @@
+launchpad-buildd (193) UNRELEASED; urgency=medium
+
+  * Fix handling of bytes arguments passed to BuildManager.runSubProcess.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 24 Sep 2020 16:45:27 +0100
+
 launchpad-buildd (192) bionic; urgency=medium
 
   * Update Maintainer to launchpad-dev.

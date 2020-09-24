@@ -16,6 +16,7 @@ import shutil
 import tempfile
 
 import apt
+import six
 from six.moves.urllib.request import (
     build_opener,
     HTTPBasicAuthHandler,
@@ -145,8 +146,11 @@ class BuildManager(object):
         if iterate is None:
             iterate = self.iterate
         self._subprocess = RunCapture(self._builder, iterate, stdin=stdin)
+        text_args = [
+            arg.decode("UTF-8", "replace") if isinstance(arg, bytes) else arg
+            for arg in args[1:]]
         self._builder.log("RUN: %s %s\n" % (
-            command, " ".join(shell_escape(arg) for arg in args[1:])))
+            command, " ".join(shell_escape(arg) for arg in text_args)))
         childfds = {
             0: devnull.fileno() if stdin is None else "w",
             1: "r",
@@ -516,11 +520,24 @@ class Builder(object):
                 data if isinstance(data, bytes) else data.encode("UTF-8"))
             self._log.write(data_bytes)
             self._log.flush()
-        if not isinstance(data, str):
-            data = data.decode("UTF-8", "replace")
-        if data.endswith("\n"):
-            data = data[:-1]
-        log.msg("Build log: " + data)
+        data_text = (
+            data if isinstance(data, six.text_type)
+            else data.decode("UTF-8", "replace"))
+        if six.PY3:
+            data_str = data_text
+        else:
+            # Twisted's logger doesn't handle non-ASCII text very reliably
+            # on Python 2.  This is just for debugging, so replace non-ASCII
+            # characters with the corresponding \u escapes.  We need to go
+            # to ridiculous lengths here to avoid (e.g.) replacing newlines
+            # with "\n".
+            data_str = re.sub(
+                r"([^\x00-\x7f])",
+                lambda match: "\\u%04x" % ord(match.group(0)),
+                data_text).encode("UTF-8")
+        if data_str.endswith("\n"):
+            data_str = data_str[:-1]
+        log.msg("Build log: " + data_str)
 
     def getLogTail(self):
         """Return the tail of the log.
