@@ -14,13 +14,7 @@ import os
 import pwd
 import socket
 import stat
-from subprocess import (
-    PIPE,
-    Popen,
-    call,
-    check_call,
-    check_output,
-    )
+import subprocess
 import sys
 import tempfile
 from textwrap import dedent
@@ -43,7 +37,7 @@ def call_report(args, env):
     :return: The process exit status.
     """
     print('RUN %r' % args)
-    return call(args, env=env)
+    return subprocess.call(args, env=env)
 
 
 class RecipeBuilder:
@@ -108,22 +102,22 @@ class RecipeBuilder:
         # using buildd@<hostname>.
         hostname = socket.gethostname()
         email = 'buildd@%s' % hostname
-        lsb_release = Popen(['/usr/bin/sudo',
+        lsb_release = subprocess.Popen(['/usr/bin/sudo',
             '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
-            '-r', '-s'], stdout=PIPE)
+            '-r', '-s'], stdout=subprocess.PIPE)
         distroseries_version = lsb_release.communicate()[0].rstrip()
         assert lsb_release.returncode == 0
 
         if self.git:
             print('Git version:')
-            check_call(['git', '--version'])
-            print(check_output(
+            subprocess.check_call(['git', '--version'])
+            print(subprocess.check_output(
                 ['dpkg-query', '-W', 'git-build-recipe']).rstrip(
                     '\n').replace('\t', ' '))
         else:
             print('Bazaar versions:')
-            check_call(['bzr', 'version'])
-            check_call(['bzr', 'plugins'])
+            subprocess.check_call(['bzr', 'version'])
+            subprocess.check_call(['bzr', 'plugins'])
 
         print('Building recipe:')
         print(recipe)
@@ -214,14 +208,14 @@ class RecipeBuilder:
                 file=conf)
         ftparchive_env = dict(os.environ)
         ftparchive_env.pop("APT_CONFIG", None)
-        ret = call(
+        ret = subprocess.call(
             ["apt-ftparchive", "-q=2", "generate", conf_path],
             env=ftparchive_env)
         if ret != 0:
             return ret
 
         with open(os.path.join(self.apt_dir, "Release"), "w") as release:
-            return call(
+            return subprocess.call(
                 ["apt-ftparchive", "-q=2", "-c", conf_path, "release",
                  self.apt_dir],
                 stdout=release, env=ftparchive_env)
@@ -249,7 +243,7 @@ class RecipeBuilder:
         if ret == 0:
             list_path = os.path.join(
                 self.apt_sources_list_dir, "buildrecipe-archive.list")
-            return call(['sudo', 'mv', tmp_list_path, list_path])
+            return subprocess.call(['sudo', 'mv', tmp_list_path, list_path])
         return ret
 
     def setUpAptArchive(self, package):
@@ -293,7 +287,8 @@ class RecipeBuilder:
             print("Running in chroot: %s" %
                   ' '.join("'%s'" % arg for arg in args))
             sys.stdout.flush()
-        return call(['sudo', '/usr/sbin/chroot', self.chroot_path] + args)
+        return subprocess.call(
+            ['sudo', '/usr/sbin/chroot', self.chroot_path] + args)
 
     def copy_in(self, source_path, target_path):
         """Copy a file into the target environment.
@@ -313,7 +308,7 @@ class RecipeBuilder:
         mode = stat.S_IMODE(os.stat(source_path).st_mode)
         full_target_path = os.path.join(
             self.chroot_path, target_path.lstrip("/"))
-        check_call(
+        subprocess.check_call(
             ["sudo", "install", "-o", "root", "-g", "root", "-m", "%o" % mode,
              source_path, full_target_path])
 
