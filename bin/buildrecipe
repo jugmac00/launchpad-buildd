@@ -35,18 +35,15 @@ RETCODE_FAILURE_INSTALL_BUILD_DEPS = 202
 RETCODE_FAILURE_BUILD_SOURCE_PACKAGE = 203
 
 
-def call_report_rusage(args, env):
+def call_report(args, env):
     """Run a subprocess.
 
-    Report that it was run, and the resources used, and complain if it fails.
+    Report that it was run and complain if it fails.
 
-    :return: The process wait status.
+    :return: The process exit status.
     """
     print('RUN %r' % args)
-    proc = Popen(args, env=env)
-    pid, status, rusage = os.wait4(proc.pid, 0)
-    print(rusage)
-    return status
+    return call(args, env=env)
 
 
 class RecipeBuilder:
@@ -149,7 +146,7 @@ class RecipeBuilder:
             '--append-version', '~ubuntu%s.1' % distroseries_version,
             recipe_path, self.tree_path,
             ])
-        retcode = call_report_rusage(cmd, env=env)
+        retcode = call_report(cmd, env=env)
         if retcode != 0:
             return retcode
         (source,) = [name for name in os.listdir(self.tree_path)
