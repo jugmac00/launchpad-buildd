@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from contextlib import contextmanager
 import imp
+import io
 import os
 import shutil
 import stat
@@ -14,7 +15,10 @@ import sys
 import tempfile
 from textwrap import dedent
 
-from fixtures import MockPatchObject
+from fixtures import (
+    MockPatch,
+    MockPatchObject,
+    )
 import six
 from systemfixtures import FakeProcesses
 from testtools import TestCase
@@ -81,6 +85,107 @@ class TestRecipeBuilder(TestCase):
     def tearDown(self):
         self.resetEnvironment()
         super(TestRecipeBuilder, self).tearDown()
+
+    def test_buildTree_git(self):
+        def fake_git(args):
+            if args["args"][1] == "--version":
+                print("git version x.y.z")
+                return {}
+            else:
+                return {"returncode": 1}
+
+        def fake_git_build_recipe(args):
+            print("dummy recipe build")
+            os.makedirs(os.path.join(self.builder.tree_path, "foo"))
+            return {}
+
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(
+            lambda _: {"stdout": io.StringIO(u"5.10\n")}, name="sudo")
+        processes_fixture.add(fake_git, name="git")
+        processes_fixture.add(
+            lambda _: {"stdout": io.StringIO(u"git-build-recipe\tx.y.z\n")},
+            name="dpkg-query")
+        processes_fixture.add(fake_git_build_recipe, name="git-build-recipe")
+        self.builder = RecipeBuilder(
+            self.build_id, "Recipe Builder", "builder@example.org>", "grumpy",
+            "grumpy", "main", "PPA", git=True)
+        with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
+            f.write("dummy recipe contents\n")
+        mock_stdout = six.StringIO()
+        self.useFixture(MockPatch("sys.stdout", mock_stdout))
+        self.assertEqual(0, self.builder.buildTree())
+        self.assertEqual(
+            os.path.join(self.builder.work_dir_relative, "tree", "foo"),
+            self.builder.source_dir_relative)
+        expected_recipe_command = [
+            "git-build-recipe", "--safe", "--no-build",
+            "--manifest", os.path.join(self.builder.tree_path, "manifest"),
+            "--distribution", "grumpy", "--allow-fallback-to-native",
+            "--append-version", u"~ubuntu5.10.1",
+            os.path.join(self.builder.work_dir, "recipe"),
+            self.builder.tree_path,
+            ]
+        self.assertEqual(
+            dedent("""\
+                Git version:
+                git version x.y.z
+                git-build-recipe x.y.z
+                Building recipe:
+                dummy recipe contents
+
+                RUN %s
+                dummy recipe build
+                """) % repr(expected_recipe_command),
+            mock_stdout.getvalue())
+
+    def test_buildTree_bzr(self):
+        def fake_bzr(args):
+            if args["args"][1] == "version":
+                print("bzr version x.y.z")
+                return {}
+            elif args["args"][1] == "plugins":
+                print("bzr-plugin x.y.z")
+                return {}
+            elif "dailydeb" in args["args"][1:]:
+                print("dummy recipe build")
+                os.makedirs(os.path.join(self.builder.tree_path, "foo"))
+                return {}
+            else:
+                return {"returncode": 1}
+
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(
+            lambda _: {"stdout": io.StringIO(u"5.10\n")}, name="sudo")
+        processes_fixture.add(fake_bzr, name="bzr")
+        with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
+            f.write("dummy recipe contents\n")
+        mock_stdout = six.StringIO()
+        self.useFixture(MockPatch("sys.stdout", mock_stdout))
+        self.assertEqual(0, self.builder.buildTree())
+        self.assertEqual(
+            os.path.join(self.builder.work_dir_relative, "tree", "foo"),
+            self.builder.source_dir_relative)
+        expected_recipe_command = [
+            "bzr", "-Derror", "dailydeb", "--safe", "--no-build",
+            "--manifest", os.path.join(self.builder.tree_path, "manifest"),
+            "--distribution", "grumpy", "--allow-fallback-to-native",
+            "--append-version", u"~ubuntu5.10.1",
+            os.path.join(self.builder.work_dir, "recipe"),
+            self.builder.tree_path,
+            ]
+        self.assertEqual(
+            dedent("""\
+                Bazaar versions:
+                bzr version x.y.z
+                bzr-plugin x.y.z
+                Building recipe:
+                dummy recipe contents
+
+                RUN %s
+                dummy recipe build
+                """) % repr(expected_recipe_command),
+            mock_stdout.getvalue())
 
     def test_makeDummyDsc(self):
         self.builder.source_dir_relative = os.path.join(
