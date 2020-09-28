@@ -22,7 +22,12 @@ def main():
         "--warnonly", default=False, action="store_true",
         help="Exit zero even if problems are found")
     args = parser.parse_args()
-    problems = filter_log(sys.stdin, sys.stdout, in_line=args.inline)
+    stdin = sys.stdin
+    stdout = sys.stdout
+    if sys.version_info[0] >= 3:
+        stdin = stdin.buffer
+        stdout = stdout.buffer
+    problems = filter_log(stdin, stdout, in_line=args.inline)
     if problems and not args.warnonly:
         return 2
     else:

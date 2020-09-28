@@ -35,28 +35,27 @@
 from __future__ import print_function
 
 import re
-import sys
 
 implicit_pattern = re.compile(
-    r"([^:]*):(\d+):(\d+:)? warning: implicit declaration "
-    r"of function [`']([^']*)'")
+    br"([^:]*):(\d+):(\d+:)? warning: implicit declaration "
+    br"of function [`']([^']*)'")
 pointer_pattern = re.compile(
-    r"([^:]*):(\d+):(\d+:)? warning: "
-    r"("
-     r"(assignment"
-     r"|initialization"
-     r"|return"
-     r"|passing arg \d+ of `[^']*'"
-     r"|passing arg \d+ of pointer to function"
-     r") makes pointer from integer without a cast"
-    r"|"
-    r"cast to pointer from integer of different size)")
+    br"([^:]*):(\d+):(\d+:)? warning: "
+    br"("
+     br"(assignment"
+     br"|initialization"
+     br"|return"
+     br"|passing arg \d+ of `[^']*'"
+     br"|passing arg \d+ of pointer to function"
+     br") makes pointer from integer without a cast"
+    br"|"
+    br"cast to pointer from integer of different size)")
 
 
 def filter_log(in_file, out_file, in_line=False):
-    last_implicit_filename = ""
+    last_implicit_filename = b""
     last_implicit_linenum = -1
-    last_implicit_func = ""
+    last_implicit_func = b""
 
     errlist = []
 
@@ -65,7 +64,7 @@ def filter_log(in_file, out_file, in_line=False):
         if in_line:
             out_file.write(line)
             out_file.flush()
-        if line == '':
+        if line == b'':
             break
         m = implicit_pattern.match(line)
         if m:
@@ -79,16 +78,18 @@ def filter_log(in_file, out_file, in_line=False):
                 pointer_linenum = int(m.group(2))
                 if (last_implicit_filename == pointer_filename
                     and last_implicit_linenum == pointer_linenum):
-                    err = "Function `%s' implicitly converted to pointer at " \
-                          "%s:%d" % (last_implicit_func, last_implicit_filename,
-                                     last_implicit_linenum)
+                    err = (
+                        b"Function `%s' implicitly converted to pointer at "
+                        b"%s:%d" % (
+                            last_implicit_func, last_implicit_filename,
+                            last_implicit_linenum))
                     errlist.append(err)
-                    out_file.write(err + "\n")
+                    out_file.write(err + b"\n")
 
     if errlist:
         if in_line:
-            out_file.write("\n".join(errlist) + "\n\n")
-            out_file.write("""
+            out_file.write(b"\n".join(errlist) + b"\n\n")
+            out_file.write(b"""
 
 Our automated build log filter detected the problem(s) above that will
 likely cause your package to segfault on architectures where the size of
