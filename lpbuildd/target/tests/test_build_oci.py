@@ -290,6 +290,20 @@ class TestBuildOCI(TestCase):
                 cwd="/home/buildd/test-image", **env),
             ]))
 
+    def assertRanPostBuildCommands(self, build_oci):
+        self.assertThat(build_oci.backend.run.calls[1:], MatchesListwise([
+            RanBuildCommand(
+                ['docker', 'create', '--name', 'test-image', 'test-image'],
+                cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ['docker', 'cp',
+                 '/tmp/rocks-manifest.json', 'test-image:/manifest.json'],
+                cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ['docker', 'commit', 'test-image', 'test-image'],
+                cwd="/home/buildd/test-image"),
+        ]))
+
     def test_build(self):
         args = [
             "build-oci",
@@ -299,12 +313,11 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(
-                ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image"),
-            ]))
+        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
+            ["docker", "build", "--no-cache", "--tag", "test-image",
+             "/home/buildd/test-image/."],
+            cwd="/home/buildd/test-image"))
+        self.assertRanPostBuildCommands(build_oci)
 
     def test_build_with_file(self):
         args = [
@@ -316,13 +329,12 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(
-                ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "--file", "./build-aux/Dockerfile",
-                 "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image"),
-            ]))
+        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
+            ["docker", "build", "--no-cache", "--tag", "test-image",
+             "--file", "./build-aux/Dockerfile",
+             "/home/buildd/test-image/."],
+            cwd="/home/buildd/test-image"))
+        self.assertRanPostBuildCommands(build_oci)
 
     def test_build_with_path(self):
         args = [
@@ -334,12 +346,11 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(
-                ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "/home/buildd/test-image/a-sub-directory/"],
-                cwd="/home/buildd/test-image"),
-            ]))
+        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
+            ["docker", "build", "--no-cache", "--tag", "test-image",
+             "/home/buildd/test-image/a-sub-directory/"],
+            cwd="/home/buildd/test-image"))
+        self.assertRanPostBuildCommands(build_oci)
 
     def test_build_with_file_and_path(self):
         args = [
@@ -352,13 +363,12 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(
-                ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "--file", "test-build-path/build-aux/Dockerfile",
-                 "/home/buildd/test-image/test-build-path"],
-                cwd="/home/buildd/test-image"),
-            ]))
+        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
+            ["docker", "build", "--no-cache", "--tag", "test-image",
+             "--file", "test-build-path/build-aux/Dockerfile",
+             "/home/buildd/test-image/test-build-path"],
+            cwd="/home/buildd/test-image"))
+        self.assertRanPostBuildCommands(build_oci)
 
     def test_build_with_args(self):
         args = [
@@ -372,14 +382,13 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(
-                ["docker", "build", "--no-cache", "--tag", "test-image",
-                 "--file", "test-build-path/build-aux/Dockerfile",
-                 "--build-arg=VAR1=xxx", "--build-arg=VAR2=yyy",
-                 "/home/buildd/test-image/test-build-path"],
-                cwd="/home/buildd/test-image"),
-            ]))
+        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
+            ["docker", "build", "--no-cache", "--tag", "test-image",
+             "--file", "test-build-path/build-aux/Dockerfile",
+             "--build-arg=VAR1=xxx", "--build-arg=VAR2=yyy",
+             "/home/buildd/test-image/test-build-path"],
+            cwd="/home/buildd/test-image"))
+        self.assertRanPostBuildCommands(build_oci)
 
     def test_build_proxy(self):
         args = [
@@ -391,14 +400,13 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanBuildCommand(
-                ["docker", "build", "--no-cache",
-                 "--build-arg", "http_proxy=http://proxy.example:3128/",
-                 "--build-arg", "https_proxy=http://proxy.example:3128/",
-                 "--tag", "test-image", "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image"),
-            ]))
+        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
+            ["docker", "build", "--no-cache",
+             "--build-arg", "http_proxy=http://proxy.example:3128/",
+             "--build-arg", "https_proxy=http://proxy.example:3128/",
+             "--tag", "test-image", "/home/buildd/test-image/."],
+            cwd="/home/buildd/test-image"))
+        self.assertRanPostBuildCommands(build_oci)
 
     def test_run_succeeds(self):
         args = [
