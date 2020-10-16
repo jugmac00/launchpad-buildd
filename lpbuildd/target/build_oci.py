@@ -54,6 +54,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         super(BuildOCI, self).__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
+        self.security_manifest_target_path = "/usr/share/rocks/manifest.json"
 
     def _add_docker_engine_proxy_settings(self):
         """Add systemd file for docker proxy settings."""
@@ -128,33 +129,47 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             "manifest-version": "1"
         }
         local_filename = tempfile.mktemp()
-        destination = "/tmp/rocks-manifest.json"
+        destination = "/tmp/security-manifest.json"
         with open(local_filename, 'w') as fd:
             json.dump(content, fd, indent=2)
-        self.backend.copy_in(local_filename, "/tmp/rocks-manifest.json")
+        self.backend.copy_in(local_filename, destination)
         return destination
 
-    def createImageContainer(self):
-        """Creates a temp container where we can do changes to the image."""
+    def startImageContainer(self):
+        """Starts a container from the built image without actually running
+        the image's command."""
         self.run_build_command([
-            "docker", "create", "--name", self.args.name, self.args.name])
+            "docker", "run", "-d", "--name", self.args.name, self.args.name,
+            "sleep", "infinity"])
+
+    def stopImageContainer(self):
+        self.run_build_command(["docker", "stop", self.args.name])
+
+    def removeImageContainer(self):
+        self.run_build_command(["docker", "rm", self.args.name])
 
     def commitImage(self):
         """Commits the tmp container, overriding the originally built image."""
         self.run_build_command([
             "docker", "commit", self.args.name, self.args.name])
 
-    def addFileToImage(self, src, dst):
+    def addFileToImageContainer(self, src, dst):
         """Copy a file in the local filesystem into the image container."""
+        dir_path = os.path.dirname(dst)
+        # Ensure the destination directory exists.
         self.run_build_command(
-            ["docker", "cp", src, "%s:%s" % (self.args.name, dst)]
-        )
+            ["docker", "exec", self.args.name, "mkdir", "-p", dir_path])
+        self.run_build_command(
+            ["docker", "cp", src, "%s:%s" % (self.args.name, dst)])
 
     def addSecurityManifest(self):
+        self.startImageContainer()
         manifest_filename = self.createSecurityManifest()
-        self.createImageContainer()
-        self.addFileToImage(manifest_filename, "/manifest.json")
+        self.addFileToImageContainer(
+            manifest_filename, self.security_manifest_target_path)
+        self.stopImageContainer()
         self.commitImage()
+        self.removeImageContainer()
 
     def build(self):
         logger.info("Running build phase...")

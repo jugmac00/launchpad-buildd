@@ -293,14 +293,25 @@ class TestBuildOCI(TestCase):
     def assertRanPostBuildCommands(self, build_oci):
         self.assertThat(build_oci.backend.run.calls[1:], MatchesListwise([
             RanBuildCommand(
-                ['docker', 'create', '--name', 'test-image', 'test-image'],
+                ['docker', 'run', '-d', '--name', 'test-image', 'test-image',
+                 'sleep', 'infinity'],
                 cwd="/home/buildd/test-image"),
             RanBuildCommand(
-                ['docker', 'cp',
-                 '/tmp/rocks-manifest.json', 'test-image:/manifest.json'],
+                ['docker', 'exec', 'test-image', 'mkdir', '-p',
+                 '/usr/share/rocks'],
+                cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ['docker', 'cp', '/tmp/security-manifest.json',
+                 'test-image:/usr/share/rocks/manifest.json'],
+                cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ['docker', 'stop', 'test-image'],
                 cwd="/home/buildd/test-image"),
             RanBuildCommand(
                 ['docker', 'commit', 'test-image', 'test-image'],
+                cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ['docker', 'rm', 'test-image'],
                 cwd="/home/buildd/test-image"),
         ]))
 
