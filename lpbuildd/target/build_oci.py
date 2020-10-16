@@ -6,6 +6,7 @@ from __future__ import print_function
 __metaclass__ = type
 
 from collections import OrderedDict
+import json
 import logging
 import os.path
 import sys
@@ -119,6 +120,42 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
 
+    def createSecurityManifest(self):
+        """Generates the security manifest file, returning the tmp file name
+        where it is stored in the backend.
+        """
+        content = {
+            "manifest-version": "1"
+        }
+        local_filename = tempfile.mktemp()
+        destination = "/tmp/rocks-manifest.json"
+        with open(local_filename, 'w') as fd:
+            json.dump(content, fd, indent=2)
+        self.backend.copy_in(local_filename, "/tmp/rocks-manifest.json")
+        return destination
+
+    def createImageContainer(self):
+        """Creates a temp container where we can do changes to the image."""
+        self.run_build_command([
+            "docker", "create", "--name", self.args.name, self.args.name])
+
+    def commitImage(self):
+        """Commits the tmp container, overriding the originally built image."""
+        self.run_build_command([
+            "docker", "commit", self.args.name, self.args.name])
+
+    def addFileToImage(self, src, dst):
+        """Copy a file in the local filesystem into the image container."""
+        self.run_build_command(
+            ["docker", "cp", src, "%s:%s" % (self.args.name, dst)]
+        )
+
+    def addSecurityManifest(self):
+        manifest_filename = self.createSecurityManifest()
+        self.createImageContainer()
+        self.addFileToImage(manifest_filename, "/manifest.json")
+        self.commitImage()
+
     def build(self):
         logger.info("Running build phase...")
         args = ["docker", "build", "--no-cache"]
@@ -143,6 +180,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         self._check_path_escape(build_context_path)
         args.append(build_context_path)
         self.run_build_command(args)
+        self.addSecurityManifest()
 
     def run(self):
         try:
