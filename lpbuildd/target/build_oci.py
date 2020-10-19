@@ -54,7 +54,10 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         super(BuildOCI, self).__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
-        self.security_manifest_target_path = "/usr/share/rocks/manifest.json"
+        # Temp directory where we store files that will be included in the
+        # final filesystem of the image.
+        self.backend_tmp_fs_dir = "/tmp/image-root-dir/"
+        self.security_manifest_target_path = "/.rocks/manifest.json"
 
     def _add_docker_engine_proxy_settings(self):
         """Add systemd file for docker proxy settings."""
@@ -126,24 +129,34 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         where it is stored in the backend.
         """
         content = {
-            "manifest-version": "1"
+            "manifest-version": "0",
+            "name": self.args.name
         }
         local_filename = tempfile.mktemp()
-        destination = "/tmp/security-manifest.json"
+        destination_path = self.security_manifest_target_path.lstrip(
+            os.path.sep)
+        destination = os.path.join(self.backend_tmp_fs_dir, destination_path)
         with open(local_filename, 'w') as fd:
             json.dump(content, fd, indent=2)
         self.backend.copy_in(local_filename, destination)
         return destination
 
-    def startImageContainer(self):
-        """Starts a container from the built image without actually running
-        the image's command."""
-        self.run_build_command([
-            "docker", "run", "-d", "--name", self.args.name, self.args.name,
-            "sleep", "infinity"])
+    def initTempRootDir(self):
+        """Initialize in the backend the directories that will be included in
+        resulting image's filesystem.
+        """
+        security_manifest_dir = os.path.dirname(
+            self.security_manifest_target_path)
+        dir = os.path.join(
+            self.backend_tmp_fs_dir,
+            security_manifest_dir.lstrip(os.path.sep))
+        self.backend.run(["mkdir", "-p", dir])
 
-    def stopImageContainer(self):
-        self.run_build_command(["docker", "stop", self.args.name])
+    def createImageContainer(self):
+        """Creates a container from the built image, so we can play with
+        it's filesystem."""
+        self.run_build_command([
+            "docker", "create", "--name", self.args.name, self.args.name])
 
     def removeImageContainer(self):
         self.run_build_command(["docker", "rm", self.args.name])
@@ -153,21 +166,20 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         self.run_build_command([
             "docker", "commit", self.args.name, self.args.name])
 
-    def addFileToImageContainer(self, src, dst):
-        """Copy a file in the local filesystem into the image container."""
-        dir_path = os.path.dirname(dst)
-        # Ensure the destination directory exists.
-        self.run_build_command(
-            ["docker", "exec", self.args.name, "mkdir", "-p", dir_path])
-        self.run_build_command(
-            ["docker", "cp", src, "%s:%s" % (self.args.name, dst)])
+    def addFilesToImageContainer(self):
+        """Flushes all files from temp root dir (in the backend) to the
+        resulting image container."""
+        # The extra '.' in the end is important. It indicates to docker that
+        # the directory itself should be copied, instead of the list of
+        # files in the directory. It makes docker keep the paths.
+        src = os.path.join(self.backend_tmp_fs_dir, ".")
+        self.run_build_command(["docker", "cp", src, "%s:/" % self.args.name])
 
     def addSecurityManifest(self):
-        self.startImageContainer()
-        manifest_filename = self.createSecurityManifest()
-        self.addFileToImageContainer(
-            manifest_filename, self.security_manifest_target_path)
-        self.stopImageContainer()
+        self.createImageContainer()
+        self.initTempRootDir()
+        self.createSecurityManifest()
+        self.addFilesToImageContainer()
         self.commitImage()
         self.removeImageContainer()
 
