@@ -3,6 +3,8 @@
 
 __metaclass__ = type
 
+import datetime
+import json
 import os.path
 import stat
 import subprocess
@@ -71,6 +73,82 @@ class RanBuildCommand(RanCommand):
         kwargs.setdefault("LANG", "C.UTF-8")
         kwargs.setdefault("SHELL", "/bin/sh")
         super(RanBuildCommand, self).__init__(args, **kwargs)
+
+
+class TestBuildOCIManifestGeneration(TestCase):
+    def test_getSecurityManifestContent(self):
+        now = datetime.datetime.now().isoformat()
+        metadata = {
+            "architectures": ["amd64", "386"],
+            "recipe_owner": dict(name="pappacena", email="me@foo.com"),
+            "build_request_id": 123,
+            "build_request_timestamp": now,
+            "build_requester": dict(name="someone", email="someone@foo.com"),
+            "build_urls": {
+                "amd64": "http://lp.net/build/1",
+                "386": "http://lp.net/build/2"
+            },
+        }
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
+            "--build-arg", "VAR1=1", "--build-arg", "VAR2=22",
+            "--build-file", "SomeDockerfile", "--build-path", "docker/builder",
+            "--metadata", json.dumps(metadata),
+            "test-image"
+        ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.run.result = "a1b2c3d4e5f5"
+        self.assertEqual(build_oci._getSecurityManifestContent(), {
+            "manifest-version": "1",
+            "name": "test-image",
+            "architectures": ["amd64", "386"],
+            "publisher-emails": ["me@foo.com", "someone@foo.com"],
+            "image-info": {
+                "build-request-id": 123,
+                "build-request-timestamp": now,
+                "build-urls": {
+                    "386": "http://lp.net/build/2",
+                    "amd64": "http://lp.net/build/1"}},
+            "vcs-info": [{
+                "source": "lp:git-repo",
+                "source-branch": "refs/heads/main",
+                "source-build-args": ["VAR1=1", "VAR2=22"],
+                "source-build-file": "SomeDockerfile",
+                "source-commit": "a1b2c3d4e5f5",
+                "source-subdir": "docker/builder"
+            }]
+        })
+
+    def test_getSecurityManifestContent_without_manifest(self):
+        """With minimal parameters, the manifest content should give
+        something back without breaking."""
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
+            "test-image"
+        ]
+        build_oci = parse_args(args=args).operation
+        self.assertEqual(build_oci._getSecurityManifestContent(), {
+            "manifest-version": "1",
+            "name": "test-image",
+            "architectures": ["amd64"],
+            "publisher-emails": [],
+            "image-info": {
+                "build-request-id": None,
+                "build-request-timestamp": None,
+                "build-urls": {}},
+            "vcs-info": [{
+                "source": "lp:git-repo",
+                "source-branch": "refs/heads/main",
+                "source-build-args": [],
+                "source-build-file": None,
+                "source-commit": None,
+                "source-subdir": "."
+            }]
+        })
 
 
 class TestBuildOCI(TestCase):
@@ -291,11 +369,16 @@ class TestBuildOCI(TestCase):
             ]))
 
     def assertRanPostBuildCommands(self, build_oci):
+        rev_num_args = (
+            ['bzr', 'revno'] if build_oci.args.branch
+            else ['git', 'rev-parse', 'HEAD'])
         self.assertThat(build_oci.backend.run.calls[1:], MatchesListwise([
             RanBuildCommand(
                 ['docker', 'create', '--name', 'test-image', 'test-image'],
                 cwd="/home/buildd/test-image"),
             RanCommand(['mkdir', '-p', '/tmp/image-root-dir/.rocks']),
+            RanCommand(
+                rev_num_args, cwd="/home/buildd/test-image", get_output=True),
             RanBuildCommand(
                 ['docker', 'cp', '/tmp/image-root-dir/.', 'test-image:/'],
                 cwd="/home/buildd/test-image"),
