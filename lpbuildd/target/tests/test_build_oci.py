@@ -5,6 +5,10 @@ __metaclass__ = type
 
 import datetime
 import json
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 import os.path
 import stat
 import subprocess
@@ -99,7 +103,28 @@ class TestBuildOCIManifestGeneration(TestCase):
             "test-image"
         ]
         build_oci = parse_args(args=args).operation
-        build_oci.backend.run.result = "a1b2c3d4e5f5"
+
+        # Expected build_oci.backend.run outputs.
+        commit_hash = "a1b2c3d4e5f5"
+        grep_dctrl_output = dedent("""
+        Package: adduser
+        Version: 3.118
+        
+        Package: apt
+        Version: 1.8.2.1
+
+        Package: util-linux
+        Version: 2.33.1
+        
+        Package: zlib1g
+        Version: 1:1.2.11
+        Source: zlib
+        """)
+
+        # Side effect for "docker cp...", "dgrep-dctrl" and "git rev-parse..."
+        build_oci.backend.run = mock.Mock(side_effect=[
+            None, grep_dctrl_output, commit_hash])
+
         self.assertEqual(build_oci._getSecurityManifestContent(), {
             "manifest-version": "1",
             "name": "test-image",
@@ -118,7 +143,13 @@ class TestBuildOCIManifestGeneration(TestCase):
                 "source-build-file": "SomeDockerfile",
                 "source-commit": "a1b2c3d4e5f5",
                 "source-subdir": "docker/builder"
-            }]
+            }],
+            "packages": [
+                {'package': 'adduser', 'source': None, 'version': '3.118'},
+                {'package': 'apt', 'source': None, 'version': '1.8.2.1'},
+                {'package': 'util-linux', 'source': None, 'version': '2.33.1'},
+                {'package': 'zlib1g', 'source': 'zlib', 'version': '1:1.2.11'}
+            ]
         })
 
     def test_getSecurityManifestContent_without_manifest(self):
@@ -130,7 +161,11 @@ class TestBuildOCIManifestGeneration(TestCase):
             "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
             "test-image"
         ]
+
+        # Here we will not mock the package gathering in order to let it
+        # raise exception, so we end up with a manifest without packages.
         build_oci = parse_args(args=args).operation
+
         self.assertEqual(build_oci._getSecurityManifestContent(), {
             "manifest-version": "1",
             "name": "test-image",
@@ -147,9 +182,38 @@ class TestBuildOCIManifestGeneration(TestCase):
                 "source-build-file": None,
                 "source-commit": None,
                 "source-subdir": "."
-            }]
+            }],
+            "packages": []
         })
 
+    def test_getContainerPackageList(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
+            "test-image"
+        ]
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.run = mock.Mock(return_value=dedent("""
+        Package: adduser
+        Version: 3.118
+        
+        Package: apt
+        Version: 1.8.2.1
+
+        Package: util-linux
+        Version: 2.33.1-0.1
+        
+        Package: zlib1g
+        Version: 1:1.2.11
+        Source: zlib
+        """))
+        self.assertEqual([
+            {'package': 'adduser', 'source': None, 'version': '3.118'},
+            {'package': 'apt', 'source': None, 'version': '1.8.2.1'},
+            {'package': 'util-linux', 'source': None, 'version': '2.33.1-0.1'},
+            {'package': 'zlib1g', 'source': 'zlib', 'version': '1:1.2.11'}
+        ], build_oci._getContainerPackageList())
 
 class TestBuildOCI(TestCase):
 
@@ -377,8 +441,20 @@ class TestBuildOCI(TestCase):
                 ['docker', 'create', '--name', 'test-image', 'test-image'],
                 cwd="/home/buildd/test-image"),
             RanCommand(['mkdir', '-p', '/tmp/image-root-dir/.rocks']),
+
+            # Manifest building: packages discovery.
+            RanBuildCommand([
+                'docker', 'cp',
+                'test-image:/var/lib/dpkg/status', '/tmp/dpkg-status'],
+                cwd="/home/buildd/test-image"),
+            RanCommand([
+                'grep-dctrl', '-s', 'Package,Version,Source', '',
+                '/tmp/dpkg-status'], get_output=True),
+
+            # Manifest building: get current revision number.
             RanCommand(
                 rev_num_args, cwd="/home/buildd/test-image", get_output=True),
+
             RanBuildCommand(
                 ['docker', 'cp', '/tmp/image-root-dir/.', 'test-image:/'],
                 cwd="/home/buildd/test-image"),

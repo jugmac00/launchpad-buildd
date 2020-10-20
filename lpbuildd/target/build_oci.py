@@ -121,6 +121,12 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])
 
+    def repo(self):
+        """Collect git or bzr branch."""
+        logger.info("Running repo phase...")
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
+
     def getCurrentVCSRevision(self):
         if self.args.branch is not None:
             revision_cmd = ["bzr", "revno"]
@@ -130,11 +136,28 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             revision_cmd, cwd=os.path.join("/home/buildd", self.args.name),
             get_output=True)
 
-    def repo(self):
-        """Collect git or bzr branch."""
-        logger.info("Running repo phase...")
-        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
-        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
+    def _getContainerPackageList(self):
+        tmp_file = "/tmp/dpkg-status"
+        self.run_build_command([
+            "docker", "cp",
+            "%s:/var/lib/dpkg/status" % self.args.name, tmp_file])
+        output = self.backend.run([
+            "grep-dctrl", "-s", "Package,Version,Source", "", tmp_file],
+            get_output=True)
+        packages = []
+        empty_pkg_details = dict.fromkeys(["package", "version", "source"])
+        current_package = empty_pkg_details.copy()
+        for line in output.split("\n"):
+            if not line.strip():
+                if not all(i is None for i in current_package.values()):
+                    packages.append(current_package)
+                    current_package = empty_pkg_details.copy()
+                continue
+            k, v = line.split(":", 1)
+            current_package[k.lower().strip()] = v.strip()
+        if not all(i is None for i in current_package.values()):
+            packages.append(current_package)
+        return packages
 
     def _getSecurityManifestContent(self):
         try:
@@ -145,6 +168,12 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         build_requester = metadata.get("build_requester", {})
         emails = [i.get("email") for i in (recipe_owner, build_requester)
                   if i.get("email")]
+
+        try:
+            packages = self._getContainerPackageList()
+        except Exception as e:
+            logger.warning("Failed to get container package list: %s", e)
+            packages = []
 
         return {
             "manifest-version": "1",
@@ -164,7 +193,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 "source-subdir": self.args.build_path,
                 "source-build-file": self.args.build_file,
                 "source-build-args": self.args.build_arg
-            }]
+            }],
+            "packages": packages
         }
 
     def createSecurityManifest(self):
