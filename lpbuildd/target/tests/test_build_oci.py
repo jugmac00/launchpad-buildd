@@ -121,13 +121,35 @@ class TestBuildOCIManifestGeneration(TestCase):
         Source: zlib
         """).encode('utf8')
 
+        os_release_cat_output = dedent("""
+        NAME="Ubuntu"
+        VERSION="20.04.1 LTS (Focal Fossa)"
+        ID=ubuntu
+        ID_LIKE=debian
+        PRETTY_NAME="Ubuntu 20.04.1 LTS"
+        VERSION_ID="20.04"
+        HOME_URL="https://www.ubuntu.com/"
+        SUPPORT_URL="https://help.ubuntu.com/"
+        BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+        PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+        VERSION_CODENAME=focal
+        UBUNTU_CODENAME=focal
+        """).encode("utf8")
+
         # Side effect for "docker cp...", "dgrep-dctrl" and "git rev-parse..."
         build_oci.backend.run = mock.Mock(side_effect=[
-            None, grep_dctrl_output, commit_hash])
+            # docker cp and dgrep-dctrl to get packages.
+            None, grep_dctrl_output,
+            # git rev-parse HEAD to get current revision.
+            commit_hash,
+            # docker cp and cat for container /etc/os-release.
+            None, os_release_cat_output])
 
         self.assertEqual(build_oci._getSecurityManifestContent(), {
             "manifest-version": "1",
             "name": "test-image",
+            'os-release-id': "ubuntu",
+            'os-release-version-id': "20.04",
             "architectures": ["amd64", "386"],
             "publisher-emails": ["me@foo.com", "someone@foo.com"],
             "image-info": {
@@ -162,13 +184,16 @@ class TestBuildOCIManifestGeneration(TestCase):
             "test-image"
         ]
 
-        # Here we will not mock the package gathering in order to let it
-        # raise exception, so we end up with a manifest without packages.
+        # Here we will not mock the package gathering nor os-release file
+        # reading in order to let it raise exception, so we end up with a
+        # manifest without packages.
         build_oci = parse_args(args=args).operation
 
         self.assertEqual(build_oci._getSecurityManifestContent(), {
             "manifest-version": "1",
             "name": "test-image",
+            'os-release-id': None,
+            'os-release-version-id': None,
             "architectures": ["amd64"],
             "publisher-emails": [],
             "image-info": {
@@ -445,7 +470,7 @@ class TestBuildOCI(TestCase):
 
             # Manifest building: packages discovery.
             RanBuildCommand([
-                'docker', 'cp',
+                'docker', 'cp', '-L',
                 'test-image:/var/lib/dpkg/status', '/tmp/dpkg-status'],
                 cwd="/home/buildd/test-image"),
             RanCommand([
@@ -456,6 +481,14 @@ class TestBuildOCI(TestCase):
             RanCommand(
                 rev_num_args, cwd="/home/buildd/test-image", get_output=True),
 
+            # Manifest building: os-release file.
+            RanBuildCommand([
+                'docker', 'cp',  '-L', 'test-image:/etc/os-release',
+                '/tmp/os-release'],
+                cwd="/home/buildd/test-image"),
+            RanCommand(['cat', '/tmp/os-release'], get_output=True),
+
+            # Filesystem injection and image commiting.
             RanBuildCommand(
                 ['docker', 'cp', '/tmp/image-root-dir/.', 'test-image:/'],
                 cwd="/home/buildd/test-image"),

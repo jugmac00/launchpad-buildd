@@ -9,6 +9,7 @@ from collections import OrderedDict
 import json
 import logging
 import os.path
+import re
 import sys
 import tempfile
 from textwrap import dedent
@@ -128,7 +129,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
 
-    def getCurrentVCSRevision(self):
+    def _getCurrentVCSRevision(self):
         if self.args.branch is not None:
             revision_cmd = ["bzr", "revno"]
         else:
@@ -140,7 +141,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
     def _getContainerPackageList(self):
         tmp_file = "/tmp/dpkg-status"
         self.run_build_command([
-            "docker", "cp",
+            "docker", "cp", "-L",
             "%s:/var/lib/dpkg/status" % self.args.name, tmp_file])
         output = self.backend.run([
             "grep-dctrl", "-s", "Package,Version,Source", "", tmp_file],
@@ -160,6 +161,25 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             packages.append(current_package)
         return packages
 
+    def _getContainerOSRelease(self):
+        tmp_file = "/tmp/os-release"
+        self.run_build_command([
+            "docker", "cp",  "-L",
+            "%s:/etc/os-release" % self.args.name, tmp_file])
+        content = self.backend.run(["cat", tmp_file], get_output=True)
+        os_release = {}
+        # Variable content might be enclosed by double-quote, single-quote
+        # or no quote at all. We accept everything.
+        content_expr = re.compile(r""""(.*)"|'(.*)'|(.*)""")
+        unquote = lambda string: [
+            i for i in content_expr.match(string).groups() if i is not None][0]
+        for line in content.decode("UTF-8", "replace").split("\n"):
+            if '=' not in line:
+                continue
+            key, value = line.strip().split("=", 1)
+            os_release[key] = unquote(value)
+        return os_release
+
     def _getSecurityManifestContent(self):
         try:
             metadata = json.loads(self.args.metadata) or {}
@@ -176,14 +196,21 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             logger.warning("Failed to get container package list: %s", e)
             packages = []
         try:
-            vcs_current_version = self.getCurrentVCSRevision()
+            vcs_current_version = self._getCurrentVCSRevision()
         except Exception as e:
             logger.warning("Failed to get current VCS revision: %s" % e)
             vcs_current_version = None
+        try:
+            os_release = self._getContainerOSRelease()
+        except Exception as e:
+            logger.warning("Failed to get /etc/os-release info: %s" % e)
+            os_release = {}
 
         return {
             "manifest-version": "1",
             "name": self.args.name,
+            "os-release-id": os_release.get("ID"),
+            "os-release-version-id": os_release.get("VERSION_ID"),
             "architectures": metadata.get("architectures") or [self.args.arch],
             "publisher-emails": emails,
             "image-info": {
