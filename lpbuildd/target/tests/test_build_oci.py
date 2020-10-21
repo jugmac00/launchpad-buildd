@@ -256,7 +256,7 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.install()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "bzr", "docker.io"),
+            RanAptGet("install", "bzr", "docker.io", "dctrl-tools"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -270,7 +270,7 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.install()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git", "docker.io"),
+            RanAptGet("install", "git", "docker.io", "dctrl-tools"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -326,7 +326,8 @@ class TestBuildOCI(TestCase):
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanCommand(
                 ["mkdir", "-p", "/etc/systemd/system/docker.service.d"]),
-            RanAptGet("install", "python3", "socat", "git", "docker.io"),
+            RanAptGet("install", "python3", "socat", "git", "docker.io",
+                      "dctrl-tools"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -581,7 +582,7 @@ class TestBuildOCI(TestCase):
         build_oci.backend.run = FakeMethod()
         self.assertEqual(0, build_oci.run())
         self.assertThat(build_oci.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "bzr", "docker.io")),
+            AnyMatch(RanAptGet("install", "bzr", "docker.io", "dctrl-tools")),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"],
                 cwd="/home/buildd")),

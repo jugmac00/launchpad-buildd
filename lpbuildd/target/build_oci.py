@@ -112,7 +112,8 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             # Add any proxy settings that are needed
             self._add_docker_engine_proxy_settings()
         deps.extend(self.vcs_deps)
-        deps.extend(["docker.io"])
+        # Install dctrl-tools to extract installed packages using grep-dctrl.
+        deps.extend(["docker.io", "dctrl-tools"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.backend in ("lxd", "fake"):
             self.snap_store_set_proxy()
