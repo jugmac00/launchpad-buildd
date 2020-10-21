@@ -121,20 +121,20 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])
 
-    def getCurrentVCSRevision(self):
+    def repo(self):
+        """Collect git or bzr branch."""
+        logger.info("Running repo phase...")
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
+
+    def _getCurrentVCSRevision(self):
         if self.args.branch is not None:
             revision_cmd = ["bzr", "revno"]
         else:
             revision_cmd = ["git", "rev-parse", "HEAD"]
         return self.backend.run(
             revision_cmd, cwd=os.path.join("/home/buildd", self.args.name),
-            get_output=True)
-
-    def repo(self):
-        """Collect git or bzr branch."""
-        logger.info("Running repo phase...")
-        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
-        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
+            get_output=True).decode("UTF-8", "replace").strip()
 
     def _getSecurityManifestContent(self):
         try:
@@ -145,6 +145,12 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         build_requester = metadata.get("build_requester", {})
         emails = [i.get("email") for i in (recipe_owner, build_requester)
                   if i.get("email")]
+
+        try:
+            vcs_current_version = self._getCurrentVCSRevision()
+        except Exception as e:
+            logger.warning("Failed to get current VCS revision: %s" % e)
+            vcs_current_version = None
 
         return {
             "manifest-version": "1",
@@ -160,7 +166,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             "vcs-info": [{
                 "source": self.args.git_repository,
                 "source-branch": self.args.git_path,
-                "source-commit": self.getCurrentVCSRevision(),
+                "source-commit": vcs_current_version,
                 "source-subdir": self.args.build_path,
                 "source-build-file": self.args.build_file,
                 "source-build-args": self.args.build_arg

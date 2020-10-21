@@ -99,7 +99,7 @@ class TestBuildOCIManifestGeneration(TestCase):
             "test-image"
         ]
         build_oci = parse_args(args=args).operation
-        build_oci.backend.run.result = "a1b2c3d4e5f5"
+        build_oci.backend.run.result = b"a1b2c3d4e5f5\n"
         self.assertEqual(build_oci._getSecurityManifestContent(), {
             "manifest-version": "1",
             "name": "test-image",
