@@ -105,7 +105,7 @@ class TestBuildOCIManifestGeneration(TestCase):
         build_oci = parse_args(args=args).operation
 
         # Expected build_oci.backend.run outputs.
-        commit_hash = "a1b2c3d4e5f5"
+        commit_hash = b"a1b2c3d4e5f5"
         grep_dctrl_output = dedent("""
         Package: adduser
         Version: 3.118
@@ -119,7 +119,7 @@ class TestBuildOCIManifestGeneration(TestCase):
         Package: zlib1g
         Version: 1:1.2.11
         Source: zlib
-        """)
+        """).encode('utf8')
 
         # Side effect for "docker cp...", "dgrep-dctrl" and "git rev-parse..."
         build_oci.backend.run = mock.Mock(side_effect=[
@@ -207,7 +207,7 @@ class TestBuildOCIManifestGeneration(TestCase):
         Package: zlib1g
         Version: 1:1.2.11
         Source: zlib
-        """))
+        """).encode("utf8"))
         self.assertEqual([
             {'package': 'adduser', 'source': None, 'version': '3.118'},
             {'package': 'apt', 'source': None, 'version': '1.8.2.1'},

@@ -134,7 +134,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             revision_cmd = ["git", "rev-parse", "HEAD"]
         return self.backend.run(
             revision_cmd, cwd=os.path.join("/home/buildd", self.args.name),
-            get_output=True)
+            get_output=True).decode("UTF-8", "replace").strip()
 
     def _getContainerPackageList(self):
         tmp_file = "/tmp/dpkg-status"
@@ -143,7 +143,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             "%s:/var/lib/dpkg/status" % self.args.name, tmp_file])
         output = self.backend.run([
             "grep-dctrl", "-s", "Package,Version,Source", "", tmp_file],
-            get_output=True)
+            get_output=True).decode("UTF-8", "replace")
         packages = []
         empty_pkg_details = dict.fromkeys(["package", "version", "source"])
         current_package = empty_pkg_details.copy()
@@ -174,6 +174,11 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         except Exception as e:
             logger.warning("Failed to get container package list: %s", e)
             packages = []
+        try:
+            vcs_current_version = self.getCurrentVCSRevision()
+        except Exception as e:
+            logger.warning("Failed to get current VCS revision: %s" % e)
+            vcs_current_version = None
 
         return {
             "manifest-version": "1",
@@ -189,7 +194,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             "vcs-info": [{
                 "source": self.args.git_repository,
                 "source-branch": self.args.git_path,
-                "source-commit": self.getCurrentVCSRevision(),
+                "source-commit": vcs_current_version,
                 "source-subdir": self.args.build_path,
                 "source-build-file": self.args.build_file,
                 "source-build-args": self.args.build_arg
@@ -206,6 +211,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         destination_path = self.security_manifest_target_path.lstrip(
             os.path.sep)
         destination = os.path.join(self.backend_tmp_fs_dir, destination_path)
+        logger.info("Security manifest: %s" % content)
         with open(local_filename, 'w') as fd:
             json.dump(content, fd, indent=2)
         self.backend.copy_in(local_filename, destination)
