@@ -170,7 +170,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         os_release = {}
         # Variable content might be enclosed by double-quote, single-quote
         # or no quote at all. We accept everything.
-        content_expr = re.compile(r""""(.*)"|'(.*)'|(.*)""")
+        content_expr = re.compile(r"""^"(.*)"$|^'(.*)$'|^(.*)$""")
         unquote = lambda string: [
             i for i in content_expr.match(string).groups() if i is not None][0]
         for line in content.decode("UTF-8", "replace").split("\n"):
