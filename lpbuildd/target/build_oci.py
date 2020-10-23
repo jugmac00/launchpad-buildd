@@ -140,6 +140,9 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         try:
             metadata = json.loads(self.args.metadata) or {}
         except TypeError:
+            logger.warning(
+                "No valid OCI build metadata received. Expecting a valid "
+                "JSON, but got %s." % self.args.metadata)
             metadata = {}
         recipe_owner = metadata.get("recipe_owner", {})
         build_requester = metadata.get("build_requester", {})
