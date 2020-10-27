@@ -1,6 +1,3 @@
-# Mail address where logs are sent to (mandatory, no default!)
-$mailto = "buildd-maint\@canonical.com";
-
 # Maintainer name to use in .changes files (mandatory, no default!)
 my $fqdn=`hostname --fqdn`;
 chomp $fqdn;
