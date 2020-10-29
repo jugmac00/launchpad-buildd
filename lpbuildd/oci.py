@@ -21,7 +21,6 @@ from lpbuildd.debian import (
     DebianBuildState,
     )
 from lpbuildd.snap import SnapBuildProxyMixin
-from lpbuildd.util import shell_escape
 
 
 RETCODE_SUCCESS = 0
@@ -74,8 +73,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             args.extend(["--build-file", self.build_file])
         if self.build_args:
             for k, v in self.build_args.items():
-                args.extend([
-                    "--build-arg=%s=%s" % (shell_escape(k), shell_escape(v))])
+                args.extend(["--build-arg", "%s=%s" % (k, v)])
         if self.build_path is not None:
             args.extend(["--build-path", self.build_path])
         try:
