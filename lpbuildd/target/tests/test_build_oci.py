@@ -107,30 +107,28 @@ class TestBuildOCIManifestGeneration(TestCase):
 
         # Expected build_oci.backend.run outputs.
         commit_hash = b"a1b2c3d4e5f5"
-        build_oci.dpkg_status_tmp_file = tempfile.mktemp()
-        with open(build_oci.dpkg_status_tmp_file, 'wb') as fd:
-            fd.write(dedent("""
-                Package: adduser
-                Version: 3.118
-                Status: install ok installed
+        dpkg_status_content = dedent("""
+            Package: adduser
+            Version: 3.118
+            Status: install ok installed
 
-                Package: apt
-                Version: 1.8.2.1
-                Status: install ok installed
+            Package: apt
+            Version: 1.8.2.1
+            Status: install ok installed
 
-                Package: util-linux
-                Version: 2.33.1
-                Status: install ok installed
+            Package: util-linux
+            Version: 2.33.1
+            Status: install ok installed
 
-                Package: zlib1g
-                Version: 1:1.2.11
-                Source: zlib
-                Status: install ok installed
+            Package: zlib1g
+            Version: 1:1.2.11
+            Source: zlib
+            Status: install ok installed
 
-                Package: to-be-ignored
-                Version: 111
-                Status: invalid
-                """).encode('utf8'))
+            Package: to-be-ignored
+            Version: 111
+            Status: invalid
+            """).encode('utf8')
 
         os_release_cat_output = dedent("""
         NAME="Ubuntu"
@@ -149,8 +147,8 @@ class TestBuildOCIManifestGeneration(TestCase):
 
         # Side effect for "docker cp...", "git rev-parse...", ...
         build_oci.backend.run = mock.Mock(side_effect=[
-            # docker cp to get packages file.
-            None,
+            # docker cp, cat to get packages file.
+            None, dpkg_status_content,
             # git rev-parse HEAD to get current revision.
             commit_hash,
             # docker cp and cat for container /etc/os-release.
@@ -235,30 +233,31 @@ class TestBuildOCIManifestGeneration(TestCase):
         ]
         build_oci = parse_args(args=args).operation
 
-        build_oci.dpkg_status_tmp_file = tempfile.mktemp()
-        with open(build_oci.dpkg_status_tmp_file, 'wb') as fd:
-            fd.write(dedent("""
-                Package: adduser
-                Version: 3.118
-                Status: install ok installed
+        dpkg_status_content = dedent("""
+            Package: adduser
+            Version: 3.118
+            Status: install ok installed
 
-                Package: apt
-                Version: 1.8.2.1
-                Status: install ok installed
+            Package: apt
+            Version: 1.8.2.1
+            Status: install ok installed
 
-                Package: util-linux
-                Version: 2.33.1-0.1
-                Status: install ok installed
+            Package: util-linux
+            Version: 2.33.1-0.1
+            Status: install ok installed
 
-                Package: zlib1g
-                Version: 1:1.2.11
-                Source: zlib
-                Status: install ok installed
+            Package: zlib1g
+            Version: 1:1.2.11
+            Source: zlib
+            Status: install ok installed
 
-                Package invalid
-                Version: 000
-                Status: broken
-                """).encode("utf8"))
+            Package invalid
+            Version: 000
+            Status: broken
+            """).encode("utf8")
+        build_oci.backend.run = mock.Mock(side_effect=[
+            # docker cp, cat to get packages file.
+            None, dpkg_status_content])
         self.assertEqual([
             {'package': 'adduser', 'source': 'adduser',
              'version': '3.118'},
@@ -524,6 +523,8 @@ class TestBuildOCI(TestCase):
                 'docker', 'cp', '-L',
                 'test-image:/var/lib/dpkg/status', '/tmp/dpkg-status'],
                 cwd="/home/buildd/test-image"),
+
+            RanCommand(['cat', '/tmp/dpkg-status'], get_output=True),
 
             # Manifest building: get current revision number.
             RanCommand(

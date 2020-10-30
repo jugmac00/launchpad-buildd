@@ -64,7 +64,6 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         # final filesystem of the image.
         self.backend_tmp_fs_dir = "/tmp/image-root-dir/"
         self.security_manifest_target_path = "/.rocks/manifest.json"
-        self.dpkg_status_tmp_file = "/tmp/dpkg-status"
 
     def _add_docker_engine_proxy_settings(self):
         """Add systemd file for docker proxy settings."""
@@ -146,21 +145,21 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         :return: A list of dict with package information, in the format
             {"package": "xx", "version": "yy", "source": "zz"}.
         """
-        tmp_file = self.dpkg_status_tmp_file
+        tmp_file = "/tmp/dpkg-status"
         self.run_build_command([
             "docker", "cp", "-L",
             "%s:/var/lib/dpkg/status" % self.args.name, tmp_file])
+        content = self.backend.run(["cat", tmp_file], get_output=True)
 
         packages = []
-        with open(tmp_file) as dpkg_status:
-            for paragraph in Deb822.iter_paragraphs(dpkg_status):
-                if paragraph.get("Status") != "install ok installed":
-                    continue
-                keys = ["Package", "Version", "Source"]
-                pkg = {i.lower(): paragraph.get(i) for i in keys}
-                if not pkg.get('source'):
-                    pkg['source'] = pkg['package']
-                packages.append(pkg)
+        for paragraph in Deb822.iter_paragraphs(content.split(b"\n")):
+            if paragraph.get("Status") != "install ok installed":
+                continue
+            keys = ["Package", "Version", "Source"]
+            pkg = {i.lower(): paragraph.get(i) for i in keys}
+            if not pkg.get('source'):
+                pkg['source'] = pkg['package']
+            packages.append(pkg)
         return packages
 
     def _getContainerOSRelease(self):
