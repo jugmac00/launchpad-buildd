@@ -157,7 +157,10 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 if paragraph.get("Status") != "install ok installed":
                     continue
                 keys = ["Package", "Version", "Source"]
-                packages.append({i.lower(): paragraph.get(i) for i in keys})
+                pkg = {i.lower(): paragraph.get(i) for i in keys}
+                if not pkg.get('source'):
+                    pkg['source'] = pkg['package']
+                packages.append(pkg)
         return packages
 
     def _getContainerOSRelease(self):

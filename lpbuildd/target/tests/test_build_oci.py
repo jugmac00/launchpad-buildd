@@ -178,10 +178,14 @@ class TestBuildOCIManifestGeneration(TestCase):
                 "source-subdir": "docker/builder"
             }],
             "packages": [
-                {'package': 'adduser', 'source': None, 'version': '3.118'},
-                {'package': 'apt', 'source': None, 'version': '1.8.2.1'},
-                {'package': 'util-linux', 'source': None, 'version': '2.33.1'},
-                {'package': 'zlib1g', 'source': 'zlib', 'version': '1:1.2.11'}
+                {'package': 'adduser', 'source': 'adduser',
+                 'version': '3.118'},
+                {'package': 'apt', 'source': 'apt',
+                 'version': '1.8.2.1'},
+                {'package': 'util-linux', 'source': 'util-linux',
+                 'version': '2.33.1'},
+                {'package': 'zlib1g', 'source': 'zlib',
+                 'version': '1:1.2.11'}
             ]
         })
 
@@ -256,10 +260,14 @@ class TestBuildOCIManifestGeneration(TestCase):
                 Status: broken
                 """).encode("utf8"))
         self.assertEqual([
-            {'package': 'adduser', 'source': None, 'version': '3.118'},
-            {'package': 'apt', 'source': None, 'version': '1.8.2.1'},
-            {'package': 'util-linux', 'source': None, 'version': '2.33.1-0.1'},
-            {'package': 'zlib1g', 'source': 'zlib', 'version': '1:1.2.11'}
+            {'package': 'adduser', 'source': 'adduser',
+             'version': '3.118'},
+            {'package': 'apt', 'source': 'apt',
+             'version': '1.8.2.1'},
+            {'package': 'util-linux', 'source': 'util-linux',
+             'version': '2.33.1-0.1'},
+            {'package': 'zlib1g', 'source': 'zlib',
+             'version': '1:1.2.11'}
         ], build_oci._getContainerPackageList())
 
     def test_getContainerOSRelease_quoting(self):
