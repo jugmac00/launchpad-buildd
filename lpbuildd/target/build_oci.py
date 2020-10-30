@@ -6,11 +6,15 @@ from __future__ import print_function
 __metaclass__ = type
 
 from collections import OrderedDict
+import json
 import logging
 import os.path
+import re
 import sys
 import tempfile
 from textwrap import dedent
+
+from debian.deb822 import Deb822
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
@@ -47,12 +51,19 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             help="A docker build ARG in the format of key=value. "
                  "This option can be repeated many times. For example: "
                  "--build-arg VAR1=A --build-arg VAR2=B")
+        parser.add_argument(
+            "--metadata", default=None,
+            help="Metadata about this build, used to generate manifest file.")
         parser.add_argument("name", help="name of snap to build")
 
     def __init__(self, args, parser):
         super(BuildOCI, self).__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
+        # Temp directory where we store files that will be included in the
+        # final filesystem of the image.
+        self.backend_tmp_fs_dir = "/tmp/image-root-dir/"
+        self.security_manifest_target_path = "/.rocks/manifest.json"
 
     def _add_docker_engine_proxy_settings(self):
         """Add systemd file for docker proxy settings."""
@@ -119,6 +130,164 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
 
+    def _getCurrentVCSRevision(self):
+        if self.args.branch is not None:
+            revision_cmd = ["bzr", "revno"]
+        else:
+            revision_cmd = ["git", "rev-parse", "HEAD"]
+        return self.backend.run(
+            revision_cmd, cwd=os.path.join("/home/buildd", self.args.name),
+            get_output=True).decode("UTF-8", "replace").strip()
+
+    def _getContainerPackageList(self):
+        """Extracts package list from /var/lib/dpkg/status.
+
+        :return: A list of dict with package information, in the format
+            {"package": "xx", "version": "yy", "source": "zz"}.
+        """
+        tmp_file = "/tmp/dpkg-status"
+        self.run_build_command([
+            "docker", "cp", "-L",
+            "%s:/var/lib/dpkg/status" % self.args.name, tmp_file])
+        content = self.backend.run(["cat", tmp_file], get_output=True)
+
+        packages = []
+        for paragraph in Deb822.iter_paragraphs(content.split(b"\n")):
+            if paragraph.get("Status") != "install ok installed":
+                continue
+            keys = ["Package", "Version", "Source"]
+            pkg = {i.lower(): paragraph.get(i) for i in keys}
+            if not pkg.get('source'):
+                pkg['source'] = pkg['package']
+            packages.append(pkg)
+        return packages
+
+    def _getContainerOSRelease(self):
+        tmp_file = "/tmp/os-release"
+        self.run_build_command([
+            "docker", "cp",  "-L",
+            "%s:/etc/os-release" % self.args.name, tmp_file])
+        content = self.backend.run(["cat", tmp_file], get_output=True)
+        os_release = {}
+        # Variable content might be enclosed by double-quote, single-quote
+        # or no quote at all. We accept everything.
+        content_expr = re.compile(r"""^"(.*)"$|^'(.*)'$|^(.*)$""")
+        unquote = lambda string: [
+            i for i in content_expr.match(string).groups() if i is not None][0]
+        for line in content.decode("UTF-8", "replace").split("\n"):
+            if '=' not in line:
+                continue
+            key, value = line.strip().split("=", 1)
+            os_release[key] = unquote(value)
+        return os_release
+
+    def _getSecurityManifestContent(self):
+        try:
+            metadata = json.loads(self.args.metadata) or {}
+        except TypeError:
+            metadata = {}
+        recipe_owner = metadata.get("recipe_owner", {})
+        build_requester = metadata.get("build_requester", {})
+        emails = [i.get("email") for i in (recipe_owner, build_requester)
+                  if i.get("email")]
+
+        try:
+            packages = self._getContainerPackageList()
+        except Exception as e:
+            logger.warning("Failed to get container package list: %s", e)
+            packages = []
+        try:
+            vcs_current_version = self._getCurrentVCSRevision()
+        except Exception as e:
+            logger.warning("Failed to get current VCS revision: %s" % e)
+            vcs_current_version = None
+        try:
+            os_release = self._getContainerOSRelease()
+        except Exception as e:
+            logger.warning("Failed to get /etc/os-release info: %s" % e)
+            os_release = {}
+
+        return {
+            "manifest-version": "1",
+            "name": self.args.name,
+            "os-release-id": os_release.get("ID"),
+            "os-release-version-id": os_release.get("VERSION_ID"),
+            "architectures": metadata.get("architectures") or [self.args.arch],
+            "publisher-emails": emails,
+            "image-info": {
+                "build-request-id": metadata.get("build_request_id"),
+                "build-request-timestamp": metadata.get(
+                    "build_request_timestamp"),
+                "build-urls": metadata.get("build_urls") or {}
+            },
+            "vcs-info": [{
+                "source": self.args.git_repository,
+                "source-branch": self.args.git_path,
+                "source-commit": vcs_current_version,
+                "source-subdir": self.args.build_path,
+                "source-build-file": self.args.build_file,
+                "source-build-args": self.args.build_arg
+            }],
+            "packages": packages
+        }
+
+    def createSecurityManifest(self):
+        """Generates the security manifest file, returning the tmp file name
+        where it is stored in the backend.
+        """
+        content = self._getSecurityManifestContent()
+        local_filename = tempfile.mktemp()
+        destination_path = self.security_manifest_target_path.lstrip(
+            os.path.sep)
+        destination = os.path.join(self.backend_tmp_fs_dir, destination_path)
+        logger.info("Security manifest: %s" % content)
+        with open(local_filename, 'w') as fd:
+            json.dump(content, fd, indent=2)
+        self.backend.copy_in(local_filename, destination)
+        return destination
+
+    def initTempRootDir(self):
+        """Initialize in the backend the directories that will be included in
+        resulting image's filesystem.
+        """
+        security_manifest_dir = os.path.dirname(
+            self.security_manifest_target_path)
+        dir = os.path.join(
+            self.backend_tmp_fs_dir,
+            security_manifest_dir.lstrip(os.path.sep))
+        self.backend.run(["mkdir", "-p", dir])
+
+    def createImageContainer(self):
+        """Creates a container from the built image, so we can play with
+        it's filesystem."""
+        self.run_build_command([
+            "docker", "create", "--name", self.args.name, self.args.name])
+
+    def removeImageContainer(self):
+        self.run_build_command(["docker", "rm", self.args.name])
+
+    def commitImage(self):
+        """Commits the tmp container, overriding the originally built image."""
+        self.run_build_command([
+            "docker", "commit", self.args.name, self.args.name])
+
+    def addFilesToImageContainer(self):
+        """Flushes all files from temp root dir (in the backend) to the
+        resulting image container."""
+        # The extra '.' in the end is important. It indicates to docker that
+        # the directory itself should be copied, instead of the list of
+        # files in the directory. It makes docker keep the paths.
+        src = os.path.join(self.backend_tmp_fs_dir, ".")
+        self.run_build_command(["docker", "cp", src, "%s:/" % self.args.name])
+
+    def addSecurityManifest(self):
+        self.createImageContainer()
+        self.initTempRootDir()
+        self.createSecurityManifest()
+        self.addFilesToImageContainer()
+        self.commitImage()
+        self.removeImageContainer()
+
     def build(self):
         logger.info("Running build phase...")
         args = ["docker", "build", "--no-cache"]
@@ -143,6 +312,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         self._check_path_escape(build_context_path)
         args.append(build_context_path)
         self.run_build_command(args)
+        self.addSecurityManifest()
 
     def run(self):
         try:
