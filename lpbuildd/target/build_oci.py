@@ -14,6 +14,8 @@ import sys
 import tempfile
 from textwrap import dedent
 
+from debian.deb822 import Deb822
+
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
@@ -62,6 +64,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         # final filesystem of the image.
         self.backend_tmp_fs_dir = "/tmp/image-root-dir/"
         self.security_manifest_target_path = "/.rocks/manifest.json"
+        self.dpkg_status_tmp_file = "/tmp/dpkg-status"
 
     def _add_docker_engine_proxy_settings(self):
         """Add systemd file for docker proxy settings."""
@@ -113,8 +116,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             # Add any proxy settings that are needed
             self._add_docker_engine_proxy_settings()
         deps.extend(self.vcs_deps)
-        # Install dctrl-tools to extract installed packages using grep-dctrl.
-        deps.extend(["docker.io", "dctrl-tools"])
+        deps.extend(["docker.io"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.args.backend in ("lxd", "fake"):
             self.snap_store_set_proxy()
@@ -139,46 +141,23 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             get_output=True).decode("UTF-8", "replace").strip()
 
     def _getContainerPackageList(self):
-        """Extracts package list from /var/lib/dpkg/status using grep-dctrl.
-
-        grep-dctrl output is a list of "Package: xx", "Version: yy" and
-        "Source: zz", one item per line, followed by an empty line (see
-        TestBuildOCIManifestGeneration for examples). This method parses
-        this output into a list of dicts.
+        """Extracts package list from /var/lib/dpkg/status.
 
         :return: A list of dict with package information, in the format
             {"package": "xx", "version": "yy", "source": "zz"}.
         """
-        tmp_file = "/tmp/dpkg-status"
+        tmp_file = self.dpkg_status_tmp_file
         self.run_build_command([
             "docker", "cp", "-L",
             "%s:/var/lib/dpkg/status" % self.args.name, tmp_file])
-        output = self.backend.run([
-            "grep-dctrl", "-s", "Package,Version,Source", "", tmp_file],
-            get_output=True).decode("UTF-8", "replace")
+
         packages = []
-        # The default dict format to be returned (one per package).
-        empty_pkg_details = dict.fromkeys(["package", "version", "source"])
-        current_package = empty_pkg_details.copy()
-        for line in output.split("\n"):
-            # If we reached an empty line, the package information block has
-            # finished. We need to "yield" that dict into the returning
-            # list, and start parsing the new block.
-            if not line.strip():
-                # Make sure to not include completely empty dict, in case we
-                # have duplicated empty line somewhere.
-                if not all(i is None for i in current_package.values()):
-                    packages.append(current_package)
-                    current_package = empty_pkg_details.copy()
-                continue
-            # Get the information key (Package, Version or Source) and its
-            # value. And set it in the current package information dict.
-            k, v = line.split(":", 1)
-            current_package[k.lower().strip()] = v.strip()
-        # Add the last package to the list (in case we didn't get an empty
-        # line at the end of grep-dctrl, for example).
-        if not all(i is None for i in current_package.values()):
-            packages.append(current_package)
+        with open(tmp_file) as dpkg_status:
+            for paragraph in Deb822.iter_paragraphs(dpkg_status):
+                if paragraph.get("Status") != "install ok installed":
+                    continue
+                keys = ["Package", "Version", "Source"]
+                packages.append({i.lower(): paragraph.get(i) for i in keys})
         return packages
 
     def _getContainerOSRelease(self):
@@ -190,7 +169,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         os_release = {}
         # Variable content might be enclosed by double-quote, single-quote
         # or no quote at all. We accept everything.
-        content_expr = re.compile(r"""^"(.*)"$|^'(.*)$'|^(.*)$""")
+        content_expr = re.compile(r"""^"(.*)"$|^'(.*)'$|^(.*)$""")
         unquote = lambda string: [
             i for i in content_expr.match(string).groups() if i is not None][0]
         for line in content.decode("UTF-8", "replace").split("\n"):

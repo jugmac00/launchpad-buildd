@@ -12,6 +12,7 @@ except ImportError:
 import os.path
 import stat
 import subprocess
+import tempfile
 from textwrap import dedent
 
 from fixtures import (
@@ -106,20 +107,30 @@ class TestBuildOCIManifestGeneration(TestCase):
 
         # Expected build_oci.backend.run outputs.
         commit_hash = b"a1b2c3d4e5f5"
-        grep_dctrl_output = dedent("""
-        Package: adduser
-        Version: 3.118
-        
-        Package: apt
-        Version: 1.8.2.1
+        build_oci.dpkg_status_tmp_file = tempfile.mktemp()
+        with open(build_oci.dpkg_status_tmp_file, 'wb') as fd:
+            fd.write(dedent("""
+                Package: adduser
+                Version: 3.118
+                Status: install ok installed
 
-        Package: util-linux
-        Version: 2.33.1
-        
-        Package: zlib1g
-        Version: 1:1.2.11
-        Source: zlib
-        """).encode('utf8')
+                Package: apt
+                Version: 1.8.2.1
+                Status: install ok installed
+
+                Package: util-linux
+                Version: 2.33.1
+                Status: install ok installed
+
+                Package: zlib1g
+                Version: 1:1.2.11
+                Source: zlib
+                Status: install ok installed
+
+                Package: to-be-ignored
+                Version: 111
+                Status: invalid
+                """).encode('utf8'))
 
         os_release_cat_output = dedent("""
         NAME="Ubuntu"
@@ -136,10 +147,10 @@ class TestBuildOCIManifestGeneration(TestCase):
         UBUNTU_CODENAME=focal
         """).encode("utf8")
 
-        # Side effect for "docker cp...", "dgrep-dctrl" and "git rev-parse..."
+        # Side effect for "docker cp...", "git rev-parse...", ...
         build_oci.backend.run = mock.Mock(side_effect=[
-            # docker cp and dgrep-dctrl to get packages.
-            None, grep_dctrl_output,
+            # docker cp to get packages file.
+            None,
             # git rev-parse HEAD to get current revision.
             commit_hash,
             # docker cp and cat for container /etc/os-release.
@@ -219,26 +230,59 @@ class TestBuildOCIManifestGeneration(TestCase):
             "test-image"
         ]
         build_oci = parse_args(args=args).operation
-        build_oci.backend.run = mock.Mock(return_value=dedent("""
-        Package: adduser
-        Version: 3.118
-        
-        Package: apt
-        Version: 1.8.2.1
 
-        Package: util-linux
-        Version: 2.33.1-0.1
-        
-        Package: zlib1g
-        Version: 1:1.2.11
-        Source: zlib
-        """).encode("utf8"))
+        build_oci.dpkg_status_tmp_file = tempfile.mktemp()
+        with open(build_oci.dpkg_status_tmp_file, 'wb') as fd:
+            fd.write(dedent("""
+                Package: adduser
+                Version: 3.118
+                Status: install ok installed
+
+                Package: apt
+                Version: 1.8.2.1
+                Status: install ok installed
+
+                Package: util-linux
+                Version: 2.33.1-0.1
+                Status: install ok installed
+
+                Package: zlib1g
+                Version: 1:1.2.11
+                Source: zlib
+                Status: install ok installed
+
+                Package invalid
+                Version: 000
+                Status: broken
+                """).encode("utf8"))
         self.assertEqual([
             {'package': 'adduser', 'source': None, 'version': '3.118'},
             {'package': 'apt', 'source': None, 'version': '1.8.2.1'},
             {'package': 'util-linux', 'source': None, 'version': '2.33.1-0.1'},
             {'package': 'zlib1g', 'source': 'zlib', 'version': '1:1.2.11'}
         ], build_oci._getContainerPackageList())
+
+    def test_getContainerOSRelease_quoting(self):
+        args = [
+            "build-oci",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
+            "test-image"
+        ]
+        os_release_cat_output = dedent("""
+            NO_QUOTE=ubuntu
+            DOUBLE_QUOTE="20.04"
+            SINGLE_QUOTE='Canonical'   
+        """).encode("utf8")
+        build_oci = parse_args(args=args).operation
+        build_oci.backend.run = mock.Mock(side_effect=[
+            # docker cp /etc/os-release /tmp-file; cat /tmp-file
+            None, os_release_cat_output])
+        self.assertEqual({
+            "NO_QUOTE": "ubuntu",
+            "DOUBLE_QUOTE": "20.04",
+            "SINGLE_QUOTE": "Canonical"}, build_oci._getContainerOSRelease())
+
 
 class TestBuildOCI(TestCase):
 
@@ -281,7 +325,7 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.install()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "bzr", "docker.io", "dctrl-tools"),
+            RanAptGet("install", "bzr", "docker.io"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -295,7 +339,7 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.install()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git", "docker.io", "dctrl-tools"),
+            RanAptGet("install", "git", "docker.io"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -351,8 +395,7 @@ class TestBuildOCI(TestCase):
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanCommand(
                 ["mkdir", "-p", "/etc/systemd/system/docker.service.d"]),
-            RanAptGet("install", "python3", "socat", "git", "docker.io",
-                      "dctrl-tools"),
+            RanAptGet("install", "python3", "socat", "git", "docker.io"),
             RanCommand(["systemctl", "restart", "docker"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -473,9 +516,6 @@ class TestBuildOCI(TestCase):
                 'docker', 'cp', '-L',
                 'test-image:/var/lib/dpkg/status', '/tmp/dpkg-status'],
                 cwd="/home/buildd/test-image"),
-            RanCommand([
-                'grep-dctrl', '-s', 'Package,Version,Source', '',
-                '/tmp/dpkg-status'], get_output=True),
 
             # Manifest building: get current revision number.
             RanCommand(
@@ -615,7 +655,7 @@ class TestBuildOCI(TestCase):
         build_oci.backend.run = FakeMethod()
         self.assertEqual(0, build_oci.run())
         self.assertThat(build_oci.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "bzr", "docker.io", "dctrl-tools")),
+            AnyMatch(RanAptGet("install", "bzr", "docker.io")),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"],
                 cwd="/home/buildd")),
