@@ -68,11 +68,11 @@ by
 https://code.launchpad.net/~canonical-sysadmins/canonical-is-charms/launchpad-buildd-image-modifier
 (currently private, sorry).
 
-At present (May 2020), all these base VM images are built from Ubuntu
-xenial, and launchpad-buildd runs on Python 2.  We plan to upgrade these to
-bionic soon, where it will be possible for launchpad-buildd to run on Python
-3; however, it's necessary to support the powerpc architecture until at
-least April 2021 (end of standard maintenance for xenial), and the powerpc
-base images will need to stay on xenial since that architecture is no longer
-supported by bionic.  As a result, launchpad-buildd must run on both Python
-2 and 3 for the time being.
+At present (November 2020), most of these base VM images are built from
+Ubuntu bionic, and launchpad-buildd runs on Python 3.  However, it's
+necessary to support the powerpc architecture until at least April 2021 (end
+of standard maintenance for xenial), and the powerpc base images need to
+stay on xenial since that architecture is no longer supported by bionic;
+furthermore, the version of Twisted in xenial has some bugs that break
+launchpad-buildd when running on Python 3.  As a result, launchpad-buildd
+must run on both Python 2 and 3 for the time being.
