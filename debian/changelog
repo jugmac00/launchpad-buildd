@@ -2,6 +2,7 @@ launchpad-buildd (194) UNRELEASED; urgency=medium
 
   * Stop setting $mailto in .sbuildrc, to work around LP #1859010.
   * Stop overquoting OCI --build-arg options (LP: #1902007).
+  * Update production deployment documentation in README.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 27 Oct 2020 13:22:05 +0000
 
