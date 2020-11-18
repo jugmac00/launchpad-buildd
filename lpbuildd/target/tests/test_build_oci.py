@@ -3,16 +3,9 @@
 
 __metaclass__ = type
 
-import datetime
-import json
-try:
-    from unittest import mock
-except ImportError:
-    import mock
 import os.path
 import stat
 import subprocess
-import tempfile
 from textwrap import dedent
 
 from fixtures import (
@@ -78,217 +71,6 @@ class RanBuildCommand(RanCommand):
         kwargs.setdefault("LANG", "C.UTF-8")
         kwargs.setdefault("SHELL", "/bin/sh")
         super(RanBuildCommand, self).__init__(args, **kwargs)
-
-
-class TestBuildOCIManifestGeneration(TestCase):
-    def test_getSecurityManifestContent(self):
-        now = datetime.datetime.now().isoformat()
-        metadata = {
-            "architectures": ["amd64", "386"],
-            "recipe_owner": dict(name="pappacena", email="me@foo.com"),
-            "build_request_id": 123,
-            "build_request_timestamp": now,
-            "build_requester": dict(name="someone", email="someone@foo.com"),
-            "build_urls": {
-                "amd64": "http://lp.net/build/1",
-                "386": "http://lp.net/build/2"
-            },
-        }
-        args = [
-            "build-oci",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
-            "--build-arg", "VAR1=1", "--build-arg", "VAR2=22",
-            "--build-file", "SomeDockerfile", "--build-path", "docker/builder",
-            "--metadata", json.dumps(metadata),
-            "test-image"
-        ]
-        build_oci = parse_args(args=args).operation
-
-        # Expected build_oci.backend.run outputs.
-        commit_hash = b"a1b2c3d4e5f5"
-        dpkg_status_content = dedent("""
-            Package: adduser
-            Version: 3.118
-            Status: install ok installed
-
-            Package: apt
-            Version: 1.8.2.1
-            Status: install ok installed
-
-            Package: util-linux
-            Version: 2.33.1
-            Status: install ok installed
-
-            Package: zlib1g
-            Version: 1:1.2.11
-            Source: zlib
-            Status: install ok installed
-
-            Package: to-be-ignored
-            Version: 111
-            Status: invalid
-            """).encode('utf8')
-
-        os_release_cat_output = dedent("""
-        NAME="Ubuntu"
-        VERSION="20.04.1 LTS (Focal Fossa)"
-        ID=ubuntu
-        ID_LIKE=debian
-        PRETTY_NAME="Ubuntu 20.04.1 LTS"
-        VERSION_ID="20.04"
-        HOME_URL="https://www.ubuntu.com/"
-        SUPPORT_URL="https://help.ubuntu.com/"
-        BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-        PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-        VERSION_CODENAME=focal
-        UBUNTU_CODENAME=focal
-        """).encode("utf8")
-
-        # Side effect for "docker cp...", "git rev-parse...", ...
-        build_oci.backend.run = mock.Mock(side_effect=[
-            # docker cp, cat to get packages file.
-            None, dpkg_status_content,
-            # git rev-parse HEAD to get current revision.
-            commit_hash,
-            # docker cp and cat for container /etc/os-release.
-            None, os_release_cat_output])
-
-        self.assertEqual(build_oci._getSecurityManifestContent(), {
-            "manifest-version": "1",
-            "name": "test-image",
-            'os-release-id': "ubuntu",
-            'os-release-version-id': "20.04",
-            "architectures": ["amd64", "386"],
-            "publisher-emails": ["me@foo.com", "someone@foo.com"],
-            "image-info": {
-                "build-request-id": 123,
-                "build-request-timestamp": now,
-                "build-urls": {
-                    "386": "http://lp.net/build/2",
-                    "amd64": "http://lp.net/build/1"}},
-            "vcs-info": [{
-                "source": "lp:git-repo",
-                "source-branch": "refs/heads/main",
-                "source-build-args": ["VAR1=1", "VAR2=22"],
-                "source-build-file": "SomeDockerfile",
-                "source-commit": "a1b2c3d4e5f5",
-                "source-subdir": "docker/builder"
-            }],
-            "packages": [
-                {'package': 'adduser', 'source': 'adduser',
-                 'version': '3.118'},
-                {'package': 'apt', 'source': 'apt',
-                 'version': '1.8.2.1'},
-                {'package': 'util-linux', 'source': 'util-linux',
-                 'version': '2.33.1'},
-                {'package': 'zlib1g', 'source': 'zlib',
-                 'version': '1:1.2.11'}
-            ]
-        })
-
-    def test_getSecurityManifestContent_without_manifest(self):
-        """With minimal parameters, the manifest content should give
-        something back without breaking."""
-        args = [
-            "build-oci",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
-            "test-image"
-        ]
-
-        # Here we will not mock the package gathering nor os-release file
-        # reading in order to let it raise exception, so we end up with a
-        # manifest without packages.
-        build_oci = parse_args(args=args).operation
-
-        self.assertEqual(build_oci._getSecurityManifestContent(), {
-            "manifest-version": "1",
-            "name": "test-image",
-            'os-release-id': None,
-            'os-release-version-id': None,
-            "architectures": ["amd64"],
-            "publisher-emails": [],
-            "image-info": {
-                "build-request-id": None,
-                "build-request-timestamp": None,
-                "build-urls": {}},
-            "vcs-info": [{
-                "source": "lp:git-repo",
-                "source-branch": "refs/heads/main",
-                "source-build-args": [],
-                "source-build-file": None,
-                "source-commit": None,
-                "source-subdir": "."
-            }],
-            "packages": []
-        })
-
-    def test_getContainerPackageList(self):
-        args = [
-            "build-oci",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
-            "test-image"
-        ]
-        build_oci = parse_args(args=args).operation
-
-        dpkg_status_content = dedent("""
-            Package: adduser
-            Version: 3.118
-            Status: install ok installed
-
-            Package: apt
-            Version: 1.8.2.1
-            Status: install ok installed
-
-            Package: util-linux
-            Version: 2.33.1-0.1
-            Status: install ok installed
-
-            Package: zlib1g
-            Version: 1:1.2.11
-            Source: zlib
-            Status: install ok installed
-
-            Package invalid
-            Version: 000
-            Status: broken
-            """).encode("utf8")
-        build_oci.backend.run = mock.Mock(side_effect=[
-            # docker cp, cat to get packages file.
-            None, dpkg_status_content])
-        self.assertEqual([
-            {'package': 'adduser', 'source': 'adduser',
-             'version': '3.118'},
-            {'package': 'apt', 'source': 'apt',
-             'version': '1.8.2.1'},
-            {'package': 'util-linux', 'source': 'util-linux',
-             'version': '2.33.1-0.1'},
-            {'package': 'zlib1g', 'source': 'zlib',
-             'version': '1:1.2.11'}
-        ], build_oci._getContainerPackageList())
-
-    def test_getContainerOSRelease_quoting(self):
-        args = [
-            "build-oci",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", "lp:git-repo", "--git-path", "refs/heads/main",
-            "test-image"
-        ]
-        os_release_cat_output = dedent("""
-            NO_QUOTE=ubuntu
-            DOUBLE_QUOTE="20.04"
-            SINGLE_QUOTE='Canonical'   
-        """).encode("utf8")
-        build_oci = parse_args(args=args).operation
-        build_oci.backend.run = mock.Mock(side_effect=[
-            # docker cp /etc/os-release /tmp-file; cat /tmp-file
-            None, os_release_cat_output])
-        self.assertEqual({
-            "NO_QUOTE": "ubuntu",
-            "DOUBLE_QUOTE": "20.04",
-            "SINGLE_QUOTE": "Canonical"}, build_oci._getContainerOSRelease())
 
 
 class TestBuildOCI(TestCase):
@@ -508,47 +290,6 @@ class TestBuildOCI(TestCase):
                 cwd="/home/buildd/test-image", **env),
             ]))
 
-    def assertRanPostBuildCommands(self, build_oci):
-        rev_num_args = (
-            ['bzr', 'revno'] if build_oci.args.branch
-            else ['git', 'rev-parse', 'HEAD'])
-        self.assertThat(build_oci.backend.run.calls[1:], MatchesListwise([
-            RanBuildCommand(
-                ['docker', 'create', '--name', 'test-image', 'test-image'],
-                cwd="/home/buildd/test-image"),
-            RanCommand(['mkdir', '-p', '/tmp/image-root-dir/.rocks']),
-
-            # Manifest building: packages discovery.
-            RanBuildCommand([
-                'docker', 'cp', '-L',
-                'test-image:/var/lib/dpkg/status', '/tmp/dpkg-status'],
-                cwd="/home/buildd/test-image"),
-
-            RanCommand(['cat', '/tmp/dpkg-status'], get_output=True),
-
-            # Manifest building: get current revision number.
-            RanCommand(
-                rev_num_args, cwd="/home/buildd/test-image", get_output=True),
-
-            # Manifest building: os-release file.
-            RanBuildCommand([
-                'docker', 'cp',  '-L', 'test-image:/etc/os-release',
-                '/tmp/os-release'],
-                cwd="/home/buildd/test-image"),
-            RanCommand(['cat', '/tmp/os-release'], get_output=True),
-
-            # Filesystem injection and image commiting.
-            RanBuildCommand(
-                ['docker', 'cp', '/tmp/image-root-dir/.', 'test-image:/'],
-                cwd="/home/buildd/test-image"),
-            RanBuildCommand(
-                ['docker', 'commit', 'test-image', 'test-image'],
-                cwd="/home/buildd/test-image"),
-            RanBuildCommand(
-                ['docker', 'rm', 'test-image'],
-                cwd="/home/buildd/test-image"),
-        ]))
-
     def test_build(self):
         args = [
             "build-oci",
@@ -558,11 +299,12 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
-            ["docker", "build", "--no-cache", "--tag", "test-image",
-             "/home/buildd/test-image/."],
-            cwd="/home/buildd/test-image"))
-        self.assertRanPostBuildCommands(build_oci)
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image"),
+            ]))
 
     def test_build_with_file(self):
         args = [
@@ -574,12 +316,13 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
-            ["docker", "build", "--no-cache", "--tag", "test-image",
-             "--file", "./build-aux/Dockerfile",
-             "/home/buildd/test-image/."],
-            cwd="/home/buildd/test-image"))
-        self.assertRanPostBuildCommands(build_oci)
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "--file", "./build-aux/Dockerfile",
+                 "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image"),
+            ]))
 
     def test_build_with_path(self):
         args = [
@@ -591,11 +334,12 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
-            ["docker", "build", "--no-cache", "--tag", "test-image",
-             "/home/buildd/test-image/a-sub-directory/"],
-            cwd="/home/buildd/test-image"))
-        self.assertRanPostBuildCommands(build_oci)
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "/home/buildd/test-image/a-sub-directory/"],
+                cwd="/home/buildd/test-image"),
+            ]))
 
     def test_build_with_file_and_path(self):
         args = [
@@ -608,12 +352,13 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
-            ["docker", "build", "--no-cache", "--tag", "test-image",
-             "--file", "test-build-path/build-aux/Dockerfile",
-             "/home/buildd/test-image/test-build-path"],
-            cwd="/home/buildd/test-image"))
-        self.assertRanPostBuildCommands(build_oci)
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "--file", "test-build-path/build-aux/Dockerfile",
+                 "/home/buildd/test-image/test-build-path"],
+                cwd="/home/buildd/test-image"),
+            ]))
 
     def test_build_with_args(self):
         args = [
@@ -627,13 +372,14 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
-            ["docker", "build", "--no-cache", "--tag", "test-image",
-             "--file", "test-build-path/build-aux/Dockerfile",
-             "--build-arg=VAR1=xxx", "--build-arg=VAR2=yyy",
-             "/home/buildd/test-image/test-build-path"],
-            cwd="/home/buildd/test-image"))
-        self.assertRanPostBuildCommands(build_oci)
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache", "--tag", "test-image",
+                 "--file", "test-build-path/build-aux/Dockerfile",
+                 "--build-arg=VAR1=xxx", "--build-arg=VAR2=yyy",
+                 "/home/buildd/test-image/test-build-path"],
+                cwd="/home/buildd/test-image"),
+            ]))
 
     def test_build_proxy(self):
         args = [
@@ -645,13 +391,14 @@ class TestBuildOCI(TestCase):
         build_oci = parse_args(args=args).operation
         build_oci.backend.add_dir('/build/test-directory')
         build_oci.build()
-        self.assertThat(build_oci.backend.run.calls[0], RanBuildCommand(
-            ["docker", "build", "--no-cache",
-             "--build-arg", "http_proxy=http://proxy.example:3128/",
-             "--build-arg", "https_proxy=http://proxy.example:3128/",
-             "--tag", "test-image", "/home/buildd/test-image/."],
-            cwd="/home/buildd/test-image"))
-        self.assertRanPostBuildCommands(build_oci)
+        self.assertThat(build_oci.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["docker", "build", "--no-cache",
+                 "--build-arg", "http_proxy=http://proxy.example:3128/",
+                 "--build-arg", "https_proxy=http://proxy.example:3128/",
+                 "--tag", "test-image", "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image"),
+            ]))
 
     def test_run_succeeds(self):
         args = [

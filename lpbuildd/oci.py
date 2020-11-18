@@ -53,7 +53,6 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         self.build_path = extra_args.get("build_path")
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
-        self.metadata = extra_args.get("metadata")
         self.proxy_service = None
 
         super(OCIBuildManager, self).initiate(files, chroot, extra_args)
@@ -83,11 +82,6 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
             pass
-        if self.metadata is not None:
-            try:
-                args.extend(["--metadata", json.dumps(self.metadata)])
-            except TypeError as e:
-                print("Could not JSONify metadata: %s" % e)
         args.append(self.name)
         self.runTargetSubProcess("build-oci", *args)
 
