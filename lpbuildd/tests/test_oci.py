@@ -130,8 +130,7 @@ class TestOCIBuildManagerIteration(TestCase):
         self.buildmanager.backend.add_file(
             '/var/lib/docker/image/'
             'vfs/distribution/v2metadata-by-diffid/sha256/diff1',
-            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
-        )
+            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]""")
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
@@ -268,6 +267,33 @@ class TestOCIBuildManagerIteration(TestCase):
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_no_pull(self):
+        # check with no pulled images.
+        # This sha would change as it includes file attributes in the
+        # tar file. Fix it so we can test against a known value.
+        sha_mock = self.useFixture(
+            MockPatch('lpbuildd.oci.OCIBuildManager._calculateLayerSha'))
+        sha_mock.mock.return_value = "testsha"
+        # The build manager iterates a normal build from start to finish.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.run.result = MockOCITarSave()
+        yield self.buildmanager.iterate(0)
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
