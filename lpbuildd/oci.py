@@ -209,14 +209,20 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         # used. This is correct for bionic buildd image
         # with apt installed docker.
         sha_path = ('/var/lib/docker/image/'
-                    'vfs/distribution/v2metadata-by-diffid/sha256/')
-        sha_files = [x for x in self.backend.listdir(sha_path)
-                     if not x.startswith('.')]
-        for file in sha_files:
-            self.backend.copy_out(
-                os.path.join(sha_path, file),
-                os.path.join(sha_directory, file)
-            )
+                    'vfs/distribution/v2metadata-by-diffid/sha256')
+        # If there have been no images pulled in the build process
+        # (FROM scratch), then this directory will not exist and
+        # we will have no contents from it.
+        if self.backend.path_exists(sha_path):
+            sha_files = [x for x in self.backend.listdir(sha_path)
+                        if not x.startswith('.')]
+            for file in sha_files:
+                self.backend.copy_out(
+                    os.path.join(sha_path, file),
+                    os.path.join(sha_directory, file)
+                )
+        else:
+            self._builder.log("No metadata directory at {}".format(sha_path))
 
         # Parse the manifest for the other files we need
         manifest_path = os.path.join(extract_path, 'manifest.json')
