@@ -1,4 +1,4 @@
-launchpad-buildd (194) UNRELEASED; urgency=medium
+launchpad-buildd (194) bionic; urgency=medium
 
   [ Colin Watson ]
   * Stop setting $mailto in .sbuildrc, to work around LP #1859010.
@@ -8,7 +8,7 @@ launchpad-buildd (194) UNRELEASED; urgency=medium
   [ Tom Wardill ]
   * Fix OCI builds that don't pull another image. 
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 27 Oct 2020 13:22:05 +0000
+ -- Tom Wardill <tom.wardill@canonical.com>  Thu, 07 Jan 2021 10:02:27 +0000
 
 launchpad-buildd (193) bionic; urgency=medium
 
