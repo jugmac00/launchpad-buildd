@@ -51,6 +51,25 @@ getent group sbuild | sudo tee -a chroot-autobuild/etc/group > /dev/null || exit
 getent passwd sbuild | sudo tee -a chroot-autobuild/etc/passwd > /dev/null || exit 2
 sudo chown sbuild:sbuild chroot-autobuild/build || exit 2
 
+# schroot calls initgroups(3) when entering a session, which sets
+# supplementary groups to the target user's groups in the host system's
+# /etc/group.  As a result, additional group memberships of the buildd user
+# (currently just lxd) outside the chroot are also visible inside the
+# chroot, and must exist in /etc/group there as well or else a few package
+# builds will fail, so we temporarily remove the lxd group membership for
+# the duration of this build.  This is all very unfortunate and not very
+# robust; perhaps eventually we should fix this by doing package builds in
+# LXD containers, although that would have its own problems, particularly
+# when bootstrapping new architectures.
+cleanup () {
+    sudo adduser --quiet buildd lxd
+}
+trap cleanup EXIT
+# According to deluser(8):
+#   6   The user does not belong to the specified group.  No action was
+#       performed.
+sudo deluser --quiet buildd lxd || [ $? = 6 ]
+
 hostarch=$(dpkg --print-architecture)
 
 UNAME26=""
