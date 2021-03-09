@@ -28,6 +28,8 @@ case "$1" in
         adduser --ingroup buildd --disabled-login --gecos 'Buildd user' \
                 --uid $BUILDDUID ${USER}
         adduser --quiet buildd sbuild
+        # Note that any additional group memberships here must currently be
+        # reflected in the deluser hacks in sbuild-package.
         adduser --quiet buildd lxd
 
 	SUDO_VERSION=$(sudo -V | sed -n '/^Sudo version/s/.* //p')
