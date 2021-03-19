@@ -180,12 +180,20 @@ class BinaryPackageBuildManager(DebianBuildManager):
     def getAptLists(self):
         """Yield each of apt's Packages files in turn as a file object."""
         apt_helper = "/usr/lib/apt/apt-helper"
+        paths = None
         if os.path.exists(os.path.join(self.chroot_path, apt_helper[1:])):
-            paths = subprocess.check_output(
-                ["sudo", "chroot", self.chroot_path,
-                 "apt-get", "indextargets", "--format", "$(FILENAME)",
-                 "Created-By: Packages"],
-                universal_newlines=True).splitlines()
+            try:
+                paths = subprocess.check_output(
+                    ["sudo", "chroot", self.chroot_path,
+                     "apt-get", "indextargets", "--format", "$(FILENAME)",
+                     "Created-By: Packages"],
+                    universal_newlines=True).splitlines()
+            except subprocess.CalledProcessError:
+                # This might be e.g. Ubuntu 14.04, where
+                # /usr/lib/apt/apt-helper exists but "apt-get indextargets"
+                # doesn't.  Fall back to reading Packages files directly.
+                pass
+        if paths is not None:
             for path in paths:
                 helper = subprocess.Popen(
                     ["sudo", "chroot", self.chroot_path,
