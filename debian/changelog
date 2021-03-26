@@ -1,11 +1,11 @@
-launchpad-buildd (195) UNRELEASED; urgency=medium
+launchpad-buildd (195) bionic; urgency=medium
 
   * sbuild-package: Temporarily remove lxd group membership (LP: #1820348).
   * Tolerate missing "apt-get indextargets" on trusty.
   * Add a Juju charm which can be used to deploy local launchpad-buildd
     instances.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 05 Mar 2021 13:39:19 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 26 Mar 2021 08:54:22 +0000
 
 launchpad-buildd (194) bionic; urgency=medium
 
