@@ -191,6 +191,9 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                     # as you can't seek backwards.
                     # Work out what the symlink is referring to, then
                     # we can deal with it later
+                    self._builder.log(
+                        "Found symlink at {} referencing {}".format(
+                            file.name, file.linkpath))
                     symlinks.append(file)
                     continue
                 if current_dir and file.name.endswith('layer.tar'):
@@ -224,6 +227,9 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                 extract_path,
                 '{}.tar.gz'.format(symlink.name.split('/')[-2]))
             # Do a copy to dereference the symlink
+            self._builder.log(
+                "Deferencing symlink from {} to {}".format(
+                    source_name, target_name))
             shutil.copy(source_name, target_name)
 
 
