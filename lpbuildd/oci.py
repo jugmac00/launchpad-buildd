@@ -8,6 +8,7 @@ __metaclass__ = type
 import hashlib
 import json
 import os
+import shutil
 import tarfile
 import tempfile
 
@@ -168,6 +169,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
 
         current_dir = ''
         directory_tar = None
+        symlinks = []
         try:
             # The tarfile is a stream and must be processed in order
             for file in tar:
@@ -184,6 +186,16 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                         os.path.join(
                             extract_path, '{}.tar.gz'.format(file.name)),
                         'w|gz')
+                if file.issym():
+                    # symlinks can't be extracted or derefenced from a stream
+                    # as you can't seek backwards.
+                    # Work out what the symlink is referring to, then
+                    # we can deal with it later
+                    self._builder.log(
+                        "Found symlink at {} referencing {}".format(
+                            file.name, file.linkpath))
+                    symlinks.append(file)
+                    continue
                 if current_dir and file.name.endswith('layer.tar'):
                     # This is the actual layer data, we want to add it to
                     # the directory gzip
@@ -202,6 +214,24 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         finally:
             if directory_tar is not None:
                 directory_tar.close()
+
+        # deal with any symlinks we had
+        for symlink in symlinks:
+            # These are paths that finish in "<layer_id>/layer.tar"
+            # we want the directory name, which should always be
+            # the second component
+            source_name = os.path.join(
+                extract_path,
+                "{}.tar.gz".format(symlink.linkpath.split('/')[-2]))
+            target_name = os.path.join(
+                extract_path,
+                '{}.tar.gz'.format(symlink.name.split('/')[-2]))
+            # Do a copy to dereference the symlink
+            self._builder.log(
+                "Deferencing symlink from {} to {}".format(
+                    source_name, target_name))
+            shutil.copy(source_name, target_name)
+
 
         # We need these mapping files
         sha_directory = tempfile.mkdtemp()

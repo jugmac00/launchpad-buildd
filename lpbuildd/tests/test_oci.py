@@ -43,7 +43,8 @@ class MockBuildManager(OCIBuildManager):
 class MockOCITarSave():
     @property
     def stdout(self):
-        return io.open(OCITarball().build_tar_file(), 'rb')
+        tar_path = OCITarball().build_tar_file()
+        return io.open(tar_path, 'rb')
 
 
 class TestOCIBuildManagerIteration(TestCase):
@@ -147,6 +148,7 @@ class TestOCIBuildManagerIteration(TestCase):
             'manifest.json',
             'layer-1.tar.gz',
             'layer-2.tar.gz',
+            'layer-3.tar.gz',
             'digests.json',
             'config.json',
             ]
@@ -167,6 +169,11 @@ class TestOCIBuildManagerIteration(TestCase):
                 "source": "",
                 "digest": "testsha",
                 "layer_id": "layer-2"
+            },
+            "sha256:diff3": {
+                "source": "",
+                "digest": "testsha",
+                "layer_id": "layer-3"
             }
         }]
         self.assertEqual(digests_expected, json.loads(digests_contents))
@@ -233,6 +240,7 @@ class TestOCIBuildManagerIteration(TestCase):
             'manifest.json',
             'layer-1.tar.gz',
             'layer-2.tar.gz',
+            'layer-3.tar.gz',
             'digests.json',
             'config.json',
             ]
@@ -253,6 +261,11 @@ class TestOCIBuildManagerIteration(TestCase):
                 "source": "",
                 "digest": "testsha",
                 "layer_id": "layer-2"
+            },
+            "sha256:diff3": {
+                "source": "",
+                "digest": "testsha",
+                "layer_id": "layer-3"
             }
         }]
         self.assertEqual(digests_expected, json.loads(digests_contents))
