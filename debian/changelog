@@ -1,3 +1,9 @@
+launchpad-buildd (196) UNRELEASED; urgency=medium
+
+  * Handle symlinks in OCI image files
+
+ -- Tom Wardill <tom.wardill@canonical.com>  Fri, 23 Apr 2021 15:51:11 +0100
+
 launchpad-buildd (195) bionic; urgency=medium
 
   * sbuild-package: Temporarily remove lxd group membership (LP: #1820348).
