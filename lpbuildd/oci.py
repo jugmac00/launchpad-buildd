@@ -162,7 +162,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             proc = self.backend.run(
                 ['docker', 'save', self.name],
                 get_output=True, return_process=True)
-            tar = tarfile.open(fileobj=proc.stdout, mode="r|", dereference=True)
+            tar = tarfile.open(fileobj=proc.stdout, mode="r|")
         except Exception as e:
             self._builder.log("Unable to save image: {}".format(e))
             raise
@@ -185,7 +185,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                     directory_tar = tarfile.open(
                         os.path.join(
                             extract_path, '{}.tar.gz'.format(file.name)),
-                        'w|gz', dereference=True)
+                        'w|gz')
                 if file.issym():
                     # symlinks can't be extracted or derefenced from a stream
                     # as you can't seek backwards.
