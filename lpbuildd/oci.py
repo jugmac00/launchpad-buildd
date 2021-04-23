@@ -8,6 +8,7 @@ __metaclass__ = type
 import hashlib
 import json
 import os
+import shutil
 import tarfile
 import tempfile
 
@@ -161,13 +162,14 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             proc = self.backend.run(
                 ['docker', 'save', self.name],
                 get_output=True, return_process=True)
-            tar = tarfile.open(fileobj=proc.stdout, mode="r|")
+            tar = tarfile.open(fileobj=proc.stdout, mode="r|", dereference=True)
         except Exception as e:
             self._builder.log("Unable to save image: {}".format(e))
             raise
 
         current_dir = ''
         directory_tar = None
+        symlinks = []
         try:
             # The tarfile is a stream and must be processed in order
             for file in tar:
@@ -183,7 +185,14 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                     directory_tar = tarfile.open(
                         os.path.join(
                             extract_path, '{}.tar.gz'.format(file.name)),
-                        'w|gz')
+                        'w|gz', dereference=True)
+                if file.issym():
+                    # symlinks can't be extracted or derefenced from a stream
+                    # as you can't seek backwards.
+                    # Work out what the symlink is referring to, then
+                    # we can deal with it later
+                    symlinks.append(file)
+                    continue
                 if current_dir and file.name.endswith('layer.tar'):
                     # This is the actual layer data, we want to add it to
                     # the directory gzip
@@ -202,6 +211,21 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         finally:
             if directory_tar is not None:
                 directory_tar.close()
+
+        # deal with any symlinks we had
+        for symlink in symlinks:
+            # These are paths that finish in "<layer_id>/layer.tar"
+            # we want the directory name, which should always be
+            # the second component
+            source_name = os.path.join(
+                extract_path,
+                "{}.tar.gz".format(symlink.linkpath.split('/')[-2]))
+            target_name = os.path.join(
+                extract_path,
+                '{}.tar.gz'.format(symlink.name.split('/')[-2]))
+            # Do a copy to dereference the symlink
+            shutil.copy(source_name, target_name)
+
 
         # We need these mapping files
         sha_directory = tempfile.mkdtemp()
