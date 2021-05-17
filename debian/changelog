@@ -1,8 +1,8 @@
-launchpad-buildd (196) UNRELEASED; urgency=medium
+launchpad-buildd (196) bionic; urgency=medium
 
   * Handle symlinks in OCI image files
 
- -- Tom Wardill <tom.wardill@canonical.com>  Fri, 23 Apr 2021 15:51:11 +0100
+ -- Tom Wardill <tom.wardill@canonical.com>  Mon, 17 May 2021 14:19:04 +0100
 
 launchpad-buildd (195) bionic; urgency=medium
 
