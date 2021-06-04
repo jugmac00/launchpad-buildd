@@ -59,7 +59,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
         super(OCIBuildManager, self).initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
-        """Run the process to build the snap."""
+        """Run the process to build the OCI image."""
         args = []
         args.extend(self.startProxy())
         if self.revocation_endpoint:

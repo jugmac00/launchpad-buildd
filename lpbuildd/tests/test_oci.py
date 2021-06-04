@@ -89,7 +89,7 @@ class TestOCIBuildManagerIteration(TestCase):
         # directly before BUILD_OCI.
         self.buildmanager._state = OCIBuildState.UPDATE
 
-        # BUILD_OCI: Run the builder's payload to build the snap package.
+        # BUILD_OCI: Run the builder's payload to build the OCI image.
         yield self.buildmanager.iterate(0)
         self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
         expected_command = [

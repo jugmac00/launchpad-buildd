@@ -23,6 +23,7 @@ from twisted.web import (
 
 from lpbuildd.binarypackage import BinaryPackageBuildManager
 from lpbuildd.builder import XMLRPCBuilder
+from lpbuildd.charm import CharmBuildManager
 from lpbuildd.oci import OCIBuildManager
 from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.log import RotatableFileLogObserver
@@ -47,6 +48,7 @@ builder.registerManager(
 builder.registerManager(LiveFilesystemBuildManager, "livefs")
 builder.registerManager(SnapBuildManager, "snap")
 builder.registerManager(OCIBuildManager, "oci")
+builder.registerManager(CharmBuildManager, "charm")
 
 application = service.Application('Builder')
 application.addComponent(
