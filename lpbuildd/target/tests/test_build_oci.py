@@ -24,8 +24,8 @@ from testtools.matchers import (
     MatchesListwise,
     )
 
+from lpbuildd.target.backend import InvalidBuildFilePath
 from lpbuildd.target.build_oci import (
-    InvalidBuildFilePath,
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
     )

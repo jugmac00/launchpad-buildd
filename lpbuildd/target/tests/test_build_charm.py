@@ -1,0 +1,342 @@
+# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+__metaclass__ = type
+
+import os
+import subprocess
+
+from fixtures import (
+    FakeLogger,
+    TempDir,
+    )
+from testtools.matchers import (
+    AnyMatch,
+    Equals,
+    Is,
+    MatchesAll,
+    MatchesDict,
+    MatchesListwise,
+    )
+from testtools.testcase import TestCase
+
+from lpbuildd.target.backend import InvalidBuildFilePath
+from lpbuildd.target.build_charm import (
+    RETCODE_FAILURE_BUILD,
+    RETCODE_FAILURE_INSTALL,
+    )
+from lpbuildd.tests.fakebuilder import FakeMethod
+from lpbuildd.target.cli import parse_args
+
+
+class RanCommand(MatchesListwise):
+
+    def __init__(self, args, echo=None, cwd=None, input_text=None,
+                 get_output=None, **env):
+        kwargs_matcher = {}
+        if echo is not None:
+            kwargs_matcher["echo"] = Is(echo)
+        if cwd:
+            kwargs_matcher["cwd"] = Equals(cwd)
+        if input_text:
+            kwargs_matcher["input_text"] = Equals(input_text)
+        if get_output is not None:
+            kwargs_matcher["get_output"] = Is(get_output)
+        if env:
+            kwargs_matcher["env"] = MatchesDict(
+                {key: Equals(value) for key, value in env.items()})
+        super(RanCommand, self).__init__(
+            [Equals((args,)), MatchesDict(kwargs_matcher)])
+
+
+class RanAptGet(RanCommand):
+
+    def __init__(self, *args):
+        super(RanAptGet, self).__init__(["apt-get", "-y"] + list(args))
+
+
+class RanBuildCommand(RanCommand):
+
+    def __init__(self, args, **kwargs):
+        kwargs.setdefault("LANG", "C.UTF-8")
+        kwargs.setdefault("SHELL", "/bin/sh")
+        super(RanBuildCommand, self).__init__(args, **kwargs)
+
+
+class TestBuildCharm(TestCase):
+
+    def test_run_build_command_no_env(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.run_build_command(["echo", "hello world"])
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["echo", "hello world"],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_run_build_command_env(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.run_build_command(
+            ["echo", "hello world"], env={"FOO": "bar baz"})
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["echo", "hello world"],
+                FOO="bar baz",
+                cwd="/home/buildd/test-image")
+            ]))
+
+    def test_install_bzr(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image"
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.install()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "bzr"),
+            RanCommand(["snap", "install", "core"]),
+            RanCommand(["snap", "install", "core20"]),
+            RanCommand(["snap", "install", "charmcraft"]),
+            RanCommand(["mkdir", "-p", "/home/buildd"]),
+            ]))
+
+    def test_install_git(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo", "test-image"
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.install()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "git"),
+            RanCommand(["snap", "install", "core"]),
+            RanCommand(["snap", "install", "core20"]),
+            RanCommand(["snap", "install", "charmcraft"]),
+            RanCommand(["mkdir", "-p", "/home/buildd"]),
+            ]))
+
+    def test_repo_bzr(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.build_path = self.useFixture(TempDir()).path
+        build_charm.backend.run = FakeMethod()
+        build_charm.repo()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["bzr", "branch", "lp:foo", "test-image"], cwd="/home/buildd"),
+            ]))
+
+    def test_repo_git(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.build_path = self.useFixture(TempDir()).path
+        build_charm.backend.run = FakeMethod()
+        build_charm.repo()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["git", "clone", "lp:foo", "test-image"], cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_repo_git_with_path(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo", "--git-path", "next", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.build_path = self.useFixture(TempDir()).path
+        build_charm.backend.run = FakeMethod()
+        build_charm.repo()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["git", "clone", "-b", "next", "lp:foo", "test-image"],
+                cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_repo_git_with_tag_path(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo", "--git-path", "refs/tags/1.0",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.build_path = self.useFixture(TempDir()).path
+        build_charm.backend.run = FakeMethod()
+        build_charm.repo()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["git", "clone", "-b", "1.0", "lp:foo", "test-image"],
+                cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_build(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.add_dir('/build/test-directory')
+        build_charm.build()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["charmcraft", "build", "-f",
+                 "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_build_with_path(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "build-aux/",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.add_dir('/build/test-directory')
+        build_charm.build()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["charmcraft", "build", "-f",
+                 "/home/buildd/test-image/build-aux/"],
+                cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_run_succeeds(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.build_path = self.useFixture(TempDir()).path
+        build_charm.backend.run = FakeMethod()
+        self.assertEqual(0, build_charm.run())
+        self.assertThat(build_charm.backend.run.calls, MatchesAll(
+            AnyMatch(RanAptGet("install", "bzr"),),
+            AnyMatch(RanBuildCommand(
+                ["bzr", "branch", "lp:foo", "test-image"],
+                cwd="/home/buildd")),
+            AnyMatch(RanBuildCommand(
+                ["charmcraft", "build", "-f",
+                 "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image")),
+            ))
+
+    def test_run_install_fails(self):
+        class FailInstall(FakeMethod):
+            def __call__(self, run_args, *args, **kwargs):
+                super(FailInstall, self).__call__(run_args, *args, **kwargs)
+                if run_args[0] == "apt-get":
+                    raise subprocess.CalledProcessError(1, run_args)
+
+        self.useFixture(FakeLogger())
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.run = FailInstall()
+        self.assertEqual(RETCODE_FAILURE_INSTALL, build_charm.run())
+
+    def test_run_repo_fails(self):
+        class FailRepo(FakeMethod):
+            def __call__(self, run_args, *args, **kwargs):
+                super(FailRepo, self).__call__(run_args, *args, **kwargs)
+                if run_args[:2] == ["bzr", "branch"]:
+                    raise subprocess.CalledProcessError(1, run_args)
+
+        self.useFixture(FakeLogger())
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.run = FailRepo()
+        self.assertEqual(RETCODE_FAILURE_BUILD, build_charm.run())
+
+    def test_run_build_fails(self):
+        class FailBuild(FakeMethod):
+            def __call__(self, run_args, *args, **kwargs):
+                super(FailBuild, self).__call__(run_args, *args, **kwargs)
+                if run_args[0] == "charmcraft":
+                    raise subprocess.CalledProcessError(1, run_args)
+
+        self.useFixture(FakeLogger())
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.build_path = self.useFixture(TempDir()).path
+        build_charm.backend.run = FailBuild()
+        self.assertEqual(RETCODE_FAILURE_BUILD, build_charm.run())
+
+    def test_build_with_invalid_build_path_parent(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "../",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.add_dir('/build/test-directory')
+        self.assertRaises(InvalidBuildFilePath, build_charm.build)
+
+    def test_build_with_invalid_build_path_absolute(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "/etc",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.add_dir('/build/test-directory')
+        self.assertRaises(InvalidBuildFilePath, build_charm.build)
+
+    def test_build_with_invalid_build_path_symlink(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--build-path", "build/",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.buildd_path = self.useFixture(TempDir()).path
+        os.symlink(
+            '/etc/hosts',
+            os.path.join(build_charm.buildd_path, 'build'))
+        self.assertRaises(InvalidBuildFilePath, build_charm.build)

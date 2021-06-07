@@ -12,6 +12,7 @@ import sys
 import tempfile
 from textwrap import dedent
 
+from lpbuildd.target.backend import InvalidBuildFilePath
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
@@ -23,10 +24,6 @@ RETCODE_FAILURE_BUILD = 201
 
 
 logger = logging.getLogger(__name__)
-
-
-class InvalidBuildFilePath(Exception):
-    pass
 
 
 class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
@@ -47,7 +44,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             help="A docker build ARG in the format of key=value. "
                  "This option can be repeated many times. For example: "
                  "--build-arg VAR1=A --build-arg VAR2=B")
-        parser.add_argument("name", help="name of snap to build")
+        parser.add_argument("name", help="name of image to build")
 
     def __init__(self, args, parser):
         super(BuildOCI, self).__init__(args, parser)

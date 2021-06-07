@@ -13,6 +13,10 @@ class BackendException(Exception):
     pass
 
 
+class InvalidBuildFilePath(Exception):
+    pass
+
+
 class Backend:
     """A backend implementation for the environment where we run builds."""
 
