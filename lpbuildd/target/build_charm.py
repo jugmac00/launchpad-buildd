@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 
-from lpbuildd.target.backend import InvalidBuildFilePath
+from lpbuildd.target.backend import _check_path_escape
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
@@ -49,14 +49,6 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         super(BuildCharm, self).__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
-
-    def _check_path_escape(self, path_to_check):
-        """Check the build file path doesn't escape the build directory."""
-        build_file_path = os.path.realpath(
-            os.path.join(self.buildd_path, path_to_check))
-        common_path = os.path.commonprefix((build_file_path, self.buildd_path))
-        if common_path != self.buildd_path:
-            raise InvalidBuildFilePath("Invalid build file path.")
 
     def run_build_command(self, args, env=None, build_path=None, **kwargs):
         """Run a build command in the target.
@@ -114,7 +106,7 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             "/home/buildd",
             self.args.name,
             self.args.build_path)
-        self._check_path_escape(build_context_path)
+        _check_path_escape(self.buildd_path, build_context_path)
         args = ["charmcraft", "build", "-f", build_context_path]
         self.run_build_command(args)
 
