@@ -99,17 +99,6 @@ class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
             full_env.update(env)
         return self.backend.run(args, env=full_env, **kwargs)
 
-    def save_status(self, status):
-        """Save a dictionary of status information about this build.
-
-        This will be picked up by the build manager and included in XML-RPC
-        status responses.
-        """
-        status_path = os.path.join(self.backend.build_path, "status")
-        with open("%s.tmp" % status_path, "w") as status_file:
-            json.dump(status, status_file)
-        os.rename("%s.tmp" % status_path, status_path)
-
     def install_svn_servers(self):
         proxy = urlparse(self.args.proxy_url)
         svn_servers = dedent("""\
@@ -173,23 +162,7 @@ class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
         logger.info("Running repo phase...")
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(self.args.name, cwd="/build", env=env)
-        status = {}
-        if self.args.branch is not None:
-            status["revision_id"] = self.run_build_command(
-                ["bzr", "revno"],
-                cwd=os.path.join("/build", self.args.name),
-                get_output=True, universal_newlines=True).rstrip("\n")
-        else:
-            rev = (
-                self.args.git_path
-                if self.args.git_path is not None else "HEAD")
-            status["revision_id"] = self.run_build_command(
-                # The ^{} suffix copes with tags: we want to peel them
-                # recursively until we get an actual commit.
-                ["git", "rev-parse", rev + "^{}"],
-                cwd=os.path.join("/build", self.args.name),
-                get_output=True, universal_newlines=True).rstrip("\n")
-        self.save_status(status)
+        self.save_status(os.path.join("/build", self.args.name))
 
     @property
     def image_info(self):

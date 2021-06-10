@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from collections import OrderedDict
 import logging
+import json
 import os.path
 import subprocess
 
@@ -101,3 +102,30 @@ class VCSOperationMixin:
                 logger.error(
                     "'git submodule update --init --recursive failed with "
                     "exit code %s (build may fail later)" % e.returncode)
+
+    def save_status(self, cwd):
+        """Save a dictionary of status information about this build.
+
+        This will be picked up by the build manager and included in XML-RPC
+        status responses.
+        """
+        status = {}
+        if self.args.branch is not None:
+            status["revision_id"] = self.run_build_command(
+                ["bzr", "revno"],
+                cwd=cwd,
+                get_output=True, universal_newlines=True).rstrip("\n")
+        else:
+            rev = (
+                self.args.git_path
+                if self.args.git_path is not None else "HEAD")
+            status["revision_id"] = self.run_build_command(
+                # The ^{} suffix copes with tags: we want to peel them
+                # recursively until we get an actual commit.
+                ["git", "rev-parse", rev + "^{}"],
+                cwd=cwd,
+                get_output=True, universal_newlines=True).rstrip("\n")
+        status_path = os.path.join(self.backend.build_path, "status")
+        with open("%s.tmp" % status_path, "w") as status_file:
+            json.dump(status, status_file)
+        os.rename("%s.tmp" % status_path, status_path)

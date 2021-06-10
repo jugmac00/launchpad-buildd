@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+import json
 import os
 import subprocess
 from textwrap import dedent
@@ -28,14 +29,17 @@ from lpbuildd.target.build_charm import (
     RETCODE_FAILURE_INSTALL,
     )
 from lpbuildd.tests.fakebuilder import FakeMethod
-from lpbuildd.target.tests.test_build_snap import RanSnap
+from lpbuildd.target.tests.test_build_snap import (
+    FakeRevisionID,
+    RanSnap,
+    )
 from lpbuildd.target.cli import parse_args
 
 
 class RanCommand(MatchesListwise):
 
     def __init__(self, args, echo=None, cwd=None, input_text=None,
-                 get_output=None, **env):
+                 get_output=None, universal_newlines=None, **env):
         kwargs_matcher = {}
         if echo is not None:
             kwargs_matcher["echo"] = Is(echo)
@@ -45,6 +49,8 @@ class RanCommand(MatchesListwise):
             kwargs_matcher["input_text"] = Equals(input_text)
         if get_output is not None:
             kwargs_matcher["get_output"] = Is(get_output)
+        if universal_newlines is not None:
+            kwargs_matcher["universal_newlines"] = Is(universal_newlines)
         if env:
             kwargs_matcher["env"] = MatchesDict(
                 {key: Equals(value) for key, value in env.items()})
@@ -186,12 +192,19 @@ class TestBuildCharm(TestCase):
             ]
         build_charm = parse_args(args=args).operation
         build_charm.backend.build_path = self.useFixture(TempDir()).path
-        build_charm.backend.run = FakeMethod()
+        build_charm.backend.run = FakeRevisionID("42")
         build_charm.repo()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"], cwd="/home/buildd"),
+            RanBuildCommand(
+                ["bzr", "revno"],
+                cwd="/home/buildd/test-image", get_output=True,
+                universal_newlines=True),
             ]))
+        status_path = os.path.join(build_charm.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "42"}, json.load(status))
 
     def test_repo_git(self):
         args = [
@@ -201,7 +214,7 @@ class TestBuildCharm(TestCase):
             ]
         build_charm = parse_args(args=args).operation
         build_charm.backend.build_path = self.useFixture(TempDir()).path
-        build_charm.backend.run = FakeMethod()
+        build_charm.backend.run = FakeRevisionID("0" * 40)
         build_charm.repo()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -209,7 +222,14 @@ class TestBuildCharm(TestCase):
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ["git", "rev-parse", "HEAD^{}"],
+                cwd="/home/buildd/test-image",
+                get_output=True, universal_newlines=True),
             ]))
+        status_path = os.path.join(build_charm.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_repo_git_with_path(self):
         args = [
@@ -219,7 +239,7 @@ class TestBuildCharm(TestCase):
             ]
         build_charm = parse_args(args=args).operation
         build_charm.backend.build_path = self.useFixture(TempDir()).path
-        build_charm.backend.run = FakeMethod()
+        build_charm.backend.run = FakeRevisionID("0" * 40)
         build_charm.repo()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -228,7 +248,14 @@ class TestBuildCharm(TestCase):
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ["git", "rev-parse", "next^{}"],
+                cwd="/home/buildd/test-image", get_output=True,
+                universal_newlines=True),
             ]))
+        status_path = os.path.join(build_charm.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_repo_git_with_tag_path(self):
         args = [
@@ -239,7 +266,7 @@ class TestBuildCharm(TestCase):
             ]
         build_charm = parse_args(args=args).operation
         build_charm.backend.build_path = self.useFixture(TempDir()).path
-        build_charm.backend.run = FakeMethod()
+        build_charm.backend.run = FakeRevisionID("0" * 40)
         build_charm.repo()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -248,7 +275,14 @@ class TestBuildCharm(TestCase):
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
+            RanBuildCommand(
+                ["git", "rev-parse", "refs/tags/1.0^{}"],
+                cwd="/home/buildd/test-image", get_output=True,
+                universal_newlines=True),
             ]))
+        status_path = os.path.join(build_charm.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_build(self):
         args = [
@@ -291,7 +325,7 @@ class TestBuildCharm(TestCase):
             ]
         build_charm = parse_args(args=args).operation
         build_charm.backend.build_path = self.useFixture(TempDir()).path
-        build_charm.backend.run = FakeMethod()
+        build_charm.backend.run = FakeRevisionID("42")
         self.assertEqual(0, build_charm.run())
         self.assertThat(build_charm.backend.run.calls, MatchesAll(
             AnyMatch(RanAptGet("install", "bzr"),),

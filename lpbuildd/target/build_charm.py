@@ -62,8 +62,9 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         full_env["SHELL"] = "/bin/sh"
         if env:
             full_env.update(env)
+        cwd = kwargs.pop('cwd', self.buildd_path)
         return self.backend.run(
-            args, cwd=self.buildd_path, env=full_env, **kwargs)
+            args, cwd=cwd, env=full_env, **kwargs)
 
     def install(self):
         logger.info("Running install phase")
@@ -99,6 +100,7 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
         self.vcs_fetch(self.args.name, cwd="/home/buildd")
+        self.save_status(self.buildd_path)
 
     def build(self):
         logger.info("Running build phase...")
