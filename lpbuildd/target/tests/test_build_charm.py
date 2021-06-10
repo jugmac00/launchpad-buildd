@@ -5,11 +5,13 @@ __metaclass__ = type
 
 import os
 import subprocess
+from textwrap import dedent
 
 from fixtures import (
     FakeLogger,
     TempDir,
     )
+import responses
 from testtools.matchers import (
     AnyMatch,
     Equals,
@@ -139,6 +141,40 @@ class TestBuildCharm(TestCase):
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanAptGet("install", "git"),
             RanCommand(["snap", "install", "charmcraft"]),
+            RanCommand(["mkdir", "-p", "/home/buildd"]),
+            ]))
+
+    @responses.activate
+    def test_install_snap_store_proxy(self):
+        store_assertion = dedent("""\
+            type: store
+            store: store-id
+            url: http://snap-store-proxy.example
+
+            body
+            """)
+
+        def respond(request):
+            return 200, {"X-Assertion-Store-Id": "store-id"}, store_assertion
+
+        responses.add_callback(
+            "GET", "http://snap-store-proxy.example/v2/auth/store/assertions",
+            callback=respond)
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo",
+            "--snap-store-proxy-url", "http://snap-store-proxy.example/",
+            "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.install()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "git"),
+            RanCommand(
+                ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
+            RanCommand(["snap", "set", "core", "proxy.store=store-id"]),
+            RanSnap("install", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 

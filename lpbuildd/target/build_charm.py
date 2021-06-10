@@ -14,6 +14,7 @@ import sys
 from lpbuildd.target.backend import InvalidBuildFilePath
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
+from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
 
@@ -24,7 +25,7 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildCharm(VCSOperationMixin, Operation):
+class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
 
     description = "Build a charm."
 
@@ -83,6 +84,8 @@ class BuildCharm(VCSOperationMixin, Operation):
                     deps.append(dep)
         deps.extend(self.vcs_deps)
         self.backend.run(["apt-get", "-y", "install"] + deps)
+        if self.args.backend in ("lxd", "fake"):
+            self.snap_store_set_proxy()
         for snap_name in self.core_snap_names:
             if snap_name in self.args.channels:
                 self.backend.run(
