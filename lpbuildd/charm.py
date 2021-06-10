@@ -39,12 +39,15 @@ class CharmBuildManager(DebianBuildManager):
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
         self.build_path = extra_args.get("build_path")
+        self.channels = extra_args.get("channels", {})
 
         super(CharmBuildManager, self).initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the process to build the charm."""
         args = []
+        for snap, channel in sorted(self.channels.items()):
+            args.extend(["--channel", "%s=%s" % (snap, channel)])
         if self.branch is not None:
             args.extend(["--branch", self.branch])
         if self.git_repository is not None:

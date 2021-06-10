@@ -26,6 +26,7 @@ from lpbuildd.target.build_charm import (
     RETCODE_FAILURE_INSTALL,
     )
 from lpbuildd.tests.fakebuilder import FakeMethod
+from lpbuildd.target.tests.test_build_snap import RanSnap
 from lpbuildd.target.cli import parse_args
 
 
@@ -95,6 +96,24 @@ class TestBuildCharm(TestCase):
                 cwd="/home/buildd/test-image")
             ]))
 
+    def test_install_channels(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--channel=core=candidate", "--channel=core18=beta",
+            "--channel=charmcraft=edge",
+            "--branch", "lp:foo", "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.install()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "bzr"),
+            RanSnap("install", "--channel=candidate", "core"),
+            RanSnap("install", "--channel=beta", "core18"),
+            RanSnap("install", "--channel=edge", "charmcraft"),
+            RanCommand(["mkdir", "-p", "/home/buildd"]),
+            ]))
+
     def test_install_bzr(self):
         args = [
             "build-charm",
@@ -105,8 +124,6 @@ class TestBuildCharm(TestCase):
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanAptGet("install", "bzr"),
-            RanCommand(["snap", "install", "core"]),
-            RanCommand(["snap", "install", "core20"]),
             RanCommand(["snap", "install", "charmcraft"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -121,8 +138,6 @@ class TestBuildCharm(TestCase):
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanAptGet("install", "git"),
-            RanCommand(["snap", "install", "core"]),
-            RanCommand(["snap", "install", "core20"]),
             RanCommand(["snap", "install", "charmcraft"]),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))

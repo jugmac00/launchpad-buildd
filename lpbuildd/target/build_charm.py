@@ -12,6 +12,7 @@ import os
 import sys
 
 from lpbuildd.target.backend import InvalidBuildFilePath
+from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.vcs import VCSOperationMixin
 
@@ -27,12 +28,17 @@ class BuildCharm(VCSOperationMixin, Operation):
 
     description = "Build a charm."
 
-    # charmcraft is a snap, so we'll need these
-    core_snap_names = ["core", "core20"]
+    core_snap_names = ["core", "core16", "core18", "core20"]
 
     @classmethod
     def add_arguments(cls, parser):
         super(BuildCharm, cls).add_arguments(parser)
+        parser.add_argument(
+            "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
+            dest="channels", default={}, help=(
+                "install SNAP from CHANNEL "
+                "(supported snaps: {}, charmcraft)".format(
+                    ", ".join(cls.core_snap_names))))
         parser.add_argument(
             "--build-path", default=".",
             help="location of charm to build.")
@@ -78,9 +84,18 @@ class BuildCharm(VCSOperationMixin, Operation):
         deps.extend(self.vcs_deps)
         self.backend.run(["apt-get", "-y", "install"] + deps)
         for snap_name in self.core_snap_names:
-            self.backend.run(["snap", "install", snap_name])
-        self.backend.run(
-            ["snap", "install", "charmcraft"])
+            if snap_name in self.args.channels:
+                self.backend.run(
+                    ["snap", "install",
+                     "--channel=%s" % self.args.channels[snap_name],
+                     snap_name])
+        if "charmcraft" in self.args.channels:
+            self.backend.run(
+                ["snap", "install",
+                 "--channel=%s" % self.args.channels["charmcraft"],
+                 "charmcraft"])
+        else:
+            self.backend.run(["snap", "install", "charmcraft"])
         # The charmcraft snap can't see /build, so we have to do our work under
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])
