@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 
-from lpbuildd.target.backend import _check_path_escape
+from lpbuildd.target.backend import check_path_escape
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
@@ -108,7 +108,7 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             "/home/buildd",
             self.args.name,
             self.args.build_path)
-        _check_path_escape(self.buildd_path, build_context_path)
+        check_path_escape(self.buildd_path, build_context_path)
         args = ["charmcraft", "build", "-f", build_context_path]
         self.run_build_command(args)
 

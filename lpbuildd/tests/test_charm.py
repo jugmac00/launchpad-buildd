@@ -74,7 +74,7 @@ class TestCharmBuildManagerIteration(TestCase):
         # directly before BUILD_CHARM.
         self.buildmanager._state = CharmBuildState.UPDATE
 
-        # BUILD_OCI: Run the builder's payload to build the charm.
+        # BUILD_CHARM: Run the builder's payload to build the charm.
         yield self.buildmanager.iterate(0)
         self.assertEqual(CharmBuildState.BUILD_CHARM, self.getState())
         expected_command = [

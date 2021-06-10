@@ -6,8 +6,8 @@ from __future__ import print_function
 __metaclass__ = type
 
 from collections import OrderedDict
-import logging
 import json
+import logging
 import os.path
 import subprocess
 

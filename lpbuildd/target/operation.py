@@ -35,11 +35,3 @@ class Operation:
 
     def run(self):
         raise NotImplementedError
-
-    def _check_path_escape(self, path_to_check):
-        """Check the build file path doesn't escape the build directory."""
-        build_file_path = os.path.realpath(
-            os.path.join(self.buildd_path, path_to_check))
-        common_path = os.path.commonprefix((build_file_path, self.buildd_path))
-        if common_path != self.buildd_path:
-            raise InvalidBuildFilePath("Invalid build file path.")

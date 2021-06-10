@@ -17,7 +17,7 @@ class InvalidBuildFilePath(Exception):
     pass
 
 
-def _check_path_escape(buildd_path, path_to_check):
+def check_path_escape(buildd_path, path_to_check):
     """Check the build file path doesn't escape the build directory."""
     build_file_path = os.path.realpath(
         os.path.join(buildd_path, path_to_check))

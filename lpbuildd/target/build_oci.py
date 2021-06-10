@@ -12,7 +12,7 @@ import sys
 import tempfile
 from textwrap import dedent
 
-from lpbuildd.target.backend import _check_path_escape
+from lpbuildd.target.backend import check_path_escape
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
@@ -119,7 +119,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         if self.args.build_file is not None:
             build_file_path = os.path.join(
                 self.args.build_path, self.args.build_file)
-            _check_path_escape(self.buildd_path, build_file_path)
+            check_path_escape(self.buildd_path, build_file_path)
             args.extend(["--file", build_file_path])
 
         # Keep this at the end, so we give the user a chance to override any
@@ -129,7 +129,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
 
         build_context_path = os.path.join(
             self.buildd_path, self.args.build_path)
-        _check_path_escape(self.buildd_path, build_context_path)
+        check_path_escape(self.buildd_path, build_context_path)
         args.append(build_context_path)
         self.run_build_command(args)
 
