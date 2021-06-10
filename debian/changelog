@@ -1,3 +1,9 @@
+launchpad-buildd (197) UNRELEASED; urgency=medium
+
+  * Add charm building support
+
+ -- Tom Wardill <tom.wardill@canonical.com>  Mon, 07 Jun 2021 10:22:50 +0100
+
 launchpad-buildd (196) bionic; urgency=medium
 
   * Handle symlinks in OCI image files

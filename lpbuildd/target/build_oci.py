@@ -12,6 +12,7 @@ import sys
 import tempfile
 from textwrap import dedent
 
+from lpbuildd.target.backend import check_path_escape
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
@@ -23,10 +24,6 @@ RETCODE_FAILURE_BUILD = 201
 
 
 logger = logging.getLogger(__name__)
-
-
-class InvalidBuildFilePath(Exception):
-    pass
 
 
 class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
@@ -47,7 +44,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
             help="A docker build ARG in the format of key=value. "
                  "This option can be repeated many times. For example: "
                  "--build-arg VAR1=A --build-arg VAR2=B")
-        parser.add_argument("name", help="name of snap to build")
+        parser.add_argument("name", help="name of image to build")
 
     def __init__(self, args, parser):
         super(BuildOCI, self).__init__(args, parser)
@@ -71,14 +68,6 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
                 systemd_file.write(contents)
                 systemd_file.flush()
                 self.backend.copy_in(systemd_file.name, file_path)
-
-    def _check_path_escape(self, path_to_check):
-        """Check the build file path doesn't escape the build directory."""
-        build_file_path = os.path.realpath(
-            os.path.join(self.buildd_path, path_to_check))
-        common_path = os.path.commonprefix((build_file_path, self.buildd_path))
-        if common_path != self.buildd_path:
-            raise InvalidBuildFilePath("Invalid build file path.")
 
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
@@ -130,7 +119,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
         if self.args.build_file is not None:
             build_file_path = os.path.join(
                 self.args.build_path, self.args.build_file)
-            self._check_path_escape(build_file_path)
+            check_path_escape(self.buildd_path, build_file_path)
             args.extend(["--file", build_file_path])
 
         # Keep this at the end, so we give the user a chance to override any
@@ -140,7 +129,7 @@ class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
 
         build_context_path = os.path.join(
             self.buildd_path, self.args.build_path)
-        self._check_path_escape(build_context_path)
+        check_path_escape(self.buildd_path, build_context_path)
         args.append(build_context_path)
         self.run_build_command(args)
 

@@ -13,6 +13,19 @@ class BackendException(Exception):
     pass
 
 
+class InvalidBuildFilePath(Exception):
+    pass
+
+
+def check_path_escape(buildd_path, path_to_check):
+    """Check the build file path doesn't escape the build directory."""
+    build_file_path = os.path.realpath(
+        os.path.join(buildd_path, path_to_check))
+    common_path = os.path.commonprefix((build_file_path, buildd_path))
+    if common_path != buildd_path:
+        raise InvalidBuildFilePath("Invalid build file path.")
+
+
 class Backend:
     """A backend implementation for the environment where we run builds."""
 
