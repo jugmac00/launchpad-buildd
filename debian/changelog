@@ -1,8 +1,9 @@
-launchpad-buildd (197) UNRELEASED; urgency=medium
+launchpad-buildd (197) bionic; urgency=medium
 
+  [ Tom Wardill ]
   * Add charm building support
 
- -- Tom Wardill <tom.wardill@canonical.com>  Mon, 07 Jun 2021 10:22:50 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 14 Jun 2021 16:30:33 +0100
 
 launchpad-buildd (196) bionic; urgency=medium
 
