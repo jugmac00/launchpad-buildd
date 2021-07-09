@@ -1,3 +1,9 @@
+launchpad-buildd (198) UNRELEASED; urgency=medium
+
+  * Run charmcraft in verbose mode.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 09 Jul 2021 14:08:58 +0100
+
 launchpad-buildd (197) bionic; urgency=medium
 
   [ Tom Wardill ]
