@@ -295,7 +295,7 @@ class TestBuildCharm(TestCase):
         build_charm.build()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-f",
+                ["charmcraft", "build", "-v", "-f",
                  "/home/buildd/test-image/."],
                 cwd="/home/buildd/test-image"),
             ]))
@@ -312,7 +312,7 @@ class TestBuildCharm(TestCase):
         build_charm.build()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-f",
+                ["charmcraft", "build", "-v", "-f",
                  "/home/buildd/test-image/build-aux/"],
                 cwd="/home/buildd/test-image"),
             ]))
@@ -333,7 +333,7 @@ class TestBuildCharm(TestCase):
                 ["bzr", "branch", "lp:foo", "test-image"],
                 cwd="/home/buildd")),
             AnyMatch(RanBuildCommand(
-                ["charmcraft", "build", "-f",
+                ["charmcraft", "build", "-v", "-f",
                  "/home/buildd/test-image/."],
                 cwd="/home/buildd/test-image")),
             ))

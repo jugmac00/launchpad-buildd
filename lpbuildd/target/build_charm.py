@@ -109,7 +109,7 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             self.args.name,
             self.args.build_path)
         check_path_escape(self.buildd_path, build_context_path)
-        args = ["charmcraft", "build", "-f", build_context_path]
+        args = ["charmcraft", "build", "-v", "-f", build_context_path]
         self.run_build_command(args)
 
     def run(self):
