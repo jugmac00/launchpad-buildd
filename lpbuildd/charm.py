@@ -11,6 +11,7 @@ from lpbuildd.debian import (
     DebianBuildState,
     DebianBuildManager,
     )
+from lpbuildd.snap import SnapBuildProxyMixin
 
 
 RETCODE_SUCCESS = 0
@@ -22,7 +23,7 @@ class CharmBuildState(DebianBuildState):
     BUILD_CHARM = "BUILD_CHARM"
 
 
-class CharmBuildManager(DebianBuildManager):
+class CharmBuildManager(SnapBuildProxyMixin, DebianBuildManager):
     """Build a charm."""
 
     backend_name = "lxd"
@@ -40,6 +41,9 @@ class CharmBuildManager(DebianBuildManager):
         self.git_path = extra_args.get("git_path")
         self.build_path = extra_args.get("build_path")
         self.channels = extra_args.get("channels", {})
+        self.proxy_url = extra_args.get("proxy_url")
+        self.revocation_endpoint = extra_args.get("revocation_endpoint")
+        self.proxy_service = None
 
         super(CharmBuildManager, self).initiate(files, chroot, extra_args)
 

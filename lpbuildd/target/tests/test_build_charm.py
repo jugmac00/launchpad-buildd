@@ -5,6 +5,7 @@ __metaclass__ = type
 
 import json
 import os
+import stat
 import subprocess
 from textwrap import dedent
 
@@ -13,6 +14,7 @@ from fixtures import (
     TempDir,
     )
 import responses
+from systemfixtures import FakeFilesystem
 from testtools.matchers import (
     AnyMatch,
     Equals,
@@ -171,11 +173,11 @@ class TestBuildCharm(TestCase):
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--git-repository", "lp:foo",
             "--snap-store-proxy-url", "http://snap-store-proxy.example/",
-            "test-snap",
+            "test-image",
             ]
-        build_snap = parse_args(args=args).operation
-        build_snap.install()
-        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+        build_charm = parse_args(args=args).operation
+        build_charm.install()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanAptGet("install", "git"),
             RanCommand(
                 ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
@@ -183,6 +185,31 @@ class TestBuildCharm(TestCase):
             RanSnap("install", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
+
+    def test_install_proxy(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo",
+            "--proxy-url", "http://proxy.example:3128/",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/snap-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_charm.install()
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "python3", "socat", "git"),
+            RanSnap("install", "charmcraft"),
+            RanCommand(["mkdir", "-p", "/home/buildd"]),
+            ]))
+        self.assertEqual(
+            (b"proxy script\n", stat.S_IFREG | 0o755),
+            build_charm.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
 
     def test_repo_bzr(self):
         args = [
@@ -284,6 +311,39 @@ class TestBuildCharm(TestCase):
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
+    def test_repo_proxy(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--git-repository", "lp:foo",
+            "--proxy-url", "http://proxy.example:3128/",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.build_path = self.useFixture(TempDir()).path
+        build_charm.backend.run = FakeRevisionID("0" * 40)
+        build_charm.repo()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
+            }
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["git", "clone", "lp:foo", "test-image"],
+                cwd="/home/buildd", **env),
+            RanBuildCommand(
+                ["git", "submodule", "update", "--init", "--recursive"],
+                cwd="/home/buildd/test-image", **env),
+            RanBuildCommand(
+                ["git", "rev-parse", "HEAD^{}"],
+                cwd="/home/buildd/test-image", get_output=True,
+                universal_newlines=True),
+            ]))
+        status_path = os.path.join(build_charm.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
+
     def test_build(self):
         args = [
             "build-charm",
@@ -315,6 +375,27 @@ class TestBuildCharm(TestCase):
                 ["charmcraft", "build", "-v", "-f",
                  "/home/buildd/test-image/build-aux/"],
                 cwd="/home/buildd/test-image"),
+            ]))
+
+    def test_build_proxy(self):
+        args = [
+            "build-charm",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo", "--proxy-url", "http://proxy.example:3128/",
+            "test-image",
+            ]
+        build_charm = parse_args(args=args).operation
+        build_charm.build()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
+            }
+        self.assertThat(build_charm.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["charmcraft", "build", "-v", "-f",
+                 "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image", **env),
             ]))
 
     def test_run_succeeds(self):
