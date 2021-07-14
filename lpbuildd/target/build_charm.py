@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import print_function
-import functools
 
 __metaclass__ = type
 
@@ -14,6 +13,7 @@ import sys
 from lpbuildd.target.backend import check_path_escape
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
+from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
@@ -25,7 +25,8 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
+class BuildCharm(SnapBuildProxyOperationMixin, VCSOperationMixin,
+                 SnapStoreOperationMixin, Operation):
 
     description = "Build a charm."
 
@@ -69,6 +70,9 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
     def install(self):
         logger.info("Running install phase")
         deps = []
+        if self.args.proxy_url:
+            deps.extend(self.proxy_deps)
+            self.install_git_proxy()
         if self.args.backend == "lxd":
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.
@@ -99,7 +103,8 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
     def repo(self):
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
-        self.vcs_fetch(self.args.name, cwd="/home/buildd")
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
         self.save_status(self.buildd_path)
 
     def build(self):
@@ -109,8 +114,13 @@ class BuildCharm(VCSOperationMixin, SnapStoreOperationMixin, Operation):
             self.args.name,
             self.args.build_path)
         check_path_escape(self.buildd_path, build_context_path)
+        env = OrderedDict()
+        if self.args.proxy_url:
+            env["http_proxy"] = self.args.proxy_url
+            env["https_proxy"] = self.args.proxy_url
+            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
         args = ["charmcraft", "build", "-v", "-f", build_context_path]
-        self.run_build_command(args)
+        self.run_build_command(args, env=env)
 
     def run(self):
         try:
