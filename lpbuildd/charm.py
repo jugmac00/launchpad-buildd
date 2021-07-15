@@ -50,6 +50,9 @@ class CharmBuildManager(SnapBuildProxyMixin, DebianBuildManager):
     def doRunBuild(self):
         """Run the process to build the charm."""
         args = []
+        args.extend(self.startProxy())
+        if self.revocation_endpoint:
+            args.extend(["--revocation-endpoint", self.revocation_endpoint])
         for snap, channel in sorted(self.channels.items()):
             args.extend(["--channel", "%s=%s" % (snap, channel)])
         if self.branch is not None:
@@ -65,6 +68,8 @@ class CharmBuildManager(SnapBuildProxyMixin, DebianBuildManager):
 
     def iterate_BUILD_CHARM(self, retcode):
         """Finished building the charm."""
+        self.stopProxy()
+        self.revokeProxyToken()
         if retcode == RETCODE_SUCCESS:
             print("Returning build status: OK")
             return self.deferGatherResults()
