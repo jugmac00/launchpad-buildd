@@ -91,11 +91,11 @@ class BuildCharm(SnapBuildProxyOperationMixin, VCSOperationMixin,
                      snap_name])
         if "charmcraft" in self.args.channels:
             self.backend.run(
-                ["snap", "install",
+                ["snap", "install", "--classic",
                  "--channel=%s" % self.args.channels["charmcraft"],
                  "charmcraft"])
         else:
-            self.backend.run(["snap", "install", "charmcraft"])
+            self.backend.run(["snap", "install", "--classic", "charmcraft"])
         # The charmcraft snap can't see /build, so we have to do our work under
         # /home/buildd instead.  Make sure it exists.
         self.backend.run(["mkdir", "-p", "/home/buildd"])
