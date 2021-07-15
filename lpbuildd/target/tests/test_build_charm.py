@@ -120,7 +120,7 @@ class TestBuildCharm(TestCase):
             RanAptGet("install", "bzr"),
             RanSnap("install", "--channel=candidate", "core"),
             RanSnap("install", "--channel=beta", "core18"),
-            RanSnap("install", "--channel=edge", "charmcraft"),
+            RanSnap("install", "--classic", "--channel=edge", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 
@@ -134,7 +134,7 @@ class TestBuildCharm(TestCase):
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanAptGet("install", "bzr"),
-            RanCommand(["snap", "install", "charmcraft"]),
+            RanSnap("install", "--classic", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 
@@ -148,7 +148,7 @@ class TestBuildCharm(TestCase):
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanAptGet("install", "git"),
-            RanCommand(["snap", "install", "charmcraft"]),
+            RanSnap("install", "--classic", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 
@@ -182,7 +182,7 @@ class TestBuildCharm(TestCase):
             RanCommand(
                 ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
             RanCommand(["snap", "set", "core", "proxy.store=store-id"]),
-            RanSnap("install", "charmcraft"),
+            RanSnap("install", "--classic", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
 
@@ -204,7 +204,7 @@ class TestBuildCharm(TestCase):
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanAptGet("install", "python3", "socat", "git"),
-            RanSnap("install", "charmcraft"),
+            RanSnap("install", "--classic", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
         self.assertEqual(
