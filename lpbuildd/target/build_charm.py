@@ -125,7 +125,11 @@ class BuildCharm(SnapBuildProxyOperationMixin, VCSOperationMixin,
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
             env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
-        args = ["charmcraft", "build", "-v", "-p", build_context_path, "-f", build_context_path]
+        args = [
+            "charmcraft", "build", "-v",
+            "-p", build_context_path,
+            "-f", build_context_path,
+            ]
         self.run_build_command(args, env=env)
 
     def run(self):
