@@ -117,7 +117,7 @@ class TestBuildCharm(TestCase):
         build_snap = parse_args(args=args).operation
         build_snap.install()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "bzr"),
+            RanAptGet("install", "bzr", "python3-pip", "python3-setuptools"),
             RanSnap("install", "--channel=candidate", "core"),
             RanSnap("install", "--channel=beta", "core18"),
             RanSnap("install", "--classic", "--channel=edge", "charmcraft"),
@@ -133,7 +133,7 @@ class TestBuildCharm(TestCase):
         build_charm = parse_args(args=args).operation
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "bzr"),
+            RanAptGet("install", "bzr", "python3-pip", "python3-setuptools"),
             RanSnap("install", "--classic", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -147,7 +147,7 @@ class TestBuildCharm(TestCase):
         build_charm = parse_args(args=args).operation
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git"),
+            RanAptGet("install", "git", "python3-pip", "python3-setuptools"),
             RanSnap("install", "--classic", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -178,7 +178,7 @@ class TestBuildCharm(TestCase):
         build_charm = parse_args(args=args).operation
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "git"),
+            RanAptGet("install", "git", "python3-pip", "python3-setuptools"),
             RanCommand(
                 ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
             RanCommand(["snap", "set", "core", "proxy.store=store-id"]),
@@ -203,7 +203,9 @@ class TestBuildCharm(TestCase):
             os.fchmod(proxy_script.fileno(), 0o755)
         build_charm.install()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "python3", "socat", "git"),
+            RanAptGet(
+                "install", "python3", "socat", "git",
+                "python3-pip", "python3-setuptools"),
             RanSnap("install", "--classic", "charmcraft"),
             RanCommand(["mkdir", "-p", "/home/buildd"]),
             ]))
@@ -355,9 +357,10 @@ class TestBuildCharm(TestCase):
         build_charm.build()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-v", "-f",
-                 "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image"),
+                ["charmcraft", "build", "-v",
+                 "-p", "/home/buildd/test-image/.",
+                 "-f", "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image", CHARMCRAFT_MANAGED_MODE="1"),
             ]))
 
     def test_build_with_path(self):
@@ -372,9 +375,10 @@ class TestBuildCharm(TestCase):
         build_charm.build()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-v", "-f",
-                 "/home/buildd/test-image/build-aux/"],
-                cwd="/home/buildd/test-image"),
+                ["charmcraft", "build", "-v",
+                 "-p", "/home/buildd/test-image/build-aux/",
+                 "-f", "/home/buildd/test-image/build-aux/"],
+                cwd="/home/buildd/test-image", CHARMCRAFT_MANAGED_MODE="1"),
             ]))
 
     def test_build_proxy(self):
@@ -387,14 +391,16 @@ class TestBuildCharm(TestCase):
         build_charm = parse_args(args=args).operation
         build_charm.build()
         env = {
+            "CHARMCRAFT_MANAGED_MODE": "1",
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
             }
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-v", "-f",
-                 "/home/buildd/test-image/."],
+                ["charmcraft", "build", "-v",
+                 "-p", "/home/buildd/test-image/.",
+                 "-f", "/home/buildd/test-image/."],
                 cwd="/home/buildd/test-image", **env),
             ]))
 
@@ -409,14 +415,16 @@ class TestBuildCharm(TestCase):
         build_charm.backend.run = FakeRevisionID("42")
         self.assertEqual(0, build_charm.run())
         self.assertThat(build_charm.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "bzr"),),
+            AnyMatch(RanAptGet(
+                "install", "bzr", "python3-pip", "python3-setuptools"),),
             AnyMatch(RanBuildCommand(
                 ["bzr", "branch", "lp:foo", "test-image"],
                 cwd="/home/buildd")),
             AnyMatch(RanBuildCommand(
-                ["charmcraft", "build", "-v", "-f",
-                 "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image")),
+                ["charmcraft", "build", "-v",
+                 "-p", "/home/buildd/test-image/.",
+                 "-f", "/home/buildd/test-image/."],
+                cwd="/home/buildd/test-image", CHARMCRAFT_MANAGED_MODE="1")),
             ))
 
     def test_run_install_fails(self):
