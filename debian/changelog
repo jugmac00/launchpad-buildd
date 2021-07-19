@@ -3,6 +3,7 @@ launchpad-buildd (198) UNRELEASED; urgency=medium
   * Run charmcraft in verbose mode.
   * Honour proxy arguments when building charms.
   * Install charmcraft with --classic.
+  * Run charmcraft in managed mode.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 09 Jul 2021 14:08:58 +0100
 
