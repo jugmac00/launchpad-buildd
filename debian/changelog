@@ -1,11 +1,11 @@
-launchpad-buildd (198) UNRELEASED; urgency=medium
+launchpad-buildd (198) bionic; urgency=medium
 
   * Run charmcraft in verbose mode.
   * Honour proxy arguments when building charms.
   * Install charmcraft with --classic.
   * Run charmcraft in managed mode.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 09 Jul 2021 14:08:58 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 20 Jul 2021 10:05:27 +0100
 
 launchpad-buildd (197) bionic; urgency=medium
 
