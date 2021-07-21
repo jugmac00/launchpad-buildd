@@ -183,7 +183,7 @@ class TestBuildSnap(TestCase):
         build_snap.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
-        with open("/builderbin/snap-git-proxy", "w") as proxy_script:
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
         build_snap.install()
@@ -193,7 +193,7 @@ class TestBuildSnap(TestCase):
             ]))
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_snap.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
+            build_snap.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"])
         self.assertEqual(
             (b"[global]\n"
              b"http-proxy-host = proxy.example\n"
@@ -333,7 +333,7 @@ class TestBuildSnap(TestCase):
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
-            "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -389,7 +389,7 @@ class TestBuildSnap(TestCase):
             "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
-            "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -473,7 +473,7 @@ class TestBuildSnap(TestCase):
             "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
-            "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(["snapcraft"], cwd="/build/test-snap", **env),

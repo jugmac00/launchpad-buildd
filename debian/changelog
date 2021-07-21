@@ -1,6 +1,8 @@
 launchpad-buildd (200) UNRELEASED; urgency=medium
 
   * Add core22 to the list of supported core snap names.
+  * Rename "snap proxy" to "builder proxy", since it's used for several
+    different build types nowadays.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 13 Aug 2021 14:05:55 +0100
 

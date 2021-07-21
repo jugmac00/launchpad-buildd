@@ -142,7 +142,7 @@ class TestCharmBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
-    @mock.patch('lpbuildd.snap.urlopen')
+    @mock.patch('lpbuildd.proxy.urlopen')
     def test_revokeProxyToken(self, urlopen_mock):
         self.buildmanager.revocation_endpoint = "http://revoke_endpoint"
         self.buildmanager.proxy_url = "http://username:password@proxy_url"

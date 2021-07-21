@@ -17,7 +17,7 @@ from textwrap import dedent
 from six.moves.urllib.parse import urlparse
 
 from lpbuildd.target.operation import Operation
-from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
+from lpbuildd.target.proxy import BuilderProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
@@ -47,7 +47,7 @@ class SnapChannelsAction(argparse.Action):
         getattr(namespace, self.dest)[snap] = channel
 
 
-class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
+class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
                 SnapStoreOperationMixin, Operation):
 
     description = "Build a snap."
@@ -189,7 +189,7 @@ class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
+            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
         self.run_build_command(
             ["snapcraft", "pull"],
             cwd=os.path.join("/build", self.args.name),
@@ -213,7 +213,7 @@ class BuildSnap(SnapBuildProxyOperationMixin, VCSOperationMixin,
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
+            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
         self.run_build_command(
             ["snapcraft"],
             cwd=os.path.join("/build", self.args.name),

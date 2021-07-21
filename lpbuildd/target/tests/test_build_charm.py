@@ -198,7 +198,7 @@ class TestBuildCharm(TestCase):
         build_charm.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
-        with open("/builderbin/snap-git-proxy", "w") as proxy_script:
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
         build_charm.install()
@@ -211,7 +211,8 @@ class TestBuildCharm(TestCase):
             ]))
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_charm.backend.backend_fs["/usr/local/bin/snap-git-proxy"])
+            build_charm.backend.backend_fs[
+                "/usr/local/bin/lpbuildd-git-proxy"])
 
     def test_repo_bzr(self):
         args = [
@@ -328,7 +329,7 @@ class TestBuildCharm(TestCase):
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
-            "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             }
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -394,7 +395,7 @@ class TestBuildCharm(TestCase):
             "CHARMCRAFT_MANAGED_MODE": "1",
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
-            "GIT_PROXY_COMMAND": "/usr/local/bin/snap-git-proxy",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             }
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(

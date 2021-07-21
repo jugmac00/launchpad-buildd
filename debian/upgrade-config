@@ -7,6 +7,18 @@
 
 from __future__ import print_function
 
+try:
+    from configparser import (
+        ConfigParser as SafeConfigParser,
+        NoOptionError,
+        NoSectionError,
+        )
+except ImportError:
+    from ConfigParser import (
+        SafeConfigParser,
+        NoOptionError,
+        NoSectionError,
+        )
 import os
 import re
 import sys
@@ -219,6 +231,48 @@ def upgrade_to_190():
                     line = "[builder]\n"
                 out_file.write(line)
 
+def upgrade_to_200():
+    print("Upgrading %s to version 200" % conf_file)
+
+    # We need to move snapmanager.proxyport to builder.proxyport, so start
+    # by parsing the existing file to find the current value.
+    conf = SafeConfigParser()
+    conf.read(conf_file)
+    try:
+        proxyport = conf.get("snapmanager", "proxyport")
+    except (NoOptionError, NoSectionError):
+        proxyport = None
+
+    os.rename(conf_file, conf_file + "-prev200~")
+    with open(conf_file + "-prev200~", "r") as in_file:
+        with open(conf_file, "w") as out_file:
+            in_builder = False
+            in_snapmanager = False
+            wrote_blank = False
+            for line in in_file:
+                if line.startswith("[builder]"):
+                    in_builder = True
+                elif in_builder and (line.startswith("[") or not line.strip()):
+                    if proxyport is not None:
+                        out_file.write("proxyport = %s\n" % proxyport)
+                    in_builder = False
+                elif line.startswith("[snapmanager]"):
+                    # Delete this section.
+                    in_snapmanager = True
+
+                if not line.strip():
+                    wrote_blank = True
+                elif not in_snapmanager:
+                    if wrote_blank:
+                        out_file.write("\n")
+                    out_file.write(line)
+                    wrote_blank = False
+
+                if (in_snapmanager and
+                        not line.startswith("[snapmanager]") and
+                        (line.startswith("[") or not line.strip())):
+                    in_snapmanager = False
+
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)
     if apt_pkg.version_compare(old_version, "12") < 0:
@@ -249,3 +303,5 @@ if __name__ == "__main__":
         upgrade_to_162()
     if apt_pkg.version_compare(old_version, "190") < 0:
         upgrade_to_190()
+    if apt_pkg.version_compare(old_version, "200") < 0:
+        upgrade_to_200()

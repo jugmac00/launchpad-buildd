@@ -20,5 +20,5 @@
  Need to get 0B/2832kB of archives.
  After unpacking 94.2kB of additional disk space will be used.
  (Reading database ... 8942 files and directories currently installed.)
--socat STDIO PROXY:snap-proxy.launchpad.dev:github.com:443,proxyport=3128,proxyauth=user:blah
-+socat STDIO PROXY:snap-proxy.launchpad.dev:github.com:443,proxyport=3128
+-socat STDIO PROXY:builder-proxy.launchpad.dev:github.com:443,proxyport=3128,proxyauth=user:blah
++socat STDIO PROXY:builder-proxy.launchpad.dev:github.com:443,proxyport=3128

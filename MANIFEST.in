@@ -3,8 +3,8 @@ include Makefile
 include bin/builder-prep
 include bin/buildrecipe
 include bin/in-target
+include bin/lpbuildd-git-proxy
 include bin/sbuild-package
-include bin/snap-git-proxy
 include bin/test_buildd_generatetranslationtemplates
 include bin/test_buildd_recipe
 include buildd-genconfig

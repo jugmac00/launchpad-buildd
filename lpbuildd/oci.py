@@ -22,7 +22,7 @@ from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
     )
-from lpbuildd.snap import SnapBuildProxyMixin
+from lpbuildd.proxy import BuildManagerProxyMixin
 
 
 RETCODE_SUCCESS = 0
@@ -34,7 +34,7 @@ class OCIBuildState(DebianBuildState):
     BUILD_OCI = "BUILD_OCI"
 
 
-class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
+class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
     """Build an OCI Image."""
 
     backend_name = "lxd"
