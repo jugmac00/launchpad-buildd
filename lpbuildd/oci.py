@@ -5,6 +5,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
+import gzip
 import hashlib
 import json
 import os
@@ -168,7 +169,7 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             raise
 
         current_dir = ''
-        directory_tar = None
+        gzip_layer = None
         symlinks = []
         try:
             # The tarfile is a stream and must be processed in order
@@ -178,14 +179,9 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                 # directly, so keep track of what dir we're in.
                 if file.isdir():
                     current_dir = file.name
-                    if directory_tar:
+                    if gzip_layer:
                         # Close the old directory if we have one
-                        directory_tar.close()
-                    # We're going to add the layer.tar to a gzip
-                    directory_tar = tarfile.open(
-                        os.path.join(
-                            extract_path, '{}.tar.gz'.format(file.name)),
-                        'w|gz')
+                        gzip_layer.close()
                 if file.issym():
                     # symlinks can't be extracted or derefenced from a stream
                     # as you can't seek backwards.
@@ -197,10 +193,23 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
                     symlinks.append(file)
                     continue
                 if current_dir and file.name.endswith('layer.tar'):
-                    # This is the actual layer data, we want to add it to
-                    # the directory gzip
-                    file.name = file.name.split('/')[1]
-                    directory_tar.addfile(file, tar.extractfile(file))
+                    # This is the actual layer data.
+                    # Instead of adding the layer.tar to a gzip directory
+                    # we add the contents of untarred layer.tar to a gzip.
+                    # Now instead of having a gz directory in the form:
+                    # directory.tar.gz/layer.tar/contents
+                    # we will have: layer.tar.gz/contents. This final gz format
+                    # will have to have the name of the directory
+                    # (directory_name.tar.gz/contents) otherwise we will endup
+                    # with multiple gzips with the same name "layer.tar.gz".
+                    fileobj = tar.extractfile(file)
+                    name = os.path.join(extract_path,
+                                        '{}.tar.gz'.format(current_dir))
+                    with gzip.GzipFile(name, 'wb') as gzip_layer:
+                        byte = fileobj.read(1)
+                        while len(byte) > 0:
+                            gzip_layer.write(byte)
+                            byte = fileobj.read(1)
                 elif current_dir and file.name.startswith(current_dir):
                     # Other files that are in the layer directories,
                     # we don't care about
@@ -212,8 +221,9 @@ class OCIBuildManager(SnapBuildProxyMixin, DebianBuildManager):
             self._builder.log("Tar file processing failed: {}".format(e))
             raise
         finally:
-            if directory_tar is not None:
-                directory_tar.close()
+            if gzip_layer is not None:
+                gzip_layer.close()
+            fileobj.close()
 
         # deal with any symlinks we had
         for symlink in symlinks:
