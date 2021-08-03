@@ -1,3 +1,9 @@
+launchpad-buildd (199) bionic; urgency=medium
+
+  * Upload oci layers to librarian as tar.gz
+
+ -- Ioana Lasc <ioana.lasc@canonical.com>  Tue, 03 Aug 2021 12:08:15 +0300
+
 launchpad-buildd (198) bionic; urgency=medium
 
   * Run charmcraft in verbose mode.
