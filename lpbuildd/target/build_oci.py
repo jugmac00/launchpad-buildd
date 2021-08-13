@@ -14,7 +14,7 @@ from textwrap import dedent
 
 from lpbuildd.target.backend import check_path_escape
 from lpbuildd.target.operation import Operation
-from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
+from lpbuildd.target.proxy import BuilderProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
@@ -26,7 +26,7 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildOCI(SnapBuildProxyOperationMixin, VCSOperationMixin,
+class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
                SnapStoreOperationMixin, Operation):
 
     description = "Build an OCI image."

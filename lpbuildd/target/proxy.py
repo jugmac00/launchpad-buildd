@@ -9,12 +9,12 @@ from collections import OrderedDict
 import os
 
 
-class SnapBuildProxyOperationMixin:
-    """Methods supporting the build time HTTP proxy for snap and OCI builds."""
+class BuilderProxyOperationMixin:
+    """Methods supporting the build time HTTP proxy for certain build types."""
 
     @classmethod
     def add_arguments(cls, parser):
-        super(SnapBuildProxyOperationMixin, cls).add_arguments(parser)
+        super(BuilderProxyOperationMixin, cls).add_arguments(parser)
         parser.add_argument("--proxy-url", help="builder proxy url")
         parser.add_argument(
             "--revocation-endpoint",
@@ -26,8 +26,8 @@ class SnapBuildProxyOperationMixin:
 
     def install_git_proxy(self):
         self.backend.copy_in(
-            os.path.join(self.bin, "snap-git-proxy"),
-            "/usr/local/bin/snap-git-proxy")
+            os.path.join(self.bin, "lpbuildd-git-proxy"),
+            "/usr/local/bin/lpbuildd-git-proxy")
 
     def build_proxy_environment(self, proxy_url=None, env=None):
         """Extend a command environment to include http proxy variables."""
@@ -37,5 +37,5 @@ class SnapBuildProxyOperationMixin:
         if proxy_url:
             full_env["http_proxy"] = self.args.proxy_url
             full_env["https_proxy"] = self.args.proxy_url
-            full_env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
+            full_env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
         return full_env

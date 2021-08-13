@@ -29,10 +29,10 @@ from twisted.web import (
     static,
     )
 
+from lpbuildd.proxy import BuilderProxyFactory
 from lpbuildd.snap import (
     SnapBuildManager,
     SnapBuildState,
-    SnapProxyFactory,
     )
 from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
@@ -411,7 +411,7 @@ class TestSnapBuildManagerIteration(TestCase):
         return remote_proxy_listener
 
     def startLocalProxy(self, remote_url):
-        proxy_factory = SnapProxyFactory(
+        proxy_factory = BuilderProxyFactory(
             self.buildmanager, remote_url, timeout=60)
         proxy_listener = reactor.listenTCP(0, proxy_factory)
         self.addCleanup(proxy_listener.stopListening)
@@ -453,7 +453,7 @@ class TestSnapBuildManagerIteration(TestCase):
     # the code under test since the stock twisted.web.proxy doesn't support
     # CONNECT.
 
-    @mock.patch('lpbuildd.snap.urlopen')
+    @mock.patch('lpbuildd.proxy.urlopen')
     def test_revokeProxyToken(self, urlopen_mock):
         self.buildmanager.revocation_endpoint = "http://revoke_endpoint"
         self.buildmanager.proxy_url = "http://username:password@proxy_url"

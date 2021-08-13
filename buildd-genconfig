@@ -37,8 +37,8 @@ parser.add_option("-t", "--template", dest="TEMPLATE",
                   metavar="FILE",
                   default="/usr/share/launchpad-buildd/template-buildd-slave.conf")
 
-parser.add_option("--snap-proxy-port", dest="SNAPPROXYPORT",
-                  help="the port the local snap proxy binds to",
+parser.add_option("--proxy-port", dest="PROXYPORT",
+                  help="the port the local builder proxy binds to",
                   metavar="PORT",
                   default="8222")
 
@@ -51,7 +51,7 @@ replacements = {
     "@BINDHOST@": options.BINDHOST,
     "@ARCHTAG@": options.ARCHTAG,
     "@BINDPORT@": options.BINDPORT,
-    "@SNAPPROXYPORT@": options.SNAPPROXYPORT,
+    "@PROXYPORT@": options.PROXYPORT,
     }
 
 for replacement_key in replacements:

@@ -13,7 +13,7 @@ import sys
 from lpbuildd.target.backend import check_path_escape
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
-from lpbuildd.target.snapbuildproxy import SnapBuildProxyOperationMixin
+from lpbuildd.target.proxy import BuilderProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
@@ -25,7 +25,7 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildCharm(SnapBuildProxyOperationMixin, VCSOperationMixin,
+class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
                  SnapStoreOperationMixin, Operation):
 
     description = "Build a charm."
@@ -124,7 +124,7 @@ class BuildCharm(SnapBuildProxyOperationMixin, VCSOperationMixin,
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/snap-git-proxy"
+            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
         args = [
             "charmcraft", "build", "-v",
             "-p", build_context_path,
