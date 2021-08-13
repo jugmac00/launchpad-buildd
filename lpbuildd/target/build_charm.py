@@ -30,7 +30,7 @@ class BuildCharm(SnapBuildProxyOperationMixin, VCSOperationMixin,
 
     description = "Build a charm."
 
-    core_snap_names = ["core", "core16", "core18", "core20"]
+    core_snap_names = ["core", "core16", "core18", "core20", "core22"]
 
     @classmethod
     def add_arguments(cls, parser):
