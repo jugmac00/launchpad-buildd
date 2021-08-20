@@ -10,6 +10,7 @@ Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://ftpmaster.internal gutsy Release [65.9kB]
 Get:3 http://user:blah@ftpmaster.internal gutsy/main Packages [1085kB]
 Get:4 http://ftpmaster.internal gutsy/universe Packages [3991kB]
+Get:5 http://:macaroon@private-ppa.buildd/user/archive/ubuntu Packages [11kB]
 Fetched 5142kB in 5s (1012kB/s)
 Reading package lists...
 Reading package lists...
@@ -34,6 +35,7 @@ Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://ftpmaster.internal gutsy Release [65.9kB]
 Get:3 http://user:blah@ftpmaster.internal gutsy/main Packages [1085kB]
 Get:4 http://ftpmaster.internal gutsy/universe Packages [3991kB]
+Get:5 http://:macaroon@private-ppa.buildd/user/archive/ubuntu Packages [11kB]
 Fetched 5142kB in 5s (1012kB/s)
 Reading package lists...
 Reading package lists...
@@ -57,6 +59,7 @@ Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://ftpmaster.internal gutsy Release [65.9kB]
 Get:3 http://user:blah@ftpmaster.internal gutsy/main Packages [1085kB]
 Get:4 http://ftpmaster.internal gutsy/universe Packages [3991kB]
+Get:5 http://:macaroon@private-ppa.buildd/user/archive/ubuntu Packages [11kB]
 Fetched 5142kB in 5s (1012kB/s)
 Reading package lists...
 Reading package lists...
@@ -80,5 +83,6 @@ Get:1 http://buildd:secret@ftpmaster.internal gutsy Release.gpg [191B]
 Get:2 http://must:go@ftpmaster.internal gutsy Release [65.9kB]
 Get:3 http://scrub:this@ftpmaster.internal gutsy/main Packages [1085kB]
 Get:4 http://ftpmaster.internal gutsy/universe Packages [3991kB]
+Get:5 http://:macaroon@private-ppa.buildd/user/archive/ubuntu Packages [11kB]
 Fetched 5142kB in 5s (1012kB/s)
 socat STDIO PROXY:builder-proxy.launchpad.dev:github.com:443,proxyport=3128,proxyauth=user:blah

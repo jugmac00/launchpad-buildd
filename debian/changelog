@@ -1,3 +1,9 @@
+launchpad-buildd (201) UNRELEASED; urgency=medium
+
+  * Sanitize non-user-bound macaroons in build logs.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 20 Aug 2021 17:53:12 +0100
+
 launchpad-buildd (200) bionic; urgency=medium
 
   * Add core22 to the list of supported core snap names.

@@ -2,7 +2,7 @@
 
 +++  
 
-@@ -6,9 +6,9 @@
+@@ -6,11 +6,11 @@
 
  Attempting OGRE for universe in build-370614-896976
  RUN: /usr/share/launchpad-buildd/bin/update-debian-chroot 370614-896976
@@ -13,9 +13,12 @@
 -Get:3 http://user:blah@ftpmaster.internal gutsy/main Packages [1085kB]
 +Get:3 http://ftpmaster.internal gutsy/main Packages [1085kB]
  Get:4 http://ftpmaster.internal gutsy/universe Packages [3991kB]
+-Get:5 http://:macaroon@private-ppa.buildd/user/archive/ubuntu Packages [11kB]
++Get:5 http://private-ppa.buildd/user/archive/ubuntu Packages [11kB]
  Fetched 5142kB in 5s (1012kB/s)
  Reading package lists...
-@@ -21,4 +21,4 @@
+ Reading package lists...
+@@ -22,4 +22,4 @@
 
  Need to get 0B/2832kB of archives.
  After unpacking 94.2kB of additional disk space will be used.
