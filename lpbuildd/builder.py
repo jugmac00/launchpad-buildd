@@ -48,7 +48,7 @@ def _sanitizeURLs(bytes_seq):
     """
     # This regular expression will be used to remove authentication
     # credentials from URLs.
-    password_re = re.compile(br'://([^:]+:[^@]+@)(\S+)')
+    password_re = re.compile(br'://([^:]*:[^@]+@)(\S+)')
     # Builder proxy passwords are UUIDs.
     proxy_auth_re = re.compile(br',proxyauth=[^:]+:[A-Za-z0-9-]+')
 
