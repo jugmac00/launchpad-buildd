@@ -358,10 +358,8 @@ class TestBuildCharm(TestCase):
         build_charm.build()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-v",
-                 "-p", "/home/buildd/test-image/.",
-                 "-f", "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image", CHARMCRAFT_MANAGED_MODE="1"),
+                ["charmcraft", "pack", "-v", "--destructive-mode"],
+                cwd="/home/buildd/test-image/."),
             ]))
 
     def test_build_with_path(self):
@@ -376,10 +374,8 @@ class TestBuildCharm(TestCase):
         build_charm.build()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-v",
-                 "-p", "/home/buildd/test-image/build-aux/",
-                 "-f", "/home/buildd/test-image/build-aux/"],
-                cwd="/home/buildd/test-image", CHARMCRAFT_MANAGED_MODE="1"),
+                ["charmcraft", "pack", "-v", "--destructive-mode"],
+                cwd="/home/buildd/test-image/build-aux/"),
             ]))
 
     def test_build_proxy(self):
@@ -392,17 +388,14 @@ class TestBuildCharm(TestCase):
         build_charm = parse_args(args=args).operation
         build_charm.build()
         env = {
-            "CHARMCRAFT_MANAGED_MODE": "1",
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             }
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["charmcraft", "build", "-v",
-                 "-p", "/home/buildd/test-image/.",
-                 "-f", "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image", **env),
+                ["charmcraft", "pack", "-v", "--destructive-mode"],
+                cwd="/home/buildd/test-image/.", **env),
             ]))
 
     def test_run_succeeds(self):
@@ -422,10 +415,8 @@ class TestBuildCharm(TestCase):
                 ["bzr", "branch", "lp:foo", "test-image"],
                 cwd="/home/buildd")),
             AnyMatch(RanBuildCommand(
-                ["charmcraft", "build", "-v",
-                 "-p", "/home/buildd/test-image/.",
-                 "-f", "/home/buildd/test-image/."],
-                cwd="/home/buildd/test-image", CHARMCRAFT_MANAGED_MODE="1")),
+                ["charmcraft", "pack", "-v", "--destructive-mode"],
+                cwd="/home/buildd/test-image/.")),
             ))
 
     def test_run_install_fails(self):
