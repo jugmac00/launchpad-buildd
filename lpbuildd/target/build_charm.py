@@ -51,7 +51,7 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
         self.bin = os.path.dirname(sys.argv[0])
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
 
-    def run_build_command(self, args, env=None, build_path=None, **kwargs):
+    def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
 
         :param args: the command and arguments to run.
@@ -120,17 +120,12 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
             self.args.build_path)
         check_path_escape(self.buildd_path, build_context_path)
         env = OrderedDict()
-        env["CHARMCRAFT_MANAGED_MODE"] = "1"
         if self.args.proxy_url:
             env["http_proxy"] = self.args.proxy_url
             env["https_proxy"] = self.args.proxy_url
             env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
-        args = [
-            "charmcraft", "build", "-v",
-            "-p", build_context_path,
-            "-f", build_context_path,
-            ]
-        self.run_build_command(args, env=env)
+        args = ["charmcraft", "pack", "-v", "--destructive-mode"]
+        self.run_build_command(args, env=env, cwd=build_context_path)
 
     def run(self):
         try:
