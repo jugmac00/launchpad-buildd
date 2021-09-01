@@ -1,10 +1,10 @@
-launchpad-buildd (201) UNRELEASED; urgency=medium
+launchpad-buildd (201) bionic; urgency=medium
 
   * Sanitize non-user-bound macaroons in build logs.
   * Switch to "charmcraft pack --destructive-mode", now that Charmcraft 1.2
     is in the stable channel.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 20 Aug 2021 17:53:12 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 01 Sep 2021 18:17:34 +0100
 
 launchpad-buildd (200) bionic; urgency=medium
 
