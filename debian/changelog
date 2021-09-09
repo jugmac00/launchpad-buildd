@@ -1,3 +1,11 @@
+launchpad-buildd (202) UNRELEASED; urgency=medium
+
+  [ Thomas Bechtold ]
+  * Add git_shallow_clone option to vcs_fetch() and use it for OCI build
+    (LP: #1939392).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 09 Sep 2021 12:58:06 +0100
+
 launchpad-buildd (201) bionic; urgency=medium
 
   * Sanitize non-user-bound macaroons in build logs.
