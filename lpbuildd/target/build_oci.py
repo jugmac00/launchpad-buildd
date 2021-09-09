@@ -106,7 +106,8 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
-        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
+        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env,
+                       git_shallow_clone=True)
 
     def build(self):
         logger.info("Running build phase...")

@@ -57,7 +57,7 @@ class VCSOperationMixin:
         else:
             return ["git"]
 
-    def vcs_fetch(self, name, cwd, env=None, quiet=False):
+    def vcs_fetch(self, name, cwd, env=None, quiet=False, git_shallow_clone=False):
         full_env = OrderedDict()
         full_env["LANG"] = "C.UTF-8"
         full_env["SHELL"] = "/bin/sh"
@@ -75,6 +75,8 @@ class VCSOperationMixin:
             cmd = ["git", "clone"]
             if quiet:
                 cmd.append("-q")
+            if git_shallow_clone:
+                cmd.extend(["--depth", "1"])
             if self.args.git_path is not None:
                 git_path = self.args.git_path
                 # "git clone -b" is a bit odd: it takes either branches or

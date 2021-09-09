@@ -219,7 +219,8 @@ class TestBuildOCI(TestCase):
         build_oci.repo()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "lp:foo", "test-image"], cwd="/home/buildd"),
+                ["git", "clone", "--depth", "1", "lp:foo", "test-image"],
+                cwd="/home/buildd"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -237,8 +238,8 @@ class TestBuildOCI(TestCase):
         build_oci.repo()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "next", "lp:foo", "test-image"],
-                cwd="/home/buildd"),
+                ["git", "clone", "--depth", "1", "-b", "next",
+                 "lp:foo", "test-image"], cwd="/home/buildd"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -257,8 +258,8 @@ class TestBuildOCI(TestCase):
         build_oci.repo()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "1.0", "lp:foo", "test-image"],
-                cwd="/home/buildd"),
+                ["git", "clone", "--depth", "1", "-b", "1.0", "lp:foo",
+                 "test-image"], cwd="/home/buildd"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -283,7 +284,7 @@ class TestBuildOCI(TestCase):
             }
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "lp:foo", "test-image"],
+                ["git", "clone", "--depth", "1", "lp:foo", "test-image"],
                 cwd="/home/buildd", **env),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
