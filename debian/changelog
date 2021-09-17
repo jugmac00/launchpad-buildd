@@ -6,6 +6,11 @@ launchpad-buildd (202) UNRELEASED; urgency=medium
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 09 Sep 2021 12:58:06 +0100
 
+  [ Ioana Lasc ]
+  * Gather dpkg.yaml for snap builds.
+
+ -- Ioana Lasc <ioana.lasc@canonical.com>  Fri, 17 Sep 2021 16:39:48 +0300
+
 launchpad-buildd (201) bionic; urgency=medium
 
   * Sanitize non-user-bound macaroons in build logs.
