@@ -224,6 +224,67 @@ class TestSnapBuildManagerIteration(TestCase):
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
+    def test_iterate_with_dpkg_yaml(self):
+        # The build manager iterates a build that uploads dpkg.yaml from
+        # start to finish.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.snap", b"I am a snap package.")
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.manifest", b"I am a manifest.")
+        self.buildmanager.backend.add_file(
+            "/build/test-snap/test-snap_0_all.dpkg.yaml", b"I am a yaml file.")
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.BUILD_SNAP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "test-snap_0_all.manifest": b"I am a manifest.",
+            "test-snap_0_all.snap": b"I am a snap package.",
+            "test-snap_0_all.dpkg.yaml": b"I am a yaml file.",
+            }))
+        # Ensure we don't just gather any yaml file but exactly
+        # the dpkg yaml.
+        self.assertNotEqual(self.builder, HasWaitingFiles.byEquality({
+            "test-snap_0_all.manifest": b"I am a manifest.",
+            "test-snap_0_all.snap": b"I am a snap package.",
+            "test-snap_0_all.snapcraft.yaml": b"I am a yaml file.",
+            }))
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(SnapBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
     def test_iterate_with_channels(self):
         # The build manager iterates a build that specifies channels from
         # start to finish.
