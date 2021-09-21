@@ -1,4 +1,4 @@
-launchpad-buildd (202) UNRELEASED; urgency=medium
+launchpad-buildd (202) bionic; urgency=medium
 
   [ Thomas Bechtold ]
   * Add git_shallow_clone option to vcs_fetch() and use it for OCI build
@@ -7,7 +7,7 @@ launchpad-buildd (202) UNRELEASED; urgency=medium
   [ Ioana Lasc ]
   * Gather dpkg.yaml for snap builds.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 09 Sep 2021 12:58:06 +0100
+ -- Ioana Lasc <ioana.lasc@canonical.com>  Tue, 21 Sep 2021 12:46:41 +0300
 
 launchpad-buildd (201) bionic; urgency=medium
 
