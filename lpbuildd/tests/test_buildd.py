@@ -13,7 +13,7 @@ This file contains the following tests:
 
 __metaclass__ = type
 
-__all__ = ['LaunchpadBuilddSlaveTests']
+__all__ = ['LaunchpadBuilddTests']
 
 import difflib
 import os
@@ -27,8 +27,8 @@ from six.moves.xmlrpc_client import ServerProxy
 import twisted
 
 from lpbuildd.tests.harness import (
-    BuilddSlaveTestSetup,
     BuilddTestCase,
+    BuilddTestSetup,
     MockBuildManager,
     )
 
@@ -39,7 +39,7 @@ def read_file(path):
         return file_object.read()
 
 
-class LaunchpadBuilddSlaveTests(BuilddTestCase):
+class LaunchpadBuilddTests(BuilddTestCase):
     """Unit tests for scrubbing (removal of passwords) of buildlog files."""
 
     def testBasicAuth(self):
@@ -48,7 +48,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         user = "myuser"
         password = "fakepassword"
 
-        opener = self.slave.setupAuthHandler(url, user, password)
+        opener = self.builder.setupAuthHandler(url, user, password)
 
         # Inspect the openers and ensure the wanted handler is installed.
         basic_auth_handler = None
@@ -68,17 +68,17 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
     def testBuildlogScrubbing(self):
         """Tests the buildlog scrubbing (removal of passwords from URLs)."""
         # This is where the buildlog file lives.
-        log_path = self.slave.cachePath('buildlog')
+        log_path = self.builder.cachePath('buildlog')
 
         # This is where the builder leaves the original/unsanitized
         # buildlog file after scrubbing.
-        unsanitized_path = self.slave.cachePath('buildlog.unsanitized')
+        unsanitized_path = self.builder.cachePath('buildlog.unsanitized')
 
         # Copy the fake buildlog file to the cache path.
         shutil.copy(os.path.join(self.here, 'buildlog'), log_path)
 
         # Invoke the builder's buildlog scrubbing method.
-        self.slave.sanitizeBuildlog(log_path)
+        self.builder.sanitizeBuildlog(log_path)
 
         # Read the unsanitized original content.
         unsanitized = read_file(unsanitized_path).splitlines()
@@ -104,7 +104,7 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         """Test the scrubbing of the builder's getLogTail() output."""
 
         # This is where the buildlog file lives.
-        log_path = self.slave.cachePath('buildlog')
+        log_path = self.builder.cachePath('buildlog')
 
         # Copy the prepared, longer buildlog file so we can test lines
         # that are chopped off in the middle.
@@ -113,13 +113,13 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         # First get the unfiltered log tail output (which is the default
         # behaviour because the BuildManager's 'is_archive_private'
         # property is initialized to False).
-        self.slave.manager.is_archive_private = False
-        unsanitized = self.slave.getLogTail().decode('UTF-8').splitlines()
+        self.builder.manager.is_archive_private = False
+        unsanitized = self.builder.getLogTail().decode('UTF-8').splitlines()
 
         # Make the builder believe we are building in a private archive to
         # obtain the scrubbed log tail output.
-        self.slave.manager.is_archive_private = True
-        clean = self.slave.getLogTail().decode('UTF-8').splitlines()
+        self.builder.manager.is_archive_private = True
+        clean = self.builder.getLogTail().decode('UTF-8').splitlines()
 
         # Get the differences ..
         differences = '\n'.join(difflib.unified_diff(unsanitized, clean))
@@ -142,27 +142,27 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         'getLogTail' return up to 2 KiB text from the current 'buildlog' file.
         """
         self.makeLog(0)
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 0)
 
         self.makeLog(1)
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 1)
 
         self.makeLog(2048)
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 2048)
 
         self.makeLog(2049)
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 2048)
 
         self.makeLog(4096)
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 2048)
 
     def testLogtailWhenLogFileVanishes(self):
-        """Slave.getLogTail doesn't get hurt if the logfile has vanished.
+        """Builder.getLogTail doesn't get hurt if the logfile has vanished.
 
         This is a common race-condition in our builders, since they get
         polled all the time when they are building.
@@ -173,47 +173,47 @@ class LaunchpadBuilddSlaveTests(BuilddTestCase):
         """
         # Create some log content and read it.
         self.makeLog(2048)
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 2048)
 
         # Read it again for luck.
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 2048)
 
         # Remove the buildlog file
-        os.remove(self.slave.cachePath('buildlog'))
+        os.remove(self.builder.cachePath('buildlog'))
 
         # Instead of shocking the getLogTail call, return an empty string.
-        log_tail = self.slave.getLogTail()
+        log_tail = self.builder.getLogTail()
         self.assertEqual(len(log_tail), 0)
 
     def testCleanDuplicateFiles(self):
         """The clean method copes with duplicate waiting files."""
         workdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, workdir)
-        self.slave._log = None
-        self.slave.startBuild(MockBuildManager())
-        self.slave.buildComplete()
+        self.builder._log = None
+        self.builder.startBuild(MockBuildManager())
+        self.builder.buildComplete()
         paths = [os.path.join(workdir, name) for name in ('a', 'b')]
         for path in paths:
             with open(path, 'w') as f:
                 f.write('data')
-            self.slave.addWaitingFile(path)
-        self.slave.clean()
-        self.assertEqual([], os.listdir(self.slave._cachepath))
+            self.builder.addWaitingFile(path)
+        self.builder.clean()
+        self.assertEqual([], os.listdir(self.builder._cachepath))
 
 
-class XMLRPCBuildDSlaveTests(unittest.TestCase):
+class XMLRPCBuilderTests(unittest.TestCase):
 
     def setUp(self):
-        super(XMLRPCBuildDSlaveTests, self).setUp()
-        self.slave = BuilddSlaveTestSetup()
-        self.slave.setUp()
+        super(XMLRPCBuilderTests, self).setUp()
+        self.builder = BuilddTestSetup()
+        self.builder.setUp()
         self.server = ServerProxy('http://localhost:8321/rpc/')
 
     def tearDown(self):
-        self.slave.tearDown()
-        super(XMLRPCBuildDSlaveTests, self).tearDown()
+        self.builder.tearDown()
+        super(XMLRPCBuilderTests, self).tearDown()
 
     @unittest.skipIf(
         sys.version >= '3' and
