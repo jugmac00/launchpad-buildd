@@ -46,27 +46,27 @@ class BuilddTestCase(unittest.TestCase):
         conf.read(test_conffile)
         conf.set("builder", "filecache", tempfile.mkdtemp())
 
-        self.slave = Builder(conf)
-        self.slave._log = True
-        self.slave.manager = MockBuildManager()
+        self.builder = Builder(conf)
+        self.builder._log = True
+        self.builder.manager = MockBuildManager()
 
         self.here = os.path.abspath(os.path.dirname(__file__))
 
     def tearDown(self):
         """Remove the 'filecache' directory used for the tests."""
-        shutil.rmtree(self.slave._cachepath)
+        shutil.rmtree(self.builder._cachepath)
 
     def makeLog(self, size):
         """Inject data into the default buildlog file."""
-        f = open(self.slave.cachePath('buildlog'), 'w')
+        f = open(self.builder.cachePath('buildlog'), 'w')
         f.write("x" * size)
         f.close()
 
 
-class BuilddSlaveTestSetup(TacTestFixture):
+class BuilddTestSetup(TacTestFixture):
     r"""Setup Builder for use by functional tests
 
-    >>> fixture = BuilddSlaveTestSetup()
+    >>> fixture = BuilddTestSetup()
     >>> fixture.setUp()
 
     Make sure the server is running
