@@ -179,17 +179,13 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
     def pull(self):
         """Run pull phase."""
         logger.info("Running pull phase...")
-        env = OrderedDict()
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         env["SNAPCRAFT_LOCAL_SOURCES"] = "1"
         env["SNAPCRAFT_SETUP_CORE"] = "1"
         if not self.args.private:
             env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
-        if self.args.proxy_url:
-            env["http_proxy"] = self.args.proxy_url
-            env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
         self.run_build_command(
             ["snapcraft", "pull"],
             cwd=os.path.join("/build", self.args.name),
@@ -205,15 +201,11 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
     def build(self):
         """Run all build, stage and snap phases."""
         logger.info("Running build phase...")
-        env = OrderedDict()
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         if not self.args.private:
             env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
-        if self.args.proxy_url:
-            env["http_proxy"] = self.args.proxy_url
-            env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
         self.run_build_command(
             ["snapcraft"],
             cwd=os.path.join("/build", self.args.name),

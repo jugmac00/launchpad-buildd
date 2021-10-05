@@ -38,4 +38,7 @@ class BuilderProxyOperationMixin:
             full_env["http_proxy"] = self.args.proxy_url
             full_env["https_proxy"] = self.args.proxy_url
             full_env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
+            # Avoid needing to keep track of snap store CDNs in proxy
+            # configuration.
+            full_env["SNAPPY_STORE_NO_CDN"] = "1"
         return full_env
