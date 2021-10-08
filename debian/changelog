@@ -1,10 +1,10 @@
-launchpad-buildd (203) UNRELEASED; urgency=medium
+launchpad-buildd (203) bionic; urgency=medium
 
   * Remove some more "slave" terminology from tests.
   * Add SNAPPY_STORE_NO_CDN=1 to the environment in more places when using a
     builder proxy (LP: #1945712).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 01 Oct 2021 13:43:31 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 08 Oct 2021 14:45:06 +0100
 
 launchpad-buildd (202) bionic; urgency=medium
 
