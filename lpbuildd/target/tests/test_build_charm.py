@@ -330,6 +330,7 @@ class TestBuildCharm(TestCase):
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
             }
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -391,6 +392,7 @@ class TestBuildCharm(TestCase):
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
             }
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(

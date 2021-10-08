@@ -119,11 +119,7 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
             self.args.name,
             self.args.build_path)
         check_path_escape(self.buildd_path, build_context_path)
-        env = OrderedDict()
-        if self.args.proxy_url:
-            env["http_proxy"] = self.args.proxy_url
-            env["https_proxy"] = self.args.proxy_url
-            env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
+        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         args = ["charmcraft", "pack", "-v", "--destructive-mode"]
         self.run_build_command(args, env=env, cwd=build_context_path)
 
