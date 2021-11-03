@@ -114,8 +114,7 @@ class BuilddTestSetup(TacTestFixture):
         filecache = os.path.join(self.root, 'filecache')
         os.mkdir(filecache)
         self.useFixture(EnvironmentVariable('HOME', self.root))
-        self.useFixture(
-            EnvironmentVariable('BUILDD_SLAVE_CONFIG', test_conffile))
+        self.useFixture(EnvironmentVariable('BUILDD_CONFIG', test_conffile))
         # XXX cprov 2005-05-30:
         # When we are about running it seriously we need :
         # * install sbuild package
