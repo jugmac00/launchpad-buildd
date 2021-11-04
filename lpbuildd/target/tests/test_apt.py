@@ -52,6 +52,10 @@ class TestOverrideSourcesList(TestCase):
                 deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
                 """).encode("UTF-8"), stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs["/etc/apt/sources.list"])
+        self.assertEqual(
+            (b'Acquire::Retries "3";\n', stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99retries"])
 
     def test_apt_proxy(self):
         args = [
@@ -67,6 +71,10 @@ class TestOverrideSourcesList(TestCase):
                 deb http://archive.ubuntu.com/ubuntu xenial main
                 """).encode("UTF-8"), stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs["/etc/apt/sources.list"])
+        self.assertEqual(
+            (b'Acquire::Retries "3";\n', stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99retries"])
         self.assertEqual(
             (dedent("""\
                 Acquire::http::Proxy "http://apt-proxy.example:3128/";

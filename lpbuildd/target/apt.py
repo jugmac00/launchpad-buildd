@@ -39,6 +39,12 @@ class OverrideSourcesList(Operation):
             sources_list.flush()
             os.fchmod(sources_list.fileno(), 0o644)
             self.backend.copy_in(sources_list.name, "/etc/apt/sources.list")
+        with tempfile.NamedTemporaryFile(mode="w+") as apt_retries_conf:
+            print('Acquire::Retries "3";', file=apt_retries_conf)
+            apt_retries_conf.flush()
+            os.fchmod(apt_retries_conf.fileno(), 0o644)
+            self.backend.copy_in(
+                apt_retries_conf.name, "/etc/apt/apt.conf.d/99retries")
         if self.args.apt_proxy_url is not None:
             with tempfile.NamedTemporaryFile(mode="w+") as apt_proxy_conf:
                 print(
