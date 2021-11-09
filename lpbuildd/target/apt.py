@@ -45,6 +45,16 @@ class OverrideSourcesList(Operation):
             os.fchmod(apt_retries_conf.fileno(), 0o644)
             self.backend.copy_in(
                 apt_retries_conf.name, "/etc/apt/apt.conf.d/99retries")
+        # Versions of APT that support phased updates do this automatically
+        # if running in a chroot, but builds may be running in a LXD
+        # container instead.
+        with tempfile.NamedTemporaryFile(mode="w+") as apt_phasing_conf:
+            print('APT::Get::Always-Include-Phased-Updates "true";',
+                  file=apt_phasing_conf)
+            apt_phasing_conf.flush()
+            os.fchmod(apt_phasing_conf.fileno(), 0o644)
+            self.backend.copy_in(
+                apt_phasing_conf.name, "/etc/apt/apt.conf.d/99phasing")
         if self.args.apt_proxy_url is not None:
             with tempfile.NamedTemporaryFile(mode="w+") as apt_proxy_conf:
                 print(

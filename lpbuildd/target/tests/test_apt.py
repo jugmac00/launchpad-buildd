@@ -56,6 +56,11 @@ class TestOverrideSourcesList(TestCase):
             (b'Acquire::Retries "3";\n', stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs[
                 "/etc/apt/apt.conf.d/99retries"])
+        self.assertEqual(
+            (b'APT::Get::Always-Include-Phased-Updates "true";\n',
+             stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99phasing"])
 
     def test_apt_proxy(self):
         args = [
@@ -75,6 +80,11 @@ class TestOverrideSourcesList(TestCase):
             (b'Acquire::Retries "3";\n', stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs[
                 "/etc/apt/apt.conf.d/99retries"])
+        self.assertEqual(
+            (b'APT::Get::Always-Include-Phased-Updates "true";\n',
+             stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99phasing"])
         self.assertEqual(
             (dedent("""\
                 Acquire::http::Proxy "http://apt-proxy.example:3128/";
