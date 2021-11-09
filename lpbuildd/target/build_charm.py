@@ -26,8 +26,6 @@ class BuildCharm(
 ):
     description = "Build a charm."
 
-    core_snap_names = ["core", "core16", "core18", "core20", "core22"]
-
     @classmethod
     def add_arguments(cls, parser):
         super().add_arguments(parser)
@@ -37,10 +35,7 @@ class BuildCharm(
             metavar="SNAP=CHANNEL",
             dest="channels",
             default={},
-            help=(
-                f"install SNAP from CHANNEL (supported snaps: "
-                f"{', '.join(cls.core_snap_names)}, charmcraft)"
-            ),
+            help="install SNAP from CHANNEL",
         )
         parser.add_argument(
             "--build-path", default=".", help="location of charm to build."
@@ -74,15 +69,10 @@ class BuildCharm(
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
-        for snap_name in self.core_snap_names:
-            if snap_name in self.args.channels:
+        for snap_name, channel in sorted(self.args.channels.items()):
+            if snap_name != "charmcraft":
                 self.backend.run(
-                    [
-                        "snap",
-                        "install",
-                        "--channel=%s" % self.args.channels[snap_name],
-                        snap_name,
-                    ]
+                    ["snap", "install", "--channel=%s" % channel, snap_name]
                 )
         if "charmcraft" in self.args.channels:
             self.backend.run(

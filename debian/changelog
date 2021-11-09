@@ -1,6 +1,8 @@
 launchpad-buildd (234) UNRELEASED; urgency=medium
 
   * Add basic documentation of malware scanning for CI builds.
+  * Remove restrictions on core snap names; we now install snaps
+    corresponding to whatever Launchpad sends.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 06 Jun 2023 11:42:23 +0100
 
