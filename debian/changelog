@@ -1,11 +1,11 @@
-launchpad-buildd (204) UNRELEASED; urgency=medium
+launchpad-buildd (204) bionic; urgency=medium
 
   * Configure apt to automatically retry downloads on failures
     (LP: #1949473).
   * Configure apt to always include phased updates, even if running in LXD
     containers (LP: #1949769).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 02 Nov 2021 13:42:13 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 09 Nov 2021 21:50:17 +0000
 
 launchpad-buildd (203) bionic; urgency=medium
 
