@@ -1,3 +1,9 @@
+launchpad-buildd (205) UNRELEASED; urgency=medium
+
+  * Ignore NotAutomatic flag for -proposed and -backports (LP: #1016776).
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 29 Nov 2021 16:20:37 +0000
+
 launchpad-buildd (204) bionic; urgency=medium
 
   * Configure apt to automatically retry downloads on failures

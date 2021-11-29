@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from textwrap import dedent
 import time
 
 from lpbuildd.target.operation import Operation
@@ -65,6 +66,18 @@ class OverrideSourcesList(Operation):
                 os.fchmod(apt_proxy_conf.fileno(), 0o644)
                 self.backend.copy_in(
                     apt_proxy_conf.name, "/etc/apt/apt.conf.d/99proxy")
+        for pocket in ("proposed", "backports"):
+            with tempfile.NamedTemporaryFile(mode="w+") as preferences:
+                print(dedent("""\
+                    Package: *
+                    Pin: release a=*-{}
+                    Pin-Priority: 500
+                    """).format(pocket), file=preferences, end="")
+                preferences.flush()
+                os.fchmod(preferences.fileno(), 0o644)
+                self.backend.copy_in(
+                    preferences.name,
+                    "/etc/apt/preferences.d/{}.pref".format(pocket))
         return 0
 
 

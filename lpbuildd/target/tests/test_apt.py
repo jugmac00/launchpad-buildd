@@ -61,6 +61,16 @@ class TestOverrideSourcesList(TestCase):
              stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs[
                 "/etc/apt/apt.conf.d/99phasing"])
+        self.assertEqual(
+            (b"Package: *\nPin: release a=*-proposed\nPin-Priority: 500\n",
+             stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/preferences.d/proposed.pref"])
+        self.assertEqual(
+            (b"Package: *\nPin: release a=*-backports\nPin-Priority: 500\n",
+             stat.S_IFREG | 0o644),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/preferences.d/backports.pref"])
 
     def test_apt_proxy(self):
         args = [
