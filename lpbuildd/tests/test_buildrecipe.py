@@ -166,7 +166,7 @@ class TestRecipeBuilder(TestCase):
         mock_stdout = six.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
         self.useFixture(MockPatchObject(
-            self.builder, "_find_on_path",
+            self.builder, "_is_command_on_path",
             side_effect=lambda command: command == "brz-build-daily-recipe"))
         self.assertEqual(0, self.builder.buildTree())
         self.assertEqual(
@@ -217,7 +217,7 @@ class TestRecipeBuilder(TestCase):
         mock_stdout = six.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
         self.useFixture(MockPatchObject(
-            self.builder, "_find_on_path", return_value=False))
+            self.builder, "_is_command_on_path", return_value=False))
         self.assertEqual(0, self.builder.buildTree())
         self.assertEqual(
             os.path.join(self.builder.work_dir_relative, "tree", "foo"),

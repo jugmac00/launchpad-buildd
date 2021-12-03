@@ -86,7 +86,7 @@ class RecipeBuilder:
 
     # XXX cjwatson 2021-11-23: Use shutil.which instead once we can assume
     # Python >= 3.3.
-    def _find_on_path(command):
+    def _is_command_on_path(command):
         """Is 'command' on the executable search path?"""
         if "PATH" not in os.environ:
             return False
@@ -142,7 +142,7 @@ class RecipeBuilder:
             }
         if self.git:
             cmd = ['git-build-recipe']
-        elif self._find_on_path('brz-build-daily-recipe'):
+        elif self._is_command_on_path('brz-build-daily-recipe'):
             cmd = ['brz-build-daily-recipe']
         else:
             cmd = ['bzr', '-Derror', 'dailydeb']
