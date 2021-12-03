@@ -86,7 +86,7 @@ class RecipeBuilder:
 
     # XXX cjwatson 2021-11-23: Use shutil.which instead once we can assume
     # Python >= 3.3.
-    def _is_command_on_path(command):
+    def _is_command_on_path(self, command):
         """Is 'command' on the executable search path?"""
         if "PATH" not in os.environ:
             return False

@@ -16,8 +16,10 @@ import tempfile
 from textwrap import dedent
 
 from fixtures import (
+    EnvironmentVariable,
     MockPatch,
     MockPatchObject,
+    TempDir,
     )
 import six
 from systemfixtures import FakeProcesses
@@ -85,6 +87,30 @@ class TestRecipeBuilder(TestCase):
     def tearDown(self):
         self.resetEnvironment()
         super(TestRecipeBuilder, self).tearDown()
+
+    def test_is_command_on_path_missing_environment(self):
+        self.useFixture(EnvironmentVariable("PATH"))
+        self.assertFalse(self.builder._is_command_on_path("ls"))
+
+    def test_is_command_on_path_present_executable(self):
+        temp_dir = self.useFixture(TempDir()).path
+        bin_dir = os.path.join(temp_dir, "bin")
+        os.mkdir(bin_dir)
+        program = os.path.join(bin_dir, "program")
+        with open(program, "w"):
+            pass
+        os.chmod(program, 0o755)
+        self.useFixture(EnvironmentVariable("PATH", bin_dir))
+        self.assertTrue(self.builder._is_command_on_path("program"))
+
+    def test_is_command_on_path_present_not_executable(self):
+        temp_dir = self.useFixture(TempDir()).path
+        bin_dir = os.path.join(temp_dir, "bin")
+        os.mkdir(bin_dir)
+        with open(os.path.join(bin_dir, "program"), "w"):
+            pass
+        self.useFixture(EnvironmentVariable("PATH", bin_dir))
+        self.assertFalse(self.builder._is_command_on_path("program"))
 
     def test_buildTree_git(self):
         def fake_git(args):
