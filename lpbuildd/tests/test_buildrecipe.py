@@ -16,8 +16,10 @@ import tempfile
 from textwrap import dedent
 
 from fixtures import (
+    EnvironmentVariable,
     MockPatch,
     MockPatchObject,
+    TempDir,
     )
 import six
 from systemfixtures import FakeProcesses
@@ -86,6 +88,30 @@ class TestRecipeBuilder(TestCase):
         self.resetEnvironment()
         super(TestRecipeBuilder, self).tearDown()
 
+    def test_is_command_on_path_missing_environment(self):
+        self.useFixture(EnvironmentVariable("PATH"))
+        self.assertFalse(self.builder._is_command_on_path("ls"))
+
+    def test_is_command_on_path_present_executable(self):
+        temp_dir = self.useFixture(TempDir()).path
+        bin_dir = os.path.join(temp_dir, "bin")
+        os.mkdir(bin_dir)
+        program = os.path.join(bin_dir, "program")
+        with open(program, "w"):
+            pass
+        os.chmod(program, 0o755)
+        self.useFixture(EnvironmentVariable("PATH", bin_dir))
+        self.assertTrue(self.builder._is_command_on_path("program"))
+
+    def test_is_command_on_path_present_not_executable(self):
+        temp_dir = self.useFixture(TempDir()).path
+        bin_dir = os.path.join(temp_dir, "bin")
+        os.mkdir(bin_dir)
+        with open(os.path.join(bin_dir, "program"), "w"):
+            pass
+        self.useFixture(EnvironmentVariable("PATH", bin_dir))
+        self.assertFalse(self.builder._is_command_on_path("program"))
+
     def test_buildTree_git(self):
         def fake_git(args):
             if args["args"][1] == "--version":
@@ -139,6 +165,60 @@ class TestRecipeBuilder(TestCase):
                 """) % repr(expected_recipe_command),
             mock_stdout.getvalue())
 
+    def test_buildTree_brz(self):
+        def fake_bzr(args):
+            if args["args"][1] == "version":
+                print("brz version x.y.z")
+                return {}
+            elif args["args"][1] == "plugins":
+                print("brz-plugin x.y.z")
+                return {}
+            else:
+                return {"returncode": 1}
+
+        def fake_brz_build_daily_recipe(args):
+            print("dummy recipe build")
+            os.makedirs(os.path.join(self.builder.tree_path, "foo"))
+            return {}
+
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(
+            lambda _: {"stdout": io.StringIO(u"5.10\n")}, name="sudo")
+        processes_fixture.add(fake_bzr, name="bzr")
+        processes_fixture.add(
+            fake_brz_build_daily_recipe, name="brz-build-daily-recipe")
+        with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
+            f.write("dummy recipe contents\n")
+        mock_stdout = six.StringIO()
+        self.useFixture(MockPatch("sys.stdout", mock_stdout))
+        self.useFixture(MockPatchObject(
+            self.builder, "_is_command_on_path",
+            side_effect=lambda command: command == "brz-build-daily-recipe"))
+        self.assertEqual(0, self.builder.buildTree())
+        self.assertEqual(
+            os.path.join(self.builder.work_dir_relative, "tree", "foo"),
+            self.builder.source_dir_relative)
+        expected_recipe_command = [
+            "brz-build-daily-recipe", "--safe", "--no-build",
+            "--manifest", os.path.join(self.builder.tree_path, "manifest"),
+            "--distribution", "grumpy", "--allow-fallback-to-native",
+            "--append-version", u"~ubuntu5.10.1",
+            os.path.join(self.builder.work_dir, "recipe"),
+            self.builder.tree_path,
+            ]
+        self.assertEqual(
+            dedent("""\
+                Bazaar versions:
+                brz version x.y.z
+                brz-plugin x.y.z
+                Building recipe:
+                dummy recipe contents
+
+                RUN %s
+                dummy recipe build
+                """) % repr(expected_recipe_command),
+            mock_stdout.getvalue())
+
     def test_buildTree_bzr(self):
         def fake_bzr(args):
             if args["args"][1] == "version":
@@ -162,6 +242,8 @@ class TestRecipeBuilder(TestCase):
             f.write("dummy recipe contents\n")
         mock_stdout = six.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
+        self.useFixture(MockPatchObject(
+            self.builder, "_is_command_on_path", return_value=False))
         self.assertEqual(0, self.builder.buildTree())
         self.assertEqual(
             os.path.join(self.builder.work_dir_relative, "tree", "foo"),

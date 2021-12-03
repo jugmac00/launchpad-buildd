@@ -84,6 +84,21 @@ class RecipeBuilder:
         """
         return self.chroot(['apt-get', 'install', '-y', 'lsb-release'])
 
+    # XXX cjwatson 2021-11-23: Use shutil.which instead once we can assume
+    # Python >= 3.3.
+    def _is_command_on_path(self, command):
+        """Is 'command' on the executable search path?"""
+        if "PATH" not in os.environ:
+            return False
+        path = os.environ["PATH"]
+        for element in path.split(os.pathsep):
+            if not element:
+                continue
+            filename = os.path.join(element, command)
+            if os.path.isfile(filename) and os.access(filename, os.X_OK):
+                return True
+        return False
+
     def buildTree(self):
         """Build the recipe into a source tree.
 
@@ -127,6 +142,8 @@ class RecipeBuilder:
             }
         if self.git:
             cmd = ['git-build-recipe']
+        elif self._is_command_on_path('brz-build-daily-recipe'):
+            cmd = ['brz-build-daily-recipe']
         else:
             cmd = ['bzr', '-Derror', 'dailydeb']
         cmd.extend([

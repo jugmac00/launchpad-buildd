@@ -1,6 +1,8 @@
 launchpad-buildd (205) UNRELEASED; urgency=medium
 
   * Ignore NotAutomatic flag for -proposed and -backports (LP: #1016776).
+  * Use brz-build-daily-recipe rather than "bzr -Derror dailydeb" if the
+    former exists (see LP #1943292).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 29 Nov 2021 16:20:37 +0000
 
