@@ -5,11 +5,10 @@
 
 from __future__ import print_function
 
+from optparse import OptionParser
 import os
 
 archtag = os.popen("dpkg --print-architecture").read().strip()
-
-from optparse import OptionParser
 
 parser = OptionParser()
 parser.add_option("-n", "--name", dest="NAME",
@@ -35,7 +34,9 @@ parser.add_option("-a", "--arch", dest="ARCHTAG",
 parser.add_option("-t", "--template", dest="TEMPLATE",
                   help="the template file to use",
                   metavar="FILE",
-                  default="/usr/share/launchpad-buildd/template-buildd-slave.conf")
+                  default=(
+                      "/usr/share/launchpad-buildd/"
+                      "template-buildd-slave.conf"))
 
 parser.add_option("--proxy-port", dest="PROXYPORT",
                   help="the port the local builder proxy binds to",

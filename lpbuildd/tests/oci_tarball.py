@@ -17,8 +17,9 @@ class OCITarball:
     @property
     def config(self):
         return self._makeFile(
-            {"rootfs": {"diff_ids":
-                ["sha256:diff1", "sha256:diff2", "sha256:diff3"]}},
+            {"rootfs": {
+                "diff_ids": [
+                    "sha256:diff1", "sha256:diff2", "sha256:diff3"]}},
             'config.json')
 
     @property
@@ -57,10 +58,7 @@ class OCITarball:
         source = os.path.join(source_layer_directory, "layer.tar")
 
         os.mkdir(target_layer_directory)
-        os.symlink(
-            os.path.relpath(source, target_layer_directory),
-            os.path.join(target_layer_directory, "layer.tar")
-        )
+        os.symlink(os.path.relpath(source, target_layer_directory), target)
         return target_layer_directory
 
     def build_tar_file(self):

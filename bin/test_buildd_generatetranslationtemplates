@@ -28,8 +28,3 @@ build_type = 'translation-templates'
 filemap = {}
 args = {'branch_url': 'no-branch-here-sorry'}
 print(proxy.build(buildid, build_type, chroot_sha1, filemap, args))
-#status = proxy.status()
-#for filename, sha1 in status[3].iteritems():
-#    print(filename)
-#proxy.clean()
-

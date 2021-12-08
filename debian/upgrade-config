@@ -31,6 +31,7 @@ apt_pkg.init()
 
 (old_version, conf_file) = sys.argv[1:]
 
+
 def upgrade_to_12():
     print("Upgrading %s to version 12" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev12~"])
@@ -38,12 +39,15 @@ def upgrade_to_12():
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[debianmanager]"):
-            line += "ogrepath = /usr/share/launchpad-buildd/slavebin/apply-ogre-model\n"
+            line += (
+                "ogrepath = "
+                "/usr/share/launchpad-buildd/slavebin/apply-ogre-model\n")
         if line.startswith("sbuildargs"):
             line = line.replace("-A", "")
         out_file.write(line)
     in_file.close()
     out_file.close()
+
 
 def upgrade_to_34():
     print("Upgrading %s to version 34" % conf_file)
@@ -52,10 +56,13 @@ def upgrade_to_34():
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[debianmanager]"):
-            line += "sourcespath = /usr/share/launchpad-buildd/slavebin/override-sources-list\n"
+            line += (
+                "sourcespath = "
+                "/usr/share/launchpad-buildd/slavebin/override-sources-list\n")
         out_file.write(line)
     in_file.close()
     out_file.close()
+
 
 def upgrade_to_39():
     print("Upgrading %s to version 39" % conf_file)
@@ -64,12 +71,13 @@ def upgrade_to_39():
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("sbuildargs"):
-            line = line.replace("-dautobuild ","")
+            line = line.replace("-dautobuild ", "")
         if line.startswith("[slave]"):
             line += "ntphost = ntp.buildd\n"
         out_file.write(line)
     in_file.close()
     out_file.close()
+
 
 def upgrade_to_57():
     print("Upgrading %s to version 57" % conf_file)
@@ -90,6 +98,7 @@ def upgrade_to_57():
     in_file.close()
     out_file.close()
 
+
 def upgrade_to_58():
     print("Upgrading %s to version 58" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev58~"])
@@ -101,6 +110,7 @@ def upgrade_to_58():
         'buildrecipepath = /usr/share/launchpad-buildd'
         '/slavebin/buildrecipe\n')
 
+
 def upgrade_to_59():
     print("Upgrading %s to version 59" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev59~"])
@@ -109,8 +119,10 @@ def upgrade_to_59():
     out_file.write(in_file.read())
     out_file.write(
         '\n[translationtemplatesmanager]\n'
-        'generatepath = /usr/share/launchpad-buildd/slavebin/generate-translation-templates\n'
+        'generatepath = '
+        '/usr/share/launchpad-buildd/slavebin/generate-translation-templates\n'
         'resultarchive = translation-templates.tar.gz\n')
+
 
 def upgrade_to_63():
     print("Upgrading %s to version 63" % conf_file)
@@ -121,6 +133,7 @@ def upgrade_to_63():
         if not line.startswith('ogrepath'):
             out_file.write(line)
 
+
 def upgrade_to_110():
     print("Upgrading %s to version 110" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev110~"])
@@ -128,10 +141,12 @@ def upgrade_to_110():
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[allmanagers]"):
-            line += "preppath = /usr/share/launchpad-buildd/slavebin/slave-prep\n"
+            line += (
+                "preppath = /usr/share/launchpad-buildd/slavebin/slave-prep\n")
         out_file.write(line)
     in_file.close()
     out_file.close()
+
 
 def upgrade_to_115():
     print("Upgrading %s to version 115" % conf_file)
@@ -143,12 +158,15 @@ def upgrade_to_115():
         if line.startswith("[allmanagers]"):
             in_allmanagers = True
         elif in_allmanagers and (line.startswith("[") or not line.strip()):
-            out_file.write("processscanpath = /usr/share/launchpad-buildd/slavebin/scan-for-processes\n")
+            out_file.write(
+                "processscanpath = "
+                "/usr/share/launchpad-buildd/slavebin/scan-for-processes\n")
             in_allmanagers = False
         if not line.startswith("processscanpath = "):
             out_file.write(line)
     in_file.close()
     out_file.close()
+
 
 def upgrade_to_120():
     print("Upgrading %s to version 120" % conf_file)
@@ -161,6 +179,7 @@ def upgrade_to_120():
         "buildlivefspath = /usr/share/launchpad-buildd/slavebin/buildlivefs\n")
     in_file.close()
     out_file.close()
+
 
 def upgrade_to_126():
     print("Upgrading %s to version 126" % conf_file)
@@ -175,6 +194,7 @@ def upgrade_to_126():
         out_file.write(line + "\n")
     in_file.close()
     out_file.close()
+
 
 def upgrade_to_127():
     print("Upgrading %s to version 127" % conf_file)
@@ -209,6 +229,7 @@ def upgrade_to_127():
     in_file.close()
     out_file.close()
 
+
 def upgrade_to_162():
     print("Upgrading %s to version 162" % conf_file)
     os.rename(conf_file, conf_file + "-prev162~")
@@ -220,6 +241,7 @@ def upgrade_to_162():
                 "\n[snapmanager]\n"
                 "proxyport = 8222\n")
 
+
 def upgrade_to_190():
     print("Upgrading %s to version 190" % conf_file)
     os.rename(conf_file, conf_file + "-prev190~")
@@ -230,6 +252,7 @@ def upgrade_to_190():
                 if line.strip() == "[slave]":
                     line = "[builder]\n"
                 out_file.write(line)
+
 
 def upgrade_to_200():
     print("Upgrading %s to version 200" % conf_file)
@@ -272,6 +295,7 @@ def upgrade_to_200():
                         not line.startswith("[snapmanager]") and
                         (line.startswith("[") or not line.strip())):
                     in_snapmanager = False
+
 
 if __name__ == "__main__":
     old_version = re.sub(r'[~-].*', '', old_version)

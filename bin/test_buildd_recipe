@@ -17,11 +17,13 @@ distroseries_name = 'maverick'
 recipe_text = """# bzr-builder format 0.2 deb-version {debupstream}-0~{revno}
 http://bazaar.launchpad.dev/~ppa-user/+junk/wakeonlan"""
 
+
 def deb_line(host, suites):
     prefix = 'deb http://'
-    if apt_cacher_ng_host != None:
+    if apt_cacher_ng_host is not None:
         prefix += '%s:3142/' % apt_cacher_ng_host
     return '%s%s %s %s' % (prefix, host, distroseries_name, suites)
+
 
 proxy = ServerProxy('http://localhost:8221/rpc')
 print(proxy.echo('Hello World'))
@@ -44,8 +46,5 @@ print(proxy.build(
             deb_line('%s.archive.ubuntu.com/ubuntu' % country_code,
                      'main universe'),
             deb_line('ppa.launchpad.net/launchpad/bzr-builder-dev/ubuntu',
-                     'main'),]}))
-#status = proxy.status()
-#for filename, sha1 in status[3].iteritems():
-#    print(filename)
-#proxy.clean()
+                     'main'),
+            ]}))

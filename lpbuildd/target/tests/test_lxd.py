@@ -312,8 +312,9 @@ class TestLXD(TestCase):
                 ("lxc.network.0.ipv4.gateway", "10.10.10.1"),
                 ])
 
-        raw_lxc_config = "".join("{key}={val}\n".format(key=key, val=val)
-                for key, val in sorted(raw_lxc_config + extra_raw_lxc_config))
+        raw_lxc_config = "".join(
+            "{key}={val}\n".format(key=key, val=val)
+            for key, val in sorted(raw_lxc_config + extra_raw_lxc_config))
 
         expected_config = {
             "security.privileged": "true",

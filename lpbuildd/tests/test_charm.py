@@ -101,7 +101,8 @@ class TestCharmBuildManagerIteration(TestCase):
             "git_path": "master",
             }
         expected_options = [
-            "--git-repository", "https://git.launchpad.dev/~example/+git/charm",
+            "--git-repository",
+            "https://git.launchpad.dev/~example/+git/charm",
             "--git-path", "master",
             ]
         yield self.startBuild(args, expected_options)

@@ -57,7 +57,8 @@ class VCSOperationMixin:
         else:
             return ["git"]
 
-    def vcs_fetch(self, name, cwd, env=None, quiet=False, git_shallow_clone=False):
+    def vcs_fetch(self, name, cwd, env=None, quiet=False,
+                  git_shallow_clone=False):
         full_env = OrderedDict()
         full_env["LANG"] = "C.UTF-8"
         full_env["SHELL"] = "/bin/sh"

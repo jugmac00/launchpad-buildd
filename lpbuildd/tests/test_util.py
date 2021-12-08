@@ -21,7 +21,8 @@ class TestShellEscape(TestCase):
         self.assertEqual("'  '", shell_escape("  "))
 
     def test_single_quotes(self):
-        self.assertEqual("'shell'\"'\"'s great'", shell_escape("shell's great"))
+        self.assertEqual(
+            "'shell'\"'\"'s great'", shell_escape("shell's great"))
 
     def test_bytes(self):
         self.assertEqual(

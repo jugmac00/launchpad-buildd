@@ -117,9 +117,8 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
                     print("Returning build status: Build failed")
                     self._builder.buildFail()
             self.alreadyfailed = True
-        elif (
-            retcode >= RETCODE_FAILURE_INSTALL and
-            retcode <= RETCODE_FAILURE_BUILD_SOURCE_PACKAGE):
+        elif (retcode >= RETCODE_FAILURE_INSTALL and
+              retcode <= RETCODE_FAILURE_BUILD_SOURCE_PACKAGE):
             # XXX AaronBentley 2009-01-13: We should handle depwait separately
             if not self.alreadyfailed:
                 self._builder.buildFail()

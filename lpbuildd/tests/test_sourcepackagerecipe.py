@@ -78,7 +78,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             'archives': [
                 'deb http://archive.ubuntu.com/ubuntu maverick main universe',
                 'deb http://ppa.launchpad.net/launchpad/bzr-builder-dev/'
-                    'ubuntu main',
+                'ubuntu main',
                 ],
             }
         if git:

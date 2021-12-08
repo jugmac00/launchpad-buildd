@@ -136,4 +136,3 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
             logger.exception('Build failed')
             return RETCODE_FAILURE_BUILD
         return 0
-

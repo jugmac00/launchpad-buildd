@@ -277,12 +277,13 @@ class TestRecipeBuilder(TestCase):
         os.makedirs(os.path.dirname(control_path))
         os.makedirs(self.builder.apt_dir)
         with open(control_path, "w") as control:
-            print(dedent("""\
-                Source: foo
-                Build-Depends: debhelper (>= 9~), libfoo-dev
+            print(
+                dedent("""\
+                    Source: foo
+                    Build-Depends: debhelper (>= 9~), libfoo-dev
 
-                Package: foo
-                Depends: ${shlibs:Depends}"""),
+                    Package: foo
+                    Depends: ${shlibs:Depends}"""),
                 file=control)
         self.builder.makeDummyDsc("foo")
         with open(os.path.join(self.builder.apt_dir, "foo.dsc")) as dsc:
@@ -308,15 +309,16 @@ class TestRecipeBuilder(TestCase):
         os.makedirs(os.path.dirname(control_path))
         os.makedirs(self.builder.apt_dir)
         with open(control_path, "w") as control:
-            print(dedent("""\
-                Source: foo
-                Build-Depends: debhelper (>= 9~),
-                               libfoo-dev,
-                # comment line
-                               pkg-config
+            print(
+                dedent("""\
+                    Source: foo
+                    Build-Depends: debhelper (>= 9~),
+                                   libfoo-dev,
+                    # comment line
+                                   pkg-config
 
-                Package: foo
-                Depends: ${shlibs:Depends}"""),
+                    Package: foo
+                    Depends: ${shlibs:Depends}"""),
                 file=control)
         self.builder.makeDummyDsc("foo")
         with open(os.path.join(self.builder.apt_dir, "foo.dsc")) as dsc:
@@ -337,13 +339,14 @@ class TestRecipeBuilder(TestCase):
     def test_runAptFtparchive(self):
         os.makedirs(self.builder.apt_dir)
         with open(os.path.join(self.builder.apt_dir, "foo.dsc"), "w") as dsc:
-            print(dedent("""\
-                Format: 1.0
-                Source: foo
-                Architecture: any
-                Version: 99:0
-                Maintainer: invalid@example.org
-                Build-Depends: debhelper (>= 9~), libfoo-dev"""),
+            print(
+                dedent("""\
+                    Format: 1.0
+                    Source: foo
+                    Architecture: any
+                    Version: 99:0
+                    Maintainer: invalid@example.org
+                    Build-Depends: debhelper (>= 9~), libfoo-dev"""),
                 file=dsc)
         self.assertEqual(0, self.builder.runAptFtparchive())
         self.assertEqual(
@@ -379,12 +382,13 @@ class TestRecipeBuilder(TestCase):
             # Not a valid changelog, but only the first line matters here.
             print("foo (1.0-1) bionic; urgency=medium", file=changelog)
         with open(control_path, "w") as control:
-            print(dedent("""\
-                Source: foo
-                Build-Depends: debhelper (>= 9~), libfoo-dev
+            print(
+                dedent("""\
+                    Source: foo
+                    Build-Depends: debhelper (>= 9~), libfoo-dev
 
-                Package: foo
-                Depends: ${shlibs:Depends}"""),
+                    Package: foo
+                    Depends: ${shlibs:Depends}"""),
                 file=control)
         self.assertEqual(0, self.builder.installBuildDeps())
         self.assertThat(

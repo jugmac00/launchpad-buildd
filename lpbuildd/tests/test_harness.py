@@ -5,6 +5,6 @@ __metaclass__ = type
 
 import doctest
 
+
 def test_suite():
     return doctest.DocTestSuite('lpbuildd.tests.harness')
-

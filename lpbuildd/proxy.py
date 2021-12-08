@@ -128,15 +128,15 @@ class BuilderProxyRequest(http.Request):
         if self.startedWriting:
             return
         self.startedWriting = 1
-        l = []
-        l.append(
+        lines = []
+        lines.append(
             self.clientproto + b" " + intToBytes(self.code) + b" " +
             self.code_message + b"\r\n")
         for name, values in self.responseHeaders.getAllRawHeaders():
             for value in values:
-                l.extend([name, b": ", value, b"\r\n"])
-        l.append(b"\r\n")
-        self.transport.writeSequence(l)
+                lines.extend([name, b": ", value, b"\r\n"])
+        lines.append(b"\r\n")
+        self.transport.writeSequence(lines)
 
     def write(self, data):
         if self.channel is not None:

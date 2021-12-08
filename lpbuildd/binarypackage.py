@@ -48,7 +48,11 @@ APT_DUBIOUS_DEP_PATTERNS = [
 
 
 class BuildLogRegexes:
-    """Build log regexes for performing actions based on regexes, and extracting dependencies for auto dep-waits"""
+    """Various build log regexes.
+
+    These allow performing actions based on regexes, and extracting
+    dependencies for auto dep-waits.
+    """
     GIVENBACK = [
         (r"^E: There are problems and -y was used without --force-yes"),
         ]
@@ -131,15 +135,16 @@ class BinaryPackageBuildManager(DebianBuildManager):
             # Use the "plain" chroot type because we do the necessary setup
             # and teardown ourselves: it's easier to do this the same way
             # for all build types.
-            print(dedent('''\
-                [build-{buildid}]
-                description=build-{buildid}
-                groups=sbuild,root
-                root-groups=sbuild,root
-                type=plain
-                directory={chroot_path}
-                ''').format(
-                    buildid=self._buildid, chroot_path=self.chroot_path),
+            print(
+                dedent('''\
+                    [build-{buildid}]
+                    description=build-{buildid}
+                    groups=sbuild,root
+                    root-groups=sbuild,root
+                    type=plain
+                    directory={chroot_path}
+                    ''').format(
+                        buildid=self._buildid, chroot_path=self.chroot_path),
                 file=schroot_file, end='')
             schroot_file.flush()
             subprocess.check_call(
@@ -285,9 +290,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 return True
         dep_restrictions = dep.get("restrictions")
         if dep_restrictions is not None:
-            if all(
-                any(restriction.enabled for restriction in restrlist)
-                for restrlist in dep_restrictions):
+            if all(any(restriction.enabled for restriction in restrlist)
+                   for restrlist in dep_restrictions):
                 # This dependency "matches" in the sense that it's ignored
                 # when no build profiles are enabled.
                 return True

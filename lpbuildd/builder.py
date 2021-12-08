@@ -193,7 +193,8 @@ class BuildManager(object):
             if notify:
                 iterate = partial(self.iterateReap, state)
             else:
-                iterate = lambda success: None
+                def iterate(success):
+                    pass
             self.runTargetSubProcess("scan-for-processes", iterate=iterate)
 
     def doCleanup(self):
@@ -232,9 +233,8 @@ class BuildManager(object):
 
         os.mkdir("%s/build-%s" % (self.home, self._buildid))
         for f in files:
-            os.symlink( self._builder.cachePath(files[f]),
-                        "%s/build-%s/%s" % (self.home,
-                                            self._buildid, f))
+            os.symlink(self._builder.cachePath(files[f]),
+                       "%s/build-%s/%s" % (self.home, self._buildid, f))
         self._chroottarfile = self._builder.cachePath(chroot)
 
         self.image_type = extra_args.get('image_type', 'chroot')
