@@ -402,8 +402,8 @@ class LXD(Backend):
         if os.path.islink(resolv_conf):
             resolv_conf = os.path.realpath(resolv_conf)
             if (resolv_conf == "/run/systemd/resolve/stub-resolv.conf" and
-                os.path.isfile("/run/systemd/resolve/resolv.conf")):
-                    resolv_conf = "/run/systemd/resolve/resolv.conf"
+                    os.path.isfile("/run/systemd/resolve/resolv.conf")):
+                resolv_conf = "/run/systemd/resolve/resolv.conf"
 
         self.copy_in(resolv_conf, "/etc/resolv.conf")
 

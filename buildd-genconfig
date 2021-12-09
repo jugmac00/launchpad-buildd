@@ -5,42 +5,47 @@
 
 from __future__ import print_function
 
+from optparse import OptionParser
 import os
 
 archtag = os.popen("dpkg --print-architecture").read().strip()
 
-from optparse import OptionParser
-
 parser = OptionParser()
-parser.add_option("-n", "--name", dest="NAME",
-                  help="the name for this buildd",
-                  metavar="NAME",
-                  default="default")
+parser.add_option(
+    "-n", "--name", dest="NAME",
+    help="the name for this buildd",
+    metavar="NAME",
+    default="default")
 
-parser.add_option("-H", "--host", dest="BINDHOST",
-                  help="the IP/host this buildd binds to",
-                  metavar="HOSTNAME",
-                  default="localhost")
+parser.add_option(
+    "-H", "--host", dest="BINDHOST",
+    help="the IP/host this buildd binds to",
+    metavar="HOSTNAME",
+    default="localhost")
 
-parser.add_option("-p", "--port", dest="BINDPORT",
-                  help="the port this buildd binds to",
-                  metavar="PORT",
-                  default="8221")
+parser.add_option(
+    "-p", "--port", dest="BINDPORT",
+    help="the port this buildd binds to",
+    metavar="PORT",
+    default="8221")
 
-parser.add_option("-a", "--arch", dest="ARCHTAG",
-                  help="the arch tag this buildd claims",
-                  metavar="ARCHTAG",
-                  default=archtag)
+parser.add_option(
+    "-a", "--arch", dest="ARCHTAG",
+    help="the arch tag this buildd claims",
+    metavar="ARCHTAG",
+    default=archtag)
 
-parser.add_option("-t", "--template", dest="TEMPLATE",
-                  help="the template file to use",
-                  metavar="FILE",
-                  default="/usr/share/launchpad-buildd/template-buildd-slave.conf")
+parser.add_option(
+    "-t", "--template", dest="TEMPLATE",
+    help="the template file to use",
+    metavar="FILE",
+    default="/usr/share/launchpad-buildd/template-buildd-slave.conf")
 
-parser.add_option("--proxy-port", dest="PROXYPORT",
-                  help="the port the local builder proxy binds to",
-                  metavar="PORT",
-                  default="8222")
+parser.add_option(
+    "--proxy-port", dest="PROXYPORT",
+    help="the port the local builder proxy binds to",
+    metavar="PORT",
+    default="8222")
 
 (options, args) = parser.parse_args()
 

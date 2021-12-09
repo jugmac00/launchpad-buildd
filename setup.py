@@ -57,7 +57,7 @@ setup(
         # XXX cjwatson 2015-11-04: This does in fact require python-apt, but
         # that's normally shipped as a system package and specifying it here
         # causes problems for Launchpad's build system.
-        #'python-apt',
+        # 'python-apt',
         'python-debian>=0.1.23',
         'requests',
         'six',

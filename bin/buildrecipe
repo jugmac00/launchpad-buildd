@@ -114,8 +114,8 @@ class RecipeBuilder:
         # using buildd@<hostname>.
         hostname = socket.gethostname()
         email = 'buildd@%s' % hostname
-        lsb_release = subprocess.Popen(['sudo',
-            '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
+        lsb_release = subprocess.Popen([
+            'sudo', '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
             '-r', '-s'], stdout=subprocess.PIPE, universal_newlines=True)
         distroseries_version = lsb_release.communicate()[0].rstrip()
         assert lsb_release.returncode == 0
@@ -190,12 +190,13 @@ class RecipeBuilder:
         control = self.getSourceControl()
         with open(os.path.join(
                 self.apt_dir, "%s.dsc" % package), "w") as dummy_dsc:
-            print(dedent("""\
-                Format: 1.0
-                Source: %(package)s
-                Architecture: any
-                Version: 99:0
-                Maintainer: invalid@example.org""") % {"package": package},
+            print(
+                dedent("""\
+                    Format: 1.0
+                    Source: %(package)s
+                    Architecture: any
+                    Version: 99:0
+                    Maintainer: invalid@example.org""") % {"package": package},
                 file=dummy_dsc)
             for field in (
                     "Build-Depends", "Build-Depends-Indep",
@@ -208,17 +209,18 @@ class RecipeBuilder:
     def runAptFtparchive(self):
         conf_path = os.path.join(self.apt_dir, "ftparchive.conf")
         with open(conf_path, "w") as conf:
-            print(dedent("""\
-                Dir::ArchiveDir "%(apt_dir)s";
-                Default::Sources::Compress ". bzip2";
-                BinDirectory "%(apt_dir)s" { Sources "Sources"; };
-                APT::FTPArchive::Release {
-                    Origin "buildrecipe-archive";
-                    Label "buildrecipe-archive";
-                    Suite "invalid";
-                    Codename "invalid";
-                    Description "buildrecipe temporary archive";
-                };""") % {"apt_dir": self.apt_dir},
+            print(
+                dedent("""\
+                    Dir::ArchiveDir "%(apt_dir)s";
+                    Default::Sources::Compress ". bzip2";
+                    BinDirectory "%(apt_dir)s" { Sources "Sources"; };
+                    APT::FTPArchive::Release {
+                        Origin "buildrecipe-archive";
+                        Label "buildrecipe-archive";
+                        Suite "invalid";
+                        Codename "invalid";
+                        Description "buildrecipe temporary archive";
+                    };""") % {"apt_dir": self.apt_dir},
                 file=conf)
         ftparchive_env = dict(os.environ)
         ftparchive_env.pop("APT_CONFIG", None)

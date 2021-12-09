@@ -134,11 +134,11 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertState(
             BinaryPackageBuildState.SBUILD,
             [
-            'sharepath/bin/sbuild-package', 'sbuild-package',
-            self.buildid, 'i386', 'warty',
-            '-c', 'chroot:build-' + self.buildid,
-            '--arch=i386', '--dist=warty', '--nolog',
-            'foo_1.dsc',
+                'sharepath/bin/sbuild-package', 'sbuild-package',
+                self.buildid, 'i386', 'warty',
+                '-c', 'chroot:build-' + self.buildid,
+                '--arch=i386', '--dist=warty', '--nolog',
+                'foo_1.dsc',
             ], final=True)
         self.assertFalse(self.builder.wasCalled('chrootFail'))
 
@@ -490,12 +490,12 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
     def test_relationMatches_versioned(self):
         # relationMatches handles versioned dependencies correctly.
         for version, expected in (
-            (("<<", "1"), False), (("<<", "1.1"), True),
-            (("<=", "0.9"), False), (("<=", "1"), True),
-            (("=", "1"), True), (("=", "2"), False),
-            ((">=", "1"), True), ((">=", "1.1"), False),
-            ((">>", "0.9"), True), ((">>", "1"), False),
-            ):
+                (("<<", "1"), False), (("<<", "1.1"), True),
+                (("<=", "0.9"), False), (("<=", "1"), True),
+                (("=", "1"), True), (("=", "2"), False),
+                ((">=", "1"), True), ((">=", "1.1"), False),
+                ((">>", "0.9"), True), ((">>", "1"), False),
+                ):
             assert_method = self.assertTrue if expected else self.assertFalse
             assert_method(self.buildmanager.relationMatches(
                 {"name": "foo", "version": version}, {"foo": set(["1"])}),
@@ -505,10 +505,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # If multiple versions of a package are present, relationMatches
         # returns True for dependencies that match any of them.
         for version, expected in (
-            (("=", "1"), True),
-            (("=", "1.1"), True),
-            (("=", "2"), False),
-            ):
+                (("=", "1"), True),
+                (("=", "1.1"), True),
+                (("=", "2"), False),
+                ):
             assert_method = self.assertTrue if expected else self.assertFalse
             assert_method(self.buildmanager.relationMatches(
                 {"name": "foo", "version": version},

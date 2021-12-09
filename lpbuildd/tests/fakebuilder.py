@@ -108,10 +108,10 @@ class FakeBuilder:
         self._config = FakeConfig()
         self.waitingfiles = {}
         for fake_method in (
-            "emptyLog", "log",
-            "chrootFail", "buildFail", "builderFail", "depFail", "buildOK",
-            "buildComplete",
-            ):
+                "emptyLog", "log",
+                "chrootFail", "buildFail", "builderFail", "depFail", "buildOK",
+                "buildComplete",
+                ):
             setattr(self, fake_method, FakeMethod())
 
     def cachePath(self, file):

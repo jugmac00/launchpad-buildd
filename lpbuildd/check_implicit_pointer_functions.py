@@ -42,12 +42,12 @@ implicit_pattern = re.compile(
 pointer_pattern = re.compile(
     br"([^:]*):(\d+):(\d+:)? warning: "
     br"("
-     br"(assignment"
-     br"|initialization"
-     br"|return"
-     br"|passing arg \d+ of `[^']*'"
-     br"|passing arg \d+ of pointer to function"
-     br") makes pointer from integer without a cast"
+    br"(assignment"
+    br"|initialization"
+    br"|return"
+    br"|passing arg \d+ of `[^']*'"
+    br"|passing arg \d+ of pointer to function"
+    br") makes pointer from integer without a cast"
     br"|"
     br"cast to pointer from integer of different size)")
 
@@ -77,7 +77,7 @@ def filter_log(in_file, out_file, in_line=False):
                 pointer_filename = m.group(1)
                 pointer_linenum = int(m.group(2))
                 if (last_implicit_filename == pointer_filename
-                    and last_implicit_linenum == pointer_linenum):
+                        and last_implicit_linenum == pointer_linenum):
                     err = (
                         b"Function `%s' implicitly converted to pointer at "
                         b"%s:%d" % (

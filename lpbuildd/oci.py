@@ -242,7 +242,6 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     source_name, target_name))
             shutil.copy(source_name, target_name)
 
-
         # We need these mapping files
         sha_directory = tempfile.mkdtemp()
         # This can change depending on the kernel options / docker package
@@ -255,7 +254,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         # we will have no contents from it.
         if self.backend.path_exists(sha_path):
             sha_files = [x for x in self.backend.listdir(sha_path)
-                        if not x.startswith('.')]
+                         if not x.startswith('.')]
             for file in sha_files:
                 self.backend.copy_out(
                     os.path.join(sha_path, file),

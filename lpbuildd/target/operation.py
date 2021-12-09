@@ -5,8 +5,6 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-import os
-
 from lpbuildd.target.backend import make_backend
 
 

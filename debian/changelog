@@ -1,3 +1,9 @@
+launchpad-buildd (206) UNRELEASED; urgency=medium
+
+  * Fix flake8 violations.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 Dec 2021 15:42:26 +0000
+
 launchpad-buildd (205) bionic; urgency=medium
 
   * Ignore NotAutomatic flag for -proposed and -backports (LP: #1016776).
