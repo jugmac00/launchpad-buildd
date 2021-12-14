@@ -7,10 +7,15 @@ __metaclass__ = type
 
 from collections import OrderedDict
 import os
+import sys
 
 
 class BuilderProxyOperationMixin:
     """Methods supporting the build time HTTP proxy for certain build types."""
+
+    def __init__(self, args, parser):
+        super(BuilderProxyOperationMixin, self).__init__(args, parser)
+        self.bin = os.path.dirname(sys.argv[0])
 
     @classmethod
     def add_arguments(cls, parser):

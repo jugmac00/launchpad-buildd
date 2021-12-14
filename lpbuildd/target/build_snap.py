@@ -10,7 +10,6 @@ from collections import OrderedDict
 import json
 import logging
 import os.path
-import sys
 import tempfile
 from textwrap import dedent
 
@@ -80,10 +79,6 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
             "--private", default=False, action="store_true",
             help="build a private snap")
         parser.add_argument("name", help="name of snap to build")
-
-    def __init__(self, args, parser):
-        super(BuildSnap, self).__init__(args, parser)
-        self.bin = os.path.dirname(sys.argv[0])
 
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.
