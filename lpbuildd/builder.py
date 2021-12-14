@@ -6,13 +6,17 @@
 
 # The basic builder implementation.
 
+from __future__ import print_function
+
 __metaclass__ = type
 
 from functools import partial
 import hashlib
+import json
 import os
 import re
 import shutil
+import sys
 import tempfile
 
 import apt
@@ -108,6 +112,17 @@ class RunCapture(protocol.ProcessProtocol):
         # notify the builder, it'll perform the required actions
         if self.notify is not None:
             self.notify(statusobject.value.exitCode)
+
+
+def get_build_path(home, build_id, *extra):
+    """Generate a path within the build directory.
+
+    :param home: the user's home directory.
+    :param build_id: the build id to use.
+    :param extra: the extra path segments within the build directory.
+    :return: the generated path.
+    """
+    return os.path.join(home, "build-" + build_id, *extra)
 
 
 class BuildManager(object):
@@ -231,10 +246,10 @@ class BuildManager(object):
         if 'build_url' in extra_args:
             self._builder.log("%s\n" % extra_args['build_url'])
 
-        os.mkdir("%s/build-%s" % (self.home, self._buildid))
+        os.mkdir(get_build_path(self.home, self._buildid))
         for f in files:
             os.symlink(self._builder.cachePath(files[f]),
-                       "%s/build-%s/%s" % (self.home, self._buildid, f))
+                       get_build_path(self.home, self._buildid, f))
         self._chroottarfile = self._builder.cachePath(chroot)
 
         self.image_type = extra_args.get('image_type', 'chroot')
@@ -261,6 +276,16 @@ class BuildManager(object):
         This may be used to return manager-specific information from the
         XML-RPC status call.
         """
+        status_path = get_build_path(self.home, self._buildid, "status")
+        try:
+            with open(status_path) as status_file:
+                return json.load(status_file)
+        except IOError:
+            pass
+        except Exception as e:
+            print(
+                "Error deserialising extra status file: %s" % e,
+                file=sys.stderr)
         return {}
 
     def iterate(self, success, quiet=False):

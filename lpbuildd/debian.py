@@ -22,7 +22,10 @@ from twisted.internet import (
     )
 from twisted.python import log
 
-from lpbuildd.builder import BuildManager
+from lpbuildd.builder import (
+    BuildManager,
+    get_build_path,
+    )
 
 
 class DebianBuildState:
@@ -343,14 +346,3 @@ class DebianBuildManager(BuildManager):
         if self._iterator is not None:
             self._iterator.cancel()
             self._iterator = None
-
-
-def get_build_path(home, build_id, *extra):
-    """Generate a path within the build directory.
-
-    :param home: the user's home directory.
-    :param build_id: the build id to use.
-    :param extra: the extra path segments within the build directory.
-    :return: the generated path.
-    """
-    return os.path.join(home, "build-" + build_id, *extra)

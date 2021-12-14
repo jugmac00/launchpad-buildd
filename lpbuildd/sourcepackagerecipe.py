@@ -7,10 +7,10 @@
 import os
 import re
 
+from lpbuildd.builder import get_build_path
 from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
-    get_build_path,
 )
 
 
