@@ -6,6 +6,10 @@ __metaclass__ = type
 import os
 import subprocess
 import tarfile
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 from fixtures import (
     EnvironmentVariable,
@@ -14,38 +18,16 @@ from fixtures import (
     )
 from testtools import TestCase
 from testtools.matchers import (
-    ContainsDict,
     Equals,
-    Is,
-    MatchesDict,
     MatchesListwise,
     MatchesSetwise,
     )
 
 from lpbuildd.target.cli import parse_args
-
-
-class RanCommand(MatchesListwise):
-
-    def __init__(self, args, get_output=None, echo=None, cwd=None, **env):
-        kwargs_matcher = {}
-        if get_output is not None:
-            kwargs_matcher["get_output"] = Is(get_output)
-        if echo is not None:
-            kwargs_matcher["echo"] = Is(echo)
-        if cwd:
-            kwargs_matcher["cwd"] = Equals(cwd)
-        if env:
-            kwargs_matcher["env"] = MatchesDict(
-                {key: Equals(value) for key, value in env.items()})
-        super(RanCommand, self).__init__(
-            [Equals((args,)), ContainsDict(kwargs_matcher)])
-
-
-class RanAptGet(RanCommand):
-
-    def __init__(self, *args):
-        super(RanAptGet, self).__init__(["apt-get", "-y"] + list(args))
+from lpbuildd.target.tests.matchers import (
+    RanAptGet,
+    RanCommand,
+    )
 
 
 class TestGenerateTranslationTemplates(TestCase):
@@ -234,9 +216,12 @@ class TestGenerateTranslationTemplates(TestCase):
                 ["rm", "-f",
                  os.path.join(po_dir, "missing"),
                  os.path.join(po_dir, "notexist")]),
-            RanCommand(["/usr/bin/intltool-update", "-m"], cwd=po_dir),
             RanCommand(
-                ["/usr/bin/intltool-update", "-p", "-g", "test"], cwd=po_dir),
+                ["/usr/bin/intltool-update", "-m"],
+                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
+            RanCommand(
+                ["/usr/bin/intltool-update", "-p", "-g", "test"],
+                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
             RanCommand(
                 ["tar", "-C", branch_dir, "-czf", result_path, "po/test.pot"]),
             ]))
@@ -270,9 +255,12 @@ class TestGenerateTranslationTemplates(TestCase):
                 ["rm", "-f",
                  os.path.join(po_dir, "missing"),
                  os.path.join(po_dir, "notexist")]),
-            RanCommand(["/usr/bin/intltool-update", "-m"], cwd=po_dir),
             RanCommand(
-                ["/usr/bin/intltool-update", "-p", "-g", "test"], cwd=po_dir),
+                ["/usr/bin/intltool-update", "-m"],
+                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
+            RanCommand(
+                ["/usr/bin/intltool-update", "-p", "-g", "test"],
+                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
             RanCommand(
                 ["tar", "-C", branch_dir, "-czf", result_path, "po/test.pot"]),
             ]))

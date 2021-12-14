@@ -5,7 +5,6 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-from collections import OrderedDict
 import logging
 import os.path
 import tempfile
@@ -66,21 +65,6 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
                 systemd_file.write(contents)
                 systemd_file.flush()
                 self.backend.copy_in(systemd_file.name, file_path)
-
-    def run_build_command(self, args, env=None, **kwargs):
-        """Run a build command in the target.
-
-        :param args: the command and arguments to run.
-        :param env: dictionary of additional environment variables to set.
-        :param kwargs: any other keyword arguments to pass to Backend.run.
-        """
-        full_env = OrderedDict()
-        full_env["LANG"] = "C.UTF-8"
-        full_env["SHELL"] = "/bin/sh"
-        if env:
-            full_env.update(env)
-        return self.backend.run(
-            args, cwd=self.buildd_path, env=full_env, **kwargs)
 
     def install(self):
         logger.info("Running install phase...")

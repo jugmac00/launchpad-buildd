@@ -81,14 +81,6 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
             "--debug", default=False, action="store_true",
             help="enable detailed live-build debugging")
 
-    def run_build_command(self, args, **kwargs):
-        """Run a build command in the chroot.
-
-        :param args: the command and arguments to run.
-        :param kwargs: any other keyword arguments to pass to Backend.run.
-        """
-        return self.backend.run(args, cwd="/build", **kwargs)
-
     def install(self):
         deps = ["livecd-rootfs"]
         if self.args.backend == "lxd":
