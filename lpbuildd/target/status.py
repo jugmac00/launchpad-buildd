@@ -16,18 +16,22 @@ class StatusOperationMixin:
     included in XML-RPC status responses.
     """
 
-    def __init__(self, args, parser):
-        super(StatusOperationMixin, self).__init__(args, parser)
-        self._status = {}
+    @property
+    def _status_path(self):
+        return os.path.join(self.backend.build_path, "status")
 
     def get_status(self):
         """Return a copy of this operation's extra status."""
-        return dict(self._status)
+        if os.path.exists(self._status_path):
+            with open(self._status_path) as status_file:
+                return json.load(status_file)
+        else:
+            return {}
 
     def update_status(self, **status):
         """Update this operation's status with key/value pairs."""
-        self._status.update(status)
-        status_path = os.path.join(self.backend.build_path, "status")
-        with open("%s.tmp" % status_path, "w") as status_file:
-            json.dump(self._status, status_file)
-        os.rename("%s.tmp" % status_path, status_path)
+        full_status = self.get_status()
+        full_status.update(status)
+        with open("%s.tmp" % self._status_path, "w") as status_file:
+            json.dump(full_status, status_file)
+        os.rename("%s.tmp" % self._status_path, self._status_path)
