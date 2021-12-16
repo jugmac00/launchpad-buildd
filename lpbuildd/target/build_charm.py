@@ -108,7 +108,7 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
         logger.info("Running repo phase...")
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
-        self.save_status(self.buildd_path)
+        self.vcs_update_status(self.buildd_path)
 
     def build(self):
         logger.info("Running build phase...")

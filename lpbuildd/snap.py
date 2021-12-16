@@ -5,9 +5,7 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-import json
 import os
-import sys
 
 from six.moves.configparser import (
     NoOptionError,
@@ -17,7 +15,6 @@ from six.moves.configparser import (
 from lpbuildd.debian import (
     DebianBuildManager,
     DebianBuildState,
-    get_build_path,
     )
 from lpbuildd.proxy import BuildManagerProxyMixin
 
@@ -60,19 +57,6 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.proxy_service = None
 
         super(SnapBuildManager, self).initiate(files, chroot, extra_args)
-
-    def status(self):
-        status_path = get_build_path(self.home, self._buildid, "status")
-        try:
-            with open(status_path) as status_file:
-                return json.load(status_file)
-        except IOError:
-            pass
-        except Exception as e:
-            print(
-                "Error deserialising status from buildsnap: %s" % e,
-                file=sys.stderr)
-        return {}
 
     def doRunBuild(self):
         """Run the process to build the snap."""

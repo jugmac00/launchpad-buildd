@@ -93,6 +93,16 @@ class TestCharmBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("chrootFail"))
 
+    def test_status(self):
+        # The build manager returns saved status information on request.
+        self.assertEqual({}, self.buildmanager.status())
+        status_path = os.path.join(
+            self.working_dir, "home", "build-%s" % self.buildid, "status")
+        os.makedirs(os.path.dirname(status_path))
+        with open(status_path, "w") as status_file:
+            status_file.write('{"revision_id": "foo"}')
+        self.assertEqual({"revision_id": "foo"}, self.buildmanager.status())
+
     @defer.inlineCallbacks
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.

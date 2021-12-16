@@ -1,6 +1,7 @@
 launchpad-buildd (206) UNRELEASED; urgency=medium
 
   * Fix flake8 violations.
+  * Refactor extra status handling to be common to all build types.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 Dec 2021 15:42:26 +0000
 
