@@ -8,7 +8,6 @@ __metaclass__ = type
 from collections import OrderedDict
 import logging
 import os.path
-import sys
 import tempfile
 from textwrap import dedent
 
@@ -48,7 +47,6 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
 
     def __init__(self, args, parser):
         super(BuildOCI, self).__init__(args, parser)
-        self.bin = os.path.dirname(sys.argv[0])
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
 
     def _add_docker_engine_proxy_settings(self):

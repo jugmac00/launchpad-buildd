@@ -8,7 +8,6 @@ __metaclass__ = type
 from collections import OrderedDict
 import logging
 import os
-import sys
 
 from lpbuildd.target.backend import check_path_escape
 from lpbuildd.target.build_snap import SnapChannelsAction
@@ -48,7 +47,6 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
 
     def __init__(self, args, parser):
         super(BuildCharm, self).__init__(args, parser)
-        self.bin = os.path.dirname(sys.argv[0])
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
 
     def run_build_command(self, args, env=None, **kwargs):
