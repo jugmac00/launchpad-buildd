@@ -11,10 +11,7 @@ import responses
 from testtools import TestCase
 from testtools.matchers import (
     AnyMatch,
-    Equals,
-    Is,
     MatchesAll,
-    MatchesDict,
     MatchesListwise,
     )
 
@@ -23,65 +20,15 @@ from lpbuildd.target.build_livefs import (
     RETCODE_FAILURE_INSTALL,
     )
 from lpbuildd.target.cli import parse_args
+from lpbuildd.target.tests.matchers import (
+    RanAptGet,
+    RanBuildCommand,
+    RanCommand,
+    )
 from lpbuildd.tests.fakebuilder import FakeMethod
 
 
-class RanCommand(MatchesListwise):
-
-    def __init__(self, args, echo=None, cwd=None, input_text=None,
-                 get_output=None, **env):
-        kwargs_matcher = {}
-        if echo is not None:
-            kwargs_matcher["echo"] = Is(echo)
-        if cwd:
-            kwargs_matcher["cwd"] = Equals(cwd)
-        if input_text:
-            kwargs_matcher["input_text"] = Equals(input_text)
-        if get_output is not None:
-            kwargs_matcher["get_output"] = Is(get_output)
-        if env:
-            kwargs_matcher["env"] = MatchesDict(
-                {key: Equals(value) for key, value in env.items()})
-        super(RanCommand, self).__init__(
-            [Equals((args,)), MatchesDict(kwargs_matcher)])
-
-
-class RanAptGet(RanCommand):
-
-    def __init__(self, *args):
-        super(RanAptGet, self).__init__(["apt-get", "-y"] + list(args))
-
-
-class RanBuildCommand(RanCommand):
-
-    def __init__(self, args, **kwargs):
-        super(RanBuildCommand, self).__init__(args, cwd="/build", **kwargs)
-
-
 class TestBuildLiveFS(TestCase):
-
-    def test_run_build_command_no_env(self):
-        args = [
-            "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            ]
-        build_livefs = parse_args(args=args).operation
-        build_livefs.run_build_command(["echo", "hello world"])
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["echo", "hello world"]),
-            ]))
-
-    def test_run_build_command_env(self):
-        args = [
-            "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            ]
-        build_livefs = parse_args(args=args).operation
-        build_livefs.run_build_command(
-            ["echo", "hello world"], env={"FOO": "bar baz"})
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["echo", "hello world"], FOO="bar baz"),
-            ]))
 
     def test_install(self):
         args = [

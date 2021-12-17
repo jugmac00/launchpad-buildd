@@ -6,7 +6,6 @@ from __future__ import print_function
 __metaclass__ = type
 
 import argparse
-from collections import OrderedDict
 import json
 import logging
 import os.path
@@ -79,20 +78,6 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
             "--private", default=False, action="store_true",
             help="build a private snap")
         parser.add_argument("name", help="name of snap to build")
-
-    def run_build_command(self, args, env=None, **kwargs):
-        """Run a build command in the target.
-
-        :param args: the command and arguments to run.
-        :param env: dictionary of additional environment variables to set.
-        :param kwargs: any other keyword arguments to pass to Backend.run.
-        """
-        full_env = OrderedDict()
-        full_env["LANG"] = "C.UTF-8"
-        full_env["SHELL"] = "/bin/sh"
-        if env:
-            full_env.update(env)
-        return self.backend.run(args, env=full_env, **kwargs)
 
     def install_svn_servers(self):
         proxy = urlparse(self.args.proxy_url)

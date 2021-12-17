@@ -5,7 +5,6 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-from collections import OrderedDict
 import logging
 import os
 
@@ -48,22 +47,6 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
     def __init__(self, args, parser):
         super(BuildCharm, self).__init__(args, parser)
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
-
-    def run_build_command(self, args, env=None, **kwargs):
-        """Run a build command in the target.
-
-        :param args: the command and arguments to run.
-        :param env: dictionary of additional environment variables to set.
-        :param kwargs: any other keyword arguments to pass to Backend.run.
-        """
-        full_env = OrderedDict()
-        full_env["LANG"] = "C.UTF-8"
-        full_env["SHELL"] = "/bin/sh"
-        if env:
-            full_env.update(env)
-        cwd = kwargs.pop('cwd', self.buildd_path)
-        return self.backend.run(
-            args, cwd=cwd, env=full_env, **kwargs)
 
     def install(self):
         logger.info("Running install phase")

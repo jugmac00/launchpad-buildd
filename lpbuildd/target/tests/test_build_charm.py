@@ -17,10 +17,7 @@ import responses
 from systemfixtures import FakeFilesystem
 from testtools.matchers import (
     AnyMatch,
-    Equals,
-    Is,
     MatchesAll,
-    MatchesDict,
     MatchesListwise,
     )
 from testtools.testcase import TestCase
@@ -36,42 +33,11 @@ from lpbuildd.target.tests.test_build_snap import (
     RanSnap,
     )
 from lpbuildd.target.cli import parse_args
-
-
-class RanCommand(MatchesListwise):
-
-    def __init__(self, args, echo=None, cwd=None, input_text=None,
-                 get_output=None, universal_newlines=None, **env):
-        kwargs_matcher = {}
-        if echo is not None:
-            kwargs_matcher["echo"] = Is(echo)
-        if cwd:
-            kwargs_matcher["cwd"] = Equals(cwd)
-        if input_text:
-            kwargs_matcher["input_text"] = Equals(input_text)
-        if get_output is not None:
-            kwargs_matcher["get_output"] = Is(get_output)
-        if universal_newlines is not None:
-            kwargs_matcher["universal_newlines"] = Is(universal_newlines)
-        if env:
-            kwargs_matcher["env"] = MatchesDict(
-                {key: Equals(value) for key, value in env.items()})
-        super(RanCommand, self).__init__(
-            [Equals((args,)), MatchesDict(kwargs_matcher)])
-
-
-class RanAptGet(RanCommand):
-
-    def __init__(self, *args):
-        super(RanAptGet, self).__init__(["apt-get", "-y"] + list(args))
-
-
-class RanBuildCommand(RanCommand):
-
-    def __init__(self, args, **kwargs):
-        kwargs.setdefault("LANG", "C.UTF-8")
-        kwargs.setdefault("SHELL", "/bin/sh")
-        super(RanBuildCommand, self).__init__(args, **kwargs)
+from lpbuildd.target.tests.matchers import (
+    RanAptGet,
+    RanBuildCommand,
+    RanCommand,
+    )
 
 
 class TestBuildCharm(TestCase):
