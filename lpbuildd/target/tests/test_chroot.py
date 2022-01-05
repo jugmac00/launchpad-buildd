@@ -255,6 +255,7 @@ class TestChroot(TestCase):
             {"stdout": io.BytesIO(b"foo\0bar\0")},
             {"stdout": io.BytesIO(b"foo\0bar/bar\0bar/baz\0")},
             {"stdout": io.BytesIO(b"bar\0bar/bar\0")},
+            {"stdout": io.BytesIO(b"")},
             ])
         processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
         self.assertEqual(
@@ -270,6 +271,9 @@ class TestChroot(TestCase):
         self.assertEqual(
             ["bar", "bar/bar"],
             Chroot("1", "xenial", "amd64").find("/path", name="bar"))
+        self.assertEqual(
+            [],
+            Chroot("1", "xenial", "amd64").find("/path", name="nonexistent"))
 
         find_prefix = [
             "sudo", "/usr/sbin/chroot",
@@ -282,6 +286,7 @@ class TestChroot(TestCase):
             find_prefix + ["-maxdepth", "1"] + find_suffix,
             find_prefix + ["!", "-type", "d"] + find_suffix,
             find_prefix + ["-name", "bar"] + find_suffix,
+            find_prefix + ["-name", "nonexistent"] + find_suffix,
             ]
         self.assertEqual(
             expected_args,
