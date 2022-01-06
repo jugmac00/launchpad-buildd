@@ -110,19 +110,21 @@ class FakeBuilder:
         for fake_method in (
                 "emptyLog", "log",
                 "chrootFail", "buildFail", "builderFail", "depFail", "buildOK",
-                "buildComplete",
+                "buildComplete", "sanitizeBuildlog",
                 ):
             setattr(self, fake_method, FakeMethod())
 
     def cachePath(self, file):
         return os.path.join(self._cachepath, file)
 
-    def addWaitingFile(self, path):
+    def addWaitingFile(self, path, name=None):
+        if name is None:
+            name = os.path.basename(path)
         with open(path, "rb") as f:
             contents = f.read()
         sha1sum = hashlib.sha1(contents).hexdigest()
         shutil.copy(path, self.cachePath(sha1sum))
-        self.waitingfiles[os.path.basename(path)] = sha1sum
+        self.waitingfiles[name] = sha1sum
 
     def anyMethod(self, *args, **kwargs):
         pass
@@ -199,9 +201,10 @@ class FakeBackend(Backend):
 
     def find(self, path, max_depth=None, include_directories=True, name=None):
         def match(backend_path, mode):
-            rel_path = os.path.relpath(backend_path, path)
-            if rel_path == os.sep or os.path.dirname(rel_path) == os.pardir:
+            prefix = path + os.sep
+            if os.path.commonprefix((backend_path, prefix)) != prefix:
                 return False
+            rel_path = os.path.relpath(backend_path, path)
             if max_depth is not None:
                 if rel_path.count(os.sep) + 1 > max_depth:
                     return False

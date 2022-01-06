@@ -128,7 +128,7 @@ class DebianBuildManager(BuildManager):
                 self._builder.addWaitingFile(
                     get_build_path(self.home, self._buildid, fn))
 
-    def deferGatherResults(self):
+    def deferGatherResults(self, reap=True):
         """Gather the results of the build in a thread."""
         # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once we're
         # on Twisted >= 18.7.0 (https://twistedmatrix.com/trac/ticket/4632).
@@ -143,11 +143,14 @@ class DebianBuildManager(BuildManager):
                 self._builder.buildFail()
             self.alreadyfailed = True
 
-        def reap(ignored):
+        def reap_processes(ignored):
             self.doReapProcesses(self._state)
 
-        return threads.deferToThread(self.gatherResults).addErrback(
-            failed_to_gather).addCallback(reap)
+        d = threads.deferToThread(self.gatherResults).addErrback(
+            failed_to_gather)
+        if reap:
+            d.addCallback(reap_processes)
+        return d
 
     @defer.inlineCallbacks
     def iterate(self, success, quiet=False):

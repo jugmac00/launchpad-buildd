@@ -46,8 +46,8 @@ class RanAptGet(RanCommand):
 
 class RanSnap(RanCommand):
 
-    def __init__(self, *args):
-        super(RanSnap, self).__init__(["snap"] + list(args))
+    def __init__(self, *args, **kwargs):
+        super(RanSnap, self).__init__(["snap"] + list(args), **kwargs)
 
 
 class RanBuildCommand(RanCommand):

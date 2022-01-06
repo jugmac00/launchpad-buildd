@@ -28,6 +28,10 @@ from lpbuildd.target.lifecycle import (
     Start,
     Stop,
     )
+from lpbuildd.target.run_ci import (
+    RunCI,
+    RunCIPrepare,
+    )
 
 
 def configure_logging():
@@ -59,6 +63,8 @@ operations = {
     "override-sources-list": OverrideSourcesList,
     "mount-chroot": Start,
     "remove-build": Remove,
+    "run-ci": RunCI,
+    "run-ci-prepare": RunCIPrepare,
     "scan-for-processes": KillProcesses,
     "umount-chroot": Stop,
     "unpack-chroot": Create,
