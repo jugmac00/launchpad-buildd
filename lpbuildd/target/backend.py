@@ -146,7 +146,7 @@ class Backend:
         if name is not None:
             cmd.extend(["-name", name])
         cmd.extend(["-printf", "%P\\0"])
-        paths = self.run(cmd, get_output=True).rstrip(b"\0").split(b"\0")
+        paths = self.run(cmd, get_output=True).split(b"\0")[:-1]
         # XXX cjwatson 2017-08-04: Use `os.fsdecode` instead once we're on
         # Python 3.
         return [p.decode("UTF-8") for p in paths]

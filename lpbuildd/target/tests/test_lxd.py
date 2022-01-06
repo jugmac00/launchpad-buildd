@@ -797,6 +797,7 @@ class TestLXD(TestCase):
             {"stdout": io.BytesIO(b"foo\0bar\0")},
             {"stdout": io.BytesIO(b"foo\0bar/bar\0bar/baz\0")},
             {"stdout": io.BytesIO(b"bar\0bar/bar\0")},
+            {"stdout": io.BytesIO(b"")},
             ])
         processes_fixture.add(lambda _: next(test_proc_infos), name="lxc")
         self.assertEqual(
@@ -812,6 +813,8 @@ class TestLXD(TestCase):
         self.assertEqual(
             ["bar", "bar/bar"],
             LXD("1", "xenial", "amd64").find("/path", name="bar"))
+        self.assertEqual(
+            [], LXD("1", "xenial", "amd64").find("/path", name="nonexistent"))
 
         find_prefix = [
             "lxc", "exec", "lp-xenial-amd64", "--",
@@ -823,6 +826,7 @@ class TestLXD(TestCase):
             find_prefix + ["-maxdepth", "1"] + find_suffix,
             find_prefix + ["!", "-type", "d"] + find_suffix,
             find_prefix + ["-name", "bar"] + find_suffix,
+            find_prefix + ["-name", "nonexistent"] + find_suffix,
             ]
         self.assertEqual(
             expected_args,
