@@ -54,7 +54,7 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
         if self.args.proxy_url:
             deps.extend(self.proxy_deps)
             self.install_git_proxy()
-        if self.args.backend == "lxd":
+        if self.backend.supports_snapd:
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.
             for dep in "snapd", "fuse", "squashfuse", "udev":
@@ -67,7 +67,7 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
             "python3-setuptools",
             ])
         self.backend.run(["apt-get", "-y", "install"] + deps)
-        if self.args.backend in ("lxd", "fake"):
+        if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         for snap_name in self.core_snap_names:
             if snap_name in self.args.channels:

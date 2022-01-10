@@ -29,6 +29,8 @@ def check_path_escape(buildd_path, path_to_check):
 class Backend:
     """A backend implementation for the environment where we run builds."""
 
+    supports_snapd = False
+
     def __init__(self, build_id, series=None, arch=None):
         self.build_id = build_id
         self.series = series
