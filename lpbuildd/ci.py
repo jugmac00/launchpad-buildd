@@ -5,7 +5,6 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-import json
 import os
 
 from six.moves.configparser import (
@@ -53,6 +52,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.proxy_service = None
+        self.job_status = {}
 
         super(CIBuildManager, self).initiate(files, chroot, extra_args)
 
@@ -151,17 +151,11 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         """
         self.iterateReap_PREPARE(retcode)
 
-    def _addJobToStatus(self, job_id, job_status):
-        """Add information about a job to the extra status file.
-
-        This must not be run concurrently with a run-ci-prepare or run-ci
-        subprocess.
-        """
-        status = self.status()
-        status.setdefault("jobs", {})[job_id] = job_status
-        with open("%s.tmp" % self.status_path, "w") as status_file:
-            json.dump(status, status_file)
-        os.rename("%s.tmp" % self.status_path, self.status_path)
+    def status(self):
+        """See `BuildManager.status`."""
+        status = super(CIBuildManager, self).status()
+        status["jobs"] = dict(self.job_status)
+        return status
 
     def gatherResults(self):
         """Gather the results of the CI job that just completed.
@@ -190,4 +184,4 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         # Save a file map for this job in the extra status file.  This
         # allows buildd-manager to fetch job logs/output incrementally
         # rather than having to wait for the entire CI job to finish.
-        self._addJobToStatus(self.current_job_id, job_status)
+        self.job_status[self.current_job_id] = job_status

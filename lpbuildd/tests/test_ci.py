@@ -139,7 +139,7 @@ class TestCIBuildManagerIteration(TestCase):
             "/build/output/test:0/ci.tar.gz",
             b"I am output from a CI test job.")
 
-        # Output from the first job is visible in the extra status file.
+        # Output from the first job is visible in the status response.
         extra_status = self.buildmanager.status()
         self.assertEqual(
             {
@@ -170,7 +170,7 @@ class TestCIBuildManagerIteration(TestCase):
             "test:0/ci.tar.gz": b"I am output from a CI test job.",
             }))
 
-        # Output from both jobs is visible in the extra status file.
+        # Output from both jobs is visible in the status response.
         extra_status = self.buildmanager.status()
         self.assertEqual(
             {
