@@ -120,7 +120,10 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
 
     @defer.inlineCallbacks
     def iterate_RUN_JOB(self, retcode):
-        """Finished running a CI job."""
+        """Finished running a CI job.
+
+        This state is repeated for each CI job in the pipeline.
+        """
         if retcode == RETCODE_SUCCESS:
             pass
         elif (retcode >= RETCODE_FAILURE_INSTALL and
@@ -161,7 +164,10 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         os.rename("%s.tmp" % self.status_path, self.status_path)
 
     def gatherResults(self):
-        """Gather the results of the job that just completed."""
+        """Gather the results of the CI job that just completed.
+
+        This is called once for each CI job in the pipeline.
+        """
         job_status = {}
         output_path = os.path.join("/build", "output", self.current_job_id)
         log_path = "%s.log" % output_path
