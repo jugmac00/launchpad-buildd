@@ -77,7 +77,7 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
         deps.extend(self.vcs_deps)
         deps.extend(["docker.io"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
-        if self.args.backend in ("lxd", "fake"):
+        if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         self.backend.run(["systemctl", "restart", "docker"])
         # The docker snap can't see /build, so we have to do our work under

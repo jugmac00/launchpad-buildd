@@ -138,6 +138,8 @@ class FakeBuilder:
 
 class FakeBackend(Backend):
 
+    supports_snapd = True
+
     def __init__(self, *args, **kwargs):
         super(FakeBackend, self).__init__(*args, **kwargs)
         fake_methods = (
@@ -148,6 +150,7 @@ class FakeBackend(Backend):
         for fake_method in fake_methods:
             setattr(self, fake_method, FakeMethod())
         self.backend_fs = {}
+        self.available_packages = set()
 
     def _add_inode(self, path, contents, full_mode):
         path = os.path.normpath(path)
@@ -220,6 +223,9 @@ class FakeBackend(Backend):
             os.path.relpath(backend_path, path)
             for backend_path, (_, mode) in self.backend_fs.items()
             if match(backend_path, mode)]
+
+    def is_package_available(self, package):
+        return package in self.available_packages
 
 
 class UncontainedBackend(Backend):

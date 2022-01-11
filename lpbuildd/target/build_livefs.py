@@ -83,14 +83,14 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
 
     def install(self):
         deps = ["livecd-rootfs"]
-        if self.args.backend == "lxd":
+        if self.backend.supports_snapd:
             # udev is installed explicitly to work around
             # https://bugs.launchpad.net/snapd/+bug/1731519.
             for dep in "snapd", "fuse", "squashfuse", "udev":
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
         self.backend.run(["apt-get", "-y", "install"] + deps)
-        if self.args.backend in ("lxd", "fake"):
+        if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         if self.args.locale is not None:
             self.backend.run([

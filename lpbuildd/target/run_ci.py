@@ -40,13 +40,13 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
         if self.args.proxy_url:
             deps.extend(self.proxy_deps)
             self.install_git_proxy()
-        if self.args.backend == "lxd":
+        if self.backend.supports_snapd:
             for dep in "snapd", "fuse", "squashfuse":
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
         deps.extend(self.vcs_deps)
         self.backend.run(["apt-get", "-y", "install"] + deps)
-        if self.args.backend in ("lxd", "fake"):
+        if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         for snap_name, channel in sorted(self.args.channels.items()):
             if snap_name not in ("lxd", "lpcraft"):

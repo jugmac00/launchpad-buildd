@@ -93,6 +93,8 @@ class LXDException(Exception):
 
 class LXD(Backend):
 
+    supports_snapd = True
+
     # Architecture mapping
     arches = {
         "amd64": "x86_64",
