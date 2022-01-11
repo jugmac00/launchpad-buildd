@@ -1,11 +1,11 @@
-launchpad-buildd (206) UNRELEASED; urgency=medium
+launchpad-buildd (206) bionic; urgency=medium
 
   * Fix flake8 violations.
   * Refactor extra status handling to be common to all build types.
   * Fix handling of empty output in Backend.find.
   * Add CI job support.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 08 Dec 2021 15:42:26 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 11 Jan 2022 16:26:40 +0000
 
 launchpad-buildd (205) bionic; urgency=medium
 
