@@ -151,6 +151,8 @@ class BuildManager(object):
         self.is_archive_private = False
         self.home = os.environ['HOME']
         self.abort_timeout = 120
+        self.status_path = get_build_path(self.home, self._buildid, "status")
+        self._final_extra_status = None
 
     @property
     def needs_sanitized_logs(self):
@@ -214,6 +216,9 @@ class BuildManager(object):
 
     def doCleanup(self):
         """Remove the build tree etc."""
+        # Fetch a final snapshot of manager-specific extra status.
+        self._final_extra_status = self.status()
+
         if not self.fast_cleanup:
             self.runTargetSubProcess("remove-build")
 
@@ -276,9 +281,10 @@ class BuildManager(object):
         This may be used to return manager-specific information from the
         XML-RPC status call.
         """
-        status_path = get_build_path(self.home, self._buildid, "status")
+        if self._final_extra_status is not None:
+            return self._final_extra_status
         try:
-            with open(status_path) as status_file:
+            with open(self.status_path) as status_file:
                 return json.load(status_file)
         except IOError:
             pass
@@ -359,12 +365,12 @@ class BuildManager(object):
         self._subprocess.ignore = True
         self._subprocess.transport.loseConnection()
 
-    def addWaitingFileFromBackend(self, path):
+    def addWaitingFileFromBackend(self, path, name=None):
         fetched_dir = tempfile.mkdtemp()
         try:
             fetched_path = os.path.join(fetched_dir, os.path.basename(path))
             self.backend.copy_out(path, fetched_path)
-            self._builder.addWaitingFile(fetched_path)
+            self._builder.addWaitingFile(fetched_path, name=name)
         finally:
             shutil.rmtree(fetched_dir)
 
@@ -501,9 +507,11 @@ class Builder(object):
         os.rename(tmppath, self.cachePath(sha1sum))
         return sha1sum
 
-    def addWaitingFile(self, path):
+    def addWaitingFile(self, path, name=None):
         """Add a file to the cache and store its details for reporting."""
-        self.waitingfiles[os.path.basename(path)] = self.storeFile(path)
+        if name is None:
+            name = os.path.basename(path)
+        self.waitingfiles[name] = self.storeFile(path)
 
     def abort(self):
         """Abort the current build."""
