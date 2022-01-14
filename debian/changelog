@@ -1,3 +1,9 @@
+launchpad-buildd (207) UNRELEASED; urgency=medium
+
+  * Return results from individual CI jobs.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 13 Jan 2022 14:51:09 +0000
+
 launchpad-buildd (206) bionic; urgency=medium
 
   * Fix flake8 violations.

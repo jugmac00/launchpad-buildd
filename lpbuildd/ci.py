@@ -24,6 +24,11 @@ RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
 
+# These must match the names of `RevisionStatusResult` enumeration items in
+# Launchpad.
+RESULT_SUCCEEDED = "SUCCEEDED"
+RESULT_FAILED = "FAILED"
+
 
 class CIBuildState(DebianBuildState):
     PREPARE = "PREPARE"
@@ -125,18 +130,20 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         This state is repeated for each CI job in the pipeline.
         """
         if retcode == RETCODE_SUCCESS:
-            pass
-        elif (retcode >= RETCODE_FAILURE_INSTALL and
-              retcode <= RETCODE_FAILURE_BUILD):
-            if not self.alreadyfailed:
-                self._builder.log("Job %s failed." % self.current_job_id)
-                self._builder.buildFail()
-            self.alreadyfailed = True
+            result = RESULT_SUCCEEDED
         else:
-            if not self.alreadyfailed:
-                self._builder.builderFail()
+            result = RESULT_FAILED
+            if (retcode >= RETCODE_FAILURE_INSTALL and
+                    retcode <= RETCODE_FAILURE_BUILD):
+                self._builder.log("Job %s failed." % self.current_job_id)
+                if not self.alreadyfailed:
+                    self._builder.buildFail()
+            else:
+                if not self.alreadyfailed:
+                    self._builder.builderFail()
             self.alreadyfailed = True
         yield self.deferGatherResults(reap=False)
+        self.job_status[self.current_job_id]["result"] = result
         if self.remaining_jobs and not self.alreadyfailed:
             self.runNextJob()
         else:

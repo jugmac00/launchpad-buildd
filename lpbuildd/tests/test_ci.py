@@ -18,6 +18,10 @@ from lpbuildd.builder import get_build_path
 from lpbuildd.ci import (
     CIBuildManager,
     CIBuildState,
+    RESULT_SUCCEEDED,
+    RESULT_FAILED,
+    RETCODE_FAILURE_BUILD,
+    RETCODE_SUCCESS,
     )
 from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
@@ -94,8 +98,9 @@ class TestCIBuildManagerIteration(TestCase):
         self.assertFalse(self.builder.wasCalled("chrootFail"))
 
     @defer.inlineCallbacks
-    def expectRunJob(self, job_name, job_index, options=None):
-        yield self.buildmanager.iterate(0)
+    def expectRunJob(self, job_name, job_index, options=None,
+                     retcode=RETCODE_SUCCESS):
+        yield self.buildmanager.iterate(retcode)
         self.assertEqual(CIBuildState.RUN_JOB, self.getState())
         expected_command = [
             "sharepath/bin/in-target", "in-target", "run-ci",
@@ -110,7 +115,7 @@ class TestCIBuildManagerIteration(TestCase):
         self.assertFalse(self.builder.wasCalled("chrootFail"))
 
     @defer.inlineCallbacks
-    def test_iterate(self):
+    def test_iterate_success(self):
         # The build manager iterates multiple CI jobs from start to finish.
         args = {
             "git_repository": "https://git.launchpad.test/~example/+git/ci",
@@ -148,6 +153,7 @@ class TestCIBuildManagerIteration(TestCase):
                     "output": {
                         "ci.whl": self.builder.waitingfiles["build:0/ci.whl"],
                         },
+                    "result": RESULT_SUCCEEDED,
                     },
                 },
             extra_status["jobs"])
@@ -179,6 +185,7 @@ class TestCIBuildManagerIteration(TestCase):
                     "output": {
                         "ci.whl": self.builder.waitingfiles["build:0/ci.whl"],
                         },
+                    "result": RESULT_SUCCEEDED,
                     },
                 "test:0": {
                     "log": self.builder.waitingfiles["test:0.log"],
@@ -186,6 +193,7 @@ class TestCIBuildManagerIteration(TestCase):
                         "ci.tar.gz":
                             self.builder.waitingfiles["test:0/ci.tar.gz"],
                         },
+                    "result": RESULT_SUCCEEDED,
                     },
                 },
             extra_status["jobs"])
@@ -216,6 +224,83 @@ class TestCIBuildManagerIteration(TestCase):
 
         self.buildmanager.iterate(0)
         self.assertTrue(self.builder.wasCalled('buildOK'))
+        self.assertTrue(self.builder.wasCalled('buildComplete'))
+        # remove-build would remove this in a non-test environment.
+        shutil.rmtree(get_build_path(
+            self.buildmanager.home, self.buildmanager._buildid))
+        self.assertIn("jobs", self.buildmanager.status())
+
+    @defer.inlineCallbacks
+    def test_iterate_failure(self):
+        # The build manager records CI jobs that fail.
+        args = {
+            "git_repository": "https://git.launchpad.test/~example/+git/ci",
+            "git_path": "main",
+            "jobs": [("build", "0"), ("test", "0")],
+            }
+        expected_options = [
+            "--git-repository", "https://git.launchpad.test/~example/+git/ci",
+            "--git-path", "main",
+            ]
+        yield self.startBuild(args, expected_options)
+
+        # After preparation, start running the first job.
+        yield self.expectRunJob("build", "0")
+        self.buildmanager.backend.add_file(
+            "/build/output/build:0.log", b"I am a failing CI build job log.")
+
+        # If the first job fails, then the build fails here.
+        yield self.buildmanager.iterate(RETCODE_FAILURE_BUILD)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
+            "--backend=lxd", "--series=focal", "--arch=amd64", self.buildid,
+            ]
+        self.assertEqual(CIBuildState.RUN_JOB, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertTrue(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "build:0.log": b"I am a failing CI build job log.",
+            }))
+
+        # Output from the first job is visible in the status response.
+        extra_status = self.buildmanager.status()
+        self.assertEqual(
+            {
+                "build:0": {
+                    "log": self.builder.waitingfiles["build:0.log"],
+                    "result": RESULT_FAILED,
+                    },
+                },
+            extra_status["jobs"])
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
+            "--backend=lxd", "--series=focal", "--arch=amd64", self.buildid,
+            ]
+        self.assertEqual(CIBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertTrue(self.builder.wasCalled("buildFail"))
+
+        # If we iterate to the end of the build, then the extra status
+        # information is still present.
+        self.buildmanager.iterate(0)
+        expected_command = [
+            'sharepath/bin/in-target', 'in-target', 'remove-build',
+            '--backend=lxd', '--series=focal', '--arch=amd64', self.buildid,
+            ]
+        self.assertEqual(CIBuildState.CLEANUP, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+        self.buildmanager.iterate(0)
+        self.assertFalse(self.builder.wasCalled('buildOK'))
         self.assertTrue(self.builder.wasCalled('buildComplete'))
         # remove-build would remove this in a non-test environment.
         shutil.rmtree(get_build_path(
