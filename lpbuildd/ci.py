@@ -30,6 +30,10 @@ RESULT_SUCCEEDED = "SUCCEEDED"
 RESULT_FAILED = "FAILED"
 
 
+def _make_job_id(job_name, job_index):
+    return "%s:%s" % (job_name, job_index)
+
+
 class CIBuildState(DebianBuildState):
     PREPARE = "PREPARE"
     RUN_JOB = "RUN_JOB"
@@ -84,9 +88,22 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             pass
         self.runTargetSubProcess("run-ci-prepare", *args)
 
+    @property
+    def current_job(self):
+        return self.jobs[self.stage_index][self.job_index]
+
+    @property
+    def has_current_job(self):
+        try:
+            self.current_job
+            return True
+        except IndexError:
+            return False
+
     def iterate_PREPARE(self, retcode):
         """Finished preparing for running CI jobs."""
-        self.remaining_jobs = list(self.jobs)
+        self.stage_index = 0
+        self.job_index = 0
         if retcode == RETCODE_SUCCESS:
             pass
         elif (retcode >= RETCODE_FAILURE_INSTALL and
@@ -99,7 +116,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             if not self.alreadyfailed:
                 self._builder.builderFail()
             self.alreadyfailed = True
-        if self.remaining_jobs and not self.alreadyfailed:
+        if self.has_current_job and not self.alreadyfailed:
             self._state = CIBuildState.RUN_JOB
             self.runNextJob()
         else:
@@ -115,11 +132,15 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()
 
+    @staticmethod
+    def _makeJobID(job_name, job_index):
+        return "%s:%s" % (job_name, job_index)
+
     def runNextJob(self):
         """Run the next CI job."""
         args = list(self.proxy_args)
-        job_name, job_index = self.remaining_jobs.pop(0)
-        self.current_job_id = "%s:%s" % (job_name, job_index)
+        job_name, job_index = self.current_job
+        self.current_job_id = _make_job_id(job_name, job_index)
         args.extend([job_name, str(job_index)])
         self.runTargetSubProcess("run-ci", *args)
 
@@ -136,15 +157,39 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             if (retcode >= RETCODE_FAILURE_INSTALL and
                     retcode <= RETCODE_FAILURE_BUILD):
                 self._builder.log("Job %s failed." % self.current_job_id)
-                if not self.alreadyfailed:
-                    self._builder.buildFail()
+                if len(self.jobs[self.stage_index]) == 1:
+                    # Single-job stage, so fail straight away in order to
+                    # get simpler error messages.
+                    if not self.alreadyfailed:
+                        self._builder.buildFail()
+                    self.alreadyfailed = True
             else:
                 if not self.alreadyfailed:
                     self._builder.builderFail()
-            self.alreadyfailed = True
+                self.alreadyfailed = True
         yield self.deferGatherResults(reap=False)
         self.job_status[self.current_job_id]["result"] = result
-        if self.remaining_jobs and not self.alreadyfailed:
+
+        self.job_index += 1
+        if self.job_index >= len(self.jobs[self.stage_index]):
+            # End of stage.  Fail if any job in this stage has failed.
+            current_stage_job_ids = [
+                _make_job_id(job_name, job_index)
+                for job_name, job_index in self.jobs[self.stage_index]]
+            if any(
+                self.job_status[job_id]["result"] != RESULT_SUCCEEDED
+                for job_id in current_stage_job_ids
+            ):
+                if not self.alreadyfailed:
+                    self._builder.log(
+                        "Some jobs in %s failed; stopping." %
+                        current_stage_job_ids)
+                    self._builder.buildFail()
+                self.alreadyfailed = True
+            self.stage_index += 1
+            self.job_index = 0
+
+        if self.has_current_job and not self.alreadyfailed:
             self.runNextJob()
         else:
             self.stopProxy()

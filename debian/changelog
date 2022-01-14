@@ -1,6 +1,7 @@
 launchpad-buildd (207) UNRELEASED; urgency=medium
 
   * Return results from individual CI jobs.
+  * Support CI pipeline stages with multiple jobs.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 13 Jan 2022 14:51:09 +0000
 

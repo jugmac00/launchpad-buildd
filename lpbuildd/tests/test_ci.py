@@ -120,7 +120,7 @@ class TestCIBuildManagerIteration(TestCase):
         args = {
             "git_repository": "https://git.launchpad.test/~example/+git/ci",
             "git_path": "main",
-            "jobs": [("build", "0"), ("test", "0")],
+            "jobs": [[("build", "0")], [("test", "0")]],
             }
         expected_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
@@ -236,7 +236,7 @@ class TestCIBuildManagerIteration(TestCase):
         args = {
             "git_repository": "https://git.launchpad.test/~example/+git/ci",
             "git_path": "main",
-            "jobs": [("build", "0"), ("test", "0")],
+            "jobs": [[("lint", "0"), ("build", "0")], [("test", "0")]],
             }
         expected_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
@@ -245,12 +245,31 @@ class TestCIBuildManagerIteration(TestCase):
         yield self.startBuild(args, expected_options)
 
         # After preparation, start running the first job.
-        yield self.expectRunJob("build", "0")
+        yield self.expectRunJob("lint", "0")
         self.buildmanager.backend.add_file(
-            "/build/output/build:0.log", b"I am a failing CI build job log.")
+            "/build/output/lint:0.log", b"I am a failing CI lint job log.")
 
-        # If the first job fails, then the build fails here.
-        yield self.buildmanager.iterate(RETCODE_FAILURE_BUILD)
+        # Collect the output of the first job and start running the second.
+        # (Note that `retcode` is the return code of the *first* job, not the
+        # second.)
+        yield self.expectRunJob("build", "0", retcode=RETCODE_FAILURE_BUILD)
+        self.buildmanager.backend.add_file(
+            "/build/output/build:0.log", b"I am a CI build job log.")
+
+        # Output from the first job is visible in the status response.
+        extra_status = self.buildmanager.status()
+        self.assertEqual(
+            {
+                "lint:0": {
+                    "log": self.builder.waitingfiles["lint:0.log"],
+                    "result": RESULT_FAILED,
+                    },
+                },
+            extra_status["jobs"])
+
+        # Since the first pipeline stage failed, we won't go any further, and
+        # expect to start reaping processes.
+        yield self.buildmanager.iterate(0)
         expected_command = [
             "sharepath/bin/in-target", "in-target", "scan-for-processes",
             "--backend=lxd", "--series=focal", "--arch=amd64", self.buildid,
@@ -261,16 +280,22 @@ class TestCIBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertTrue(self.builder.wasCalled("buildFail"))
         self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "build:0.log": b"I am a failing CI build job log.",
+            "lint:0.log": b"I am a failing CI lint job log.",
+            "build:0.log": b"I am a CI build job log.",
             }))
 
-        # Output from the first job is visible in the status response.
+        # Output from the two jobs in the first pipeline stage is visible in
+        # the status response.
         extra_status = self.buildmanager.status()
         self.assertEqual(
             {
+                "lint:0": {
+                    "log": self.builder.waitingfiles["lint:0.log"],
+                    "result": RESULT_FAILED,
+                    },
                 "build:0": {
                     "log": self.builder.waitingfiles["build:0.log"],
-                    "result": RESULT_FAILED,
+                    "result": RESULT_SUCCEEDED,
                     },
                 },
             extra_status["jobs"])
