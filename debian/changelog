@@ -1,9 +1,9 @@
-launchpad-buildd (207) UNRELEASED; urgency=medium
+launchpad-buildd (207) bionic; urgency=medium
 
   * Return results from individual CI jobs.
   * Support CI pipeline stages with multiple jobs.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 13 Jan 2022 14:51:09 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 03 Feb 2022 10:40:58 +0000
 
 launchpad-buildd (206) bionic; urgency=medium
 
