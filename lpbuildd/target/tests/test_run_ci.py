@@ -313,7 +313,7 @@ class TestRunCI(TestCase):
             RanCommand(["mkdir", "-p", "/build/output/test:0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output /build/output/test:0 test 0 2>&1 "
+                "lpcraft -v run-one --output-directory /build/output/test:0 test 0 2>&1 "  # noqa: E501
                 "| tee /build/output/test:0.log",
                 ], cwd="/build/tree"),
             ]))
@@ -337,7 +337,7 @@ class TestRunCI(TestCase):
             RanCommand(["mkdir", "-p", "/build/output/test:0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output /build/output/test:0 test 0 2>&1 "
+                "lpcraft -v run-one --output-directory /build/output/test:0 test 0 2>&1 "  # noqa: E501
                 "| tee /build/output/test:0.log",
                 ], cwd="/build/tree", **env),
             ]))
