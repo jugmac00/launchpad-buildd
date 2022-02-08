@@ -1,7 +1,11 @@
 launchpad-buildd (208) UNRELEASED; urgency=medium
 
+  [ Jürgen Gmach ]
   * Adjust updated command line option for the CI runner.
   * Publish documentation on Read the Docs. 
+
+  [ Colin Watson ]
+  * Rename BUILDD_SLAVE_CONFIG environment variable to BUILDD_CONFIG.
 
  -- Jürgen Gmach <juergen.gmach@canonical.com>  Mon, 07 Feb 2022 18:20:58 +0000
 
