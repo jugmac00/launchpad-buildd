@@ -1,8 +1,9 @@
 launchpad-buildd (208) UNRELEASED; urgency=medium
 
   * Adjust updated command line option for the CI runner.
+  * Publish documentation on Read the Docs. 
 
- -- Jürgen Gmach <juergen.gmach@canonical.com>  Mon, 07 Feb 2022 15:17:09 +0000
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Mon, 07 Feb 2022 18:20:58 +0000
 
 launchpad-buildd (207) bionic; urgency=medium
 
