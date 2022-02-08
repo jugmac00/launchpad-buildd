@@ -1,3 +1,9 @@
+launchpad-buildd (208) UNRELEASED; urgency=medium
+
+  * Adjust updated command line option for the CI runner.
+
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Mon, 07 Feb 2022 15:17:09 +0000
+
 launchpad-buildd (207) bionic; urgency=medium
 
   * Return results from individual CI jobs.

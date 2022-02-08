@@ -103,7 +103,7 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         output_path = os.path.join("/build", "output", job_id)
         self.backend.run(["mkdir", "-p", output_path])
         lpcraft_args = [
-            "lpcraft", "-v", "run-one", "--output", output_path,
+            "lpcraft", "-v", "run-one", "--output-directory", output_path,
             self.args.job_name, str(self.args.job_index),
             ]
         tee_args = ["tee", "%s.log" % output_path]
