@@ -1,4 +1,4 @@
-launchpad-buildd (208) UNRELEASED; urgency=medium
+launchpad-buildd (208) bionic; urgency=medium
 
   [ Jürgen Gmach ]
   * Adjust updated command line option for the CI runner.
@@ -7,7 +7,7 @@ launchpad-buildd (208) UNRELEASED; urgency=medium
   [ Colin Watson ]
   * Rename BUILDD_SLAVE_CONFIG environment variable to BUILDD_CONFIG.
 
- -- Jürgen Gmach <juergen.gmach@canonical.com>  Mon, 07 Feb 2022 18:20:58 +0000
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Wed, 09 Feb 2022 13:52:46 +0000
 
 launchpad-buildd (207) bionic; urgency=medium
 
