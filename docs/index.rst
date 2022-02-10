@@ -20,6 +20,24 @@ See https://dev.launchpad.net/ for more context.
    :maxdepth: 2
 
    self
-   developing
-   building
-   deployment
+
+How-to guides
+-------------
+
+.. toctree::
+   :maxdepth: 1
+
+   how-to/developing
+   how-to/changelog_entry
+   how-to/building
+   how-to/deployment
+   how-to/qa
+
+
+Explanation
+-----------
+
+.. toctree::
+   :maxdepth: 1
+
+   explanation/deployment
