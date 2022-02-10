@@ -1,5 +1,5 @@
-Building the project
-********************
+How to build the project
+************************
 
 In order to build the package you need ``dpkg-dev`` and ``fakeroot``.
 

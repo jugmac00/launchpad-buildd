@@ -1,5 +1,5 @@
-Developing
-**********
+How to set up a development environment
+***************************************
 
 First of all, it is recommended that you create an lxc container, since the
 following steps will make changes in your system. And since some build types
@@ -29,13 +29,3 @@ test suite both in python2 and python3.
 More information on how to integrate it with Launchpad can be found here:
 https://dev.launchpad.net/Soyuz/HowToDevelopWithBuildd
 
-
-Creating a changelog entry
---------------------------
-
-In order to create a changelog entry in ``debian/changelog``,
-you need to run ``dch`` from the ``devscripts`` package.
-
-.. code:: bash
-
-    dch -U
