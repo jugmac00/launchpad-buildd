@@ -42,7 +42,7 @@ def install_packages():
     cache_dir = os.path.join(hookenv.charm_dir(), "cache")
     host.mkdir(cache_dir, perms=0o755)
     to_install = []
-    packages = ["launchpad-buildd", "python-lpbuildd"]
+    packages = ["launchpad-buildd", "python3-lpbuildd"]
     options = ["--option=Dpkg::Options::=--force-confold"]
     resource_paths = [hookenv.resource_get(package) for package in packages]
     if all(path and os.path.getsize(path) for path in resource_paths):

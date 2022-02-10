@@ -3,7 +3,7 @@ TOPDIR ?= $(CURDIR)/..
 BUILDDIR ?= $(CURDIR)/dist
 TMPDIR ?= $(CURDIR)/tmp
 
-CHARM_SERIES ?= xenial
+CHARM_SERIES ?= bionic
 CHARM_SRC ?= $(CURDIR)
 JUJU_REPOSITORY = $(BUILDDIR)
 CHARMDIR = $(BUILDDIR)/$(CHARM_SERIES)/$(NAME)
@@ -34,7 +34,7 @@ $(CHARM): $(CHARM_SRC) | $(BUILDDIR)
 	rm -rf $(CHARMDIR)
 	charm build -o $(BUILDDIR) -s $(CHARM_SERIES) -n $(NAME) $(EXTRA_CHARM_BUILD_ARGS)
 	touch $(CHARMDIR)/dummy-launchpad-buildd.deb
-	touch $(CHARMDIR)/dummy-python-lpbuildd.deb
+	touch $(CHARMDIR)/dummy-python3-lpbuildd.deb
 	touch $@
 
 clean:
@@ -48,7 +48,7 @@ $(RESOURCES):
 	mkdir -p $(RESOURCES)
 	cp -a $(TMPDIR)/launchpad-buildd_*.deb \
 	      $(RESOURCES)/launchpad-buildd.deb
-	cp -a $(TMPDIR)/python-lpbuildd_*.deb $(RESOURCES)/python-lpbuildd.deb
+	cp -a $(TMPDIR)/python3-lpbuildd_*.deb $(RESOURCES)/python3-lpbuildd.deb
 
 create-privileged-model:
 	juju add-model privileged localhost
@@ -60,7 +60,7 @@ deploy:
 deploy-with-packages:
 	juju deploy \
 		--resource=launchpad-buildd=$(RESOURCES)/launchpad-buildd.deb \
-		--resource=python-lpbuildd=$(RESOURCES)/python-lpbuildd.deb \
+		--resource=python3-lpbuildd=$(RESOURCES)/python3-lpbuildd.deb \
 		$(CHARMDIR)
 
 push:
@@ -69,7 +69,7 @@ push:
 push-with-packages:
 	charm push \
 		--resource=launchpad-buildd=$(CHARMDIR)/dummy-launchpad-buildd.deb \
-		--resource=python-lpbuildd=$(CHARMDIR)/dummy-python-lpbuildd.deb \
+		--resource=python3-lpbuildd=$(CHARMDIR)/dummy-python3-lpbuildd.deb \
 		$(CHARMDIR) $(CHARM_STORE_URL)
 
 .PHONY: build packages build-with-packages clean

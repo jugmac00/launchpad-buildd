@@ -1,3 +1,9 @@
+launchpad-buildd (209) UNRELEASED; urgency=medium
+
+  * Upgrade charm to bionic and Python 3.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 10 Feb 2022 09:27:28 +0000
+
 launchpad-buildd (208) bionic; urgency=medium
 
   [ Jürgen Gmach ]
