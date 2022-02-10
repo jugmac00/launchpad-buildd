@@ -8,14 +8,14 @@ tags:
 maintainer: Colin Watson <cjwatson@canonical.com>
 subordinate: false
 series:
-    - xenial
+    - bionic
 resources:
     launchpad-buildd:
         type: file
         filename: launchpad-buildd.deb
         description: The main Launchpad builder package.
-    python-lpbuildd:
+    python3-lpbuildd:
         type: file
-        filename: python-lpbuildd.deb
+        filename: python3-lpbuildd.deb
         description: Python libraries supporting the Launchpad builder.
 min-juju-version: 2.0.0
