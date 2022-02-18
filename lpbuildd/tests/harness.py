@@ -106,6 +106,15 @@ class BuilddTestSetup(TacTestFixture):
 
     >>> fixture.tearDown()
     """
+
+    def setUp(self, **kwargs):
+        # TacTestFixture defaults to /usr/bin/twistd, but on Ubuntu the
+        # Python 3 version of this is /usr/bin/twistd3, so that makes for a
+        # better default.
+        if kwargs.get("twistd_script") is None:
+            kwargs["twistd_script"] = "/usr/bin/twistd3"
+        super().setUp(**kwargs)
+
     def setUpRoot(self):
         """Recreate empty root directory to avoid problems."""
         if os.path.exists(self.root):
