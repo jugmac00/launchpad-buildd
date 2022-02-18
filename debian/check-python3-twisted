@@ -1,9 +1,0 @@
-#! /usr/bin/python3
-
-import sys
-
-import twisted
-
-
-ok = (twisted.version.major, twisted.version.minor) >= (16, 4)
-sys.exit(0 if ok else 1)

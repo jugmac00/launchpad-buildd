@@ -21,7 +21,5 @@ realclean:
 .PHONY: all clean deb
 
 check:
-	PYTHONPATH=$(CURDIR):$(PYTHONPATH) python -m testtools.run \
-		discover -v
 	PYTHONPATH=$(CURDIR):$(PYTHONPATH) python3 -m testtools.run \
 		discover -v

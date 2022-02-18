@@ -15,10 +15,7 @@ import stat
 import tarfile
 from textwrap import dedent
 import time
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+from unittest import mock
 
 from fixtures import (
     EnvironmentVariable,

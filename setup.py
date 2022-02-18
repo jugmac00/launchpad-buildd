@@ -71,7 +71,6 @@ setup(
     test_suite='lpbuildd',
     tests_require=[
         'fixtures',
-        'mock; python_version<"3"',
         'responses',
         'systemfixtures',
         'testtools',
