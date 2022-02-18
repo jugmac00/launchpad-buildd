@@ -53,6 +53,18 @@ setup(
     maintainer='Launchpad Developers',
     maintainer_email='launchpad-dev@lists.launchpad.net',
     license='Affero GPL v3',
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: GNU Affero General Public License v3",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+    ],
     install_requires=[
         # XXX cjwatson 2015-11-04: This does in fact require python-apt, but
         # that's normally shipped as a system package and specifying it here
