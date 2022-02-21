@@ -9,15 +9,16 @@ Most tests are done on subclasses instead.
 import io
 import re
 
-from fixtures import (
-    FakeLogger,
-    TempDir,
-    )
+from fixtures import TempDir
 import six
 from testtools import TestCase
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from twisted.internet import defer
-from twisted.python import log
+from twisted.logger import (
+    FileLogObserver,
+    formatEvent,
+    globalLogPublisher,
+    )
 
 from lpbuildd.builder import (
     Builder,
@@ -32,13 +33,14 @@ class TestBuildManager(TestCase):
 
     def setUp(self):
         super(TestBuildManager, self).setUp()
-        observer = log.PythonLoggingObserver()
-        observer.start()
-        self.addCleanup(observer.stop)
+        self.log_file = io.StringIO()
+        observer = FileLogObserver(
+            self.log_file, lambda event: formatEvent(event) + "\n")
+        globalLogPublisher.addObserver(observer)
+        self.addCleanup(globalLogPublisher.removeObserver, observer)
 
     @defer.inlineCallbacks
     def test_runSubProcess(self):
-        logger = self.useFixture(FakeLogger())
         config = FakeConfig()
         config.set("builder", "filecache", self.useFixture(TempDir()).path)
         builder = Builder(config)
@@ -56,11 +58,10 @@ class TestBuildManager(TestCase):
         self.assertEqual(
             "Build log: RUN: echo 'hello world'\n"
             "Build log: hello world\n",
-            logger.output)
+            self.log_file.getvalue())
 
     @defer.inlineCallbacks
     def test_runSubProcess_bytes(self):
-        logger = self.useFixture(FakeLogger())
         config = FakeConfig()
         config.set("builder", "filecache", self.useFixture(TempDir()).path)
         builder = Builder(config)
@@ -80,4 +81,4 @@ class TestBuildManager(TestCase):
             ["Build log: RUN: echo '%s'" % logged_snowman,
              "Build log: %s" % logged_snowman],
             [re.sub(r".*? \[-\] (.*)", r"\1", line)
-             for line in logger.output.splitlines()])
+             for line in self.log_file.getvalue().splitlines()])
