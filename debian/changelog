@@ -2,6 +2,10 @@ launchpad-buildd (209) UNRELEASED; urgency=medium
 
   * Upgrade charm to bionic and Python 3.
   * Remove Python 2 support.
+  * Unversion python-debian requirement, since the minimum version required
+    was very old (pre-xenial) and the version of the packaged python-debian
+    confuses modern pip/setuptools (see
+    https://bugs.launchpad.net/bugs/1926870).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 10 Feb 2022 09:27:28 +0000
 

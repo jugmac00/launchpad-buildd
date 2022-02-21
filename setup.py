@@ -70,7 +70,7 @@ setup(
         # that's normally shipped as a system package and specifying it here
         # causes problems for Launchpad's build system.
         # 'python-apt',
-        'python-debian>=0.1.23',
+        'python-debian',
         'requests',
         'six',
         'Twisted',
