@@ -56,16 +56,19 @@ class TestGenerateTranslationTemplates(TestCase):
         """Make a bzr branch from an existing directory."""
         bzr_home = self.useFixture(TempDir()).path
         self.useFixture(EnvironmentVariable("BZR_HOME", bzr_home))
+        self.useFixture(EnvironmentVariable("BRZ_HOME", bzr_home))
         self.useFixture(EnvironmentVariable("BZR_EMAIL"))
+        self.useFixture(EnvironmentVariable("BRZ_EMAIL"))
         self.useFixture(EnvironmentVariable("EMAIL"))
 
         subprocess.check_call(["bzr", "init", "-q"], cwd=branch_path)
         subprocess.check_call(["bzr", "add", "-q"], cwd=branch_path)
         committer_id = "Committer <committer@example.com>"
         with EnvironmentVariable("BZR_EMAIL", committer_id):
-            subprocess.check_call(
-                ["bzr", "commit", "-q", "-m", "Populating branch."],
-                cwd=branch_path)
+            with EnvironmentVariable("BRZ_EMAIL", committer_id):
+                subprocess.check_call(
+                    ["bzr", "commit", "-q", "-m", "Populating branch."],
+                    cwd=branch_path)
 
     def make_git_branch(self, branch_path):
         subprocess.check_call(["git", "init", "-q"], cwd=branch_path)
