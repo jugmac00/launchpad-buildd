@@ -6,6 +6,8 @@ launchpad-buildd (209) UNRELEASED; urgency=medium
     was very old (pre-xenial) and the version of the packaged python-debian
     confuses modern pip/setuptools (see
     https://bugs.launchpad.net/bugs/1926870).
+  * Depend on dnsmasq-base.  The LXD backend needs this, but it's no longer
+    in cloud images as of focal.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 10 Feb 2022 09:27:28 +0000
 
