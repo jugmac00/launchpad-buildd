@@ -16,6 +16,3 @@ override_dh_auto_build:
 	python3 buildd-genconfig --template=template-buildd-slave.conf \
 	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
 		> buildd-slave-example.conf
-
-override_dh_builddeb:
-	dh_builddeb -- -Zgzip
