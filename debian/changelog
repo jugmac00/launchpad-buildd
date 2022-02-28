@@ -1,3 +1,10 @@
+launchpad-buildd (210) UNRELEASED; urgency=medium
+
+  * Stop building with dpkg-deb -Zgzip; we no longer need to install on
+    lucid.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 28 Feb 2022 11:27:20 +0000
+
 launchpad-buildd (209) bionic; urgency=medium
 
   * Upgrade charm to bionic and Python 3.
