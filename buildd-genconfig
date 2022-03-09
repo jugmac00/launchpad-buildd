@@ -3,8 +3,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
 from optparse import OptionParser
 import os
 
@@ -49,7 +47,7 @@ parser.add_option(
 
 (options, args) = parser.parse_args()
 
-template = open(options.TEMPLATE, "r").read()
+template = open(options.TEMPLATE).read()
 
 replacements = {
     "@NAME@": options.NAME,

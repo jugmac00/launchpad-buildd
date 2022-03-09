@@ -1,8 +1,6 @@
 # Copyright 2017-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import io
 import stat
 import subprocess
@@ -26,13 +24,13 @@ from lpbuildd.tests.fakebuilder import FakeMethod
 class MockCopyIn(FakeMethod):
 
     def __init__(self, *args, **kwargs):
-        super(MockCopyIn, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.source_bytes = None
 
     def __call__(self, source_path, *args, **kwargs):
         with open(source_path, "rb") as source:
             self.source_bytes = source.read()
-        return super(MockCopyIn, self).__call__(source_path, *args, **kwargs)
+        return super().__call__(source_path, *args, **kwargs)
 
 
 class TestOverrideSourcesList(TestCase):
@@ -124,7 +122,7 @@ class TestAddTrustedKeys(TestCase):
 class RanAptGet(MatchesListwise):
 
     def __init__(self, args_list):
-        super(RanAptGet, self).__init__([
+        super().__init__([
             MatchesListwise([
                 Equals((["/usr/bin/apt-get"] + args,)),
                 ContainsDict({
@@ -161,7 +159,7 @@ class TestUpdate(TestCase):
     def test_first_run_fails(self):
         class FailFirstTime(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
-                super(FailFirstTime, self).__call__(run_args, *args, **kwargs)
+                super().__call__(run_args, *args, **kwargs)
                 if len(self.calls) == 1:
                     raise subprocess.CalledProcessError(1, run_args)
 

@@ -1,10 +1,6 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import logging
 import os.path
 import tempfile
@@ -31,7 +27,7 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
 
     @classmethod
     def add_arguments(cls, parser):
-        super(BuildOCI, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--build-file", help="path to Dockerfile in branch")
         parser.add_argument(
@@ -45,7 +41,7 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
         parser.add_argument("name", help="name of image to build")
 
     def __init__(self, args, parser):
-        super(BuildOCI, self).__init__(args, parser)
+        super().__init__(args, parser)
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
 
     def _add_docker_engine_proxy_settings(self):
@@ -56,11 +52,10 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
         # we need both http_proxy and https_proxy. The contents of the files
         # are otherwise identical
         for setting in ['http_proxy', 'https_proxy']:
-            contents = dedent("""[Service]
-                Environment="{}={}"
-                """.format(setting.upper(), self.args.proxy_url))
-            file_path = "/etc/systemd/system/docker.service.d/{}.conf".format(
-                setting)
+            contents = dedent(f"""[Service]
+                Environment="{setting.upper()}={self.args.proxy_url}"
+                """)
+            file_path = f"/etc/systemd/system/docker.service.d/{setting}.conf"
             with tempfile.NamedTemporaryFile(mode="w+") as systemd_file:
                 systemd_file.write(contents)
                 systemd_file.flush()
@@ -97,7 +92,7 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
         if self.args.proxy_url:
             for var in ("http_proxy", "https_proxy"):
                 args.extend(
-                    ["--build-arg", "{}={}".format(var, self.args.proxy_url)])
+                    ["--build-arg", f"{var}={self.args.proxy_url}"])
         args.extend(["--tag", self.args.name])
         if self.args.build_file is not None:
             build_file_path = os.path.join(

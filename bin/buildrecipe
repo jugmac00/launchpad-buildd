@@ -4,11 +4,6 @@
 
 """A script that builds a package from a recipe and a chroot."""
 
-from __future__ import print_function
-
-__metaclass__ = type
-
-import io
 from optparse import OptionParser
 import os
 import pwd
@@ -157,8 +152,8 @@ class RecipeBuilder:
         retcode = call_report(cmd, env=env)
         if retcode != 0:
             return retcode
-        (source,) = [name for name in os.listdir(self.tree_path)
-                     if os.path.isdir(os.path.join(self.tree_path, name))]
+        (source,) = (name for name in os.listdir(self.tree_path)
+                     if os.path.isdir(os.path.join(self.tree_path, name)))
         self.source_dir_relative = os.path.join(
             self.work_dir_relative, 'tree', source)
         return retcode
@@ -167,8 +162,8 @@ class RecipeBuilder:
         source_dir = os.path.join(
             self.chroot_path, self.source_dir_relative.lstrip('/'))
         changelog = os.path.join(source_dir, 'debian/changelog')
-        return io.open(
-            changelog, 'r', errors='replace').readline().split(' ')[0]
+        return open(
+            changelog, errors='replace').readline().split(' ')[0]
 
     def getSourceControl(self):
         """Return the parsed source control stanza from the source tree."""
@@ -203,7 +198,7 @@ class RecipeBuilder:
                     "Build-Conflicts", "Build-Conflicts-Indep",
                     ):
                 if field in control:
-                    print("%s: %s" % (field, control[field]), file=dummy_dsc)
+                    print(f"{field}: {control[field]}", file=dummy_dsc)
             print(file=dummy_dsc)
 
     def runAptFtparchive(self):

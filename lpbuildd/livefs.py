@@ -1,8 +1,6 @@
 # Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import os
 
 from six.moves.configparser import (
@@ -48,8 +46,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.cohort_key = extra_args.get("cohort-key")
         self.debug = extra_args.get("debug", False)
 
-        super(LiveFilesystemBuildManager, self).initiate(
-            files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the process to build the live filesystem."""

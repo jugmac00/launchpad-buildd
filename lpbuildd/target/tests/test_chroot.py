@@ -1,8 +1,6 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import io
 import os.path
 import signal
@@ -34,7 +32,7 @@ from lpbuildd.target.tests.testfixtures import (
 class TestChroot(TestCase):
 
     def setUp(self):
-        super(TestChroot, self).setUp()
+        super().setUp()
         self.useFixture(CarefulFakeProcessFixture())
 
     def test_create(self):
@@ -127,7 +125,7 @@ class TestChroot(TestCase):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
-        arg = u"\N{SNOWMAN}"
+        arg = "\N{SNOWMAN}"
         Chroot("1", "xenial", "amd64").run(["echo", arg])
 
         expected_args = [
@@ -315,9 +313,9 @@ class TestChroot(TestCase):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))
         processes_fixture = self.useFixture(FakeProcesses())
         test_proc_infos = iter([
-            {"stdout": io.StringIO(u"Package: snapd\n")},
+            {"stdout": io.StringIO("Package: snapd\n")},
             {"returncode": 100},
-            {"stderr": io.StringIO(u"N: No packages found\n")},
+            {"stderr": io.StringIO("N: No packages found\n")},
             ])
         processes_fixture.add(lambda _: next(test_proc_infos), name="sudo")
         self.assertTrue(
@@ -375,14 +373,15 @@ class TestChroot(TestCase):
         fs_fixture.remove("/proc/self/fd")
         os.mkdir("/proc")
         with open("/proc/mounts", "w") as mounts_file:
-            mounts_file.write(dedent("""\
+            chroot = "/expected/home/build-1/chroot-autobuild"
+            mounts_file.write(dedent(f"""\
                 sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
                 proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
                 none {chroot}/proc proc rw,relatime 0 0
                 none {chroot}/dev/pts devpts rw,relative,gid=5,mode=620 0 0
                 none {chroot}/sys sysfs rw,relatime 0 0
                 none {chroot}/dev/shm tmpfs rw,relatime 0 0
-                """.format(chroot="/expected/home/build-1/chroot-autobuild")))
+                """))
 
     def test_stop(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))

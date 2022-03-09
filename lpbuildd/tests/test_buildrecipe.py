@@ -1,10 +1,6 @@
 # Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 from contextlib import contextmanager
 import imp
 import io
@@ -49,22 +45,22 @@ class RanCommand(MatchesListwise):
 
     def __init__(self, *args):
         args_matchers = [
-            Equals(arg) if isinstance(arg, six.string_types) else arg
+            Equals(arg) if isinstance(arg, str) else arg
             for arg in args]
-        super(RanCommand, self).__init__(args_matchers)
+        super().__init__(args_matchers)
 
 
 class RanInChroot(RanCommand):
 
     def __init__(self, home_dir, *args):
-        super(RanInChroot, self).__init__(
+        super().__init__(
             "sudo", "/usr/sbin/chroot",
             os.path.join(home_dir, "build-1", "chroot-autobuild"), *args)
 
 
 class TestRecipeBuilder(TestCase):
     def setUp(self):
-        super(TestRecipeBuilder, self).setUp()
+        super().setUp()
         self.save_env = dict(os.environ)
         self.home_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.home_dir))
@@ -86,7 +82,7 @@ class TestRecipeBuilder(TestCase):
 
     def tearDown(self):
         self.resetEnvironment()
-        super(TestRecipeBuilder, self).tearDown()
+        super().tearDown()
 
     def test_is_command_on_path_missing_environment(self):
         self.useFixture(EnvironmentVariable("PATH"))
@@ -127,10 +123,10 @@ class TestRecipeBuilder(TestCase):
 
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.StringIO(u"5.10\n")}, name="sudo")
+            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo")
         processes_fixture.add(fake_git, name="git")
         processes_fixture.add(
-            lambda _: {"stdout": io.StringIO(u"git-build-recipe\tx.y.z\n")},
+            lambda _: {"stdout": io.StringIO("git-build-recipe\tx.y.z\n")},
             name="dpkg-query")
         processes_fixture.add(fake_git_build_recipe, name="git-build-recipe")
         self.builder = RecipeBuilder(
@@ -148,7 +144,7 @@ class TestRecipeBuilder(TestCase):
             "git-build-recipe", "--safe", "--no-build",
             "--manifest", os.path.join(self.builder.tree_path, "manifest"),
             "--distribution", "grumpy", "--allow-fallback-to-native",
-            "--append-version", u"~ubuntu5.10.1",
+            "--append-version", "~ubuntu5.10.1",
             os.path.join(self.builder.work_dir, "recipe"),
             self.builder.tree_path,
             ]
@@ -183,7 +179,7 @@ class TestRecipeBuilder(TestCase):
 
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.StringIO(u"5.10\n")}, name="sudo")
+            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo")
         processes_fixture.add(fake_bzr, name="bzr")
         processes_fixture.add(
             fake_brz_build_daily_recipe, name="brz-build-daily-recipe")
@@ -202,7 +198,7 @@ class TestRecipeBuilder(TestCase):
             "brz-build-daily-recipe", "--safe", "--no-build",
             "--manifest", os.path.join(self.builder.tree_path, "manifest"),
             "--distribution", "grumpy", "--allow-fallback-to-native",
-            "--append-version", u"~ubuntu5.10.1",
+            "--append-version", "~ubuntu5.10.1",
             os.path.join(self.builder.work_dir, "recipe"),
             self.builder.tree_path,
             ]
@@ -236,7 +232,7 @@ class TestRecipeBuilder(TestCase):
 
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.StringIO(u"5.10\n")}, name="sudo")
+            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo")
         processes_fixture.add(fake_bzr, name="bzr")
         with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
             f.write("dummy recipe contents\n")
@@ -252,7 +248,7 @@ class TestRecipeBuilder(TestCase):
             "bzr", "-Derror", "dailydeb", "--safe", "--no-build",
             "--manifest", os.path.join(self.builder.tree_path, "manifest"),
             "--distribution", "grumpy", "--allow-fallback-to-native",
-            "--append-version", u"~ubuntu5.10.1",
+            "--append-version", "~ubuntu5.10.1",
             os.path.join(self.builder.work_dir, "recipe"),
             self.builder.tree_path,
             ]

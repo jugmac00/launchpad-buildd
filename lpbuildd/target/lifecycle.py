@@ -1,10 +1,6 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import logging
 import os
 import sys
@@ -22,7 +18,7 @@ class Create(Operation):
 
     @classmethod
     def add_arguments(cls, parser):
-        super(Create, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--image-type", default="chroot", help="base image type")
         parser.add_argument("image_path", help="path to base image")

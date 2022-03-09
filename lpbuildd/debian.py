@@ -4,10 +4,7 @@
 # Authors: Daniel Silverstone <daniel.silverstone@canonical.com>
 #      and Adam Conrad <adam.conrad@canonical.com>
 
-__metaclass__ = type
-
 import base64
-import io
 import os
 import re
 import signal
@@ -123,7 +120,7 @@ class DebianBuildManager(BuildManager):
         path = self.getChangesFilename()
         self._builder.addWaitingFile(path)
 
-        with io.open(path, "r", errors="replace") as chfile:
+        with open(path, errors="replace") as chfile:
             for fn in self._parseChangesFile(chfile):
                 self._builder.addWaitingFile(
                     get_build_path(self.home, self._buildid, fn))
@@ -345,7 +342,7 @@ class DebianBuildManager(BuildManager):
 
     def abort(self):
         """See `BuildManager`."""
-        super(DebianBuildManager, self).abort()
+        super().abort()
         if self._iterator is not None:
             self._iterator.cancel()
             self._iterator = None

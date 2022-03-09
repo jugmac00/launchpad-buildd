@@ -1,10 +1,6 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import argparse
 from contextlib import closing
 import io
@@ -55,7 +51,7 @@ LXD_RUNNING = 103
 class FakeLXDAPIException(LXDAPIException):
 
     def __init__(self):
-        super(FakeLXDAPIException, self).__init__(None)
+        super().__init__(None)
 
     def __str__(self):
         return "Fake LXD exception"
@@ -89,20 +85,20 @@ class FakeHostname:
         parser.add_argument("--fqdn", action="store_true", default=False)
         args = parser.parse_args(proc_args["args"][1:])
         output = self.fqdn if args.fqdn else self.hostname
-        return {"stdout": io.StringIO(output + u"\n")}
+        return {"stdout": io.StringIO(output + "\n")}
 
 
 class FakeFilesystem(_FakeFilesystem):
     # Add support for os.mknod to the upstream implementation.
 
     def _setUp(self):
-        super(FakeFilesystem, self)._setUp()
+        super()._setUp()
         self._devices = {}
         self.useFixture(
             Overlay("os.mknod", self._mknod, self._is_fake_path))
 
     def _stat(self, real, path, *args, **kwargs):
-        r = super(FakeFilesystem, self)._stat(real, path, *args, **kwargs)
+        r = super()._stat(real, path, *args, **kwargs)
         if path in self._devices:
             r = os.stat_result(list(r), {"st_rdev": self._devices[path]})
         return r
@@ -117,7 +113,7 @@ class FakeFilesystem(_FakeFilesystem):
 class TestLXD(TestCase):
 
     def setUp(self):
-        super(TestLXD, self).setUp()
+        super().setUp()
         self.useFixture(CarefulFakeProcessFixture())
 
     def make_chroot_tarball(self, output_path):
@@ -294,7 +290,7 @@ class TestLXD(TestCase):
             ("lxc.mount.auto", "proc:rw sys:rw"),
             ]
 
-        major, minor = [int(v) for v in driver_version.split(".")[0:2]]
+        major, minor = (int(v) for v in driver_version.split(".")[0:2])
 
         if major >= 3:
             raw_lxc_config.extend([
@@ -310,7 +306,7 @@ class TestLXD(TestCase):
                 ])
 
         raw_lxc_config = "".join(
-            "{key}={val}\n".format(key=key, val=val)
+            f"{key}={val}\n"
             for key, val in sorted(raw_lxc_config + extra_raw_lxc_config))
 
         expected_config = {
@@ -410,7 +406,7 @@ class TestLXD(TestCase):
             elif command == "remove":
                 os.remove("/dev/dm-0")
             else:
-                self.fail("unexpected dmsetup command %r" % (command,))
+                self.fail(f"unexpected dmsetup command {command!r}")
             return {}
         processes_fixture.add(fake_sudo, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
@@ -636,7 +632,7 @@ class TestLXD(TestCase):
     def test_run_non_ascii_arguments(self):
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="lxc")
-        arg = u"\N{SNOWMAN}"
+        arg = "\N{SNOWMAN}"
         LXD("1", "xenial", "amd64").run(["echo", arg])
 
         expected_args = [
@@ -849,9 +845,9 @@ class TestLXD(TestCase):
     def test_is_package_available(self):
         processes_fixture = self.useFixture(FakeProcesses())
         test_proc_infos = iter([
-            {"stdout": io.StringIO(u"Package: snapd\n")},
+            {"stdout": io.StringIO("Package: snapd\n")},
             {"returncode": 100},
-            {"stderr": io.StringIO(u"N: No packages found\n")},
+            {"stderr": io.StringIO("N: No packages found\n")},
             ])
         processes_fixture.add(lambda _: next(test_proc_infos), name="lxc")
         self.assertTrue(

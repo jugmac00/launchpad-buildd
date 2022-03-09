@@ -3,6 +3,7 @@ launchpad-buildd (210) UNRELEASED; urgency=medium
   * Stop building with dpkg-deb -Zgzip; we no longer need to install on
     lucid.
   * Make more loop device nodes available in LXD containers (LP: #1963706).
+  * Drop pre-Python-3.6 code using pyupgrade.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 28 Feb 2022 11:27:20 +0000
 

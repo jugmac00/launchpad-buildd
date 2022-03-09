@@ -1,8 +1,6 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import logging
 import os
 
@@ -29,7 +27,7 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
 
     @classmethod
     def add_arguments(cls, parser):
-        super(RunCIPrepare, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
             dest="channels", default={}, help="install SNAP from CHANNEL")
@@ -90,7 +88,7 @@ class RunCI(BuilderProxyOperationMixin, Operation):
 
     @classmethod
     def add_arguments(cls, parser):
-        super(RunCI, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument("job_name", help="job name to run")
         parser.add_argument(
             "job_index", type=int, help="index within job name to run")
@@ -98,7 +96,7 @@ class RunCI(BuilderProxyOperationMixin, Operation):
     def run_job(self):
         logger.info("Running job phase...")
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
-        job_id = "%s:%s" % (self.args.job_name, self.args.job_index)
+        job_id = f"{self.args.job_name}:{self.args.job_index}"
         logger.info("Running %s" % job_id)
         output_path = os.path.join("/build", "output", job_id)
         self.backend.run(["mkdir", "-p", output_path])
@@ -106,11 +104,13 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             "lpcraft", "-v", "run-one", "--output-directory", output_path,
             self.args.job_name, str(self.args.job_index),
             ]
+        escaped_lpcraft_args = (
+            " ".join(shell_escape(arg) for arg in lpcraft_args))
         tee_args = ["tee", "%s.log" % output_path]
+        escaped_tee_args = " ".join(shell_escape(arg) for arg in tee_args)
         args = [
-            "/bin/bash", "-o", "pipefail", "-c", "%s 2>&1 | %s" % (
-                " ".join(shell_escape(arg) for arg in lpcraft_args),
-                " ".join(shell_escape(arg) for arg in tee_args)),
+            "/bin/bash", "-o", "pipefail", "-c",
+            f"{escaped_lpcraft_args} 2>&1 | {escaped_tee_args}",
             ]
         self.run_build_command(args, env=env)
 

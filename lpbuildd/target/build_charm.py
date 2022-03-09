@@ -1,10 +1,6 @@
 # Copyright 2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import logging
 import os
 
@@ -32,20 +28,19 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
 
     @classmethod
     def add_arguments(cls, parser):
-        super(BuildCharm, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
             dest="channels", default={}, help=(
-                "install SNAP from CHANNEL "
-                "(supported snaps: {}, charmcraft)".format(
-                    ", ".join(cls.core_snap_names))))
+                f"install SNAP from CHANNEL (supported snaps: "
+                f"{', '.join(cls.core_snap_names)}, charmcraft)"))
         parser.add_argument(
             "--build-path", default=".",
             help="location of charm to build.")
         parser.add_argument("name", help="name of charm to build")
 
     def __init__(self, args, parser):
-        super(BuildCharm, self).__init__(args, parser)
+        super().__init__(args, parser)
         self.buildd_path = os.path.join("/home/buildd", self.args.name)
 
     def install(self):

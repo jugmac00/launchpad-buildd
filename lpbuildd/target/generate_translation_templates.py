@@ -1,10 +1,6 @@
 # Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import logging
 import os.path
 
@@ -27,13 +23,13 @@ class GenerateTranslationTemplates(VCSOperationMixin, Operation):
 
     @classmethod
     def add_arguments(cls, parser):
-        super(GenerateTranslationTemplates, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "result_name",
             help="the name of the result tarball; should end in '.tar.gz'")
 
     def __init__(self, args, parser):
-        super(GenerateTranslationTemplates, self).__init__(args, parser)
+        super().__init__(args, parser)
         self.work_dir = os.environ["HOME"]
         self.branch_dir = os.path.join(self.work_dir, "source-tree")
 

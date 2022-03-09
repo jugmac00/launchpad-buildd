@@ -1,8 +1,6 @@
 # Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import os
 import subprocess
 import tarfile
@@ -33,7 +31,7 @@ class TestGenerateTranslationTemplates(TestCase):
     result_name = "translation-templates.tar.gz"
 
     def setUp(self):
-        super(TestGenerateTranslationTemplates, self).setUp()
+        super().setUp()
         self.home_dir = self.useFixture(TempDir()).path
         self.useFixture(EnvironmentVariable("HOME", self.home_dir))
         self.logger = self.useFixture(FakeLogger())

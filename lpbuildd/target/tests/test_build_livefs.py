@@ -1,8 +1,6 @@
 # Copyright 2017-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import subprocess
 from textwrap import dedent
 
@@ -200,7 +198,7 @@ class TestBuildLiveFS(TestCase):
             "buildlivefs",
             "--backend=fake", "--series=xenial", "--arch=amd64", "1",
             "--project=ubuntu-cpc",
-            "--http-proxy={}".format(proxy),
+            f"--http-proxy={proxy}",
             ]
         build_livefs = parse_args(args=args).operation
         build_livefs.build()
@@ -237,7 +235,7 @@ class TestBuildLiveFS(TestCase):
     def test_run_install_fails(self):
         class FailInstall(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
-                super(FailInstall, self).__call__(run_args, *args, **kwargs)
+                super().__call__(run_args, *args, **kwargs)
                 if run_args[0] == "apt-get":
                     raise subprocess.CalledProcessError(1, run_args)
 
@@ -254,7 +252,7 @@ class TestBuildLiveFS(TestCase):
     def test_run_build_fails(self):
         class FailBuild(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
-                super(FailBuild, self).__call__(run_args, *args, **kwargs)
+                super().__call__(run_args, *args, **kwargs)
                 if run_args[0] == "rm":
                     raise subprocess.CalledProcessError(1, run_args)
 

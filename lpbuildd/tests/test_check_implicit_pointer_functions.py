@@ -113,7 +113,7 @@ class TestFilterLog(TestCase):
 class TestCheckImplicitPointerFunctionsScript(TestCase):
 
     def setUp(self):
-        super(TestCheckImplicitPointerFunctionsScript, self).setUp()
+        super().setUp()
         top = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         self.script = os.path.join(

@@ -1,8 +1,6 @@
 # Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import os
 import shutil
 import tempfile
@@ -23,7 +21,7 @@ from lpbuildd.tests.matchers import HasWaitingFiles
 
 class MockBuildManager(SourcePackageRecipeBuildManager):
     def __init__(self, *args, **kwargs):
-        super(MockBuildManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.commands = []
         self.iterators = []
 
@@ -41,7 +39,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
-        super(TestSourcePackageRecipeBuildManagerIteration, self).setUp()
+        super().setUp()
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
         builder_dir = os.path.join(self.working_dir, 'builder')
@@ -98,7 +96,7 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             expected_command.append('--git')
         expected_command.extend([
             self.buildid,
-            'Steve\u1234'.encode('utf-8'), 'stevea@example.org',
+            'Steve\u1234'.encode(), 'stevea@example.org',
             'maverick', 'maverick', 'universe', 'puppies',
             ])
         self.assertEqual(expected_command, self.buildmanager.commands[-1])

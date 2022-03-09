@@ -1,8 +1,6 @@
 # Copyright 2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
 import os.path
 import re
 import shutil
@@ -49,7 +47,7 @@ def install_packages():
         # Install from resources.
         changed = False
         for package, resource_path in zip(packages, resource_paths):
-            local_path = os.path.join(cache_dir, "{}.deb".format(package))
+            local_path = os.path.join(cache_dir, f"{package}.deb")
             to_install.append((local_path, resource_path))
             if host.file_hash(local_path) != host.file_hash(resource_path):
                 changed = True
@@ -62,14 +60,13 @@ def install_packages():
         to_install.extend([(None, package) for package in packages])
     new_paths = [new_path for _, new_path in to_install]
     try:
-        status_set(None, "Installing {}".format(",".join(packages)))
+        status_set(None, f"Installing {','.join(packages)}")
         fetch.apt_unhold(packages)
         fetch.apt_install(new_paths, options=options)
         fetch.apt_hold(packages)
     except subprocess.CalledProcessError:
         status_set(
-            "blocked",
-            "Unable to install packages {}".format(",".join(packages)))
+            "blocked", f"Unable to install packages {','.join(packages)}")
     else:
         for local_path, resource_path in to_install:
             if local_path is not None:

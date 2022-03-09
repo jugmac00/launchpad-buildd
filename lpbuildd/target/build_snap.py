@@ -1,10 +1,6 @@
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import argparse
 import json
 import logging
@@ -32,13 +28,12 @@ class SnapChannelsAction(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         if nargs is not None:
             raise ValueError("nargs not allowed")
-        super(SnapChannelsAction, self).__init__(
-            option_strings, dest, **kwargs)
+        super().__init__(option_strings, dest, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         if "=" not in values:
             raise argparse.ArgumentError(
-                self, "'{}' is not of the form 'snap=channel'".format(values))
+                self, f"'{values}' is not of the form 'snap=channel'")
         snap, channel = values.split("=", 1)
         if getattr(namespace, self.dest, None) is None:
             setattr(namespace, self.dest, {})
@@ -54,13 +49,12 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
 
     @classmethod
     def add_arguments(cls, parser):
-        super(BuildSnap, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
             dest="channels", default={}, help=(
-                "install SNAP from CHANNEL "
-                "(supported snaps: {}, snapcraft)".format(
-                    ", ".join(cls.core_snap_names))))
+                f"install SNAP from CHANNEL (supported snaps: "
+                f"{', '.join(cls.core_snap_names)}, snapcraft)"))
         parser.add_argument(
             "--build-request-id",
             help="ID of the request triggering this build on Launchpad")
@@ -81,18 +75,18 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
 
     def install_svn_servers(self):
         proxy = urlparse(self.args.proxy_url)
-        svn_servers = dedent("""\
+        svn_servers = dedent(f"""\
             [global]
-            http-proxy-host = {host}
-            http-proxy-port = {port}
-            """.format(host=proxy.hostname, port=proxy.port))
+            http-proxy-host = {proxy.hostname}
+            http-proxy-port = {proxy.port}
+            """)
         # We should never end up with an authenticated proxy here since
         # lpbuildd.snap deals with it, but it's almost as easy to just
         # handle it as to assert that we don't need to.
         if proxy.username:
-            svn_servers += "http-proxy-username = {}\n".format(proxy.username)
+            svn_servers += f"http-proxy-username = {proxy.username}\n"
         if proxy.password:
-            svn_servers += "http-proxy-password = {}\n".format(proxy.password)
+            svn_servers += f"http-proxy-password = {proxy.password}\n"
         with tempfile.NamedTemporaryFile(mode="w+") as svn_servers_file:
             svn_servers_file.write(svn_servers)
             svn_servers_file.flush()
@@ -148,8 +142,7 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
     def image_info(self):
         data = {}
         if self.args.build_request_id is not None:
-            data["build-request-id"] = 'lp-{}'.format(
-                self.args.build_request_id)
+            data["build-request-id"] = f'lp-{self.args.build_request_id}'
         if self.args.build_request_timestamp is not None:
             data["build-request-timestamp"] = self.args.build_request_timestamp
         if self.args.build_url is not None:

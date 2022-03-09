@@ -5,8 +5,6 @@
 # This is a script to do end-to-end testing of the buildd with a bzr-builder
 # recipe, without involving the BuilderBehaviour.
 
-from __future__ import print_function
-
 import sys
 
 from six.moves.xmlrpc_client import ServerProxy
@@ -22,7 +20,7 @@ def deb_line(host, suites):
     prefix = 'deb http://'
     if apt_cacher_ng_host is not None:
         prefix += '%s:3142/' % apt_cacher_ng_host
-    return '%s%s %s %s' % (prefix, host, distroseries_name, suites)
+    return f'{prefix}{host} {distroseries_name} {suites}'
 
 
 proxy = ServerProxy('http://localhost:8221/rpc')
@@ -35,7 +33,7 @@ if status[0] != 'BuilderStatus.IDLE':
     sys.exit(1)
 print(proxy.build(
     '1-2', 'sourcepackagerecipe', '1ef177161c3cb073e66bf1550931c6fbaa0a94b0',
-    {}, {'author_name': u'Steve\u1234',
+    {}, {'author_name': 'Steve\u1234',
          'author_email': 'stevea@example.org',
          'suite': distroseries_name,
          'distroseries_name': distroseries_name,

@@ -1,8 +1,6 @@
 # Copyright 2017-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import base64
 import os.path
 import shutil
@@ -28,7 +26,7 @@ class MockBuildManager(DebianBuildManager):
     initial_build_state = MockBuildState.MAIN
 
     def __init__(self, *args, **kwargs):
-        super(MockBuildManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.commands = []
         self.iterators = []
         self.arch_indep = False
@@ -59,7 +57,7 @@ class TestDebianBuildManagerIteration(TestCase):
     """Run a generic DebianBuildManager through its iteration steps."""
 
     def setUp(self):
-        super(TestDebianBuildManagerIteration, self).setUp()
+        super().setUp()
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
         builder_dir = os.path.join(self.working_dir, 'builder')

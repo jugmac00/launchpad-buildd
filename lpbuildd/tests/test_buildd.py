@@ -11,8 +11,6 @@ This file contains the following tests:
 
 """
 
-__metaclass__ = type
-
 __all__ = ['LaunchpadBuilddTests']
 
 import difflib
@@ -206,14 +204,14 @@ class LaunchpadBuilddTests(BuilddTestCase):
 class XMLRPCBuilderTests(unittest.TestCase):
 
     def setUp(self):
-        super(XMLRPCBuilderTests, self).setUp()
+        super().setUp()
         self.builder = BuilddTestSetup()
         self.builder.setUp()
         self.server = ServerProxy('http://localhost:8321/rpc/')
 
     def tearDown(self):
         self.builder.tearDown()
-        super(XMLRPCBuilderTests, self).tearDown()
+        super().tearDown()
 
     @unittest.skipIf(
         sys.version >= '3' and
