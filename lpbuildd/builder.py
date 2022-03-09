@@ -161,8 +161,8 @@ class BuildManager:
         text_args = [
             arg.decode("UTF-8", "replace") if isinstance(arg, bytes) else arg
             for arg in args[1:]]
-        self._builder.log("RUN: {} {}\n".format(
-            command, " ".join(shell_escape(arg) for arg in text_args)))
+        escaped_args = " ".join(shell_escape(arg) for arg in text_args)
+        self._builder.log(f"RUN: {command} {escaped_args}\n")
         childfds = {
             0: devnull.fileno() if stdin is None else "w",
             1: "r",
@@ -840,21 +840,21 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         # check requested chroot availability
         chroot_present, info = self.builder.ensurePresent(chrootsum)
         if not chroot_present:
-            extra_info = """CHROOTSUM -> {}
+            extra_info = f"""CHROOTSUM -> {chrootsum}
             ***** INFO *****
-            {}
+            {info}
             ****************
-            """.format(chrootsum, info)
+            """
             return (BuilderStatus.UNKNOWNSUM, extra_info)
         # check requested files availability
         for filesum in filemap.values():
             file_present, info = self.builder.ensurePresent(filesum)
             if not file_present:
-                extra_info = """FILESUM -> {}
+                extra_info = f"""FILESUM -> {filesum}
                 ***** INFO *****
-                {}
+                {info}
                 ****************
-                """.format(filesum, info)
+                """
                 return (BuilderStatus.UNKNOWNSUM, extra_info)
         # check buildid sanity
         if buildid is None or buildid == "" or buildid == 0:

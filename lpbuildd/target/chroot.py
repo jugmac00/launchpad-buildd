@@ -66,10 +66,9 @@ class Chroot(Backend):
             # unpleasant quoting.  For now we go for the unpleasant quoting,
             # though once we have coreutils >= 8.28 everywhere we'll be able
             # to use "env --chdir".
+            escaped_args = " ".join(shell_escape(arg) for arg in args)
             args = [
-                "/bin/sh", "-c", "cd {} && {}".format(
-                    shell_escape(cwd),
-                    " ".join(shell_escape(arg) for arg in args)),
+                "/bin/sh", "-c", f"cd {shell_escape(cwd)} && {escaped_args}",
                 ]
         if echo:
             print("Running in chroot: %s" % ' '.join(

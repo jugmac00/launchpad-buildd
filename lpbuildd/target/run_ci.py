@@ -104,11 +104,13 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             "lpcraft", "-v", "run-one", "--output-directory", output_path,
             self.args.job_name, str(self.args.job_index),
             ]
+        escaped_lpcraft_args = (
+            " ".join(shell_escape(arg) for arg in lpcraft_args))
         tee_args = ["tee", "%s.log" % output_path]
+        escaped_tee_args = " ".join(shell_escape(arg) for arg in tee_args)
         args = [
-            "/bin/bash", "-o", "pipefail", "-c", "{} 2>&1 | {}".format(
-                " ".join(shell_escape(arg) for arg in lpcraft_args),
-                " ".join(shell_escape(arg) for arg in tee_args)),
+            "/bin/bash", "-o", "pipefail", "-c",
+            f"{escaped_lpcraft_args} 2>&1 | {escaped_tee_args}",
             ]
         self.run_build_command(args, env=env)
 

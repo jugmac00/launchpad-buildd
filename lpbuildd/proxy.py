@@ -244,10 +244,8 @@ class BuildManagerProxyMixin:
         self._builder.log("Revoking proxy token...\n")
         url = urlparse(self.proxy_url)
         auth = f"{url.username}:{url.password}"
-        headers = {
-            "Authorization": "Basic {}".format(
-                base64.b64encode(auth.encode('utf-8')).decode('utf-8'))
-            }
+        encoded_auth = base64.b64encode(auth.encode()).decode()
+        headers = {"Authorization": f"Basic {encoded_auth}"}
         req = Request(self.revocation_endpoint, None, headers)
         req.get_method = lambda: "DELETE"
         try:

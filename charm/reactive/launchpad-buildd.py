@@ -60,14 +60,13 @@ def install_packages():
         to_install.extend([(None, package) for package in packages])
     new_paths = [new_path for _, new_path in to_install]
     try:
-        status_set(None, "Installing {}".format(",".join(packages)))
+        status_set(None, f"Installing {','.join(packages)}")
         fetch.apt_unhold(packages)
         fetch.apt_install(new_paths, options=options)
         fetch.apt_hold(packages)
     except subprocess.CalledProcessError:
         status_set(
-            "blocked",
-            "Unable to install packages {}".format(",".join(packages)))
+            "blocked", f"Unable to install packages {','.join(packages)}")
     else:
         for local_path, resource_path in to_install:
             if local_path is not None:

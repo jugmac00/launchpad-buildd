@@ -373,14 +373,15 @@ class TestChroot(TestCase):
         fs_fixture.remove("/proc/self/fd")
         os.mkdir("/proc")
         with open("/proc/mounts", "w") as mounts_file:
-            mounts_file.write(dedent("""\
+            chroot = "/expected/home/build-1/chroot-autobuild"
+            mounts_file.write(dedent(f"""\
                 sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
                 proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
                 none {chroot}/proc proc rw,relatime 0 0
                 none {chroot}/dev/pts devpts rw,relative,gid=5,mode=620 0 0
                 none {chroot}/sys sysfs rw,relatime 0 0
                 none {chroot}/dev/shm tmpfs rw,relatime 0 0
-                """.format(chroot="/expected/home/build-1/chroot-autobuild")))
+                """))
 
     def test_stop(self):
         self.useFixture(EnvironmentVariable("HOME", "/expected/home"))

@@ -183,8 +183,8 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     # Work out what the symlink is referring to, then
                     # we can deal with it later
                     self._builder.log(
-                        "Found symlink at {} referencing {}".format(
-                            file.name, file.linkpath))
+                        f"Found symlink at {file.name} referencing "
+                        f"{file.linkpath}")
                     symlinks.append(file)
                     continue
                 if current_dir and file.name.endswith('layer.tar'):
@@ -226,14 +226,13 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             # the second component
             source_name = os.path.join(
                 extract_path,
-                "{}.tar.gz".format(symlink.linkpath.split('/')[-2]))
+                f"{symlink.linkpath.split('/')[-2]}.tar.gz")
             target_name = os.path.join(
                 extract_path,
-                '{}.tar.gz'.format(symlink.name.split('/')[-2]))
+                f"{symlink.name.split('/')[-2]}.tar.gz")
             # Do a copy to dereference the symlink
             self._builder.log(
-                "Deferencing symlink from {} to {}".format(
-                    source_name, target_name))
+                f"Dereferencing symlink from {source_name} to {target_name}")
             shutil.copy(source_name, target_name)
 
         # We need these mapping files

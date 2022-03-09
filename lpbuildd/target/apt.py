@@ -55,8 +55,7 @@ class OverrideSourcesList(Operation):
         if self.args.apt_proxy_url is not None:
             with tempfile.NamedTemporaryFile(mode="w+") as apt_proxy_conf:
                 print(
-                    'Acquire::http::Proxy "{}";'.format(
-                        self.args.apt_proxy_url),
+                    f'Acquire::http::Proxy "{self.args.apt_proxy_url}";',
                     file=apt_proxy_conf)
                 apt_proxy_conf.flush()
                 os.fchmod(apt_proxy_conf.fileno(), 0o644)
@@ -64,11 +63,11 @@ class OverrideSourcesList(Operation):
                     apt_proxy_conf.name, "/etc/apt/apt.conf.d/99proxy")
         for pocket in ("proposed", "backports"):
             with tempfile.NamedTemporaryFile(mode="w+") as preferences:
-                print(dedent("""\
+                print(dedent(f"""\
                     Package: *
-                    Pin: release a=*-{}
+                    Pin: release a=*-{pocket}
                     Pin-Priority: 500
-                    """).format(pocket), file=preferences, end="")
+                    """), file=preferences, end="")
                 preferences.flush()
                 os.fchmod(preferences.fileno(), 0o644)
                 self.backend.copy_in(

@@ -52,11 +52,10 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
         # we need both http_proxy and https_proxy. The contents of the files
         # are otherwise identical
         for setting in ['http_proxy', 'https_proxy']:
-            contents = dedent("""[Service]
-                Environment="{}={}"
-                """.format(setting.upper(), self.args.proxy_url))
-            file_path = "/etc/systemd/system/docker.service.d/{}.conf".format(
-                setting)
+            contents = dedent(f"""[Service]
+                Environment="{setting.upper()}={self.args.proxy_url}"
+                """)
+            file_path = f"/etc/systemd/system/docker.service.d/{setting}.conf"
             with tempfile.NamedTemporaryFile(mode="w+") as systemd_file:
                 systemd_file.write(contents)
                 systemd_file.flush()

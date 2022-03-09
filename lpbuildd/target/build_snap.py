@@ -53,9 +53,8 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
         parser.add_argument(
             "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
             dest="channels", default={}, help=(
-                "install SNAP from CHANNEL "
-                "(supported snaps: {}, snapcraft)".format(
-                    ", ".join(cls.core_snap_names))))
+                f"install SNAP from CHANNEL (supported snaps: "
+                f"{', '.join(cls.core_snap_names)}, snapcraft)"))
         parser.add_argument(
             "--build-request-id",
             help="ID of the request triggering this build on Launchpad")
@@ -76,11 +75,11 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
 
     def install_svn_servers(self):
         proxy = urlparse(self.args.proxy_url)
-        svn_servers = dedent("""\
+        svn_servers = dedent(f"""\
             [global]
-            http-proxy-host = {host}
-            http-proxy-port = {port}
-            """.format(host=proxy.hostname, port=proxy.port))
+            http-proxy-host = {proxy.hostname}
+            http-proxy-port = {proxy.port}
+            """)
         # We should never end up with an authenticated proxy here since
         # lpbuildd.snap deals with it, but it's almost as easy to just
         # handle it as to assert that we don't need to.
@@ -143,8 +142,7 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
     def image_info(self):
         data = {}
         if self.args.build_request_id is not None:
-            data["build-request-id"] = 'lp-{}'.format(
-                self.args.build_request_id)
+            data["build-request-id"] = f'lp-{self.args.build_request_id}'
         if self.args.build_request_timestamp is not None:
             data["build-request-timestamp"] = self.args.build_request_timestamp
         if self.args.build_url is not None:

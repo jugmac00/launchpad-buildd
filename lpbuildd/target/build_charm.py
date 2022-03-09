@@ -32,9 +32,8 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
         parser.add_argument(
             "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
             dest="channels", default={}, help=(
-                "install SNAP from CHANNEL "
-                "(supported snaps: {}, charmcraft)".format(
-                    ", ".join(cls.core_snap_names))))
+                f"install SNAP from CHANNEL (supported snaps: "
+                f"{', '.join(cls.core_snap_names)}, charmcraft)"))
         parser.add_argument(
             "--build-path", default=".",
             help="location of charm to build.")

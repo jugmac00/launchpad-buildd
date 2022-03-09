@@ -133,15 +133,14 @@ class BinaryPackageBuildManager(DebianBuildManager):
             # and teardown ourselves: it's easier to do this the same way
             # for all build types.
             print(
-                dedent('''\
-                    [build-{buildid}]
-                    description=build-{buildid}
+                dedent(f'''\
+                    [build-{self._buildid}]
+                    description=build-{self._buildid}
                     groups=sbuild,root
                     root-groups=sbuild,root
                     type=plain
-                    directory={chroot_path}
-                    ''').format(
-                        buildid=self._buildid, chroot_path=self.chroot_path),
+                    directory={self.chroot_path}
+                    '''),
                 file=schroot_file, end='')
             schroot_file.flush()
             subprocess.check_call(

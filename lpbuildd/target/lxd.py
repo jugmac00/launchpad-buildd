@@ -149,8 +149,8 @@ class LXD(Backend):
                 "os": "Ubuntu",
                 "series": self.series,
                 "architecture": self.arch,
-                "description": "Launchpad chroot for Ubuntu {} ({})".format(
-                    self.series, self.arch),
+                "description":
+                    f"Launchpad chroot for Ubuntu {self.series} ({self.arch})",
                 },
             }
         # Encoding this as JSON is good enough, and saves pulling in a YAML
@@ -515,10 +515,9 @@ class LXD(Backend):
             # unpleasant quoting.  For now we go for the unpleasant quoting,
             # though once we have coreutils >= 8.28 everywhere we'll be able
             # to use "env --chdir".
+            escaped_args = " ".join(shell_escape(arg) for arg in args)
             args = [
-                "/bin/sh", "-c", "cd {} && {}".format(
-                    shell_escape(cwd),
-                    " ".join(shell_escape(arg) for arg in args)),
+                "/bin/sh", "-c", f"cd {shell_escape(cwd)} && {escaped_args}",
                 ]
         if echo:
             print("Running in container: %s" % ' '.join(
