@@ -1,10 +1,6 @@
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import argparse
 import json
 import logging
@@ -32,13 +28,12 @@ class SnapChannelsAction(argparse.Action):
     def __init__(self, option_strings, dest, nargs=None, **kwargs):
         if nargs is not None:
             raise ValueError("nargs not allowed")
-        super(SnapChannelsAction, self).__init__(
-            option_strings, dest, **kwargs)
+        super().__init__(option_strings, dest, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
         if "=" not in values:
             raise argparse.ArgumentError(
-                self, "'{}' is not of the form 'snap=channel'".format(values))
+                self, f"'{values}' is not of the form 'snap=channel'")
         snap, channel = values.split("=", 1)
         if getattr(namespace, self.dest, None) is None:
             setattr(namespace, self.dest, {})
@@ -54,7 +49,7 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
 
     @classmethod
     def add_arguments(cls, parser):
-        super(BuildSnap, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
             dest="channels", default={}, help=(
@@ -90,9 +85,9 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
         # lpbuildd.snap deals with it, but it's almost as easy to just
         # handle it as to assert that we don't need to.
         if proxy.username:
-            svn_servers += "http-proxy-username = {}\n".format(proxy.username)
+            svn_servers += f"http-proxy-username = {proxy.username}\n"
         if proxy.password:
-            svn_servers += "http-proxy-password = {}\n".format(proxy.password)
+            svn_servers += f"http-proxy-password = {proxy.password}\n"
         with tempfile.NamedTemporaryFile(mode="w+") as svn_servers_file:
             svn_servers_file.write(svn_servers)
             svn_servers_file.flush()

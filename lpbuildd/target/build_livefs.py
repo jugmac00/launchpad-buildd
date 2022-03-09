@@ -1,10 +1,6 @@
 # Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 from collections import OrderedDict
 import logging
 import os
@@ -36,7 +32,7 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
 
     @classmethod
     def add_arguments(cls, parser):
-        super(BuildLiveFS, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--subarch", metavar="SUBARCH",
             help="build for subarchitecture SUBARCH")

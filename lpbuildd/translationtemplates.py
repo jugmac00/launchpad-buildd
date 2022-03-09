@@ -1,8 +1,6 @@
 # Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import os
 
 from lpbuildd.debian import (
@@ -30,8 +28,7 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
     initial_build_state = TranslationTemplatesBuildState.GENERATE
 
     def __init__(self, builder, buildid):
-        super(TranslationTemplatesBuildManager, self).__init__(
-            builder, buildid)
+        super().__init__(builder, buildid)
         self._resultname = builder._config.get(
             "translationtemplatesmanager", "resultarchive")
 
@@ -45,8 +42,7 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
 
-        super(TranslationTemplatesBuildManager, self).initiate(
-            files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doGenerate(self):
         """Generate templates."""

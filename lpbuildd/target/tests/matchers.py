@@ -1,8 +1,6 @@
 # Copyright 2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from testtools.matchers import (
     Equals,
     Is,
@@ -34,20 +32,19 @@ class RanCommand(MatchesListwise):
         if env:
             kwargs_matcher["env"] = MatchesDict(
                 {key: Equals(value) for key, value in env.items()})
-        super(RanCommand, self).__init__(
-            [Equals((args,)), MatchesDict(kwargs_matcher)])
+        super().__init__([Equals((args,)), MatchesDict(kwargs_matcher)])
 
 
 class RanAptGet(RanCommand):
 
     def __init__(self, *args):
-        super(RanAptGet, self).__init__(["apt-get", "-y"] + list(args))
+        super().__init__(["apt-get", "-y"] + list(args))
 
 
 class RanSnap(RanCommand):
 
     def __init__(self, *args, **kwargs):
-        super(RanSnap, self).__init__(["snap"] + list(args), **kwargs)
+        super().__init__(["snap"] + list(args), **kwargs)
 
 
 class RanBuildCommand(RanCommand):
@@ -56,4 +53,4 @@ class RanBuildCommand(RanCommand):
         kwargs.setdefault("cwd", "/build")
         kwargs.setdefault("LANG", "C.UTF-8")
         kwargs.setdefault("SHELL", "/bin/sh")
-        super(RanBuildCommand, self).__init__(args, **kwargs)
+        super().__init__(args, **kwargs)

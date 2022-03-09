@@ -1,8 +1,6 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import json
 import os
 import stat
@@ -39,11 +37,11 @@ from lpbuildd.tests.fakebuilder import FakeMethod
 class FakeRevisionID(FakeMethod):
 
     def __init__(self, revision_id):
-        super(FakeRevisionID, self).__init__()
+        super().__init__()
         self.revision_id = revision_id
 
     def __call__(self, run_args, *args, **kwargs):
-        super(FakeRevisionID, self).__call__(run_args, *args, **kwargs)
+        super().__call__(run_args, *args, **kwargs)
         if run_args[0] == "git" and "rev-parse" in run_args:
             return "%s\n" % self.revision_id
 
@@ -267,7 +265,7 @@ class TestRunCIPrepare(TestCase):
     def test_run_install_fails(self):
         class FailInstall(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
-                super(FailInstall, self).__call__(run_args, *args, **kwargs)
+                super().__call__(run_args, *args, **kwargs)
                 if run_args[0] == "apt-get":
                     raise subprocess.CalledProcessError(1, run_args)
 
@@ -284,7 +282,7 @@ class TestRunCIPrepare(TestCase):
     def test_run_repo_fails(self):
         class FailRepo(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
-                super(FailRepo, self).__call__(run_args, *args, **kwargs)
+                super().__call__(run_args, *args, **kwargs)
                 if run_args[0] == "git":
                     raise subprocess.CalledProcessError(1, run_args)
 
@@ -358,7 +356,7 @@ class TestRunCI(TestCase):
     def test_run_install_fails(self):
         class FailInstall(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
-                super(FailInstall, self).__call__(run_args, *args, **kwargs)
+                super().__call__(run_args, *args, **kwargs)
                 if run_args[0] == "/bin/bash":
                     raise subprocess.CalledProcessError(1, run_args)
 

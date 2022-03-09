@@ -1,10 +1,6 @@
 # Copyright 2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import os
 
 from lpbuildd.debian import (
@@ -45,7 +41,7 @@ class CharmBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.proxy_service = None
 
-        super(CharmBuildManager, self).initiate(files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the process to build the charm."""
@@ -54,7 +50,7 @@ class CharmBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         if self.revocation_endpoint:
             args.extend(["--revocation-endpoint", self.revocation_endpoint])
         for snap, channel in sorted(self.channels.items()):
-            args.extend(["--channel", "%s=%s" % (snap, channel)])
+            args.extend(["--channel", f"{snap}={channel}"])
         if self.branch is not None:
             args.extend(["--branch", self.branch])
         if self.git_repository is not None:

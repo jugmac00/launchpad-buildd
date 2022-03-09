@@ -23,8 +23,7 @@ Then, inside the container, install the necessary dependencies:
         sudo apt-get update
         cat system-dependencies.txt | sudo xargs apt-get install -y
 
-This should be enough for you to be able to run `make check`, which runs the
-test suite both in python2 and python3.
+This should be enough for you to be able to run `make check`.
 
 More information on how to integrate it with Launchpad can be found here:
 https://dev.launchpad.net/Soyuz/HowToDevelopWithBuildd

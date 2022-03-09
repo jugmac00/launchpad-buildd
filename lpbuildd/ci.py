@@ -1,10 +1,6 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import os
 
 from six.moves.configparser import (
@@ -31,7 +27,7 @@ RESULT_FAILED = "FAILED"
 
 
 def _make_job_id(job_name, job_index):
-    return "%s:%s" % (job_name, job_index)
+    return f"{job_name}:{job_index}"
 
 
 class CIBuildState(DebianBuildState):
@@ -63,7 +59,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.proxy_service = None
         self.job_status = {}
 
-        super(CIBuildManager, self).initiate(files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Start running CI jobs."""
@@ -73,7 +69,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 ["--revocation-endpoint", self.revocation_endpoint])
         args = list(self.proxy_args)
         for snap, channel in sorted(self.channels.items()):
-            args.extend(["--channel", "%s=%s" % (snap, channel)])
+            args.extend(["--channel", f"{snap}={channel}"])
         if self.branch is not None:
             args.extend(["--branch", self.branch])
         if self.git_repository is not None:
@@ -134,7 +130,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
 
     @staticmethod
     def _makeJobID(job_name, job_index):
-        return "%s:%s" % (job_name, job_index)
+        return f"{job_name}:{job_index}"
 
     def runNextJob(self):
         """Run the next CI job."""
@@ -205,7 +201,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
 
     def status(self):
         """See `BuildManager.status`."""
-        status = super(CIBuildManager, self).status()
+        status = super().status()
         status["jobs"] = dict(self.job_status)
         return status
 

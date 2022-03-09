@@ -3,7 +3,6 @@
 
 """Functions to build PO templates on the builder."""
 
-__metaclass__ = type
 __all__ = [
     'check_potfiles_in',
     'generate_pot',
@@ -278,7 +277,7 @@ class ConfigFile:
                 ]
 
 
-class Substitution(object):
+class Substitution:
     """Find and replace substitutions.
 
     Variable texts may contain other variables which should be substituted

@@ -5,8 +5,6 @@
 
 """Upgrade a launchpad-buildd configuration file."""
 
-from __future__ import print_function
-
 try:
     from configparser import (
         ConfigParser as SafeConfigParser,
@@ -37,7 +35,7 @@ bin_path = "/usr/share/launchpad-buildd/slavebin"
 def upgrade_to_12():
     print("Upgrading %s to version 12" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev12~"])
-    in_file = open(conf_file+"-prev12~", "r")
+    in_file = open(conf_file+"-prev12~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[debianmanager]"):
@@ -52,7 +50,7 @@ def upgrade_to_12():
 def upgrade_to_34():
     print("Upgrading %s to version 34" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev34~"])
-    in_file = open(conf_file+"-prev34~", "r")
+    in_file = open(conf_file+"-prev34~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[debianmanager]"):
@@ -65,7 +63,7 @@ def upgrade_to_34():
 def upgrade_to_39():
     print("Upgrading %s to version 39" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev39~"])
-    in_file = open(conf_file+"-prev39~", "r")
+    in_file = open(conf_file+"-prev39~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("sbuildargs"):
@@ -80,7 +78,7 @@ def upgrade_to_39():
 def upgrade_to_57():
     print("Upgrading %s to version 57" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev57~"])
-    in_file = open(conf_file+"-prev57~", "r")
+    in_file = open(conf_file+"-prev57~")
     out_file = open(conf_file, "w")
     # We want to move all the sbuild lines to a new
     # 'binarypackagemanager' section at the end.
@@ -100,7 +98,7 @@ def upgrade_to_57():
 def upgrade_to_58():
     print("Upgrading %s to version 58" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev58~"])
-    in_file = open(conf_file+"-prev58~", "r")
+    in_file = open(conf_file+"-prev58~")
     out_file = open(conf_file, "w")
     out_file.write(in_file.read())
     out_file.write(
@@ -111,7 +109,7 @@ def upgrade_to_58():
 def upgrade_to_59():
     print("Upgrading %s to version 59" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev59~"])
-    in_file = open(conf_file+"-prev59~", "r")
+    in_file = open(conf_file+"-prev59~")
     out_file = open(conf_file, "w")
     out_file.write(in_file.read())
     out_file.write(
@@ -123,7 +121,7 @@ def upgrade_to_59():
 def upgrade_to_63():
     print("Upgrading %s to version 63" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev63~"])
-    in_file = open(conf_file+"-prev63~", "r")
+    in_file = open(conf_file+"-prev63~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if not line.startswith('ogrepath'):
@@ -133,7 +131,7 @@ def upgrade_to_63():
 def upgrade_to_110():
     print("Upgrading %s to version 110" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev110~"])
-    in_file = open(conf_file+"-prev110~", "r")
+    in_file = open(conf_file+"-prev110~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[allmanagers]"):
@@ -147,7 +145,7 @@ def upgrade_to_115():
     print("Upgrading %s to version 115" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev115~"])
     in_allmanagers = False
-    in_file = open(conf_file+"-prev115~", "r")
+    in_file = open(conf_file+"-prev115~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[allmanagers]"):
@@ -165,7 +163,7 @@ def upgrade_to_115():
 def upgrade_to_120():
     print("Upgrading %s to version 120" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev120~"])
-    in_file = open(conf_file+"-prev120~", "r")
+    in_file = open(conf_file+"-prev120~")
     out_file = open(conf_file, "w")
     out_file.write(in_file.read())
     out_file.write(
@@ -178,7 +176,7 @@ def upgrade_to_120():
 def upgrade_to_126():
     print("Upgrading %s to version 126" % conf_file)
     subprocess.call(["mv", conf_file, conf_file+"-prev126~"])
-    in_file = open(conf_file+"-prev126~", "r")
+    in_file = open(conf_file+"-prev126~")
     out_file = open(conf_file, "w")
     archive_ubuntu = " --archive=ubuntu"
     for line in in_file:
@@ -194,7 +192,7 @@ def upgrade_to_127():
     print("Upgrading %s to version 127" % conf_file)
     os.rename(conf_file, conf_file + "-prev127~")
 
-    in_file = open(conf_file + "-prev127~", "r")
+    in_file = open(conf_file + "-prev127~")
     out_file = open(conf_file, "w")
     obsolete_prefixes = [
         '[allmanagers]', '[debianmanager]', '[binarypackagemanager]',
@@ -228,7 +226,7 @@ def upgrade_to_162():
     print("Upgrading %s to version 162" % conf_file)
     os.rename(conf_file, conf_file + "-prev162~")
 
-    with open(conf_file + "-prev162~", "r") as in_file:
+    with open(conf_file + "-prev162~") as in_file:
         with open(conf_file, "w") as out_file:
             out_file.write(in_file.read())
             out_file.write(
@@ -240,7 +238,7 @@ def upgrade_to_190():
     print("Upgrading %s to version 190" % conf_file)
     os.rename(conf_file, conf_file + "-prev190~")
 
-    with open(conf_file + "-prev190~", "r") as in_file:
+    with open(conf_file + "-prev190~") as in_file:
         with open(conf_file, "w") as out_file:
             for line in in_file:
                 if line.strip() == "[slave]":
@@ -261,7 +259,7 @@ def upgrade_to_200():
         proxyport = None
 
     os.rename(conf_file, conf_file + "-prev200~")
-    with open(conf_file + "-prev200~", "r") as in_file:
+    with open(conf_file + "-prev200~") as in_file:
         with open(conf_file, "w") as out_file:
             in_builder = False
             in_snapmanager = False

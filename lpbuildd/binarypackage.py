@@ -1,8 +1,6 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import absolute_import, print_function
-
 from collections import defaultdict
 import os
 import re
@@ -126,8 +124,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
         self.arch_indep = extra_args.get('arch_indep', False)
         self.build_debug_symbols = extra_args.get('build_debug_symbols', False)
 
-        super(BinaryPackageBuildManager, self).initiate(
-            files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the sbuild process to build the package."""
@@ -396,7 +393,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
             with open(os.path.join(self._cachepath, "buildlog"), "rb") as log:
                 try:
                     log.seek(-4096, os.SEEK_END)
-                except IOError:
+                except OSError:
                     pass
                 tail = log.read(4096).decode("UTF-8", "replace")
             if re.search(r"^Fail-Stage: install-deps$", tail, re.M):

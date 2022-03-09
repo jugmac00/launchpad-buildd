@@ -1,8 +1,6 @@
 # Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import os
 
 from fixtures import (
@@ -23,7 +21,7 @@ from lpbuildd.tests.matchers import HasWaitingFiles
 
 class MockBuildManager(LiveFilesystemBuildManager):
     def __init__(self, *args, **kwargs):
-        super(MockBuildManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.commands = []
         self.iterators = []
 
@@ -41,7 +39,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
-        super(TestLiveFilesystemBuildManagerIteration, self).setUp()
+        super().setUp()
         self.working_dir = self.useFixture(TempDir()).path
         builder_dir = os.path.join(self.working_dir, "builder")
         home_dir = os.path.join(self.working_dir, "home")

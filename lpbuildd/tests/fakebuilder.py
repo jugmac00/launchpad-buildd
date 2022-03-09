@@ -1,7 +1,6 @@
 # Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
 __all__ = [
     'FakeBackend',
     'FakeBuilder',
@@ -141,7 +140,7 @@ class FakeBackend(Backend):
     supports_snapd = True
 
     def __init__(self, *args, **kwargs):
-        super(FakeBackend, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         fake_methods = (
             "create", "start",
             "run",
@@ -236,7 +235,7 @@ class UncontainedBackend(Backend):
         """See `Backend`."""
         if env:
             args = ["env"] + [
-                "%s=%s" % (key, shell_escape(value))
+                f"{key}={shell_escape(value)}"
                 for key, value in env.items()] + args
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)

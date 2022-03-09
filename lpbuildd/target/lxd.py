@@ -1,10 +1,6 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 from contextlib import closing
 import io
 import json
@@ -88,7 +84,7 @@ class LXDException(Exception):
         self.lxdapi_exc = lxdapi_exc
 
     def __str__(self):
-        return "%s: %s" % (self.action, self.lxdapi_exc)
+        return f"{self.action}: {self.lxdapi_exc}"
 
 
 class LXD(Backend):
@@ -131,7 +127,7 @@ class LXD(Backend):
 
     @property
     def alias(self):
-        return "lp-%s-%s" % (self.series, self.arch)
+        return f"lp-{self.series}-{self.arch}"
 
     @property
     def name(self):
@@ -153,7 +149,7 @@ class LXD(Backend):
                 "os": "Ubuntu",
                 "series": self.series,
                 "architecture": self.arch,
-                "description": "Launchpad chroot for Ubuntu %s (%s)" % (
+                "description": "Launchpad chroot for Ubuntu {} ({})".format(
                     self.series, self.arch),
                 },
             }
@@ -323,7 +319,7 @@ class LXD(Backend):
             ]
 
         lxc_version = self._client.host_info["environment"]["driver_version"]
-        major, minor = [int(v) for v in lxc_version.split(".")[0:2]]
+        major, minor = (int(v) for v in lxc_version.split(".")[0:2])
 
         if major >= 3:
             raw_lxc_config.extend([
@@ -346,8 +342,7 @@ class LXD(Backend):
             "security.privileged": "true",
             "security.nesting": "true",
             "raw.lxc": "".join(
-                "{key}={value}\n".format(key=key, value=value)
-                for key, value in sorted(raw_lxc_config)),
+                f"{key}={value}\n" for key, value in sorted(raw_lxc_config)),
             }
         devices = {
             "eth0": {
@@ -389,7 +384,7 @@ class LXD(Backend):
                 hosts_file.seek(0, os.SEEK_SET)
                 hosts_file.write(fallback_hosts)
             hosts_file.seek(0, os.SEEK_END)
-            print("\n127.0.1.1\t%s %s" % (fqdn, hostname), file=hosts_file)
+            print(f"\n127.0.1.1\t{fqdn} {hostname}", file=hosts_file)
             hosts_file.flush()
             os.fchmod(hosts_file.fileno(), 0o644)
             self.copy_in(hosts_file.name, "/etc/hosts")
@@ -512,7 +507,7 @@ class LXD(Backend):
         env_params = []
         if env:
             for key, value in env.items():
-                env_params.extend(["--env", "%s=%s" % (key, value)])
+                env_params.extend(["--env", f"{key}={value}"])
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         if cwd is not None:
@@ -521,7 +516,7 @@ class LXD(Backend):
             # though once we have coreutils >= 8.28 everywhere we'll be able
             # to use "env --chdir".
             args = [
-                "/bin/sh", "-c", "cd %s && %s" % (
+                "/bin/sh", "-c", "cd {} && {}".format(
                     shell_escape(cwd),
                     " ".join(shell_escape(arg) for arg in args)),
                 ]
@@ -576,7 +571,7 @@ class LXD(Backend):
                     params=params, data=data, headers=headers)
             except LXDAPIException as e:
                 raise LXDException(
-                    "Failed to push %s:%s" % (self.name, target_path), e)
+                    f"Failed to push {self.name}:{target_path}", e)
 
     def _get_file(self, container, *args, **kwargs):
         # pylxd < 2.1.1 tries to validate the response as JSON in streaming
@@ -604,7 +599,7 @@ class LXD(Backend):
                         target_file.write(chunk)
             except LXDAPIException as e:
                 raise LXDException(
-                    "Failed to pull %s:%s" % (self.name, source_path), e)
+                    f"Failed to pull {self.name}:{source_path}", e)
 
     def stop(self):
         """See `Backend`."""
@@ -627,4 +622,4 @@ class LXD(Backend):
     def remove(self):
         """See `Backend`."""
         self.remove_image()
-        super(LXD, self).remove()
+        super().remove()

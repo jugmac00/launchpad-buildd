@@ -1,10 +1,6 @@
 # Copyright 2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 from collections import OrderedDict
 import logging
 import os.path
@@ -21,7 +17,7 @@ class VCSOperationMixin(StatusOperationMixin):
 
     @classmethod
     def add_arguments(cls, parser):
-        super(VCSOperationMixin, cls).add_arguments(parser)
+        super().add_arguments(parser)
         build_from_group = parser.add_mutually_exclusive_group(required=True)
         build_from_group.add_argument(
             "--branch", metavar="BRANCH", help="build from this Bazaar branch")
@@ -33,7 +29,7 @@ class VCSOperationMixin(StatusOperationMixin):
             help="build from this ref path in REPOSITORY")
 
     def __init__(self, args, parser):
-        super(VCSOperationMixin, self).__init__(args, parser)
+        super().__init__(args, parser)
         if args.git_repository is None and args.git_path is not None:
             parser.error("--git-path requires --git-repository")
         # Set to False for local testing if your target doesn't have an

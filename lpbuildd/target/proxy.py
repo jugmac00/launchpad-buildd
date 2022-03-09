@@ -1,10 +1,6 @@
 # Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 from collections import OrderedDict
 import os
 import sys
@@ -14,12 +10,12 @@ class BuilderProxyOperationMixin:
     """Methods supporting the build time HTTP proxy for certain build types."""
 
     def __init__(self, args, parser):
-        super(BuilderProxyOperationMixin, self).__init__(args, parser)
+        super().__init__(args, parser)
         self.bin = os.path.dirname(sys.argv[0])
 
     @classmethod
     def add_arguments(cls, parser):
-        super(BuilderProxyOperationMixin, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument("--proxy-url", help="builder proxy url")
         parser.add_argument(
             "--revocation-endpoint",

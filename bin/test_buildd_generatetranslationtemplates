@@ -5,8 +5,6 @@
 # Test script for manual use only.  Exercises the
 # TranslationTemplatesBuildManager through XMLRPC.
 
-from __future__ import print_function
-
 import sys
 
 from six.moves.xmlrpc_client import ServerProxy

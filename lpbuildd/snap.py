@@ -1,10 +1,6 @@
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import os
 
 from six.moves.configparser import (
@@ -56,13 +52,13 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.private = extra_args.get("private", False)
         self.proxy_service = None
 
-        super(SnapBuildManager, self).initiate(files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the process to build the snap."""
         args = []
         for snap, channel in sorted(self.channels.items()):
-            args.extend(["--channel", "%s=%s" % (snap, channel)])
+            args.extend(["--channel", f"{snap}={channel}"])
         if self.build_request_id:
             args.extend(["--build-request-id", str(self.build_request_id)])
         if self.build_request_timestamp:

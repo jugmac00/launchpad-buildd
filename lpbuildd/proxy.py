@@ -1,10 +1,6 @@
 # Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import base64
 import io
 
@@ -203,8 +199,8 @@ class BuilderProxyFactory(http.HTTPFactory):
         referrer = http._escape(request.getHeader(b"referer") or b"-")
         agent = http._escape(request.getHeader(b"user-agent") or b"-")
         line = (
-            u'%(timestamp)s "%(method)s %(uri)s %(protocol)s" '
-            u'%(code)d %(length)s "%(referrer)s" "%(agent)s"\n' % {
+            '%(timestamp)s "%(method)s %(uri)s %(protocol)s" '
+            '%(code)d %(length)s "%(referrer)s" "%(agent)s"\n' % {
                 'timestamp': self._logDateTime,
                 'method': http._escape(request.method),
                 'uri': http._escape(request.uri),
@@ -232,7 +228,7 @@ class BuildManagerProxyMixin:
             proxy_host = self.backend.ipv4_network.ip
         else:
             proxy_host = "localhost"
-        return ["--proxy-url", "http://{}:{}/".format(proxy_host, proxy_port)]
+        return ["--proxy-url", f"http://{proxy_host}:{proxy_port}/"]
 
     def stopProxy(self):
         """Stop the local builder proxy, if necessary."""
@@ -247,7 +243,7 @@ class BuildManagerProxyMixin:
             return
         self._builder.log("Revoking proxy token...\n")
         url = urlparse(self.proxy_url)
-        auth = "{}:{}".format(url.username, url.password)
+        auth = f"{url.username}:{url.password}"
         headers = {
             "Authorization": "Basic {}".format(
                 base64.b64encode(auth.encode('utf-8')).decode('utf-8'))
@@ -258,4 +254,4 @@ class BuildManagerProxyMixin:
             urlopen(req)
         except (HTTPError, URLError) as e:
             self._builder.log(
-                "Unable to revoke token for %s: %s" % (url.username, e))
+                f"Unable to revoke token for {url.username}: {e}")

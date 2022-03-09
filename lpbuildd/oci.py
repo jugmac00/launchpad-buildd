@@ -1,10 +1,6 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import gzip
 import hashlib
 import json
@@ -57,7 +53,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.proxy_service = None
 
-        super(OCIBuildManager, self).initiate(files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the process to build the OCI image."""
@@ -75,7 +71,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--build-file", self.build_file])
         if self.build_args:
             for k, v in self.build_args.items():
-                args.extend(["--build-arg", "%s=%s" % (k, v)])
+                args.extend(["--build-arg", f"{k}={v}"])
         if self.build_path is not None:
             args.extend(["--build-path", self.build_path])
         try:
@@ -123,21 +119,20 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
     def _gatherManifestSection(self, section, extract_path, sha_directory):
         config_file_path = os.path.join(extract_path, section["Config"])
         self._builder.addWaitingFile(config_file_path)
-        with open(config_file_path, 'r') as config_fp:
+        with open(config_file_path) as config_fp:
             config = json.load(config_fp)
         diff_ids = config["rootfs"]["diff_ids"]
         digest_diff_map = {}
         for diff_id, layer_id in zip(diff_ids, section['Layers']):
             layer_id = layer_id.split('/')[0]
             diff_file = os.path.join(sha_directory, diff_id.split(':')[1])
-            layer_path = os.path.join(
-                extract_path, "{}.tar.gz".format(layer_id))
+            layer_path = os.path.join(extract_path, f"{layer_id}.tar.gz")
             self._builder.addWaitingFile(layer_path)
             # If we have a mapping between diff and existing digest,
             # this means this layer has been pulled from a remote.
             # We should maintain the same digest to achieve layer reuse
             if os.path.exists(diff_file):
-                with open(diff_file, 'r') as diff_fp:
+                with open(diff_file) as diff_fp:
                     diff = json.load(diff_fp)
                     # We should be able to just take the first occurence,
                     # as that will be the 'most parent' image
@@ -165,7 +160,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 get_output=True, return_process=True)
             tar = tarfile.open(fileobj=proc.stdout, mode="r|")
         except Exception as e:
-            self._builder.log("Unable to save image: {}".format(e))
+            self._builder.log(f"Unable to save image: {e}")
             raise
 
         current_dir = ''
@@ -174,7 +169,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         try:
             # The tarfile is a stream and must be processed in order
             for file in tar:
-                self._builder.log("Processing tar file: {}".format(file.name))
+                self._builder.log(f"Processing tar file: {file.name}")
                 # Directories are just nodes, you can't extract the children
                 # directly, so keep track of what dir we're in.
                 if file.isdir():
@@ -203,8 +198,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     # (directory_name.tar.gz/contents) otherwise we will endup
                     # with multiple gzips with the same name "layer.tar.gz".
                     fileobj = tar.extractfile(file)
-                    name = os.path.join(extract_path,
-                                        '{}.tar.gz'.format(current_dir))
+                    name = os.path.join(extract_path, f'{current_dir}.tar.gz')
                     with gzip.GzipFile(name, 'wb') as gzip_layer:
                         byte = fileobj.read(1)
                         while len(byte) > 0:
@@ -218,7 +212,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     # If it's not in a directory, we need that
                     tar.extract(file, extract_path)
         except Exception as e:
-            self._builder.log("Tar file processing failed: {}".format(e))
+            self._builder.log(f"Tar file processing failed: {e}")
             raise
         finally:
             if gzip_layer is not None:
@@ -261,7 +255,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     os.path.join(sha_directory, file)
                 )
         else:
-            self._builder.log("No metadata directory at {}".format(sha_path))
+            self._builder.log(f"No metadata directory at {sha_path}")
 
         # Parse the manifest for the other files we need
         manifest_path = os.path.join(extract_path, 'manifest.json')
@@ -280,5 +274,5 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 json.dump(digest_maps, digest_map_fp)
             self._builder.addWaitingFile(digest_map_file)
         except Exception as e:
-            self._builder.log("Failed to parse manifest: {}".format(e))
+            self._builder.log(f"Failed to parse manifest: {e}")
             raise

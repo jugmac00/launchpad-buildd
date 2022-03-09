@@ -1,10 +1,6 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import logging
 import os
 import subprocess
@@ -25,7 +21,7 @@ class OverrideSourcesList(Operation):
 
     @classmethod
     def add_arguments(cls, parser):
-        super(OverrideSourcesList, cls).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             "--apt-proxy-url", metavar="URL", help="APT proxy URL")
         parser.add_argument(
@@ -77,7 +73,7 @@ class OverrideSourcesList(Operation):
                 os.fchmod(preferences.fileno(), 0o644)
                 self.backend.copy_in(
                     preferences.name,
-                    "/etc/apt/preferences.d/{}.pref".format(pocket))
+                    f"/etc/apt/preferences.d/{pocket}.pref")
         return 0
 
 
@@ -86,7 +82,7 @@ class AddTrustedKeys(Operation):
     description = "Write out new trusted keys."
 
     def __init__(self, args, parser):
-        super(AddTrustedKeys, self).__init__(args, parser)
+        super().__init__(args, parser)
         self.input_file = sys.stdin
 
     def run(self):
@@ -103,7 +99,7 @@ class Update(Operation):
 
     def run(self):
         logger.info("Updating target for build %s", self.args.build_id)
-        with open("/dev/null", "r") as devnull:
+        with open("/dev/null") as devnull:
             env = {
                 "LANG": "C",
                 "DEBIAN_FRONTEND": "noninteractive",

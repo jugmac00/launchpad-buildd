@@ -1,8 +1,6 @@
 # Copyright 2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
 import os.path
 import re
 import shutil
@@ -49,7 +47,7 @@ def install_packages():
         # Install from resources.
         changed = False
         for package, resource_path in zip(packages, resource_paths):
-            local_path = os.path.join(cache_dir, "{}.deb".format(package))
+            local_path = os.path.join(cache_dir, f"{package}.deb")
             to_install.append((local_path, resource_path))
             if host.file_hash(local_path) != host.file_hash(resource_path):
                 changed = True

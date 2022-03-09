@@ -1,10 +1,6 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 import os.path
 import signal
 import stat
@@ -27,7 +23,7 @@ class Chroot(Backend):
     """Sets up a chroot."""
 
     def __init__(self, build_id, series=None, arch=None):
-        super(Chroot, self).__init__(build_id, series=series, arch=arch)
+        super().__init__(build_id, series=series, arch=arch)
         self.chroot_path = os.path.join(self.build_path, "chroot-autobuild")
 
     def create(self, image_path, image_type):
@@ -62,7 +58,7 @@ class Chroot(Backend):
         """See `Backend`."""
         if env:
             args = ["env"] + [
-                "%s=%s" % (key, value) for key, value in env.items()] + args
+                f"{key}={value}" for key, value in env.items()] + args
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         if cwd is not None:
@@ -71,7 +67,7 @@ class Chroot(Backend):
             # though once we have coreutils >= 8.28 everywhere we'll be able
             # to use "env --chdir".
             args = [
-                "/bin/sh", "-c", "cd %s && %s" % (
+                "/bin/sh", "-c", "cd {} && {}".format(
                     shell_escape(cwd),
                     " ".join(shell_escape(arg) for arg in args)),
                 ]

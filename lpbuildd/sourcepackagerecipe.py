@@ -80,8 +80,7 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         self.distroseries_name = extra_args['distroseries_name']
         self.git = extra_args.get('git', False)
 
-        super(SourcePackageRecipeBuildManager, self).initiate(
-            files, chroot, extra_args)
+        super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the build process to build the source package."""

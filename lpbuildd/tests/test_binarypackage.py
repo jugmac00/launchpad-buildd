@@ -1,8 +1,6 @@
 # Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from functools import partial
 import os
 import shutil
@@ -52,7 +50,7 @@ class MockSubprocess:
 
 class MockBuildManager(BinaryPackageBuildManager):
     def __init__(self, *args, **kwargs):
-        super(MockBuildManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.commands = []
         self.iterators = []
         self.arch_indep = False
@@ -69,7 +67,7 @@ class MockBuildManager(BinaryPackageBuildManager):
 class DisableSudo(MonkeyPatch):
 
     def __init__(self):
-        super(DisableSudo, self).__init__(
+        super().__init__(
             'subprocess.call', partial(self.call_patch, subprocess.call))
 
     def call_patch(self, old_call, cmd, *args, **kwargs):
@@ -92,7 +90,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
-        super(TestBinaryPackageBuildManagerIteration, self).setUp()
+        super().setUp()
         self.useFixture(DisableSudo())
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
@@ -403,10 +401,10 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 """))
         write_file(os.path.join(apt_lists, "other"), "some other stuff")
         expected = {
-            "foo": set(["1.0", "1.1"]),
-            "bar": set(["2.0"]),
-            "virt": set([None]),
-            "versioned-virt": set(["3.0"]),
+            "foo": {"1.0", "1.1"},
+            "bar": {"2.0"},
+            "virt": {None},
+            "versioned-virt": {"3.0"},
             }
         self.assertEqual(expected, self.buildmanager.getAvailablePackages())
 
@@ -479,13 +477,13 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         # relationMatches returns False if a dependency's package name is
         # entirely missing.
         self.assertFalse(self.buildmanager.relationMatches(
-            {"name": "foo", "version": (">=", "1")}, {"bar": set(["2"])}))
+            {"name": "foo", "version": (">=", "1")}, {"bar": {"2"}}))
 
     def test_relationMatches_unversioned(self):
         # relationMatches returns True if a dependency's package name is
         # present and the dependency is unversioned.
         self.assertTrue(self.buildmanager.relationMatches(
-            {"name": "foo", "version": None}, {"foo": set(["1"])}))
+            {"name": "foo", "version": None}, {"foo": {"1"}}))
 
     def test_relationMatches_versioned(self):
         # relationMatches handles versioned dependencies correctly.
@@ -498,8 +496,8 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 ):
             assert_method = self.assertTrue if expected else self.assertFalse
             assert_method(self.buildmanager.relationMatches(
-                {"name": "foo", "version": version}, {"foo": set(["1"])}),
-                "%s %s 1 was not %s" % (version[1], version[0], expected))
+                {"name": "foo", "version": version}, {"foo": {"1"}}),
+                f"{version[1]} {version[0]} 1 was not {expected}")
 
     def test_relationMatches_multiple_versions(self):
         # If multiple versions of a package are present, relationMatches
@@ -512,7 +510,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             assert_method = self.assertTrue if expected else self.assertFalse
             assert_method(self.buildmanager.relationMatches(
                 {"name": "foo", "version": version},
-                {"foo": set(["1", "1.1"])}))
+                {"foo": {"1", "1.1"}}))
 
     def test_relationMatches_unversioned_virtual(self):
         # Unversioned dependencies match an unversioned virtual package, but
@@ -521,14 +519,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             assert_method = self.assertTrue if expected else self.assertFalse
             assert_method(self.buildmanager.relationMatches(
                 {"name": "foo", "version": version},
-                {"foo": set([None])}))
+                {"foo": {None}}))
 
     def test_analyseDepWait_all_satisfied(self):
         # If all direct build-dependencies are satisfied, analyseDepWait
         # returns None.
         self.assertIsNone(self.buildmanager.analyseDepWait(
             PkgRelation.parse_relations("debhelper, foo (>= 1)"),
-            {"debhelper": set(["9"]), "foo": set(["1"])}))
+            {"debhelper": {"9"}, "foo": {"1"}}))
 
     def test_analyseDepWait_unsatisfied(self):
         # If some direct build-dependencies are unsatisfied, analyseDepWait
@@ -538,7 +536,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             self.buildmanager.analyseDepWait(
                 PkgRelation.parse_relations(
                     "debhelper (>= 9~), foo (>= 1), bar (<< 1) | bar (>= 2)"),
-                {"debhelper": set(["9"]), "bar": set(["1", "1.5"])}))
+                {"debhelper": {"9"}, "bar": {"1", "1.5"}}))
 
     def test_analyseDepWait_strips_arch_restrictions(self):
         # analyseDepWait removes architecture restrictions (e.g. "[amd64]")
@@ -566,7 +564,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             "foo",
             self.buildmanager.analyseDepWait(
                 PkgRelation.parse_relations("foo:any, bar:any"),
-                {"bar": set(["1"])}))
+                {"bar": {"1"}}))
 
     def test_analyseDepWait_strips_restrictions(self):
         # analyseDepWait removes restrictions (e.g. "<stage1>") from the

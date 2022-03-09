@@ -1,10 +1,7 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 from collections import OrderedDict
-import io
 import json
 import os
 
@@ -28,7 +25,7 @@ from lpbuildd.tests.oci_tarball import OCITarball
 
 class MockBuildManager(OCIBuildManager):
     def __init__(self, *args, **kwargs):
-        super(MockBuildManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.commands = []
         self.iterators = []
 
@@ -44,7 +41,7 @@ class MockOCITarSave():
     @property
     def stdout(self):
         tar_path = OCITarball().build_tar_file()
-        return io.open(tar_path, 'rb')
+        return open(tar_path, 'rb')
 
 
 class TestOCIBuildManagerIteration(TestCase):
@@ -53,7 +50,7 @@ class TestOCIBuildManagerIteration(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
-        super(TestOCIBuildManagerIteration, self).setUp()
+        super().setUp()
         self.working_dir = self.useFixture(TempDir()).path
         builder_dir = os.path.join(self.working_dir, "builder")
         home_dir = os.path.join(self.working_dir, "home")

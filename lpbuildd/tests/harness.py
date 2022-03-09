@@ -1,7 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
 __all__ = [
     'BuilddTestCase',
     ]
@@ -25,7 +24,7 @@ test_conffile = os.path.join(
     os.path.dirname(__file__), 'buildd-slave-test.conf')
 
 
-class MockBuildManager(object):
+class MockBuildManager:
     """Mock BuildManager class.
 
     Only implements 'is_archive_private' and 'needs_sanitized_logs' as False.

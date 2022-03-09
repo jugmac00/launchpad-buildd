@@ -32,7 +32,7 @@ class TestBuildManager(TestCase):
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
-        super(TestBuildManager, self).setUp()
+        super().setUp()
         self.log_file = io.StringIO()
         observer = FileLogObserver(
             self.log_file, lambda event: formatEvent(event) + "\n")
@@ -69,12 +69,12 @@ class TestBuildManager(TestCase):
         manager = BuildManager(builder, "123")
         d = defer.Deferred()
         manager.iterate = d.callback
-        manager.runSubProcess("echo", ["echo", u"\N{SNOWMAN}".encode("UTF-8")])
+        manager.runSubProcess("echo", ["echo", "\N{SNOWMAN}".encode()])
         code = yield d
         self.assertEqual(0, code)
         self.assertEqual(
-            u"RUN: echo '\N{SNOWMAN}'\n"
-            u"\N{SNOWMAN}\n".encode("UTF-8"),
+            "RUN: echo '\N{SNOWMAN}'\n"
+            "\N{SNOWMAN}\n".encode(),
             builder._log.getvalue())
         logged_snowman = '\N{SNOWMAN}' if six.PY3 else '\\u2603'
         self.assertEqual(

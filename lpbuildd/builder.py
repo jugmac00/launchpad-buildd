@@ -6,10 +6,6 @@
 
 # The basic builder implementation.
 
-from __future__ import print_function
-
-__metaclass__ = type
-
 from functools import partial
 import hashlib
 import json
@@ -20,7 +16,6 @@ import sys
 import tempfile
 
 import apt
-import six
 from six.moves.urllib.request import (
     build_opener,
     HTTPBasicAuthHandler,
@@ -38,7 +33,7 @@ from lpbuildd.target.backend import make_backend
 from lpbuildd.util import shell_escape
 
 
-devnull = open("/dev/null", "r")
+devnull = open("/dev/null")
 
 
 def _sanitizeURLs(bytes_seq):
@@ -125,7 +120,7 @@ def get_build_path(home, build_id, *extra):
     return os.path.join(home, "build-" + build_id, *extra)
 
 
-class BuildManager(object):
+class BuildManager:
     """Build manager abstract parent."""
 
     backend_name = "chroot"
@@ -166,7 +161,7 @@ class BuildManager(object):
         text_args = [
             arg.decode("UTF-8", "replace") if isinstance(arg, bytes) else arg
             for arg in args[1:]]
-        self._builder.log("RUN: %s %s\n" % (
+        self._builder.log("RUN: {} {}\n".format(
             command, " ".join(shell_escape(arg) for arg in text_args)))
         childfds = {
             0: devnull.fileno() if stdin is None else "w",
@@ -286,7 +281,7 @@ class BuildManager(object):
         try:
             with open(self.status_path) as status_file:
                 return json.load(status_file)
-        except IOError:
+        except OSError:
             pass
         except Exception as e:
             print(
@@ -399,7 +394,7 @@ class BuildStatus:
     ABORTED = "BuildStatus.ABORTED"
 
 
-class Builder(object):
+class Builder:
     """The core of a builder."""
 
     def __init__(self, config):
@@ -453,7 +448,7 @@ class Builder(object):
         if url is not None:
             extra_info = 'Cache'
             if not os.path.exists(cachefile):
-                self.log('Fetching %s by url %s' % (sha1sum, url))
+                self.log(f'Fetching {sha1sum} by url {url}')
                 if username:
                     opener = self.setupAuthHandler(
                         url, username, password).open
@@ -554,23 +549,11 @@ class Builder(object):
             self._log.write(data_bytes)
             self._log.flush()
         data_text = (
-            data if isinstance(data, six.text_type)
+            data if isinstance(data, str)
             else data.decode("UTF-8", "replace"))
-        if six.PY3:
-            data_str = data_text
-        else:
-            # Twisted's logger doesn't handle non-ASCII text very reliably
-            # on Python 2.  This is just for debugging, so replace non-ASCII
-            # characters with the corresponding \u escapes.  We need to go
-            # to ridiculous lengths here to avoid (e.g.) replacing newlines
-            # with "\n".
-            data_str = re.sub(
-                r"([^\x00-\x7f])",
-                lambda match: "\\u%04x" % ord(match.group(0)),
-                data_text).encode("UTF-8")
-        if data_str.endswith("\n"):
-            data_str = data_str[:-1]
-        log.msg("Build log: " + data_str)
+        if data_text.endswith("\n"):
+            data_text = data_text[:-1]
+        log.msg("Build log: " + data_text)
 
     def getLogTail(self):
         """Return the tail of the log.
@@ -595,7 +578,7 @@ class Builder(object):
         try:
             try:
                 rlog = open(self.cachePath("buildlog"), "rb")
-            except IOError:
+            except OSError:
                 ret = b""
             else:
                 # We rely on good OS practices that keep the file handler
@@ -852,26 +835,26 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         """
         # check requested manager
         if managertag not in self._managers:
-            extra_info = "%s not in %r" % (managertag, list(self._managers))
+            extra_info = f"{managertag} not in {list(self._managers)!r}"
             return (BuilderStatus.UNKNOWNBUILDER, extra_info)
         # check requested chroot availability
         chroot_present, info = self.builder.ensurePresent(chrootsum)
         if not chroot_present:
-            extra_info = """CHROOTSUM -> %s
+            extra_info = """CHROOTSUM -> {}
             ***** INFO *****
-            %s
+            {}
             ****************
-            """ % (chrootsum, info)
+            """.format(chrootsum, info)
             return (BuilderStatus.UNKNOWNSUM, extra_info)
         # check requested files availability
         for filesum in filemap.values():
             file_present, info = self.builder.ensurePresent(filesum)
             if not file_present:
-                extra_info = """FILESUM -> %s
+                extra_info = """FILESUM -> {}
                 ***** INFO *****
-                %s
+                {}
                 ****************
-                """ % (filesum, info)
+                """.format(filesum, info)
                 return (BuilderStatus.UNKNOWNSUM, extra_info)
         # check buildid sanity
         if buildid is None or buildid == "" or buildid == 0:

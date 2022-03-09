@@ -1,8 +1,6 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__metaclass__ = type
-
 import argparse
 import io
 import os
@@ -10,7 +8,6 @@ import shutil
 
 from fixtures import MonkeyPatch
 from fixtures._fixtures import popen
-import six
 from systemfixtures import FakeFilesystem as _FakeFilesystem
 
 
@@ -68,7 +65,7 @@ class Kill:
 class KillFixture(MonkeyPatch):
 
     def __init__(self, delays=None):
-        super(KillFixture, self).__init__("os.kill", Kill(delays=delays))
+        super().__init__("os.kill", Kill(delays=delays))
 
     @property
     def kills(self):
@@ -85,7 +82,7 @@ class FakeFilesystem(_FakeFilesystem):
     """
 
     def _setUp(self):
-        super(FakeFilesystem, self)._setUp()
+        super()._setUp()
         self._excludes = set()
 
     def remove(self, path):
@@ -96,21 +93,21 @@ class FakeFilesystem(_FakeFilesystem):
         the overlay filesystem.
         """
         if not path.startswith(os.sep):
-            raise ValueError("Non-absolute path '{}'".format(path))
+            raise ValueError(f"Non-absolute path '{path}'")
         self._excludes.add(path.rstrip(os.sep))
 
     def _is_fake_path(self, path, *args, **kwargs):
         for prefix in self._excludes:
             if path.startswith(prefix):
                 return False
-        return super(FakeFilesystem, self)._is_fake_path(path, *args, **kwargs)
+        return super()._is_fake_path(path, *args, **kwargs)
 
 
 class CarefulFakeProcess(popen.FakeProcess):
     """A version of FakeProcess that is more careful about text mode."""
 
     def __init__(self, *args, **kwargs):
-        super(CarefulFakeProcess, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         text_mode = bool(self._args.get("universal_newlines"))
         if not self.stdout:
             self.stdout = io.StringIO() if text_mode else io.BytesIO()
@@ -118,16 +115,16 @@ class CarefulFakeProcess(popen.FakeProcess):
             self.stderr = io.StringIO() if text_mode else io.BytesIO()
 
     def communicate(self, *args, **kwargs):
-        out, err = super(CarefulFakeProcess, self).communicate(*args, **kwargs)
+        out, err = super().communicate(*args, **kwargs)
         if self._args.get("universal_newlines"):
             if isinstance(out, bytes):
                 raise TypeError("Process stdout is bytes, expecting text")
             if isinstance(err, bytes):
                 raise TypeError("Process stderr is bytes, expecting text")
         else:
-            if isinstance(out, six.text_type):
+            if isinstance(out, str):
                 raise TypeError("Process stdout is text, expecting bytes")
-            if isinstance(err, six.text_type):
+            if isinstance(err, str):
                 raise TypeError("Process stderr is text, expecting bytes")
         return out, err
 
@@ -136,5 +133,5 @@ class CarefulFakeProcessFixture(MonkeyPatch):
     """Patch the Popen fixture to be more careful about text mode."""
 
     def __init__(self):
-        super(CarefulFakeProcessFixture, self).__init__(
+        super().__init__(
             "fixtures._fixtures.popen.FakeProcess", CarefulFakeProcess)

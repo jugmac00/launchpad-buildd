@@ -39,7 +39,7 @@ class OCITarball:
     def layer_file(self, directory, layer_name):
         layer_directory = os.path.join(directory, layer_name)
         os.mkdir(layer_directory)
-        contents = "{}-contents".format(layer_name)
+        contents = f"{layer_name}-contents"
         tarinfo = tarfile.TarInfo(contents)
         tarinfo.size = len(contents)
         layer_contents = io.BytesIO(contents.encode("UTF-8"))
