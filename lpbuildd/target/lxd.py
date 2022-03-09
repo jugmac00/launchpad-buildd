@@ -470,7 +470,7 @@ class LXD(Backend):
         # filesystems.
         self.run(
             ["mknod", "-m", "0660", "/dev/loop-control", "c", "10", "237"])
-        for minor in range(8):
+        for minor in range(256):
             self.run(
                 ["mknod", "-m", "0660", "/dev/loop%d" % minor,
                  "b", "7", str(minor)])

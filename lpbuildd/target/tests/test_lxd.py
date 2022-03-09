@@ -458,7 +458,7 @@ class TestLXD(TestCase):
                 ["mknod", "-m", "0660", "/dev/loop-control",
                  "c", "10", "237"]),
             ]
-        for minor in range(8):
+        for minor in range(256):
             expected_args.append(
                 Equals(
                     lxc +
