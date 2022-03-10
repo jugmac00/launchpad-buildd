@@ -11,7 +11,7 @@ You can create a container with the following command:
 
 .. code:: bash
 
-        lxc launch --vm ubuntu:18.04 lp-builddev
+        lxc launch --vm ubuntu:20.04 lp-builddev
 
 Note that you may want to have a profile to share the source code with the
 container before running the above command.
