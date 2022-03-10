@@ -90,6 +90,8 @@ class CharmBuildManager(BuildManagerProxyMixin, DebianBuildManager):
     def gatherResults(self):
         """Gather the results of the build and add them to the file cache."""
         output_path = os.path.join("/home/buildd", self.name)
+        if self.build_path is not None:
+            output_path = os.path.join(output_path, self.build_path)
         if self.backend.path_exists(output_path):
             for entry in sorted(self.backend.listdir(output_path)):
                 path = os.path.join(output_path, entry)
