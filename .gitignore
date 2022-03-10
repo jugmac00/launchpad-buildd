@@ -2,8 +2,7 @@
 *.pyc
 .pybuild
 buildd-slave-example.conf
-charm/dist
-charm/tmp
+charm/*.charm
 dist
 debian/debhelper-build-stamp
 debian/files
