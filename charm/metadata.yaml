@@ -8,5 +8,5 @@ tags:
 maintainer: Colin Watson <cjwatson@canonical.com>
 subordinate: false
 series:
-    - bionic
+    - focal
 min-juju-version: 2.0.0
