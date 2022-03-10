@@ -23,24 +23,15 @@ lxc profile set juju-privileged security.privileged true
 
 # Deployment
 
-You can either deploy the stock launchpad-buildd package from a PPA, or
-build your own.
-
-Installing from a PPA is the default; just deploy this charm.
-
-If you're building your own package, then you already have the
-launchpad-buildd code checked out.  In the `charm/` subdirectory, build the
-charm and packages together:
-
 ```
-make build-with-packages
+make deploy
 ```
 
-Then deploy the charm, attaching the packages as resources:
-
-```
-make deploy-with-packages
-```
+This charm will deploy the launchpad-buildd package from a PPA.  If you want
+to deploy a modified version of launchpad-buildd, you can either build it
+locally and install the resulting packages manually after initial
+deployment, or you can upload a modified source package to your own PPA and
+set `install_sources` to refer to that PPA.
 
 Either way, this should eventually give you a running builder.  Find out its
 host name (e.g. `juju-XXXXXX-0.lxd`) and [add it to your local Launchpad

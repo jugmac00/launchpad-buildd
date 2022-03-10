@@ -7,6 +7,7 @@ options:
         packages:
             - bzr-builder
             - git-build-recipe
+            - launchpad-buildd
             - quilt
 ignore:
     - dist
