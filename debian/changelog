@@ -5,6 +5,7 @@ launchpad-buildd (210) UNRELEASED; urgency=medium
   * Make more loop device nodes available in LXD containers (LP: #1963706).
   * Drop pre-Python-3.6 code using pyupgrade.
   * Fix gathering the output of charm recipe builds that use --build-path.
+  * Convert daemon startup to systemd (LP: #1964615).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 28 Feb 2022 11:27:20 +0000
 

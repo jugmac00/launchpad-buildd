@@ -1,0 +1,15 @@
+# This service is really a systemd target, but we use a service since
+# targets cannot be reloaded.  See launchpad-buildd@.service for instance
+# configuration.
+
+[Unit]
+Description=Launchpad build daemon
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecReload=/bin/true
+
+[Install]
+WantedBy=multi-user.target
