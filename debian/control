@@ -8,7 +8,7 @@ Standards-Version: 3.9.5
 Build-Depends: apt-utils,
                bzr,
                curl,
-               debhelper (>= 9~),
+               debhelper (>= 9.20160709~),
                dh-exec,
                dh-python,
                git,

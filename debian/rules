@@ -9,10 +9,15 @@ export PYBUILD_NAME := lpbuildd
 export LIBDIR := $(shell python3 -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib())')
 
 %:
-	dh $@ --with=python3 --buildsystem=pybuild
+	dh $@ --with=python3,systemd --buildsystem=pybuild
 
 override_dh_auto_build:
 	dh_auto_build
 	python3 buildd-genconfig --template=template-buildd-slave.conf \
 	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
 		> buildd-slave-example.conf
+
+# Required in debhelper compatibility level <=10 to avoid generating
+# postinst fragments to register a nonexistent init.d script.
+override_dh_installinit:
+	dh_installinit -n

@@ -9,3 +9,7 @@ if [ "$1" = purge ]; then
 		rmdir -p --ignore-fail-on-non-empty /etc/systemd/timesyncd.conf.d
 	fi
 fi
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,19 @@
+#! /bin/sh
+set -e
+
+# Generate systemd unit dependency symlinks for all configured
+# launchpad-buildd instances.
+
+wantdir="$1/launchpad-buildd.service.wants"
+template=/lib/systemd/system/launchpad-buildd@.service
+
+mkdir -p "$wantdir"
+
+for conf in /etc/launchpad-buildd/*; do
+    # Skip nonexistent files (perhaps due to the glob matching no files).
+    [ -e "$conf" ] || continue
+    # Skip backup files.
+    case $conf in -*|*~) continue ;; esac
+
+    ln -s "$template" "$wantdir/launchpad-buildd@${conf##*/}.service"
+done

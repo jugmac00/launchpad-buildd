@@ -1,0 +1,26 @@
+[Unit]
+Description=Launchpad build daemon (%i)
+PartOf=launchpad-buildd.service
+Before=launchpad-buildd.service
+ReloadPropagatedFrom=launchpad-buildd.service
+After=network.target time-sync.target cloud-init.service
+# Useful for certain kinds of image builds.
+After=modprobe@nbd.service
+Requires=modprobe@nbd.service
+
+[Service]
+Type=simple
+RuntimeDirectory=launchpad-buildd
+LogsDirectory=launchpad-buildd
+User=buildd
+EnvironmentFile=-/etc/default/launchpad-buildd
+Environment=BUILDD_CONFIG=/etc/launchpad-buildd/%i
+# When enabled, launchpad-buildd accepts network commands and runs them as
+# root.  If you are sure this server will only be reachable by trusted
+# machines, edit /etc/default/launchpad-buildd.
+ExecStartPre=/usr/bin/test ${RUN_NETWORK_REQUESTS_AS_ROOT} = yes
+ExecStartPre=/usr/bin/install -d /home/buildd/filecache-default
+ExecStart=/usr/bin/twistd3 --no_save --pidfile /run/launchpad-buildd/%i.pid --python /usr/lib/launchpad-buildd/buildd-slave.tac --logfile /var/log/launchpad-buildd/%i.log --umask 022 --nodaemon
+
+[Install]
+WantedBy=multi-user.target
