@@ -148,6 +148,59 @@ class TestCharmBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
+    @defer.inlineCallbacks
+    def test_iterate_build_path(self):
+        # The build manager iterates a build using build_path from start to
+        # finish.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/charm",
+            "git_path": "master",
+            "build_path": "charm",
+            }
+        expected_options = [
+            "--git-repository",
+            "https://git.launchpad.dev/~example/+git/charm",
+            "--git-path", "master",
+            "--build-path", "charm",
+            ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.add_file(
+            "/home/buildd/test-charm/charm/test-charm_0_all.charm",
+            b"I am charming.")
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "scan-for-processes",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+
+        self.assertEqual(CharmBuildState.BUILD_CHARM, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(self.builder, HasWaitingFiles.byEquality({
+            "test-charm_0_all.charm": b"I am charming.",
+            }))
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target", "in-target", "umount-chroot",
+            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
+            ]
+        self.assertEqual(CharmBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
     @mock.patch('lpbuildd.proxy.urlopen')
     def test_revokeProxyToken(self, urlopen_mock):
         self.buildmanager.revocation_endpoint = "http://revoke_endpoint"
