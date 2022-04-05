@@ -70,34 +70,27 @@ class VCSOperationMixin(StatusOperationMixin):
                 cmd.insert(1, "-Ossl.cert_reqs=none")
         else:
             assert self.args.git_repository is not None
-            cmd = ["git", "clone"]
+            cmd = ["git", "clone", "-n"]
             if quiet:
                 cmd.append("-q")
             if git_shallow_clone:
                 cmd.extend(["--depth", "1"])
-            if self.args.git_path is not None:
-                git_path = self.args.git_path
-                # "git clone -b" is a bit odd: it takes either branches or
-                # tags, but they must be in their short form, i.e. "master"
-                # rather than "refs/heads/master" and "1.0" rather than
-                # "refs/tags/1.0".  There's thus room for ambiguity if a
-                # repository has a branch and a tag with the same name (the
-                # branch will win), but using tags in the first place is
-                # pretty rare here and a name collision is rarer still.
-                # Launchpad shortens branch names before sending them to us,
-                # but not tag names.
-                if git_path.startswith("refs/tags/"):
-                    git_path = git_path[len("refs/tags/"):]
-                cmd.extend(["-b", git_path])
             cmd.extend([self.args.git_repository, name])
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"
         self.backend.run(cmd, cwd=cwd, env=full_env)
         if self.args.git_repository is not None:
+            repository = os.path.join(cwd, name)
+            git_path = self.args.git_path
+            if self.args.git_path is None:
+                git_path = "HEAD"
+            self.backend.run(
+                ["git", "checkout", "-q", git_path],
+                cwd=repository, env=full_env)
             try:
                 self.backend.run(
                     ["git", "submodule", "update", "--init", "--recursive"],
-                    cwd=os.path.join(cwd, name), env=full_env)
+                    cwd=repository, env=full_env)
             except subprocess.CalledProcessError as e:
                 logger.error(
                     "'git submodule update --init --recursive failed with "

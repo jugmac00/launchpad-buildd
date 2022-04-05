@@ -212,7 +212,11 @@ class TestBuildCharm(TestCase):
         build_charm.repo()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "lp:foo", "test-image"], cwd="/home/buildd"),
+                ["git", "clone", "-n", "lp:foo", "test-image"],
+                cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"],
+                cwd="/home/buildd/test-image"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -237,8 +241,11 @@ class TestBuildCharm(TestCase):
         build_charm.repo()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "next", "lp:foo", "test-image"],
+                ["git", "clone", "-n", "lp:foo", "test-image"],
                 cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "next"],
+                cwd="/home/buildd/test-image"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -264,8 +271,11 @@ class TestBuildCharm(TestCase):
         build_charm.repo()
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "1.0", "lp:foo", "test-image"],
+                ["git", "clone", "-n", "lp:foo", "test-image"],
                 cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "refs/tags/1.0"],
+                cwd="/home/buildd/test-image"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -298,8 +308,11 @@ class TestBuildCharm(TestCase):
             }
         self.assertThat(build_charm.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "lp:foo", "test-image"],
+                ["git", "clone", "-n", "lp:foo", "test-image"],
                 cwd="/home/buildd", **env),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"],
+                cwd="/home/buildd/test-image", **env),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image", **env),

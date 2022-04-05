@@ -179,8 +179,11 @@ class TestBuildOCI(TestCase):
         build_oci.repo()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "--depth", "1", "lp:foo", "test-image"],
+                ["git", "clone", "-n", "--depth", "1", "lp:foo", "test-image"],
                 cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"],
+                cwd="/home/buildd/test-image"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -198,8 +201,11 @@ class TestBuildOCI(TestCase):
         build_oci.repo()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "--depth", "1", "-b", "next",
-                 "lp:foo", "test-image"], cwd="/home/buildd"),
+                ["git", "clone", "-n", "--depth", "1", "lp:foo", "test-image"],
+                cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "next"],
+                cwd="/home/buildd/test-image"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -218,8 +224,11 @@ class TestBuildOCI(TestCase):
         build_oci.repo()
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "--depth", "1", "-b", "1.0", "lp:foo",
-                 "test-image"], cwd="/home/buildd"),
+                ["git", "clone", "-n", "--depth", "1", "lp:foo", "test-image"],
+                cwd="/home/buildd"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "refs/tags/1.0"],
+                cwd="/home/buildd/test-image"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image"),
@@ -245,8 +254,11 @@ class TestBuildOCI(TestCase):
             }
         self.assertThat(build_oci.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "--depth", "1", "lp:foo", "test-image"],
+                ["git", "clone", "-n", "--depth", "1", "lp:foo", "test-image"],
                 cwd="/home/buildd", **env),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"],
+                cwd="/home/buildd/test-image", **env),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/home/buildd/test-image", **env),

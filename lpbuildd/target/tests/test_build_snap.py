@@ -186,7 +186,9 @@ class TestBuildSnap(TestCase):
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "lp:foo", "test-snap"], cwd="/build"),
+                ["git", "clone", "-n", "lp:foo", "test-snap"], cwd="/build"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"], cwd="/build/test-snap"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/test-snap"),
@@ -211,8 +213,9 @@ class TestBuildSnap(TestCase):
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "next", "lp:foo", "test-snap"],
-                cwd="/build"),
+                ["git", "clone", "-n", "lp:foo", "test-snap"], cwd="/build"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "next"], cwd="/build/test-snap"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/test-snap"),
@@ -238,8 +241,10 @@ class TestBuildSnap(TestCase):
         build_snap.repo()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "1.0", "lp:foo", "test-snap"],
-                cwd="/build"),
+                ["git", "clone", "-n", "lp:foo", "test-snap"], cwd="/build"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "refs/tags/1.0"],
+                cwd="/build/test-snap"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/test-snap"),
@@ -272,7 +277,11 @@ class TestBuildSnap(TestCase):
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "lp:foo", "test-snap"], cwd="/build", **env),
+                ["git", "clone", "-n", "lp:foo", "test-snap"],
+                cwd="/build", **env),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"],
+                cwd="/build/test-snap", **env),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/test-snap", **env),
