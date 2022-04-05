@@ -244,8 +244,11 @@ class TestGenerateTranslationTemplates(TestCase):
         self.assertThat(generator.backend.run.calls, MatchesListwise([
             RanAptGet("install", "intltool", "git"),
             RanCommand(
-                ["git", "clone", "lp:~my/repository", "source-tree"],
+                ["git", "clone", "-n", "lp:~my/repository", "source-tree"],
                 cwd=self.home_dir, LANG="C.UTF-8", SHELL="/bin/sh"),
+            RanCommand(
+                ["git", "checkout", "-q", "HEAD"],
+                cwd=branch_dir, LANG="C.UTF-8", SHELL="/bin/sh"),
             RanCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd=branch_dir, LANG="C.UTF-8", SHELL="/bin/sh"),

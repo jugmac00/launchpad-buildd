@@ -152,7 +152,10 @@ class TestRunCIPrepare(TestCase):
         run_ci_prepare.backend.run = FakeRevisionID("0" * 40)
         run_ci_prepare.repo()
         self.assertThat(run_ci_prepare.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["git", "clone", "lp:foo", "tree"], cwd="/build"),
+            RanBuildCommand(
+                ["git", "clone", "-n", "lp:foo", "tree"], cwd="/build"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"], cwd="/build/tree"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/tree"),
@@ -176,8 +179,9 @@ class TestRunCIPrepare(TestCase):
         run_ci_prepare.repo()
         self.assertThat(run_ci_prepare.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "next", "lp:foo", "tree"],
-                cwd="/build"),
+                ["git", "clone", "-n", "lp:foo", "tree"], cwd="/build"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "next"], cwd="/build/tree"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/tree"),
@@ -201,7 +205,9 @@ class TestRunCIPrepare(TestCase):
         run_ci_prepare.repo()
         self.assertThat(run_ci_prepare.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "-b", "1.0", "lp:foo", "tree"], cwd="/build"),
+                ["git", "clone", "-n", "lp:foo", "tree"], cwd="/build"),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "refs/tags/1.0"], cwd="/build/tree"),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/tree"),
@@ -232,7 +238,9 @@ class TestRunCIPrepare(TestCase):
             }
         self.assertThat(run_ci_prepare.backend.run.calls, MatchesListwise([
             RanBuildCommand(
-                ["git", "clone", "lp:foo", "tree"], cwd="/build", **env),
+                ["git", "clone", "-n", "lp:foo", "tree"], cwd="/build", **env),
+            RanBuildCommand(
+                ["git", "checkout", "-q", "HEAD"], cwd="/build/tree", **env),
             RanBuildCommand(
                 ["git", "submodule", "update", "--init", "--recursive"],
                 cwd="/build/tree", **env),
@@ -259,7 +267,7 @@ class TestRunCIPrepare(TestCase):
             AnyMatch(RanSnap("install", "--classic", "lpcraft")),
             AnyMatch(
                 RanBuildCommand(
-                    ["git", "clone", "lp:foo", "tree"], cwd="/build")),
+                    ["git", "clone", "-n", "lp:foo", "tree"], cwd="/build")),
             ))
 
     def test_run_install_fails(self):
