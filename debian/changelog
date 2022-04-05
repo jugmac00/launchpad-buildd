@@ -1,9 +1,9 @@
-launchpad-buildd (211) UNRELEASED; urgency=medium
+launchpad-buildd (211) focal; urgency=medium
 
   * Use "git checkout" rather than "git clone -b", since that allows
     checking out by commit ID.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 05 Apr 2022 14:11:21 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 05 Apr 2022 21:52:14 +0100
 
 launchpad-buildd (210) bionic; urgency=medium
 
