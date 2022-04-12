@@ -1,6 +1,8 @@
 launchpad-buildd (212) UNRELEASED; urgency=medium
 
   * Ensure that launchpad-buildd runs with lxd as a supplementary group.
+  * Fix use of shallow clones for OCI builds, which regressed in version 211
+    (LP: #1968630).
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 06 Apr 2022 12:46:35 +0100
 

@@ -74,7 +74,7 @@ class VCSOperationMixin(StatusOperationMixin):
             if quiet:
                 cmd.append("-q")
             if git_shallow_clone:
-                cmd.extend(["--depth", "1"])
+                cmd.extend(["--depth", "1", "--no-single-branch"])
             cmd.extend([self.args.git_repository, name])
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"
