@@ -12,16 +12,16 @@ except ImportError:
 import os
 import shutil
 import tempfile
+from textwrap import dedent
 import unittest
 
-from fixtures import EnvironmentVariable
+from fixtures import (
+    EnvironmentVariable,
+    TempDir,
+    )
 from txfixtures.tachandler import TacTestFixture
 
 from lpbuildd.builder import Builder
-
-
-test_conffile = os.path.join(
-    os.path.dirname(__file__), 'buildd-slave-test.conf')
 
 
 class MockBuildManager:
@@ -42,7 +42,8 @@ class BuilddTestCase(unittest.TestCase):
     def setUp(self):
         """Setup a Builder using the test config."""
         conf = SafeConfigParser()
-        conf.read(test_conffile)
+        conf.add_section("builder")
+        conf.set("builder", "architecturetag", "i386")
         conf.set("builder", "filecache", tempfile.mkdtemp())
 
         self.builder = Builder(conf)
@@ -106,6 +107,8 @@ class BuilddTestSetup(TacTestFixture):
     >>> fixture.tearDown()
     """
 
+    _root = None
+
     def setUp(self, **kwargs):
         # TacTestFixture defaults to /usr/bin/twistd, but on Ubuntu the
         # Python 3 version of this is /usr/bin/twistd3, so that makes for a
@@ -115,23 +118,30 @@ class BuilddTestSetup(TacTestFixture):
         super().setUp(**kwargs)
 
     def setUpRoot(self):
-        """Recreate empty root directory to avoid problems."""
-        if os.path.exists(self.root):
-            shutil.rmtree(self.root)
-        os.mkdir(self.root)
         filecache = os.path.join(self.root, 'filecache')
         os.mkdir(filecache)
         self.useFixture(EnvironmentVariable('HOME', self.root))
+        test_conffile = os.path.join(self.root, "buildd.conf")
+        with open(test_conffile, "w") as f:
+            f.write(dedent(f"""\
+                [builder]
+                architecturetag = i386
+                filecache = {filecache}
+                bindhost = localhost
+                bindport = {self.daemon_port}
+                sharepath = {self.root}
+                """))
         self.useFixture(EnvironmentVariable('BUILDD_CONFIG', test_conffile))
         # XXX cprov 2005-05-30:
         # When we are about running it seriously we need :
         # * install sbuild package
         # * to copy the scripts for sbuild
-        self.addCleanup(shutil.rmtree, self.root)
 
     @property
     def root(self):
-        return '/var/tmp/buildd'
+        if self._root is None:
+            self._root = self.useFixture(TempDir()).path
+        return self._root
 
     @property
     def tacfile(self):
@@ -151,5 +161,4 @@ class BuilddTestSetup(TacTestFixture):
 
     @property
     def daemon_port(self):
-        # This must match buildd-slave-test.conf.
         return 8321

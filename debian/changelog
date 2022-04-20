@@ -1,3 +1,9 @@
+launchpad-buildd (213) UNRELEASED; urgency=medium
+
+  * Dynamically generate configuration file in lpbuildd.tests.harness.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 Apr 2022 16:03:01 +0100
+
 launchpad-buildd (212) focal; urgency=medium
 
   * Ensure that launchpad-buildd runs with lxd as a supplementary group.
