@@ -1,6 +1,7 @@
 launchpad-buildd (213) UNRELEASED; urgency=medium
 
   * Dynamically generate configuration file in lpbuildd.tests.harness.
+  * Remove unnecessary "slave" component from some file names.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 Apr 2022 16:03:01 +0100
 

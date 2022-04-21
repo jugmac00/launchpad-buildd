@@ -10,6 +10,6 @@ include bin/test_buildd_recipe
 include buildd-genconfig
 include debian/changelog
 include sbuildrc
-include template-buildd-slave.conf
-include lpbuildd/buildd-slave.tac
+include template-buildd.conf
+include lpbuildd/buildd.tac
 recursive-include lpbuildd/tests *.diff *.tar.gz buildlog buildlog.long
