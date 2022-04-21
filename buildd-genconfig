@@ -37,7 +37,7 @@ parser.add_option(
     "-t", "--template", dest="TEMPLATE",
     help="the template file to use",
     metavar="FILE",
-    default="/usr/share/launchpad-buildd/template-buildd-slave.conf")
+    default="/usr/share/launchpad-buildd/template-buildd.conf")
 
 parser.add_option(
     "--proxy-port", dest="PROXYPORT",

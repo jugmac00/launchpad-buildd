@@ -1,2 +1,2 @@
 #! /usr/bin/dh-exec
-${LIBDIR}/lpbuildd/buildd-slave.tac	usr/lib/launchpad-buildd/buildd-slave.tac
+${LIBDIR}/lpbuildd/buildd.tac	usr/lib/launchpad-buildd/buildd.tac

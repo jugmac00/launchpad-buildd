@@ -148,16 +148,16 @@ class BuilddTestSetup(TacTestFixture):
         return os.path.abspath(os.path.join(
             os.path.dirname(__file__),
             os.path.pardir,
-            'buildd-slave.tac'
+            'buildd.tac'
             ))
 
     @property
     def pidfile(self):
-        return os.path.join(self.root, 'build-slave.pid')
+        return os.path.join(self.root, 'buildd.pid')
 
     @property
     def logfile(self):
-        return '/var/tmp/build-slave.log'
+        return '/var/tmp/buildd.log'
 
     @property
     def daemon_port(self):

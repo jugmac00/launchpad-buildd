@@ -36,7 +36,7 @@ from lpbuildd.translationtemplates import TranslationTemplatesBuildManager
 options = ServerOptions()
 options.parseOptions()
 
-conffile = os.environ.get('BUILDD_CONFIG', 'buildd-slave-example.conf')
+conffile = os.environ.get('BUILDD_CONFIG', 'buildd-example.conf')
 
 conf = SafeConfigParser()
 conf.read(conffile)

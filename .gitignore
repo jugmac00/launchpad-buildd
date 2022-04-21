@@ -1,7 +1,7 @@
 *.egg-info
 *.pyc
 .pybuild
-buildd-slave-example.conf
+buildd-example.conf
 charm/*.charm
 dist
 debian/debhelper-build-stamp

@@ -9,4 +9,4 @@ debian/launchpad-buildd-generator	lib/systemd/system-generators
 debian/upgrade-config			usr/share/launchpad-buildd
 default/launchpad-buildd 		etc/default
 sbuildrc				usr/share/launchpad-buildd
-template-buildd-slave.conf		usr/share/launchpad-buildd
+template-buildd.conf			usr/share/launchpad-buildd

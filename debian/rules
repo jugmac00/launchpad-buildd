@@ -13,9 +13,9 @@ export LIBDIR := $(shell python3 -c 'import distutils.sysconfig; print(distutils
 
 override_dh_auto_build:
 	dh_auto_build
-	python3 buildd-genconfig --template=template-buildd-slave.conf \
+	python3 buildd-genconfig --template=template-buildd.conf \
 	--arch=i386 --port=8221 --name=default --host=buildd.buildd \
-		> buildd-slave-example.conf
+		> buildd-example.conf
 
 # Required in debhelper compatibility level <=10 to avoid generating
 # postinst fragments to register a nonexistent init.d script.
