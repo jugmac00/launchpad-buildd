@@ -119,10 +119,17 @@ class TestCIBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.test/~example/+git/ci",
             "git_path": "main",
             "jobs": [[("build", "0")], [("test", "0")]],
+            "apt_repositories": ["repository one", "repository two"],
+            "environment_variables": {
+                "INDEX": "http://example.com", "PATH":"foo"},
             }
         expected_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
             "--git-path", "main",
+            "--apt-repository", "repository one",
+            "--apt-repository", "repository two",
+            "--environment-variable", "INDEX=http://example.com",
+            "--environment-variable", "PATH=foo",
             ]
         yield self.startBuild(args, expected_options)
 
@@ -235,10 +242,17 @@ class TestCIBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.test/~example/+git/ci",
             "git_path": "main",
             "jobs": [[("lint", "0"), ("build", "0")], [("test", "0")]],
+            "apt_repositories": ["repository one", "repository two"],
+            "environment_variables": {
+                "INDEX": "http://example.com", "PATH":"foo"},
             }
         expected_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
             "--git-path", "main",
+            "--apt-repository", "repository one",
+            "--apt-repository", "repository two",
+            "--environment-variable", "INDEX=http://example.com",
+            "--environment-variable", "PATH=foo",
             ]
         yield self.startBuild(args, expected_options)
 

@@ -348,6 +348,54 @@ class TestRunCI(TestCase):
                 ], cwd="/build/tree", **env),
             ]))
 
+    def test_run_job_with_environment_variables(self):
+        args = [
+            "run-ci",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--environment-variable", "PIP_INDEX_URL=http://example",
+            "--environment-variable", "SOME_PATH=/etc/some_path",
+            "test", "0",
+            ]
+        run_ci = parse_args(args=args).operation
+        run_ci.run_job()
+        self.assertThat(run_ci.backend.run.calls, MatchesListwise([
+            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanBuildCommand([
+                "/bin/bash", "-o", "pipefail", "-c",
+                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "test 0 "
+                "--set-env PIP_INDEX_URL=http://example "
+                "--set-env SOME_PATH=/etc/some_path "
+                "2>&1 "
+                "| tee /build/output/test:0.log",
+                ], cwd="/build/tree"),
+            ]))
+
+    def test_run_job_with_apt_repositories(self):
+        args = [
+            "run-ci",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--apt-repository",
+            "deb http://archive.ubuntu.com/ubuntu/ focal main restricted",
+            "--apt-repository",
+             "deb http://archive.ubuntu.com/ubuntu/ focal universe",
+            "test", "0",
+            ]
+        run_ci = parse_args(args=args).operation
+        run_ci.run_job()
+        self.assertThat(run_ci.backend.run.calls, MatchesListwise([
+            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanBuildCommand([
+                "/bin/bash", "-o", "pipefail", "-c",
+                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "test 0 "
+                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' "
+                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal universe' "
+                "2>&1 "
+                "| tee /build/output/test:0.log",
+                ], cwd="/build/tree"),
+            ]))
+
     def test_run_succeeds(self):
         args = [
             "run-ci",

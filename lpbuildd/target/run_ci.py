@@ -92,6 +92,22 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         parser.add_argument("job_name", help="job name to run")
         parser.add_argument(
             "job_index", type=int, help="index within job name to run")
+        parser.add_argument(
+            "--environment-variable",
+            dest="environment_variables",
+            type=str,
+            action="append",
+            default=[],
+            help="environment variable where key and value are separated by =",
+        )
+        parser.add_argument(
+            "--apt-repository",
+            dest="apt_repositories",
+            type=str,
+            action="append",
+            default=[],
+            help="single apt repository line",
+        )
 
     def run_job(self):
         logger.info("Running job phase...")
@@ -101,9 +117,22 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         output_path = os.path.join("/build", "output", job_id)
         self.backend.run(["mkdir", "-p", output_path])
         lpcraft_args = [
-            "lpcraft", "-v", "run-one", "--output-directory", output_path,
-            self.args.job_name, str(self.args.job_index),
-            ]
+            "lpcraft",
+            "-v",
+            "run-one",
+            "--output-directory",
+            output_path,
+            self.args.job_name,
+            str(self.args.job_index),
+        ]
+        environment_variables = dict(
+            pair.split("=", maxsplit=1)
+            for pair in self.args.environment_variables
+        )
+        for key, value in environment_variables.items():
+            lpcraft_args.extend(["--set-env", "%s=%s" % (key, value)])
+        for repository in self.args.apt_repositories:
+            lpcraft_args.extend(["--apt-replace-repositories", repository])
         escaped_lpcraft_args = (
             " ".join(shell_escape(arg) for arg in lpcraft_args))
         tee_args = ["tee", "%s.log" % output_path]
