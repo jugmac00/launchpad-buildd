@@ -6,15 +6,18 @@ The following steps need to be performed before `Upgrading the builders
 
 1. Ensure everything has been merged to master.
 
-2. Create a new release branch, based on master.
+2. Create a new release branch, e.g. ``release-213``, based on master.
 
-3. Run ``DEBEMAIL="<email address>" DEBFULLNAME="<name>" dch -rD bionic``.
+3. Run ``DEBEMAIL="<email address>" DEBFULLNAME="<name>" dch -rD focal``.
    The later recipe build will prepend the correct preamble for each Ubuntu release.
 
-4. Commit and push this branch, open a MergeProposal for review.
+4. Create a commit with a title like ``releasing package launchpad-buildd version 213``,
+   push this branch and open a MergeProposal with a title like
+   ``Release version 213`` for review.
 
 5. Once the release branch has merged to master,
-   tag the release commit and check https://code.launchpad.net/~launchpad/+recipe/launchpad-buildd-daily
+   tag the release commit (e.g. ``git tag 213 && git push origin --tags``) and
+   check https://code.launchpad.net/~launchpad/+recipe/launchpad-buildd-daily
    for the recipe build to happen.
    You can start a build if required.
 
