@@ -1,7 +1,11 @@
 launchpad-buildd (213) UNRELEASED; urgency=medium
 
+  [ Colin Watson ]
   * Dynamically generate configuration file in lpbuildd.tests.harness.
   * Remove unnecessary "slave" component from some file names.
+
+  [ Jürgen Gmach ]
+  * Pass environment variable and apt repository data to the CI runner.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 20 Apr 2022 16:03:01 +0100
 
