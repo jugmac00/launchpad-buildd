@@ -27,6 +27,6 @@ The following steps need to be performed before `Upgrading the builders
 
 7. Perform QA
 
-8. File an upgrade RT (`sample <https://portal.admin.canonical.com/C135751>`_),
+8. File an upgrade RT (`sample <https://portal.admin.canonical.com/C150737>`_),
    noting the version number and possibly multiple suites/releases
    (`IS procedure <https://wiki.canonical.com/InformationInfrastructure/ISO/BuildInfrastructure/BuilddFixing>`_).
