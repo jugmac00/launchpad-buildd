@@ -82,13 +82,26 @@ class AddTrustedKeys(Operation):
 
     def __init__(self, args, parser):
         super().__init__(args, parser)
-        self.input_file = sys.stdin
+        self.input_file = sys.stdin.buffer
+        self.show_keys_file = sys.stdout.buffer
 
     def run(self):
         """Add trusted keys from an input file."""
         logger.info("Adding trusted keys to build-%s", self.args.build_id)
-        self.backend.run(["apt-key", "add", "-"], stdin=self.input_file)
-        self.backend.run(["apt-key", "list"])
+        gpg_cmd = [
+            "gpg", "--ignore-time-conflict", "--no-options", "--no-keyring",
+            ]
+        with tempfile.NamedTemporaryFile(mode="wb+") as keyring:
+            subprocess.check_call(
+                gpg_cmd + ["--dearmor"], stdin=self.input_file, stdout=keyring)
+            keyring.seek(0)
+            subprocess.check_call(
+                gpg_cmd +
+                ["--show-keys", "--keyid-format", "long", "--fingerprint"],
+                stdin=keyring, stdout=self.show_keys_file)
+            os.fchmod(keyring.fileno(), 0o644)
+            self.backend.copy_in(
+                keyring.name, "/etc/apt/trusted.gpg.d/launchpad-buildd.gpg")
         return 0
 
 
