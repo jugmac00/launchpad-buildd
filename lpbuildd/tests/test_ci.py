@@ -121,20 +121,22 @@ class TestCIBuildManagerIteration(TestCase):
             "jobs": [[("build", "0")], [("test", "0")]],
             "apt_repositories": ["repository one", "repository two"],
             "environment_variables": {
-                "INDEX": "http://example.com", "PATH":"foo"},
+                "INDEX": "http://example.com", "PATH": "foo"},
             }
-        expected_options = [
+        expected_prepare_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
             "--git-path", "main",
+            ]
+        yield self.startBuild(args, expected_prepare_options)
+
+        # After preparation, start running the first job.
+        expected_job_options = [
             "--apt-repository", "repository one",
             "--apt-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
             ]
-        yield self.startBuild(args, expected_options)
-
-        # After preparation, start running the first job.
-        yield self.expectRunJob("build", "0")
+        yield self.expectRunJob("build", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
             "/build/output/build:0.log", b"I am a CI build job log.")
         self.buildmanager.backend.add_file(
@@ -142,7 +144,7 @@ class TestCIBuildManagerIteration(TestCase):
             b"I am output from a CI build job.")
 
         # Collect the output of the first job and start running the second.
-        yield self.expectRunJob("test", "0")
+        yield self.expectRunJob("test", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
             "/build/output/test:0.log", b"I am a CI test job log.")
         self.buildmanager.backend.add_file(
@@ -244,27 +246,31 @@ class TestCIBuildManagerIteration(TestCase):
             "jobs": [[("lint", "0"), ("build", "0")], [("test", "0")]],
             "apt_repositories": ["repository one", "repository two"],
             "environment_variables": {
-                "INDEX": "http://example.com", "PATH":"foo"},
+                "INDEX": "http://example.com", "PATH": "foo"},
             }
-        expected_options = [
+        expected_prepare_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
             "--git-path", "main",
+            ]
+        yield self.startBuild(args, expected_prepare_options)
+
+        # After preparation, start running the first job.
+        expected_job_options = [
             "--apt-repository", "repository one",
             "--apt-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
             ]
-        yield self.startBuild(args, expected_options)
-
-        # After preparation, start running the first job.
-        yield self.expectRunJob("lint", "0")
+        yield self.expectRunJob("lint", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
             "/build/output/lint:0.log", b"I am a failing CI lint job log.")
 
         # Collect the output of the first job and start running the second.
         # (Note that `retcode` is the return code of the *first* job, not the
         # second.)
-        yield self.expectRunJob("build", "0", retcode=RETCODE_FAILURE_BUILD)
+        yield self.expectRunJob(
+            "build", "0", options=expected_job_options,
+            retcode=RETCODE_FAILURE_BUILD)
         self.buildmanager.backend.add_file(
             "/build/output/build:0.log", b"I am a CI build job log.")
 
