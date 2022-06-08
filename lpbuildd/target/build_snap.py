@@ -71,6 +71,12 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
         parser.add_argument(
             "--private", default=False, action="store_true",
             help="build a private snap")
+        parser.add_argument(
+            "--target-arch",
+            dest="target_architectures",
+            action="append",
+            help="build for the specified architectures"
+        )
         parser.add_argument("name", help="name of snap to build")
 
     def install_svn_servers(self):
@@ -179,6 +185,8 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
             env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
+        if self.args.target_architectures:
+            env["SNAPCRAFT_BUILD_TO"] = self.args.target_architectures[0]
         self.run_build_command(
             ["snapcraft"],
             cwd=os.path.join("/build", self.args.name),
