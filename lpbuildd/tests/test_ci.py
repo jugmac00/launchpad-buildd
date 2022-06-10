@@ -122,7 +122,11 @@ class TestCIBuildManagerIteration(TestCase):
             "apt_repositories": ["repository one", "repository two"],
             "environment_variables": {
                 "INDEX": "http://example.com", "PATH": "foo"},
-            }
+            "plugin_settings" :{
+                "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+                "foo": "bar",
+            },
+        }
         expected_prepare_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
             "--git-path", "main",
@@ -135,6 +139,8 @@ class TestCIBuildManagerIteration(TestCase):
             "--apt-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
+            "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+            "--plugin-setting", "foo=bar",
             ]
         yield self.expectRunJob("build", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
@@ -247,7 +253,11 @@ class TestCIBuildManagerIteration(TestCase):
             "apt_repositories": ["repository one", "repository two"],
             "environment_variables": {
                 "INDEX": "http://example.com", "PATH": "foo"},
-            }
+            "plugin_settings" :{
+                "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+                "foo": "bar",
+            },
+        }
         expected_prepare_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
             "--git-path", "main",
@@ -260,6 +270,8 @@ class TestCIBuildManagerIteration(TestCase):
             "--apt-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
+            "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+            "--plugin-setting", "foo=bar",
             ]
         yield self.expectRunJob("lint", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
