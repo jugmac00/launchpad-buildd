@@ -20,6 +20,7 @@ Then, inside the container, install the necessary dependencies:
 
 .. code:: bash
 
+        sudo add-apt-repository ppa:launchpad/ppa
         sudo apt-get update
         cat system-dependencies.txt | sudo xargs apt-get install -y
 
