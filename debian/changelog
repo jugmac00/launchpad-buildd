@@ -1,3 +1,9 @@
+launchpad-buildd (215) UNRELEASED; urgency=medium
+
+  * Fix setup instructions for a development environment.
+
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Tue, 14 Jun 2022 13:26:01 +0200
+
 launchpad-buildd (214) focal; urgency=medium
 
   * Pass apt repository and environment variable options to run-ci, not
