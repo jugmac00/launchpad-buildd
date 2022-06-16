@@ -108,6 +108,14 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             default=[],
             help="single apt repository line",
         )
+        parser.add_argument(
+            "--plugin-setting",
+            dest="plugin_settings",
+            type=str,
+            action="append",
+            default=[],
+            help="plugin setting where the key and value are separated by =",
+        )
 
     def run_job(self):
         logger.info("Running job phase...")
@@ -125,14 +133,23 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             self.args.job_name,
             str(self.args.job_index),
         ]
+        for repository in self.args.apt_repositories:
+            lpcraft_args.extend(["--apt-replace-repositories", repository])
+
         environment_variables = dict(
             pair.split("=", maxsplit=1)
             for pair in self.args.environment_variables
         )
         for key, value in environment_variables.items():
-            lpcraft_args.extend(["--set-env", "%s=%s" % (key, value)])
-        for repository in self.args.apt_repositories:
-            lpcraft_args.extend(["--apt-replace-repositories", repository])
+            lpcraft_args.extend(["--set-env", f"{key}={value}"])
+
+        plugin_settings = dict(
+            pair.split("=", maxsplit=1)
+            for pair in self.args.plugin_settings
+        )
+        for key, value in plugin_settings.items():
+            lpcraft_args.extend(["--plugin-setting", f"{key}={value}"])
+
         escaped_lpcraft_args = (
             " ".join(shell_escape(arg) for arg in lpcraft_args))
         tee_args = ["tee", "%s.log" % output_path]

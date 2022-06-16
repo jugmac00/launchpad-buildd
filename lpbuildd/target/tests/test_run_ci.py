@@ -378,7 +378,7 @@ class TestRunCI(TestCase):
             "--apt-repository",
             "deb http://archive.ubuntu.com/ubuntu/ focal main restricted",
             "--apt-repository",
-             "deb http://archive.ubuntu.com/ubuntu/ focal universe",
+            "deb http://archive.ubuntu.com/ubuntu/ focal universe",
             "test", "0",
             ]
         run_ci = parse_args(args=args).operation
@@ -389,8 +389,31 @@ class TestRunCI(TestCase):
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output/test:0 "
                 "test 0 "
-                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' "
-                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal universe' "
+                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' "  # noqa: E501
+                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal universe' "  # noqa: E501
+                "2>&1 "
+                "| tee /build/output/test:0.log",
+                ], cwd="/build/tree"),
+            ]))
+
+    def test_run_job_with_plugin_settings(self):
+        args = [
+            "run-ci",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "test", "0",
+            "--plugin-setting",
+            "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
+            ]
+        run_ci = parse_args(args=args).operation
+        run_ci.run_job()
+        self.assertThat(run_ci.backend.run.calls, MatchesListwise([
+            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanBuildCommand([
+                "/bin/bash", "-o", "pipefail", "-c",
+                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "test 0 "
+                "--plugin-setting "
+                "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/ "  # noqa: E501
                 "2>&1 "
                 "| tee /build/output/test:0.log",
                 ], cwd="/build/tree"),
