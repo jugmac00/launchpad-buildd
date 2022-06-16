@@ -117,7 +117,6 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             help="plugin setting where the key and value are separated by =",
         )
 
-
     def run_job(self):
         logger.info("Running job phase...")
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
@@ -142,14 +141,14 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             for pair in self.args.environment_variables
         )
         for key, value in environment_variables.items():
-            lpcraft_args.extend(["--set-env", "%s=%s" % (key, value)])
+            lpcraft_args.extend(["--set-env", f"{key}={value}"])
 
         plugin_settings = dict(
             pair.split("=", maxsplit=1)
             for pair in self.args.plugin_settings
         )
         for key, value in plugin_settings.items():
-            lpcraft_args.extend(["--plugin-setting", "%s=%s" % (key, value)])
+            lpcraft_args.extend(["--plugin-setting", f"{key}={value}"])
 
         escaped_lpcraft_args = (
             " ".join(shell_escape(arg) for arg in lpcraft_args))

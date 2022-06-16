@@ -122,8 +122,8 @@ class TestCIBuildManagerIteration(TestCase):
             "apt_repositories": ["repository one", "repository two"],
             "environment_variables": {
                 "INDEX": "http://example.com", "PATH": "foo"},
-            "plugin_settings" :{
-                "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+            "plugin_settings": {
+                "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
                 "foo": "bar",
             },
         }
@@ -139,7 +139,7 @@ class TestCIBuildManagerIteration(TestCase):
             "--apt-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
-            "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+            "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
             "--plugin-setting", "foo=bar",
             ]
         yield self.expectRunJob("build", "0", options=expected_job_options)
@@ -253,8 +253,8 @@ class TestCIBuildManagerIteration(TestCase):
             "apt_repositories": ["repository one", "repository two"],
             "environment_variables": {
                 "INDEX": "http://example.com", "PATH": "foo"},
-            "plugin_settings" :{
-                "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+            "plugin_settings": {
+                "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
                 "foo": "bar",
             },
         }
@@ -270,7 +270,7 @@ class TestCIBuildManagerIteration(TestCase):
             "--apt-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
-            "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",
+            "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
             "--plugin-setting", "foo=bar",
             ]
         yield self.expectRunJob("lint", "0", options=expected_job_options)
