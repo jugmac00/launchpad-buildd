@@ -1,9 +1,10 @@
-launchpad-buildd (215) UNRELEASED; urgency=medium
+launchpad-buildd (215) focal; urgency=medium
 
+  [ Jürgen Gmach ]
   * Fix setup instructions for a development environment.
   * Add support for plugin settings for CI builds.
 
- -- Jürgen Gmach <juergen.gmach@canonical.com>  Tue, 14 Jun 2022 13:26:01 +0200
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 20 Jun 2022 10:12:05 +0100
 
 launchpad-buildd (214) focal; urgency=medium
 
