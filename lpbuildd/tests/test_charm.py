@@ -207,8 +207,10 @@ class TestCharmBuildManagerIteration(TestCase):
         self.buildmanager.proxy_url = "http://username:password@proxy_url"
         self.buildmanager.revokeProxyToken()
         self.assertEqual(1, urlopen_mock.call_count)
-        request = urlopen_mock.call_args[0][0]
+        args, kwargs = urlopen_mock.call_args
+        request = args[0]
         self.assertEqual(
             {'Authorization': "Basic dXNlcm5hbWU6cGFzc3dvcmQ="},
             request.headers)
         self.assertEqual('http://revoke_endpoint', request.get_full_url())
+        self.assertEqual({"timeout": 15}, kwargs)
