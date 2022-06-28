@@ -1,3 +1,11 @@
+launchpad-buildd (216) UNRELEASED; urgency=medium
+
+  [ Andrey Fedoseev ]
+  * Allow specifying target architecture for snaps via
+    SNAPCRAFT_BUILD_TO environment variable
+
+ -- Andrey Fedoseev <andrey.fedoseev@canonical.com>  Mon, 27 Jun 2022 12:32:05 +0500
+
 launchpad-buildd (215) focal; urgency=medium
 
   [ Jürgen Gmach ]

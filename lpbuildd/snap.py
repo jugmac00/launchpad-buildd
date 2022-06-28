@@ -51,6 +51,7 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             "build_source_tarball", False)
         self.private = extra_args.get("private", False)
         self.proxy_service = None
+        self.target_architectures = extra_args.get("target_architectures")
 
         super().initiate(files, chroot, extra_args)
 
@@ -85,6 +86,9 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
             pass
+        if self.target_architectures:
+            for arch in self.target_architectures:
+                args.extend(["--target-arch", arch])
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 

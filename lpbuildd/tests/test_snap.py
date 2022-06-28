@@ -446,6 +446,27 @@ class TestSnapBuildManagerIteration(TestCase):
             "--snap-store-proxy-url", "http://snap-store-proxy.example/"]
         yield self.startBuild(options=expected_options)
 
+    @defer.inlineCallbacks
+    def test_iterate_target_architectures(self):
+        args = {
+            "build_request_id": 13,
+            "build_request_timestamp": "2018-04-13T14:50:02Z",
+            "build_url": "https://launchpad.example/build",
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "target_architectures": ["i386", "amd64"],
+            }
+        expected_options = [
+            "--build-request-id", "13",
+            "--build-request-timestamp", "2018-04-13T14:50:02Z",
+            "--build-url", "https://launchpad.example/build",
+            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path", "master",
+            "--target-arch", "i386",
+            "--target-arch", "amd64",
+            ]
+        yield self.startBuild(args, expected_options)
+
     def getListenerURL(self, listener):
         port = listener.getHost().port
         return "http://localhost:%d/" % port

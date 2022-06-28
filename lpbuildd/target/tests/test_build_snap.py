@@ -473,6 +473,24 @@ class TestBuildSnap(TestCase):
                 SNAPCRAFT_BUILD_ENVIRONMENT="host"),
             ]))
 
+    def test_build_target_architectures(self):
+        args = [
+            "buildsnap",
+            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--branch", "lp:foo",
+            "--target-arch", "i386",
+            "--target-arch", "amd64",
+            "test-snap",
+            ]
+        build_snap = parse_args(args=args).operation
+        build_snap.build()
+        self.assertThat(build_snap.backend.run.calls, MatchesListwise([
+            RanBuildCommand(
+                ["snapcraft"], cwd="/build/test-snap",
+                SNAPCRAFT_BUILD_INFO="1", SNAPCRAFT_IMAGE_INFO="{}",
+                SNAPCRAFT_BUILD_ENVIRONMENT="host", SNAPCRAFT_BUILD_TO="i386"),
+            ]))
+
     # XXX cjwatson 2017-08-07: Test revoke_token.  It may be easiest to
     # convert it to requests first.
 
