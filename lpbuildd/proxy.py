@@ -249,7 +249,7 @@ class BuildManagerProxyMixin:
         req = Request(self.revocation_endpoint, None, headers)
         req.get_method = lambda: "DELETE"
         try:
-            urlopen(req)
+            urlopen(req, timeout=15)
         except (HTTPError, URLError) as e:
             self._builder.log(
                 f"Unable to revoke token for {url.username}: {e}")
