@@ -47,6 +47,19 @@ class FakeRevisionID(FakeMethod):
             return "%s\n" % self.revision_id
 
 
+class FakeSnapcraft(FakeMethod):
+
+    def __init__(self, backend, name):
+        super().__init__()
+        self.backend = backend
+        self.name = name
+
+    def __call__(self, run_args, *args, **kwargs):
+        super().__call__(run_args, *args, **kwargs)
+        if run_args[0] == "snapcraft" and "cwd" in kwargs:
+            self.backend.add_file(os.path.join(kwargs["cwd"], self.name), b"")
+
+
 class TestBuildSnap(TestCase):
 
     def test_install_bzr(self):
@@ -393,12 +406,16 @@ class TestBuildSnap(TestCase):
             "--branch", "lp:foo", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
+        build_snap.backend.run = FakeSnapcraft(
+            build_snap.backend, "test-snap_1.snap")
         build_snap.build()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_BUILD_INFO="1", SNAPCRAFT_IMAGE_INFO="{}",
                 SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            RanBuildCommand(
+                ["sha512sum", "test-snap_1.snap"], cwd="/build/test-snap"),
             ]))
 
     def test_build_proxy(self):
@@ -410,6 +427,8 @@ class TestBuildSnap(TestCase):
             "test-snap",
             ]
         build_snap = parse_args(args=args).operation
+        build_snap.backend.run = FakeSnapcraft(
+            build_snap.backend, "test-snap_1.snap")
         build_snap.build()
         env = {
             "SNAPCRAFT_BUILD_INFO": "1",
@@ -423,6 +442,8 @@ class TestBuildSnap(TestCase):
             }
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(["snapcraft"], cwd="/build/test-snap", **env),
+            RanBuildCommand(
+                ["sha512sum", "test-snap_1.snap"], cwd="/build/test-snap"),
             ]))
 
     def test_build_private(self):
@@ -432,11 +453,15 @@ class TestBuildSnap(TestCase):
             "--branch", "lp:foo", "--private", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
+        build_snap.backend.run = FakeSnapcraft(
+            build_snap.backend, "test-snap_1.snap")
         build_snap.build()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_IMAGE_INFO="{}", SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            RanBuildCommand(
+                ["sha512sum", "test-snap_1.snap"], cwd="/build/test-snap"),
             ]))
 
     def test_build_including_build_request_id(self):
@@ -446,6 +471,8 @@ class TestBuildSnap(TestCase):
             "--build-request-id", "13", "--branch", "lp:foo", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
+        build_snap.backend.run = FakeSnapcraft(
+            build_snap.backend, "test-snap_1.snap")
         build_snap.build()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -453,6 +480,8 @@ class TestBuildSnap(TestCase):
                 SNAPCRAFT_BUILD_INFO="1",
                 SNAPCRAFT_IMAGE_INFO='{"build-request-id": "lp-13"}',
                 SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            RanBuildCommand(
+                ["sha512sum", "test-snap_1.snap"], cwd="/build/test-snap"),
             ]))
 
     def test_build_including_build_request_timestamp(self):
@@ -463,6 +492,8 @@ class TestBuildSnap(TestCase):
             "--branch", "lp:foo", "test-snap",
             ]
         build_snap = parse_args(args=args).operation
+        build_snap.backend.run = FakeSnapcraft(
+            build_snap.backend, "test-snap_1.snap")
         build_snap.build()
         self.assertThat(build_snap.backend.run.calls, MatchesListwise([
             RanBuildCommand(
@@ -471,6 +502,8 @@ class TestBuildSnap(TestCase):
                 SNAPCRAFT_IMAGE_INFO=(
                     '{"build-request-timestamp": "2018-04-13T14:50:02Z"}'),
                 SNAPCRAFT_BUILD_ENVIRONMENT="host"),
+            RanBuildCommand(
+                ["sha512sum", "test-snap_1.snap"], cwd="/build/test-snap"),
             ]))
 
     def test_build_target_architectures(self):
