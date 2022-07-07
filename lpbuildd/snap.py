@@ -126,6 +126,7 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 if self.backend.islink(path):
                     continue
                 if (entry.endswith(".snap") or entry.endswith(".manifest")
+                        or entry.endswith(".debug")
                         or entry.endswith(".dpkg.yaml")):
                     self.addWaitingFileFromBackend(path)
         if self.build_source_tarball:
