@@ -521,7 +521,7 @@ class TestBuildSnap(TestCase):
             RanBuildCommand(
                 ["snapcraft"], cwd="/build/test-snap",
                 SNAPCRAFT_BUILD_INFO="1", SNAPCRAFT_IMAGE_INFO="{}",
-                SNAPCRAFT_BUILD_ENVIRONMENT="host", SNAPCRAFT_BUILD_TO="i386"),
+                SNAPCRAFT_BUILD_ENVIRONMENT="host", SNAPCRAFT_BUILD_FOR="i386"),
             ]))
 
     # XXX cjwatson 2017-08-07: Test revoke_token.  It may be easiest to

@@ -186,7 +186,7 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info
         env["SNAPCRAFT_BUILD_ENVIRONMENT"] = "host"
         if self.args.target_architectures:
-            env["SNAPCRAFT_BUILD_TO"] = self.args.target_architectures[0]
+            env["SNAPCRAFT_BUILD_FOR"] = self.args.target_architectures[0]
         output_path = os.path.join("/build", self.args.name)
         self.run_build_command(["snapcraft"], cwd=output_path, env=env)
         for entry in sorted(self.backend.listdir(output_path)):
