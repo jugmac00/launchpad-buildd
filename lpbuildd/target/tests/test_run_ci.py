@@ -419,6 +419,27 @@ class TestRunCI(TestCase):
                 ], cwd="/build/tree"),
             ]))
 
+    def test_run_job_with_secrets(self):
+        args = [
+            "run-ci",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--secrets", "path/to/tempfile",
+            "test", "0",
+            ]
+        run_ci = parse_args(args=args).operation
+        run_ci.run_job()
+        self.assertThat(run_ci.backend.run.calls, MatchesListwise([
+            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanBuildCommand([
+                "/bin/bash", "-o", "pipefail", "-c",
+                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "test 0 "
+                "--secrets /build/.launchpad-secrets.yaml "
+                "2>&1 "
+                "| tee /build/output/test:0.log",
+                ], cwd="/build/tree"),
+            ]))
+
     def test_run_succeeds(self):
         args = [
             "run-ci",

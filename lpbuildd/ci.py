@@ -61,6 +61,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.apt_repositories = extra_args.get("apt_repositories")
         self.environment_variables = extra_args.get("environment_variables")
         self.plugin_settings = extra_args.get("plugin_settings")
+        self.secrets = extra_args.get("secrets")
 
         super().initiate(files, chroot, extra_args)
 
@@ -149,6 +150,10 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             for key, value in self.plugin_settings.items():
                 args.extend(
                     ["--plugin-setting", f"{key}={value}"])
+        if self.secrets is not None:
+            for key, value in self.secrets.items():
+                args.extend(
+                    ["--secrets", f"{key}={value}"])
         job_name, job_index = self.current_job
         self.current_job_id = _make_job_id(job_name, job_index)
         args.extend([job_name, str(job_index)])

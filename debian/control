@@ -28,6 +28,7 @@ Build-Depends: apt-utils,
                python3-testtools,
                python3-twisted (>= 16.4.0),
                python3-txfixtures,
+               python3-yaml,
 # We don't use the bits of pylxd that require this at run-time, but at
 # build-time pybuild fails if it's not available.
                python3-ws4py,
