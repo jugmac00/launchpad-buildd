@@ -7,6 +7,7 @@ launchpad-buildd (216) UNRELEASED; urgency=medium
   [ Colin Watson ]
   * Add a timeout when revoking proxy tokens.
   * Log SHA-512 hash of built snaps (LP: #1979844).
+  * Revise ordering of deployment documentation.
 
   [ Jürgen Gmach ]
   * Pass secrets to the CI runner.
