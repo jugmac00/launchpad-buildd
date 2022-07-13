@@ -3,6 +3,10 @@
 
 import logging
 import os
+import tempfile
+from pathlib import Path
+
+import yaml
 
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
@@ -116,6 +120,11 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             default=[],
             help="plugin setting where the key and value are separated by =",
         )
+        parser.add_argument(
+            "--secrets",
+            type=Path,
+            help="secrets provided in a YAML configuration file",
+        )
 
     def run_job(self):
         logger.info("Running job phase...")
@@ -149,6 +158,17 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         )
         for key, value in plugin_settings.items():
             lpcraft_args.extend(["--plugin-setting", f"{key}={value}"])
+        if self.args.secrets:
+            text = yaml.dump(self.args.secrets)
+            with tempfile.NamedTemporaryFile(mode="w") as f:
+                f.write(text)
+                path_to_secrets = f.name
+                self.backend.copy_in(
+                    source_path=path_to_secrets,
+                    target_path="/build/.launchpad-secrets.yaml"
+                )
+            lpcraft_args.extend(
+                ["--secrets", "/build/.launchpad-secrets.yaml"])
 
         escaped_lpcraft_args = (
             " ".join(shell_escape(arg) for arg in lpcraft_args))
