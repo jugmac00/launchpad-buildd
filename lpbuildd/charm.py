@@ -97,5 +97,5 @@ class CharmBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 path = os.path.join(output_path, entry)
                 if self.backend.islink(path):
                     continue
-                if entry.endswith(".charm") or entry.endswith(".manifest"):
+                if entry.endswith((".charm", ".manifest")):
                     self.addWaitingFileFromBackend(path)
