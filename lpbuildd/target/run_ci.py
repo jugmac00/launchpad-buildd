@@ -4,7 +4,6 @@
 import logging
 import os
 import tempfile
-from pathlib import Path
 
 import yaml
 
@@ -121,9 +120,12 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             help="plugin setting where the key and value are separated by =",
         )
         parser.add_argument(
-            "--secrets",
-            type=Path,
-            help="secrets provided in a YAML configuration file",
+            "--secret",
+            dest="secrets",
+            type=str,
+            action="append",
+            default=[],
+            help="secrets where the key and the value are separated by =",
         )
 
     def run_job(self):
@@ -158,10 +160,16 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         )
         for key, value in plugin_settings.items():
             lpcraft_args.extend(["--plugin-setting", f"{key}={value}"])
-        if self.args.secrets:
-            text = yaml.dump(self.args.secrets)
+
+        secrets = dict(
+            pair.split("=", maxsplit=1)
+            for pair in self.args.secrets
+        )
+        if secrets:
+            text = yaml.dump(secrets)
             with tempfile.NamedTemporaryFile(mode="w") as f:
                 f.write(text)
+                f.flush()
                 path_to_secrets = f.name
                 self.backend.copy_in(
                     source_path=path_to_secrets,
