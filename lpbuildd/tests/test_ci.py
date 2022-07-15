@@ -275,7 +275,7 @@ class TestCIBuildManagerIteration(TestCase):
             "--environment-variable", "PATH=foo",
             "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
             "--plugin-setting", "foo=bar",
-            "--secrets", "auth=user:pass"
+            "--secret", "auth=user:pass"
             ]
         yield self.expectRunJob("lint", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
