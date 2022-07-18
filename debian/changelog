@@ -1,4 +1,4 @@
-launchpad-buildd (216) UNRELEASED; urgency=medium
+launchpad-buildd (216) focal; urgency=medium
 
   [ Andrey Fedoseev ]
   * Allow specifying target architecture for snaps via
@@ -13,7 +13,7 @@ launchpad-buildd (216) UNRELEASED; urgency=medium
   [ Jürgen Gmach ]
   * Pass secrets to the CI runner.
 
- -- Andrey Fedoseev <andrey.fedoseev@canonical.com>  Mon, 27 Jun 2022 12:32:05 +0500
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Wed, 13 Jul 2022 15:19:38 +0200
 
 launchpad-buildd (215) focal; urgency=medium
 
