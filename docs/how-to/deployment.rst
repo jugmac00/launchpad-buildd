@@ -37,7 +37,7 @@ Testing on dogfood
    the current version of launchpad-buildd to the deployment PPA.
 
 #. `Wait for PPA publishing to complete
-   <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`_.
+   <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`__.
 
 #. Run ``mojo run -m manifest-rebuild-images`` in the management environment
    (``stg-vbuilder@launchpad-bastion-ps5``) to start rebuilding images.
@@ -78,7 +78,7 @@ Releasing to production
    current version of launchpad-buildd to the deployment PPA.
 
 #. `Wait for PPA publishing to complete
-   <https://launchpad.net/~launchpad/+archive/ubuntu/buildd/+packages>`_.
+   <https://launchpad.net/~launchpad/+archive/ubuntu/buildd/+packages>`__.
 
 #. File an RT ticket asking IS to run ``mojo run -m
    manifest-rebuild-images`` in the management environment
