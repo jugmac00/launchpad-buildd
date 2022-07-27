@@ -23,8 +23,54 @@ from twisted.logger import (
 from lpbuildd.builder import (
     Builder,
     BuildManager,
+    _sanitizeURLs,
     )
 from lpbuildd.tests.fakebuilder import FakeConfig
+
+
+class TestSanitizeURLs(TestCase):
+    """Unit-test URL sanitization.
+
+    `lpbuildd.tests.test_buildd.LaunchpadBuilddTests` also covers some of
+    this, but at a higher level.
+    """
+
+    def test_non_urls(self):
+        lines = [b"not a URL", b"still not a URL"]
+        self.assertEqual(lines, list(_sanitizeURLs(lines)))
+
+    def test_url_without_credentials(self):
+        lines = [b"Get:1 http://ftpmaster.internal focal InRelease"]
+        self.assertEqual(lines, list(_sanitizeURLs(lines)))
+
+    def test_url_with_credentials(self):
+        lines = [
+            b"Get:1 http://buildd:secret@ftpmaster.internal focal InRelease",
+        ]
+        expected_lines = [b"Get:1 http://ftpmaster.internal focal InRelease"]
+        self.assertEqual(expected_lines, list(_sanitizeURLs(lines)))
+
+    def test_multiple_urls(self):
+        lines = [
+            b"http_proxy=http://squid.internal:3128/ "
+            b"GOPROXY=http://user:password@example.com/goproxy",
+        ]
+        expected_lines = [
+            b"http_proxy=http://squid.internal:3128/ "
+            b"GOPROXY=http://example.com/goproxy",
+        ]
+        self.assertEqual(expected_lines, list(_sanitizeURLs(lines)))
+
+    def test_proxyauth(self):
+        lines = [
+            b"socat STDIO PROXY:builder-proxy.launchpad.dev:github.com:443,"
+            b"proxyport=3128,proxyauth=user:blah",
+        ]
+        expected_lines = [
+            b"socat STDIO PROXY:builder-proxy.launchpad.dev:github.com:443,"
+            b"proxyport=3128",
+        ]
+        self.assertEqual(expected_lines, list(_sanitizeURLs(lines)))
 
 
 class TestBuildManager(TestCase):
