@@ -80,11 +80,10 @@ Releasing to production
 #. `Wait for PPA publishing to complete
    <https://launchpad.net/~launchpad/+archive/ubuntu/buildd/+packages>`__.
 
-#. File an RT ticket asking IS to run ``mojo run -m
-   manifest-rebuild-images`` in the management environment
-   (``prod-launchpad-vbuilders@is-bastion-ps5``) to start rebuilding images.
-   (`cRT#151858 <https://portal.admin.canonical.com/C151858>`_ will allow
-   this step to be self-service.)
+#. Run ``ssh prod-launchpad-vbuilders@is-bastion-ps5.internal
+   /home/prod-launchpad-vbuilders/scripts/rebuild-images.sh`` from the
+   staging management environment (``stg-vbuilder@launchpad-bastion-ps5``)
+   to start rebuilding images.
 
 #. Once image builds complete, builders will get the new image after they
    finish their next build (or are disabled) and go through being reset.
