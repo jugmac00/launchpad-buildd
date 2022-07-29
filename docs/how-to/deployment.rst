@@ -85,10 +85,26 @@ Releasing to production
    staging management environment (``stg-vbuilder@launchpad-bastion-ps5``)
    to start rebuilding images.
 
-#. Once image builds complete, builders will get the new image after they
-   finish their next build (or are disabled) and go through being reset.
-   `Build farm administrators
+#. Once the new image is rebuilt, which normally takes on the order of 15-60
+   minutes depending on the architecture, builders will get the new image
+   after they finish their next build (or are disabled) and go through being
+   reset.  As a result, ``manage-builders -v`` should start showing the new
+   version over time.
+
+#. Wait for the new version to appear for at least one builder in each
+   region and architecture (other than ``riscv64``, which is managed
+   separately).  If this doesn't happen after 90 minutes, then ask IS for
+   assistance in investigating; they can start by checking ``juju status``
+   in ``prod-launchpad-vbuilders@is-bastion-ps5.internal``.
+
+#. Once the updated version is visible for at least one builder in each
+   region and architecture (other than ``riscv64``), `build farm
+   administrators
    <https://launchpad.net/~launchpad-buildd-admins/+members>`_ can use
-   ``manage-builders --virt --idle --reset`` to reset idle builders.
+   ``manage-builders --virt --idle --reset`` to reset idle builders, thereby
+   causing builders that haven't taken any builds recently to catch up.
+
+#. Ask Colin Watson or William Grant to reflash ``riscv64`` builders to the
+   new version (currently a separate manual process).
 
 #. Close any bugs fixed by the new release.
