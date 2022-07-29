@@ -101,8 +101,9 @@ Releasing to production
    region and architecture (other than ``riscv64``), `build farm
    administrators
    <https://launchpad.net/~launchpad-buildd-admins/+members>`_ can use
-   ``manage-builders --virt --idle --reset`` to reset idle builders, thereby
-   causing builders that haven't taken any builds recently to catch up.
+   ``manage-builders --virt --idle --builder-version=<old-version> --reset``
+   to reset idle builders, thereby causing builders that haven't taken any
+   builds recently to catch up.
 
 #. Ask Colin Watson or William Grant to reflash ``riscv64`` builders to the
    new version (currently a separate manual process).
