@@ -423,8 +423,7 @@ class TestRunCI(TestCase):
         args = [
             "run-ci",
             "--backend=fake", "--series=focal", "--arch=amd64", "1",
-            "--secret", "soss=user:pass",
-            "--secret", "another_project=token:123",
+            "--secrets", "/build/.launchpad-secrets.yaml",
             "test", "0",
             ]
         run_ci = parse_args(args=args).operation
@@ -440,11 +439,6 @@ class TestRunCI(TestCase):
                 "| tee /build/output/test:0.log",
                 ], cwd="/build/tree"),
             ]))
-        content, _ = run_ci.backend.backend_fs[
-            "/build/.launchpad-secrets.yaml"]
-        self.assertEqual(
-            "another_project: token:123\nsoss: user:pass\n", content.decode()
-        )
 
     def test_run_succeeds(self):
         args = [

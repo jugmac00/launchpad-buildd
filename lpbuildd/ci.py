@@ -2,6 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os
+import tempfile
+import yaml
 
 from six.moves.configparser import (
     NoOptionError,
@@ -151,8 +153,18 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 args.extend(
                     ["--plugin-setting", f"{key}={value}"])
         if self.secrets is not None:
-            for key, value in self.secrets.items():
-                args.extend(["--secret", f"{key}={value}"])
+            text = yaml.dump(self.secrets)
+            with tempfile.NamedTemporaryFile(mode="w") as f:
+                f.write(text)
+                f.flush()
+                path_to_secrets = f.name
+                self.backend.copy_in(
+                    source_path=path_to_secrets,
+                    target_path="/build/.launchpad-secrets.yaml"
+                )
+            args.extend(
+                ["--secrets", "/build/.launchpad-secrets.yaml"])
+
         job_name, job_index = self.current_job
         self.current_job_id = _make_job_id(job_name, job_index)
         args.extend([job_name, str(job_index)])

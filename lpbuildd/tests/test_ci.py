@@ -126,6 +126,9 @@ class TestCIBuildManagerIteration(TestCase):
                 "miniconda_conda_channel": "https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
                 "foo": "bar",
             },
+            "secrets": {
+                "auth": "user:pass",
+            }
         }
         expected_prepare_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
@@ -141,6 +144,7 @@ class TestCIBuildManagerIteration(TestCase):
             "--environment-variable", "PATH=foo",
             "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
             "--plugin-setting", "foo=bar",
+            "--secrets", "/build/.launchpad-secrets.yaml",
             ]
         yield self.expectRunJob("build", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
@@ -275,7 +279,7 @@ class TestCIBuildManagerIteration(TestCase):
             "--environment-variable", "PATH=foo",
             "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
             "--plugin-setting", "foo=bar",
-            "--secret", "auth=user:pass"
+            "--secrets", "/build/.launchpad-secrets.yaml",
             ]
         yield self.expectRunJob("lint", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
