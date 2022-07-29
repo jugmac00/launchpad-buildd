@@ -2,6 +2,7 @@ launchpad-buildd (217) UNRELEASED; urgency=medium
 
   [ Colin Watson ]
   * Improve deployment documentation.
+  * Make URL sanitization a little less greedy.
 
   [ Jürgen Gmach ]
   * Pass secrets via a YAML configuration file in order to prevent
