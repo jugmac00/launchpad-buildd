@@ -127,8 +127,11 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         job_id = f"{self.args.job_name}:{self.args.job_index}"
         logger.info("Running %s" % job_id)
-        output_path = os.path.join("/build", "output", job_id)
-        self.backend.run(["mkdir", "-p", output_path])
+        output_path = os.path.join("/build", "output")
+        # This matches the per-job output path used by lpcraft.
+        job_output_path = os.path.join(
+            output_path, self.args.job_name, str(self.args.job_index))
+        self.backend.run(["mkdir", "-p", job_output_path])
         lpcraft_args = [
             "lpcraft",
             "-v",
@@ -161,7 +164,7 @@ class RunCI(BuilderProxyOperationMixin, Operation):
 
         escaped_lpcraft_args = (
             " ".join(shell_escape(arg) for arg in lpcraft_args))
-        tee_args = ["tee", "%s.log" % output_path]
+        tee_args = ["tee", os.path.join(job_output_path, "log")]
         escaped_tee_args = " ".join(shell_escape(arg) for arg in tee_args)
         args = [
             "/bin/bash", "-o", "pipefail", "-c",

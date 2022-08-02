@@ -241,16 +241,20 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         This is called once for each CI job in the pipeline.
         """
         job_status = {}
-        output_path = os.path.join("/build", "output", self.current_job_id)
-        log_path = "%s.log" % output_path
-        if self.backend.path_exists(log_path):
-            log_name = "%s.log" % self.current_job_id
-            self.addWaitingFileFromBackend(log_path, log_name)
-            job_status["log"] = self._builder.waitingfiles[log_name]
-        if self.backend.path_exists(output_path):
+        job_name, job_index = self.current_job
+        job_output_path = os.path.join(
+            "/build", "output", job_name, str(job_index))
+        for item_name in ("log", "properties"):
+            item_path = os.path.join(job_output_path, item_name)
+            if self.backend.path_exists(item_path):
+                item_id = f"{self.current_job_id}.{item_name}"
+                self.addWaitingFileFromBackend(item_path, name=item_id)
+                job_status[item_name] = self._builder.waitingfiles[item_id]
+        files_path = os.path.join(job_output_path, "files")
+        if self.backend.path_exists(files_path):
             for entry in sorted(self.backend.find(
-                    output_path, include_directories=False)):
-                path = os.path.join(output_path, entry)
+                    files_path, include_directories=False)):
+                path = os.path.join(files_path, entry)
                 if self.backend.islink(path):
                     continue
                 entry_base = os.path.basename(entry)

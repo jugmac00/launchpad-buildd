@@ -316,11 +316,11 @@ class TestRunCI(TestCase):
         run_ci = parse_args(args=args).operation
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
-            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanCommand(["mkdir", "-p", "/build/output/test/0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output-directory /build/output/test:0 test 0 2>&1 "  # noqa: E501
-                "| tee /build/output/test:0.log",
+                "lpcraft -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
+                "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
             ]))
 
@@ -340,11 +340,11 @@ class TestRunCI(TestCase):
             "SNAPPY_STORE_NO_CDN": "1",
             }
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
-            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanCommand(["mkdir", "-p", "/build/output/test/0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output-directory /build/output/test:0 test 0 2>&1 "  # noqa: E501
-                "| tee /build/output/test:0.log",
+                "lpcraft -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
+                "| tee /build/output/test/0/log",
                 ], cwd="/build/tree", **env),
             ]))
 
@@ -359,15 +359,15 @@ class TestRunCI(TestCase):
         run_ci = parse_args(args=args).operation
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
-            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanCommand(["mkdir", "-p", "/build/output/test/0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
                 "--set-env PIP_INDEX_URL=http://example "
                 "--set-env SOME_PATH=/etc/some_path "
                 "2>&1 "
-                "| tee /build/output/test:0.log",
+                "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
             ]))
 
@@ -384,15 +384,15 @@ class TestRunCI(TestCase):
         run_ci = parse_args(args=args).operation
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
-            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanCommand(["mkdir", "-p", "/build/output/test/0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
                 "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' "  # noqa: E501
                 "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal universe' "  # noqa: E501
                 "2>&1 "
-                "| tee /build/output/test:0.log",
+                "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
             ]))
 
@@ -407,15 +407,15 @@ class TestRunCI(TestCase):
         run_ci = parse_args(args=args).operation
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
-            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanCommand(["mkdir", "-p", "/build/output/test/0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
                 "--plugin-setting "
                 "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/ "  # noqa: E501
                 "2>&1 "
-                "| tee /build/output/test:0.log",
+                "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
             ]))
 
@@ -429,14 +429,14 @@ class TestRunCI(TestCase):
         run_ci = parse_args(args=args).operation
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
-            RanCommand(["mkdir", "-p", "/build/output/test:0"]),
+            RanCommand(["mkdir", "-p", "/build/output/test/0"]),
             RanBuildCommand([
                 "/bin/bash", "-o", "pipefail", "-c",
-                "lpcraft -v run-one --output-directory /build/output/test:0 "
+                "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
                 "--secrets /build/.launchpad-secrets.yaml "
                 "2>&1 "
-                "| tee /build/output/test:0.log",
+                "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
             ]))
 
@@ -451,7 +451,7 @@ class TestRunCI(TestCase):
         # Just check that it did something in each step, not every detail.
         self.assertThat(
             run_ci.backend.run.calls,
-            AnyMatch(RanCommand(["mkdir", "-p", "/build/output/test:0"])))
+            AnyMatch(RanCommand(["mkdir", "-p", "/build/output/test/0"])))
 
     def test_run_install_fails(self):
         class FailInstall(FakeMethod):
