@@ -148,17 +148,19 @@ class TestCIBuildManagerIteration(TestCase):
             ]
         yield self.expectRunJob("build", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
-            "/build/output/build:0.log", b"I am a CI build job log.")
+            "/build/output/build/0/log", b"I am a CI build job log.")
         self.buildmanager.backend.add_file(
-            "/build/output/build:0/ci.whl",
+            "/build/output/build/0/files/ci.whl",
             b"I am output from a CI build job.")
+        self.buildmanager.backend.add_file(
+            "/build/output/build/0/properties", b'{"key": "value"}')
 
         # Collect the output of the first job and start running the second.
         yield self.expectRunJob("test", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
-            "/build/output/test:0.log", b"I am a CI test job log.")
+            "/build/output/test/0/log", b"I am a CI test job log.")
         self.buildmanager.backend.add_file(
-            "/build/output/test:0/ci.tar.gz",
+            "/build/output/test/0/files/ci.tar.gz",
             b"I am output from a CI test job.")
 
         # Output from the first job is visible in the status response.
@@ -167,6 +169,8 @@ class TestCIBuildManagerIteration(TestCase):
             {
                 "build:0": {
                     "log": self.builder.waitingfiles["build:0.log"],
+                    "properties": (
+                        self.builder.waitingfiles["build:0.properties"]),
                     "output": {
                         "ci.whl": self.builder.waitingfiles["build:0/ci.whl"],
                         },
@@ -188,6 +192,7 @@ class TestCIBuildManagerIteration(TestCase):
         self.assertFalse(self.builder.wasCalled("buildFail"))
         self.assertThat(self.builder, HasWaitingFiles.byEquality({
             "build:0.log": b"I am a CI build job log.",
+            "build:0.properties": b'{"key": "value"}',
             "build:0/ci.whl": b"I am output from a CI build job.",
             "test:0.log": b"I am a CI test job log.",
             "test:0/ci.tar.gz": b"I am output from a CI test job.",
@@ -199,6 +204,8 @@ class TestCIBuildManagerIteration(TestCase):
             {
                 "build:0": {
                     "log": self.builder.waitingfiles["build:0.log"],
+                    "properties": (
+                        self.builder.waitingfiles["build:0.properties"]),
                     "output": {
                         "ci.whl": self.builder.waitingfiles["build:0/ci.whl"],
                         },
@@ -283,7 +290,7 @@ class TestCIBuildManagerIteration(TestCase):
             ]
         yield self.expectRunJob("lint", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
-            "/build/output/lint:0.log", b"I am a failing CI lint job log.")
+            "/build/output/lint/0/log", b"I am a failing CI lint job log.")
 
         # Collect the output of the first job and start running the second.
         # (Note that `retcode` is the return code of the *first* job, not the
@@ -292,7 +299,7 @@ class TestCIBuildManagerIteration(TestCase):
             "build", "0", options=expected_job_options,
             retcode=RETCODE_FAILURE_BUILD)
         self.buildmanager.backend.add_file(
-            "/build/output/build:0.log", b"I am a CI build job log.")
+            "/build/output/build/0/log", b"I am a CI build job log.")
 
         # Output from the first job is visible in the status response.
         extra_status = self.buildmanager.status()

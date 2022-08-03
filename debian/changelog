@@ -1,3 +1,9 @@
+launchpad-buildd (218) UNRELEASED; urgency=medium
+
+  * Use a common output directory for all lpcraft jobs.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 02 Aug 2022 15:55:19 +0100
+
 launchpad-buildd (217) focal; urgency=medium
 
   [ Colin Watson ]
