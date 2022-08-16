@@ -119,7 +119,7 @@ class TestCIBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.test/~example/+git/ci",
             "git_path": "main",
             "jobs": [[("build", "0")], [("test", "0")]],
-            "apt_repositories": ["repository one", "repository two"],
+            "package_repositories": ["repository one", "repository two"],
             "environment_variables": {
                 "INDEX": "http://example.com", "PATH": "foo"},
             "plugin_settings": {
@@ -138,8 +138,8 @@ class TestCIBuildManagerIteration(TestCase):
 
         # After preparation, start running the first job.
         expected_job_options = [
-            "--apt-repository", "repository one",
-            "--apt-repository", "repository two",
+            "--package-repository", "repository one",
+            "--package-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
             "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
@@ -261,7 +261,7 @@ class TestCIBuildManagerIteration(TestCase):
             "git_repository": "https://git.launchpad.test/~example/+git/ci",
             "git_path": "main",
             "jobs": [[("lint", "0"), ("build", "0")], [("test", "0")]],
-            "apt_repositories": ["repository one", "repository two"],
+            "package_repositories": ["repository one", "repository two"],
             "environment_variables": {
                 "INDEX": "http://example.com", "PATH": "foo"},
             "plugin_settings": {
@@ -280,8 +280,8 @@ class TestCIBuildManagerIteration(TestCase):
 
         # After preparation, start running the first job.
         expected_job_options = [
-            "--apt-repository", "repository one",
-            "--apt-repository", "repository two",
+            "--package-repository", "repository one",
+            "--package-repository", "repository two",
             "--environment-variable", "INDEX=http://example.com",
             "--environment-variable", "PATH=foo",
             "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501

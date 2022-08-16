@@ -101,8 +101,8 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             help="environment variable where key and value are separated by =",
         )
         parser.add_argument(
-            "--apt-repository",
-            dest="apt_repositories",
+            "--package-repository",
+            dest="package_repositories",
             type=str,
             action="append",
             default=[],
@@ -141,8 +141,8 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             self.args.job_name,
             str(self.args.job_index),
         ]
-        for repository in self.args.apt_repositories:
-            lpcraft_args.extend(["--apt-replace-repositories", repository])
+        for repository in self.args.package_repositories:
+            lpcraft_args.extend(["--package-repository", repository])
 
         environment_variables = dict(
             pair.split("=", maxsplit=1)

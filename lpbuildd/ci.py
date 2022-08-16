@@ -60,7 +60,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.proxy_service = None
         self.job_status = {}
-        self.apt_repositories = extra_args.get("apt_repositories")
+        self.package_repositories = extra_args.get("package_repositories")
         self.environment_variables = extra_args.get("environment_variables")
         self.plugin_settings = extra_args.get("plugin_settings")
         self.secrets = extra_args.get("secrets")
@@ -141,9 +141,9 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
     def runNextJob(self):
         """Run the next CI job."""
         args = list(self.proxy_args)
-        if self.apt_repositories is not None:
-            for repository in self.apt_repositories:
-                args.extend(["--apt-repository", repository])
+        if self.package_repositories is not None:
+            for repository in self.package_repositories:
+                args.extend(["--package-repository", repository])
         if self.environment_variables is not None:
             for key, value in self.environment_variables.items():
                 args.extend(
