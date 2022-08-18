@@ -1,3 +1,10 @@
+launchpad-buildd (219) UNRELEASED; urgency=medium
+
+  * Provide additional package repositories for CI builds rather than replacing
+    the base repositories.
+
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Tue, 16 Aug 2022 18:40:31 +0200
+
 launchpad-buildd (218) focal; urgency=medium
 
   * Use a common output directory for all lpcraft jobs.

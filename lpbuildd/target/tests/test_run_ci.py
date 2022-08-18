@@ -371,13 +371,13 @@ class TestRunCI(TestCase):
                 ], cwd="/build/tree"),
             ]))
 
-    def test_run_job_with_apt_repositories(self):
+    def test_run_job_with_package_repositories(self):
         args = [
             "run-ci",
             "--backend=fake", "--series=focal", "--arch=amd64", "1",
-            "--apt-repository",
+            "--package-repository",
             "deb http://archive.ubuntu.com/ubuntu/ focal main restricted",
-            "--apt-repository",
+            "--package-repository",
             "deb http://archive.ubuntu.com/ubuntu/ focal universe",
             "test", "0",
             ]
@@ -389,8 +389,8 @@ class TestRunCI(TestCase):
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
-                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' "  # noqa: E501
-                "--apt-replace-repositories 'deb http://archive.ubuntu.com/ubuntu/ focal universe' "  # noqa: E501
+                "--package-repository 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' "  # noqa: E501
+                "--package-repository 'deb http://archive.ubuntu.com/ubuntu/ focal universe' "  # noqa: E501
                 "2>&1 "
                 "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
