@@ -43,6 +43,7 @@ from lpbuildd.target.lxd import (
     policy_rc_d,
     )
 from lpbuildd.target.tests.testfixtures import CarefulFakeProcessFixture
+from lpbuildd.util import get_arch_bits
 
 
 LXD_RUNNING = 103
@@ -372,7 +373,9 @@ class TestLXD(TestCase):
             print("host resolv.conf", file=f)
         os.chmod("/etc/resolv.conf", 0o644)
 
-    def test_start(self, with_dm0=True):
+    # XXX cjwatson 2022-08-25: Refactor this to use some more sensible kind
+    # of test parameterization.
+    def test_start(self, arch="amd64", with_dm0=True, unmounts_cpuinfo=False):
         self.fakeFS()
         DM_BLOCK_MAJOR = random.randrange(128, 255)
         if with_dm0:
@@ -388,7 +391,7 @@ class TestLXD(TestCase):
         container.start.side_effect = (
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         files_api = container.api.files
-        files_api._api_endpoint = "/1.0/containers/lp-xenial-amd64/files"
+        files_api._api_endpoint = f"/1.0/containers/lp-xenial-{arch}/files"
         files_api.session.get.side_effect = FakeSessionGet({
             "/etc/hosts": [b"127.0.0.1\tlocalhost\n"],
             })
@@ -412,7 +415,7 @@ class TestLXD(TestCase):
         processes_fixture.add(lambda _: {}, name="lxc")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
-        LXD("1", "xenial", "amd64").start()
+        LXD("1", "xenial", arch).start()
 
         self.assert_correct_profile()
 
@@ -420,7 +423,8 @@ class TestLXD(TestCase):
         iptables = ["sudo", "iptables", "-w"]
         iptables_comment = [
             "-m", "comment", "--comment", "managed by launchpad-buildd"]
-        lxc = ["lxc", "exec", "lp-xenial-amd64", "--", "linux64"]
+        setarch_cmd = "linux64" if get_arch_bits(arch) == 64 else "linux32"
+        lxc = ["lxc", "exec", f"lp-xenial-{arch}", "--", setarch_cmd]
         expected_args = [
             Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
                          "type", "bridge"]),
@@ -480,17 +484,19 @@ class TestLXD(TestCase):
                 ["ln", "-s", "/dev/null",
                  "/etc/systemd/system/snapd.refresh.timer"]),
             ])
+        if unmounts_cpuinfo:
+            expected_args.append(Equals(lxc + ["umount", "/proc/cpuinfo"]))
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise(expected_args))
 
         client.containers.create.assert_called_once_with({
-            "name": "lp-xenial-amd64",
+            "name": f"lp-xenial-{arch}",
             "profiles": ["lpbuildd"],
-            "source": {"type": "image", "alias": "lp-xenial-amd64"},
+            "source": {"type": "image", "alias": f"lp-xenial-{arch}"},
             }, wait=True)
         files_api.session.get.assert_any_call(
-            "/1.0/containers/lp-xenial-amd64/files",
+            f"/1.0/containers/lp-xenial-{arch}/files",
             params={"path": "/etc/hosts"}, stream=True)
         files_api.post.assert_any_call(
             params={"path": "/etc/hosts"},
@@ -511,7 +517,7 @@ class TestLXD(TestCase):
             data=policy_rc_d.encode("UTF-8"),
             headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0755"})
         files_api.session.get.assert_any_call(
-            "/1.0/containers/lp-xenial-amd64/files",
+            f"/1.0/containers/lp-xenial-{arch}/files",
             params={"path": "/etc/init/mounted-dev.conf"}, stream=True)
         self.assertNotIn(
             "/etc/init/mounted-dev.override",
@@ -525,7 +531,7 @@ class TestLXD(TestCase):
         self.assertEqual(LXD_RUNNING, container.status_code)
 
     def test_start_no_dm0(self):
-        self.test_start(False)
+        self.test_start(with_dm0=False)
 
     def test_start_missing_etc_hosts(self):
         self.fakeFS()
@@ -597,6 +603,9 @@ class TestLXD(TestCase):
                 end script
                 """).encode("UTF-8"),
             headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0644"})
+
+    def test_start_armhf_unmounts_cpuinfo(self):
+        self.test_start(arch="armhf", unmounts_cpuinfo=True)
 
     def test_run(self):
         processes_fixture = self.useFixture(FakeProcesses())
