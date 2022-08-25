@@ -1,3 +1,10 @@
+launchpad-buildd (220) UNRELEASED; urgency=medium
+
+  * Work around https://github.com/lxc/lxcfs/issues/553 by unmounting
+    /proc/cpuinfo in LXD-based armhf builds.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 25 Aug 2022 17:58:34 +0100
+
 launchpad-buildd (219) focal; urgency=medium
 
   * Provide additional package repositories for CI builds rather than replacing

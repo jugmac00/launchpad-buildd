@@ -501,6 +501,16 @@ class LXD(Backend):
             ["ln", "-s", "/dev/null",
              "/etc/systemd/system/snapd.refresh.timer"])
 
+        if self.arch == "armhf":
+            # Work around https://github.com/lxc/lxcfs/issues/553.  In
+            # principle that could result in over-reporting the number of
+            # available CPU cores, but that isn't a concern in
+            # launchpad-buildd.
+            try:
+                self.run(["umount", "/proc/cpuinfo"])
+            except subprocess.CalledProcessError:
+                pass
+
     def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
             echo=False, return_process=False, **kwargs):
         """See `Backend`."""
