@@ -250,7 +250,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
         deps = []
         with open(dscpath, "rb") as dscfile:
             dsc = Dsc(dscfile)
-            fields = ["Build-Depends"]
+            fields = ["Build-Depends", "Build-Depends-Arch"]
             if arch_indep:
                 fields.append("Build-Depends-Indep")
             for field in fields:

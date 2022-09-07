@@ -418,6 +418,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             dedent("""\
                 Package: foo
                 Build-Depends: debhelper (>= 9~), bar | baz
+                Build-Depends-Arch: qux
                 Build-Depends-Indep: texlive-base
                 """))
         self.assertThat(
@@ -432,6 +433,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 MatchesListwise([
                     ContainsDict({"name": Equals("bar"), "version": Is(None)}),
                     ContainsDict({"name": Equals("baz"), "version": Is(None)}),
+                    ]),
+                MatchesListwise([
+                    ContainsDict({"name": Equals("qux"), "version": Is(None)}),
                     ])]))
 
     def test_getBuildDepends_arch_indep(self):
