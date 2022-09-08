@@ -409,7 +409,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
         self.assertEqual(expected, self.buildmanager.getAvailablePackages())
 
     def test_getBuildDepends_arch_dep(self):
-        # getBuildDepends returns only Build-Depends for
+        # getBuildDepends returns Build-Depends and Build-Depends-Arch for
         # architecture-dependent builds.
         dscpath = os.path.join(
             self.working_dir, "build-%s" % self.buildid, "foo.dsc")
@@ -418,6 +418,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             dedent("""\
                 Package: foo
                 Build-Depends: debhelper (>= 9~), bar | baz
+                Build-Depends-Arch: qux
                 Build-Depends-Indep: texlive-base
                 """))
         self.assertThat(
@@ -432,11 +433,14 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 MatchesListwise([
                     ContainsDict({"name": Equals("bar"), "version": Is(None)}),
                     ContainsDict({"name": Equals("baz"), "version": Is(None)}),
+                    ]),
+                MatchesListwise([
+                    ContainsDict({"name": Equals("qux"), "version": Is(None)}),
                     ])]))
 
     def test_getBuildDepends_arch_indep(self):
-        # getBuildDepends returns both Build-Depends and Build-Depends-Indep
-        # for architecture-independent builds.
+        # getBuildDepends returns Build-Depends, Build-Depends-Arch, and
+        # Build-Depends-Indep for architecture-independent builds.
         dscpath = os.path.join(
             self.working_dir, "build-%s" % self.buildid, "foo.dsc")
         write_file(
@@ -444,6 +448,7 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
             dedent("""\
                 Package: foo
                 Build-Depends: debhelper (>= 9~), bar | baz
+                Build-Depends-Arch: qux
                 Build-Depends-Indep: texlive-base
                 """))
         self.assertThat(
@@ -458,6 +463,9 @@ class TestBinaryPackageBuildManagerIteration(TestCase):
                 MatchesListwise([
                     ContainsDict({"name": Equals("bar"), "version": Is(None)}),
                     ContainsDict({"name": Equals("baz"), "version": Is(None)}),
+                    ]),
+                MatchesListwise([
+                    ContainsDict({"name": Equals("qux"), "version": Is(None)}),
                     ]),
                 MatchesListwise([
                     ContainsDict({
