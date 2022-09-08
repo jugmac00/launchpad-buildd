@@ -1,4 +1,4 @@
-launchpad-buildd (221 UNRELEASED; urgency=medium
+launchpad-buildd (221) UNRELEASED; urgency=medium
 
   * Include Build-Depends-Arch when considering direct dependancies
     (LP: #1988999)
