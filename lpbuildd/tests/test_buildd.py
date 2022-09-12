@@ -19,9 +19,9 @@ import shutil
 import sys
 import tempfile
 import unittest
+from urllib.request import HTTPBasicAuthHandler
+from xmlrpc.client import ServerProxy
 
-from six.moves.urllib.request import HTTPBasicAuthHandler
-from six.moves.xmlrpc_client import ServerProxy
 import twisted
 
 from lpbuildd.tests.harness import (

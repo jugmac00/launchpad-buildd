@@ -11,7 +11,6 @@ from fixtures import (
     EnvironmentVariable,
     TempDir,
     )
-import six
 from systemfixtures import (
     FakeProcesses,
     FakeTime,
@@ -131,7 +130,7 @@ class TestChroot(TestCase):
         expected_args = [
             ["sudo", "/usr/sbin/chroot",
              "/expected/home/build-1/chroot-autobuild",
-             "linux64", "echo", arg.encode("UTF-8") if six.PY2 else arg],
+             "linux64", "echo", arg],
             ]
         self.assertEqual(
             expected_args,

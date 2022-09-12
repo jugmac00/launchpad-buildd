@@ -13,7 +13,6 @@ python3-pylxd
 python3-requests
 python3-responses
 python3-setuptools
-python3-six
 python3-systemfixtures
 python3-testtools
 python3-twisted

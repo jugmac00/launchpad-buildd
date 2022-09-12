@@ -1,6 +1,10 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from configparser import (
+    NoOptionError,
+    NoSectionError,
+    )
 import gzip
 import hashlib
 import json
@@ -8,11 +12,6 @@ import os
 import shutil
 import tarfile
 import tempfile
-
-from six.moves.configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 
 from lpbuildd.debian import (
     DebianBuildManager,

@@ -6,8 +6,7 @@
 # TranslationTemplatesBuildManager through XMLRPC.
 
 import sys
-
-from six.moves.xmlrpc_client import ServerProxy
+from xmlrpc.client import ServerProxy
 
 if len(sys.argv) != 2:
     print("Usage: %s <chroot_sha1>" % sys.argv[0])

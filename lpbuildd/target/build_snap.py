@@ -7,8 +7,7 @@ import logging
 import os.path
 import tempfile
 from textwrap import dedent
-
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.proxy import BuilderProxyOperationMixin

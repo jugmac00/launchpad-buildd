@@ -72,7 +72,6 @@ setup(
         # 'python-apt',
         'python-debian',
         'requests',
-        'six',
         'Twisted',
         'zope.interface',
         ],

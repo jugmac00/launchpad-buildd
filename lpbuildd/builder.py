@@ -14,15 +14,15 @@ import re
 import shutil
 import sys
 import tempfile
-
-import apt
-from six.moves.urllib.request import (
+from urllib.request import (
     build_opener,
     HTTPBasicAuthHandler,
     HTTPPasswordMgrWithDefaultRealm,
     urlopen,
     )
-from six.moves.xmlrpc_client import Binary
+from xmlrpc.client import Binary
+
+import apt
 from twisted.internet import protocol
 from twisted.internet import reactor as default_reactor
 from twisted.internet import process

@@ -6,8 +6,7 @@
 # recipe, without involving the BuilderBehaviour.
 
 import sys
-
-from six.moves.xmlrpc_client import ServerProxy
+from xmlrpc.client import ServerProxy
 
 country_code = 'us'
 apt_cacher_ng_host = 'stumpy'

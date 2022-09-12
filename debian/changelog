@@ -1,3 +1,9 @@
+launchpad-buildd (222) UNRELEASED; urgency=medium
+
+  * Remove use of six.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 12 Sep 2022 09:50:13 +0100
+
 launchpad-buildd (221) focal; urgency=medium
 
   [ Andy Whitcroft ]

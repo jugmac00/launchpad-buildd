@@ -3,16 +3,16 @@
 
 import base64
 import io
-
-from six.moves.urllib.error import (
+from urllib.error import (
     HTTPError,
     URLError,
     )
-from six.moves.urllib.parse import urlparse
-from six.moves.urllib.request import (
+from urllib.parse import urlparse
+from urllib.request import (
     Request,
     urlopen,
     )
+
 from twisted.application import strports
 from twisted.internet import reactor
 from twisted.internet.interfaces import IHalfCloseableProtocol
