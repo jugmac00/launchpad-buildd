@@ -1,12 +1,11 @@
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import os
-
-from six.moves.configparser import (
+from configparser import (
     NoOptionError,
     NoSectionError,
     )
+import os
 
 from lpbuildd.debian import (
     DebianBuildManager,

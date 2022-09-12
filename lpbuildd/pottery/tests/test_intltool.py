@@ -2,12 +2,12 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import errno
+from io import StringIO
 import os
 import tarfile
 from textwrap import dedent
 
 from fixtures import TempDir
-from six import StringIO
 from testtools import TestCase
 from testtools.matchers import (
     Equals,

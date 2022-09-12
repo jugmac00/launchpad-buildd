@@ -17,7 +17,6 @@ from fixtures import (
     MockPatchObject,
     TempDir,
     )
-import six
 from systemfixtures import FakeProcesses
 from testtools import TestCase
 from testtools.matchers import (
@@ -134,7 +133,7 @@ class TestRecipeBuilder(TestCase):
             "grumpy", "main", "PPA", git=True)
         with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
             f.write("dummy recipe contents\n")
-        mock_stdout = six.StringIO()
+        mock_stdout = io.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
         self.assertEqual(0, self.builder.buildTree())
         self.assertEqual(
@@ -185,7 +184,7 @@ class TestRecipeBuilder(TestCase):
             fake_brz_build_daily_recipe, name="brz-build-daily-recipe")
         with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
             f.write("dummy recipe contents\n")
-        mock_stdout = six.StringIO()
+        mock_stdout = io.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
         self.useFixture(MockPatchObject(
             self.builder, "_is_command_on_path",
@@ -236,7 +235,7 @@ class TestRecipeBuilder(TestCase):
         processes_fixture.add(fake_bzr, name="bzr")
         with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
             f.write("dummy recipe contents\n")
-        mock_stdout = six.StringIO()
+        mock_stdout = io.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
         self.useFixture(MockPatchObject(
             self.builder, "_is_command_on_path", return_value=False))

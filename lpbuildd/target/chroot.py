@@ -7,8 +7,6 @@ import stat
 import subprocess
 import time
 
-import six
-
 from lpbuildd.target.backend import (
     Backend,
     BackendException,
@@ -73,10 +71,6 @@ class Chroot(Backend):
         if echo:
             print("Running in chroot: %s" % ' '.join(
                 shell_escape(arg) for arg in args))
-        if six.PY2:
-            # The behaviour of non-bytes subprocess arguments in Python 2
-            # depends on the interpreter's startup locale.
-            args = [arg.encode("UTF-8") for arg in args]
         cmd = ["sudo", "/usr/sbin/chroot", self.chroot_path] + args
         if input_text is None and not get_output:
             subprocess.check_call(cmd, **kwargs)

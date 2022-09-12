@@ -10,7 +10,6 @@ import io
 import re
 
 from fixtures import TempDir
-import six
 from testtools import TestCase
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -122,9 +121,7 @@ class TestBuildManager(TestCase):
             "RUN: echo '\N{SNOWMAN}'\n"
             "\N{SNOWMAN}\n".encode(),
             builder._log.getvalue())
-        logged_snowman = '\N{SNOWMAN}' if six.PY3 else '\\u2603'
         self.assertEqual(
-            ["Build log: RUN: echo '%s'" % logged_snowman,
-             "Build log: %s" % logged_snowman],
+            ["Build log: RUN: echo '\N{SNOWMAN}'", "Build log: \N{SNOWMAN}"],
             [re.sub(r".*? \[-\] (.*)", r"\1", line)
              for line in self.log_file.getvalue().splitlines()])

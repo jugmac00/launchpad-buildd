@@ -1,12 +1,13 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import requests
-from six.moves.urllib.parse import (
+from urllib.parse import (
     urljoin,
     urlparse,
     urlunparse,
     )
+
+import requests
 
 
 class SnapStoreOperationMixin:

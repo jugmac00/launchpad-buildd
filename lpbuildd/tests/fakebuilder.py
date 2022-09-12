@@ -9,16 +9,15 @@ __all__ = [
     ]
 
 from collections import defaultdict
+from configparser import (
+    NoOptionError,
+    NoSectionError,
+    )
 import hashlib
 import os
 import shutil
 import stat
 import subprocess
-
-from six.moves.configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 
 from lpbuildd.target.backend import Backend
 from lpbuildd.util import (

@@ -20,7 +20,6 @@ from fixtures import (
     )
 import pylxd
 from pylxd.exceptions import LXDAPIException
-import six
 from systemfixtures import (
     FakeFilesystem as _FakeFilesystem,
     FakeProcesses,
@@ -645,8 +644,7 @@ class TestLXD(TestCase):
         LXD("1", "xenial", "amd64").run(["echo", arg])
 
         expected_args = [
-            ["lxc", "exec", "lp-xenial-amd64", "--",
-             "linux64", "echo", arg.encode("UTF-8") if six.PY2 else arg],
+            ["lxc", "exec", "lp-xenial-amd64", "--", "linux64", "echo", arg],
             ]
         self.assertEqual(
             expected_args,

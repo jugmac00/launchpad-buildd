@@ -5,14 +5,14 @@
 #      and Adam Conrad <adam.conrad@canonical.com>
 
 import base64
+from configparser import (
+    NoOptionError,
+    NoSectionError,
+    )
 import os
 import re
 import signal
 
-from six.moves.configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 from twisted.internet import (
     defer,
     threads,
