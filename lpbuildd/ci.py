@@ -64,6 +64,7 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.environment_variables = extra_args.get("environment_variables")
         self.plugin_settings = extra_args.get("plugin_settings")
         self.secrets = extra_args.get("secrets")
+        self.scan_malware = extra_args.get("scan_malware", False)
 
         super().initiate(files, chroot, extra_args)
 
@@ -82,6 +83,8 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--git-repository", self.git_repository])
         if self.git_path is not None:
             args.extend(["--git-path", self.git_path])
+        if self.scan_malware:
+            args.append("--scan-malware")
         try:
             snap_store_proxy_url = self._builder._config.get(
                 "proxy", "snapstore")
@@ -164,6 +167,8 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 )
             args.extend(
                 ["--secrets", "/build/.launchpad-secrets.yaml"])
+        if self.scan_malware:
+            args.append("--scan-malware")
 
         job_name, job_index = self.current_job
         self.current_job_id = _make_job_id(job_name, job_index)
