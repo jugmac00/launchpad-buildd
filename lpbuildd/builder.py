@@ -17,7 +17,7 @@ import tempfile
 from urllib.request import (
     build_opener,
     HTTPBasicAuthHandler,
-    HTTPPasswordMgrWithDefaultRealm,
+    HTTPPasswordMgrWithPriorAuth,
     urlopen,
     )
 from xmlrpc.client import Binary
@@ -430,8 +430,10 @@ class Builder:
         This helper installs an HTTPBasicAuthHandler that will deal with any
         HTTP basic authentication required when opening the URL.
         """
-        password_mgr = HTTPPasswordMgrWithDefaultRealm()
-        password_mgr.add_password(None, url, username, password)
+        password_mgr = HTTPPasswordMgrWithPriorAuth()
+        password_mgr.add_password(
+            None, url, username, password, is_authenticated=True
+        )
         handler = HTTPBasicAuthHandler(password_mgr)
         opener = build_opener(handler)
         return opener
@@ -449,7 +451,7 @@ class Builder:
             extra_info = 'Cache'
             if not os.path.exists(cachefile):
                 self.log(f'Fetching {sha1sum} by url {url}')
-                if username:
+                if username or password:
                     opener = self.setupAuthHandler(
                         url, username, password).open
                 else:

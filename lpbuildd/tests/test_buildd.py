@@ -63,6 +63,29 @@ class LaunchpadBuilddTests(BuilddTestCase):
         self.assertEqual(user, stored_user)
         self.assertEqual(password, stored_pass)
 
+    def testBasicAuthEmptyUser(self):
+        """An empty username is used in conjunction with macaroons."""
+        url = "http://fakeurl/"
+        user = ""
+        password = "fakepassword"
+
+        opener = self.builder.setupAuthHandler(url, user, password)
+
+        # Inspect the openers and ensure the wanted handler is installed.
+        basic_auth_handler = None
+        for handler in opener.handlers:
+            if isinstance(handler, HTTPBasicAuthHandler):
+                basic_auth_handler = handler
+                break
+        self.assertIsNotNone(
+            basic_auth_handler, "No basic auth handler installed.")
+
+        password_mgr = basic_auth_handler.passwd
+        stored_user, stored_pass = password_mgr.find_user_password(None, url)
+        self.assertEqual(user, stored_user)
+        self.assertEqual(password, stored_pass)
+        self.assertTrue(password_mgr.is_authenticated(url))
+
     def testBuildlogScrubbing(self):
         """Tests the buildlog scrubbing (removal of passwords from URLs)."""
         # This is where the buildlog file lives.

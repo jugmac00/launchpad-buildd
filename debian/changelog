@@ -1,6 +1,8 @@
 launchpad-buildd (222) UNRELEASED; urgency=medium
 
   * Remove use of six.
+  * Fix handling of librarian macaroons, where the username is empty and we
+    must use prior authentication.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Mon, 12 Sep 2022 09:50:13 +0100
 
