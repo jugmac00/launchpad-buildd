@@ -141,6 +141,53 @@ class TestRunCIPrepare(TestCase):
             RanCommand(["lxd", "init", "--auto"]),
             ]))
 
+    def test_install_scan_malware(self):
+        args = [
+            "run-ci-prepare",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--git-repository", "lp:foo",
+            "--scan-malware",
+            ]
+        run_ci_prepare = parse_args(args=args).operation
+        run_ci_prepare.install()
+        self.assertThat(run_ci_prepare.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "git", "clamav"),
+            RanSnap("install", "lxd"),
+            RanSnap("install", "--classic", "lpcraft"),
+            RanCommand(["lxd", "init", "--auto"]),
+            RanCommand(["freshclam", "--quiet"]),
+            ]))
+
+    def test_install_scan_malware_proxy(self):
+        args = [
+            "run-ci-prepare",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--git-repository", "lp:foo",
+            "--proxy-url", "http://proxy.example:3128/",
+            "--scan-malware",
+            ]
+        run_ci_prepare = parse_args(args=args).operation
+        run_ci_prepare.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        run_ci_prepare.install()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+            }
+        self.assertThat(run_ci_prepare.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "python3", "socat", "git", "clamav"),
+            RanSnap("install", "lxd"),
+            RanSnap("install", "--classic", "lpcraft"),
+            RanCommand(["lxd", "init", "--auto"]),
+            RanCommand(["freshclam", "--quiet"], **env),
+            ]))
+
     def test_repo_git(self):
         args = [
             "run-ci-prepare",
@@ -439,6 +486,47 @@ class TestRunCI(TestCase):
                 "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
             ]))
+
+    def test_run_job_scan_malware_succeeds(self):
+        args = [
+            "run-ci",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--scan-malware",
+            "test", "0",
+            ]
+        run_ci = parse_args(args=args).operation
+        run_ci.run_job()
+        self.assertThat(run_ci.backend.run.calls, MatchesListwise([
+            RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanBuildCommand([
+                "/bin/bash", "-o", "pipefail", "-c",
+                "lpcraft -v run-one --output-directory /build/output "
+                "test 0 "
+                "2>&1 "
+                "| tee /build/output/test/0/log",
+                ], cwd="/build/tree"),
+            RanBuildCommand(
+                ["clamscan", "--recursive", "/build/output/test/0"],
+                cwd="/build/tree"),
+            ]))
+
+    def test_run_job_scan_malware_fails(self):
+        class FailClamscan(FakeMethod):
+            def __call__(self, run_args, *args, **kwargs):
+                super().__call__(run_args, *args, **kwargs)
+                if run_args[0] == "clamscan":
+                    raise subprocess.CalledProcessError(1, run_args)
+
+        self.useFixture(FakeLogger())
+        args = [
+            "run-ci",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--scan-malware",
+            "test", "0",
+            ]
+        run_ci = parse_args(args=args).operation
+        run_ci.backend.run = FailClamscan()
+        self.assertRaises(subprocess.CalledProcessError, run_ci.run_job)
 
     def test_run_succeeds(self):
         args = [

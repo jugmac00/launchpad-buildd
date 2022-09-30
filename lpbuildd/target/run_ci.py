@@ -31,6 +31,12 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
         parser.add_argument(
             "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
             dest="channels", default={}, help="install SNAP from CHANNEL")
+        parser.add_argument(
+            "--scan-malware",
+            action="store_true",
+            default=False,
+            help="perform malware scans on output files",
+        )
 
     def install(self):
         logger.info("Running install phase...")
@@ -43,6 +49,8 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
                 if self.backend.is_package_available(dep):
                     deps.append(dep)
         deps.extend(self.vcs_deps)
+        if self.args.scan_malware:
+            deps.append("clamav")
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
@@ -59,6 +67,16 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
             cmd.append(snap_name)
             self.backend.run(cmd)
         self.backend.run(["lxd", "init", "--auto"])
+        if self.args.scan_malware:
+            # lpbuildd.target.lxd configures the container not to run most
+            # services, which is convenient since it allows us to ensure
+            # that ClamAV's database is up to date before proceeding.
+            kwargs = {}
+            env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+            if env:
+                kwargs["env"] = env
+            logger.info("Downloading malware definitions...")
+            self.backend.run(["freshclam", "--quiet"], **kwargs)
 
     def repo(self):
         """Collect VCS branch."""
@@ -121,6 +139,12 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             type=str,
             help="secrets where the key and the value are separated by =",
         )
+        parser.add_argument(
+            "--scan-malware",
+            action="store_true",
+            default=False,
+            help="perform malware scans on output files",
+        )
 
     def run_job(self):
         logger.info("Running job phase...")
@@ -171,6 +195,10 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             f"{escaped_lpcraft_args} 2>&1 | {escaped_tee_args}",
             ]
         self.run_build_command(args, env=env)
+
+        if self.args.scan_malware:
+            clamscan = ["clamscan", "--recursive", job_output_path]
+            self.run_build_command(clamscan, env=env)
 
     def run(self):
         try:

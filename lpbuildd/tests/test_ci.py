@@ -128,11 +128,13 @@ class TestCIBuildManagerIteration(TestCase):
             },
             "secrets": {
                 "auth": "user:pass",
-            }
+            },
+            "scan_malware": True,
         }
         expected_prepare_options = [
             "--git-repository", "https://git.launchpad.test/~example/+git/ci",
             "--git-path", "main",
+            "--scan-malware",
             ]
         yield self.startBuild(args, expected_prepare_options)
 
@@ -145,6 +147,7 @@ class TestCIBuildManagerIteration(TestCase):
             "--plugin-setting", "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/",  # noqa: E501
             "--plugin-setting", "foo=bar",
             "--secrets", "/build/.launchpad-secrets.yaml",
+            "--scan-malware",
             ]
         yield self.expectRunJob("build", "0", options=expected_job_options)
         self.buildmanager.backend.add_file(
