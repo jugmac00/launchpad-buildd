@@ -1,9 +1,9 @@
-launchpad-buildd (223) UNRELEASED; urgency=medium
+launchpad-buildd (223) focal; urgency=medium
 
   * Add optional malware scanning at the end of CI build jobs, currently
     implemented using clamav.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 30 Sep 2022 11:37:20 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 07 Oct 2022 17:31:08 +0100
 
 launchpad-buildd (222) focal; urgency=medium
 
