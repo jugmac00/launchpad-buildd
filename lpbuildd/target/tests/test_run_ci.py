@@ -188,6 +188,30 @@ class TestRunCIPrepare(TestCase):
             RanCommand(["freshclam", "--quiet"], **env),
             ]))
 
+    def test_install_scan_malware_with_clamav_database_url(self):
+        args = [
+            "run-ci-prepare",
+            "--backend=fake", "--series=focal", "--arch=amd64", "1",
+            "--git-repository", "lp:foo",
+            "--scan-malware",
+            "--clamav-database-url", "http://clamav.example/",
+            ]
+        run_ci_prepare = parse_args(args=args).operation
+        run_ci_prepare.backend.add_file(
+            "/etc/clamav/freshclam.conf", b"Test line\n")
+        run_ci_prepare.install()
+        self.assertThat(run_ci_prepare.backend.run.calls, MatchesListwise([
+            RanAptGet("install", "git", "clamav"),
+            RanSnap("install", "lxd"),
+            RanSnap("install", "--classic", "lpcraft"),
+            RanCommand(["lxd", "init", "--auto"]),
+            RanCommand(["freshclam", "--quiet"]),
+            ]))
+        self.assertEqual(
+            (b"Test line\nPrivateMirror http://clamav.example/\n",
+             stat.S_IFREG | 0o644),
+            run_ci_prepare.backend.backend_fs["/etc/clamav/freshclam.conf"])
+
     def test_repo_git(self):
         args = [
             "run-ci-prepare",

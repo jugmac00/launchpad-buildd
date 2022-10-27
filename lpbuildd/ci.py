@@ -86,6 +86,17 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         if self.scan_malware:
             args.append("--scan-malware")
         try:
+            # Not precisely a proxy, but it's similar in the sense of
+            # providing additional network endpoints that we use instead of
+            # the default behaviour, and using a section that doesn't exist
+            # in the default configuration is convenient for our production
+            # deployments.
+            clamav_database_url = self._builder._config.get(
+                "proxy", "clamavdatabase")
+            args.extend(["--clamav-database-url", clamav_database_url])
+        except (NoSectionError, NoOptionError):
+            pass
+        try:
             snap_store_proxy_url = self._builder._config.get(
                 "proxy", "snapstore")
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])

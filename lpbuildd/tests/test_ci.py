@@ -379,3 +379,23 @@ class TestCIBuildManagerIteration(TestCase):
         shutil.rmtree(get_build_path(
             self.buildmanager.home, self.buildmanager._buildid))
         self.assertIn("jobs", self.buildmanager.status())
+
+    @defer.inlineCallbacks
+    def test_iterate_with_clamav_database_url(self):
+        # If proxy.clamavdatabase is set, the build manager passes it via
+        # the --clamav-database-url option.
+        self.builder._config.set(
+            "proxy", "clamavdatabase", "http://clamav.example/")
+        args = {
+            "git_repository": "https://git.launchpad.test/~example/+git/ci",
+            "git_path": "main",
+            "jobs": [[("build", "0")], [("test", "0")]],
+            "scan_malware": True,
+        }
+        expected_prepare_options = [
+            "--git-repository", "https://git.launchpad.test/~example/+git/ci",
+            "--git-path", "main",
+            "--scan-malware",
+            "--clamav-database-url", "http://clamav.example/",
+            ]
+        yield self.startBuild(args, expected_prepare_options)

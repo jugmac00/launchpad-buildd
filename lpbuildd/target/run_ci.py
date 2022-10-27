@@ -3,6 +3,7 @@
 
 import logging
 import os
+import tempfile
 
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
@@ -36,6 +37,10 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
             action="store_true",
             default=False,
             help="perform malware scans on output files",
+        )
+        parser.add_argument(
+            "--clamav-database-url",
+            help="override default ClamAV database URL",
         )
 
     def install(self):
@@ -71,6 +76,17 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
             # lpbuildd.target.lxd configures the container not to run most
             # services, which is convenient since it allows us to ensure
             # that ClamAV's database is up to date before proceeding.
+            if self.args.clamav_database_url:
+                freshclam_path = "/etc/clamav/freshclam.conf"
+                with tempfile.NamedTemporaryFile(mode="w+") as freshclam_file:
+                    self.backend.copy_out(freshclam_path, freshclam_file.name)
+                    freshclam_file.seek(0, os.SEEK_END)
+                    print(
+                        f"PrivateMirror {self.args.clamav_database_url}",
+                        file=freshclam_file,
+                    )
+                    freshclam_file.flush()
+                    self.backend.copy_in(freshclam_file.name, freshclam_path)
             kwargs = {}
             env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
             if env:
