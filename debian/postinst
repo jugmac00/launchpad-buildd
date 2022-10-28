@@ -21,6 +21,11 @@ make_buildd()
 
 case "$1" in
     configure)
+	if [ ! -d /var/snap/lxd ]; then
+	    echo "LXD is not installed.  Run 'snap install lxd' and retry." >&2
+	    exit 1
+	fi
+
 	getent group buildd >/dev/null 2>&1 ||
                 addgroup --gid $BUILDDGID buildd
 
