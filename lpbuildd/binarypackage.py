@@ -156,11 +156,11 @@ class BinaryPackageBuildManager(DebianBuildManager):
                self.archive_purpose))
         if self.build_debug_symbols:
             currently_building_contents += 'Build-Debug-Symbols: yes\n'
-        with tempfile.NamedTemporaryFile(mode='w+') as currently_building:
+        with self.backend.open(
+            '/CurrentlyBuilding', mode='w+'
+        ) as currently_building:
             currently_building.write(currently_building_contents)
-            currently_building.flush()
             os.fchmod(currently_building.fileno(), 0o644)
-            self.backend.copy_in(currently_building.name, '/CurrentlyBuilding')
 
         args = ["sbuild-package", self._buildid, self.arch_tag]
         args.append(self.suite)

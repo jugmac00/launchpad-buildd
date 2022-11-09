@@ -3,7 +3,6 @@
 
 import logging
 import os
-import tempfile
 
 from lpbuildd.target.build_snap import SnapChannelsAction
 from lpbuildd.target.operation import Operation
@@ -77,16 +76,12 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
             # services, which is convenient since it allows us to ensure
             # that ClamAV's database is up to date before proceeding.
             if self.args.clamav_database_url:
-                freshclam_path = "/etc/clamav/freshclam.conf"
-                with tempfile.NamedTemporaryFile(mode="w+") as freshclam_file:
-                    self.backend.copy_out(freshclam_path, freshclam_file.name)
-                    freshclam_file.seek(0, os.SEEK_END)
-                    print(
-                        f"PrivateMirror {self.args.clamav_database_url}",
-                        file=freshclam_file,
+                with self.backend.open(
+                    "/etc/clamav/freshclam.conf", mode="a"
+                ) as freshclam_file:
+                    freshclam_file.write(
+                        f"PrivateMirror {self.args.clamav_database_url}\n"
                     )
-                    freshclam_file.flush()
-                    self.backend.copy_in(freshclam_file.name, freshclam_path)
             kwargs = {}
             env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
             if env:
