@@ -5,7 +5,6 @@ import argparse
 import json
 import logging
 import os.path
-import tempfile
 from textwrap import dedent
 from urllib.parse import urlparse
 
@@ -92,13 +91,12 @@ class BuildSnap(BuilderProxyOperationMixin, VCSOperationMixin,
             svn_servers += f"http-proxy-username = {proxy.username}\n"
         if proxy.password:
             svn_servers += f"http-proxy-password = {proxy.password}\n"
-        with tempfile.NamedTemporaryFile(mode="w+") as svn_servers_file:
+        self.backend.run(["mkdir", "-p", "/root/.subversion"])
+        with self.backend.open(
+            "/root/.subversion/servers", mode="w+"
+        ) as svn_servers_file:
             svn_servers_file.write(svn_servers)
-            svn_servers_file.flush()
             os.fchmod(svn_servers_file.fileno(), 0o644)
-            self.backend.run(["mkdir", "-p", "/root/.subversion"])
-            self.backend.copy_in(
-                svn_servers_file.name, "/root/.subversion/servers")
 
     def install(self):
         logger.info("Running install phase...")

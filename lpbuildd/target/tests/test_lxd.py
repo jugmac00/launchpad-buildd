@@ -391,9 +391,10 @@ class TestLXD(TestCase):
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         files_api = container.api.files
         files_api._api_endpoint = f"/1.0/containers/lp-xenial-{arch}/files"
-        files_api.session.get.side_effect = FakeSessionGet({
+        existing_files = {
             "/etc/hosts": [b"127.0.0.1\tlocalhost\n"],
-            })
+        }
+        files_api.session.get.side_effect = FakeSessionGet(existing_files)
         processes_fixture = self.useFixture(FakeProcesses())
 
         def fake_sudo(args):
@@ -414,7 +415,13 @@ class TestLXD(TestCase):
         processes_fixture.add(lambda _: {}, name="lxc")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
-        LXD("1", "xenial", arch).start()
+
+        with mock.patch.object(
+            LXD,
+            "path_exists",
+            side_effect=lambda path: path in existing_files
+        ):
+            LXD("1", "xenial", arch).start()
 
         self.assert_correct_profile()
 
@@ -515,9 +522,6 @@ class TestLXD(TestCase):
             params={"path": "/usr/local/sbin/policy-rc.d"},
             data=policy_rc_d.encode("UTF-8"),
             headers={"X-LXD-uid": "0", "X-LXD-gid": "0", "X-LXD-mode": "0755"})
-        files_api.session.get.assert_any_call(
-            f"/1.0/containers/lp-xenial-{arch}/files",
-            params={"path": "/etc/init/mounted-dev.conf"}, stream=True)
         self.assertNotIn(
             "/etc/init/mounted-dev.override",
             [kwargs["params"]["path"]
@@ -551,11 +555,10 @@ class TestLXD(TestCase):
         processes_fixture.add(lambda _: {}, name="lxc")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
-        LXD("1", "xenial", "amd64").start()
 
-        files_api.session.get.assert_any_call(
-            "/1.0/containers/lp-xenial-amd64/files",
-            params={"path": "/etc/hosts"}, stream=True)
+        with mock.patch.object(LXD, "path_exists", return_value=False):
+            LXD("1", "xenial", "amd64").start()
+
         files_api.post.assert_any_call(
             params={"path": "/etc/hosts"},
             data=(
@@ -576,7 +579,7 @@ class TestLXD(TestCase):
             lambda wait=False: setattr(container, "status_code", LXD_RUNNING))
         files_api = container.api.files
         files_api._api_endpoint = "/1.0/containers/lp-trusty-amd64/files"
-        files_api.session.get.side_effect = FakeSessionGet({
+        existing_files = {
             "/etc/init/mounted-dev.conf": [dedent("""\
                 start on mounted MOUNTPOINT=/dev
                 script
@@ -584,11 +587,18 @@ class TestLXD(TestCase):
                     /sbin/MAKEDEV std fd ppp tun
                 end script
                 task
-                """).encode("UTF-8")]})
+                """).encode("UTF-8")]}
+        files_api.session.get.side_effect = FakeSessionGet(existing_files)
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
-        LXD("1", "trusty", "amd64").start()
+
+        with mock.patch.object(
+            LXD,
+            "path_exists",
+            side_effect=lambda path: path in existing_files
+        ):
+            LXD("1", "trusty", "amd64").start()
 
         files_api.session.get.assert_any_call(
             "/1.0/containers/lp-trusty-amd64/files",

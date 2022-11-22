@@ -9,7 +9,6 @@ import re
 import stat
 import subprocess
 import tarfile
-import tempfile
 from textwrap import dedent
 import time
 
@@ -376,22 +375,16 @@ class LXD(Backend):
             ["hostname"], universal_newlines=True).rstrip("\n")
         fqdn = subprocess.check_output(
             ["hostname", "--fqdn"], universal_newlines=True).rstrip("\n")
-        with tempfile.NamedTemporaryFile(mode="w+") as hosts_file:
-            try:
-                self.copy_out("/etc/hosts", hosts_file.name)
-            except LXDException:
-                hosts_file.seek(0, os.SEEK_SET)
-                hosts_file.write(fallback_hosts)
+        with self.open("/etc/hosts", mode="a") as hosts_file:
             hosts_file.seek(0, os.SEEK_END)
+            if not hosts_file.tell():
+                # /etc/hosts is missing or empty
+                hosts_file.write(fallback_hosts)
             print(f"\n127.0.1.1\t{fqdn} {hostname}", file=hosts_file)
-            hosts_file.flush()
             os.fchmod(hosts_file.fileno(), 0o644)
-            self.copy_in(hosts_file.name, "/etc/hosts")
-        with tempfile.NamedTemporaryFile(mode="w+") as hostname_file:
+        with self.open("/etc/hostname", mode="w+") as hostname_file:
             print(hostname, file=hostname_file)
-            hostname_file.flush()
             os.fchmod(hostname_file.fileno(), 0o644)
-            self.copy_in(hostname_file.name, "/etc/hostname")
 
         resolv_conf = "/etc/resolv.conf"
 
@@ -403,23 +396,17 @@ class LXD(Backend):
 
         self.copy_in(resolv_conf, "/etc/resolv.conf")
 
-        with tempfile.NamedTemporaryFile(mode="w+") as policy_rc_d_file:
+        with self.open(
+            "/usr/local/sbin/policy-rc.d", mode="w+"
+        ) as policy_rc_d_file:
             policy_rc_d_file.write(policy_rc_d)
-            policy_rc_d_file.flush()
             os.fchmod(policy_rc_d_file.fileno(), 0o755)
-            self.copy_in(policy_rc_d_file.name, "/usr/local/sbin/policy-rc.d")
         # For targets that use Upstart, prevent the mounted-dev job from
         # creating devices.  Most of the devices it creates are unnecessary
         # in a container, and creating loop devices will race with our own
         # code to do so.
-        with tempfile.NamedTemporaryFile(mode="w+") as mounted_dev_file:
-            try:
-                self.copy_out(
-                    "/etc/init/mounted-dev.conf", mounted_dev_file.name)
-            except LXDException:
-                pass
-            else:
-                mounted_dev_file.seek(0, os.SEEK_SET)
+        if self.path_exists("/etc/init/mounted-dev.conf"):
+            with self.open("/etc/init/mounted-dev.conf") as mounted_dev_file:
                 script = ""
                 in_script = False
                 for line in mounted_dev_file:
@@ -431,15 +418,13 @@ class LXD(Backend):
                     elif line.strip() == "script":
                         script += line
                         in_script = True
-                if script:
-                    mounted_dev_file.seek(0, os.SEEK_SET)
-                    mounted_dev_file.truncate()
-                    mounted_dev_file.write(script)
-                    mounted_dev_file.flush()
-                    os.fchmod(mounted_dev_file.fileno(), 0o644)
-                    self.copy_in(
-                        mounted_dev_file.name,
-                        "/etc/init/mounted-dev.override")
+
+            if script:
+                with self.open(
+                    "/etc/init/mounted-dev.override", mode="w"
+                ) as mounted_dev_override_file:
+                    mounted_dev_override_file.write(script)
+                    os.fchmod(mounted_dev_override_file.fileno(), 0o644)
 
         # Start the container and wait for it to start.
         container.start(wait=True)
@@ -481,16 +466,14 @@ class LXD(Backend):
         # directory until the container has started.  We can get away with
         # this for the time being because snapd isn't in the buildd chroots.
         self.run(["mkdir", "-p", "/etc/systemd/system/snapd.service.d"])
-        with tempfile.NamedTemporaryFile(mode="w+") as no_cdn_file:
+        with self.open(
+            "/etc/systemd/system/snapd.service.d/no-cdn.conf", mode="w+"
+        ) as no_cdn_file:
             print(dedent("""\
                 [Service]
                 Environment=SNAPPY_STORE_NO_CDN=1
                 """), file=no_cdn_file, end="")
-            no_cdn_file.flush()
             os.fchmod(no_cdn_file.fileno(), 0o644)
-            self.copy_in(
-                no_cdn_file.name,
-                "/etc/systemd/system/snapd.service.d/no-cdn.conf")
 
         # Refreshing snaps from a timer unit during a build isn't
         # appropriate.  Mask this, but manually so that we don't depend on

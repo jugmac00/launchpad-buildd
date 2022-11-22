@@ -6,7 +6,6 @@ from configparser import (
     NoSectionError,
     )
 import os
-import tempfile
 import yaml
 
 from twisted.internet import defer
@@ -168,14 +167,10 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     ["--plugin-setting", f"{key}={value}"])
         if self.secrets is not None:
             text = yaml.dump(self.secrets)
-            with tempfile.NamedTemporaryFile(mode="w") as f:
+            with self.backend.open(
+                "/build/.launchpad-secrets.yaml", mode="w"
+            ) as f:
                 f.write(text)
-                f.flush()
-                path_to_secrets = f.name
-                self.backend.copy_in(
-                    source_path=path_to_secrets,
-                    target_path="/build/.launchpad-secrets.yaml"
-                )
             args.extend(
                 ["--secrets", "/build/.launchpad-secrets.yaml"])
         if self.scan_malware:

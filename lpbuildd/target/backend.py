@@ -3,6 +3,10 @@
 
 import os.path
 import subprocess
+import tempfile
+from contextlib import contextmanager
+from pathlib import Path
+from shutil import rmtree
 
 
 class BackendException(Exception):
@@ -188,6 +192,27 @@ class Backend:
     def remove(self):
         """Remove the backend."""
         subprocess.check_call(["sudo", "rm", "-rf", self.build_path])
+
+    @contextmanager
+    def open(self, path: str, mode="r", **kwargs):
+        """
+        Provides access to the files in the target environment via a
+        file-like object.
+
+        The arguments are the same as those of the built-in `open` function.
+        """
+        tmp_dir = tempfile.mkdtemp()
+        tmp_path = os.path.join(tmp_dir, Path(path).name)
+        if self.path_exists(path):
+            self.copy_out(path, tmp_path)
+        tmp_file = open(tmp_path, mode=mode, **kwargs)
+        try:
+            yield tmp_file
+        finally:
+            tmp_file.close()
+            if mode not in ("r", "rb", "rt"):
+                self.copy_in(tmp_path, path)
+            rmtree(tmp_dir)
 
 
 def make_backend(name, build_id, series=None, arch=None):

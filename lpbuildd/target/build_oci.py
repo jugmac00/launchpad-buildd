@@ -3,7 +3,6 @@
 
 import logging
 import os.path
-import tempfile
 from textwrap import dedent
 
 from lpbuildd.target.backend import check_path_escape
@@ -56,10 +55,8 @@ class BuildOCI(BuilderProxyOperationMixin, VCSOperationMixin,
                 Environment="{setting.upper()}={self.args.proxy_url}"
                 """)
             file_path = f"/etc/systemd/system/docker.service.d/{setting}.conf"
-            with tempfile.NamedTemporaryFile(mode="w+") as systemd_file:
+            with self.backend.open(file_path, mode="w+") as systemd_file:
                 systemd_file.write(contents)
-                systemd_file.flush()
-                self.backend.copy_in(systemd_file.name, file_path)
 
     def install(self):
         logger.info("Running install phase...")
