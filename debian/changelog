@@ -4,6 +4,8 @@ launchpad-buildd (224) UNRELEASED; urgency=medium
   * Allow configuring builders to use a different ClamAV database URL.
   * Require the LXD snap to be installed, rather than depending on the lxd
     package (which no longer exists in jammy).
+  * Calculate major number for device-mapper by searching /proc/devices; the
+    "dmsetup create" approach doesn't seem to work properly in jammy.
 
   [ Andrey Fedoseev ]
   * `open` method is added to the backends providing access to the files
