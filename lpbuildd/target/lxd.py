@@ -34,16 +34,13 @@ def get_device_mapper_major():
 
     This is not consistent across kernel versions, sadly.
     """
-    created = False
-    if not os.path.exists("/dev/dm-0"):
-        created = True
-        subprocess.check_call(
-            ["sudo", "dmsetup", "create", "tmpdevice", "--notable"])
-    major = os.major(os.stat("/dev/dm-0").st_rdev)
-    if created:
-        subprocess.check_call(
-            ["sudo", "dmsetup", "remove", "tmpdevice"])
-    return major
+    with open("/proc/devices") as devices:
+        for line in devices:
+            if line.rstrip("\n").endswith(" device-mapper"):
+                return int(line.split()[0])
+        else:
+            raise Exception(
+                "Cannot determine major device number for device-mapper")
 
 
 fallback_hosts = dedent("""\
