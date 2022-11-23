@@ -32,9 +32,11 @@ Testing on dogfood
    that the resulting package has been published in the `Launchpad PPA
    <https://launchpad.net/~launchpad/+archive/ubuntu/ppa/+packages>`_.
 
-#. Run ``copy-package --from=ppa:launchpad/ubuntu/ppa --suite=focal
-   --to=ppa:launchpad/ubuntu/buildd-staging -b launchpad-buildd`` to copy
-   the current version of launchpad-buildd to the deployment PPA.
+#. Run ``copy-package --from=ppa:launchpad/ubuntu/ppa --suite=jammy
+   --to=ppa:launchpad/ubuntu/buildd-staging -b launchpad-buildd``
+   (from ``ubuntu-archive-tools``) to copy the current version of launchpad-buildd
+   to the deployment PPA (``jammy`` here refers to the series being used on
+   dogfood builder instances).
 
 #. `Wait for PPA publishing to complete
    <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`__.
@@ -48,9 +50,10 @@ Testing on dogfood
 #. Builders will get the new image after they finish their next build (or
    are disabled) and go through being reset.  Since dogfood's build farm is
    typically mostly idle, you can use ``manage-builders -l dogfood --reset``
-   to reset all builders and force them to pick up the new image.
+   to reset all builders and force them to pick up the new image
+   (from ``ubuntu-archive-tools``).
 
-#. Perform QA on dogfood until satisfied.
+#. Perform QA on dogfood until satisfied, see :doc:`/how-to/qa`.
 
 Releasing to production
 -----------------------
