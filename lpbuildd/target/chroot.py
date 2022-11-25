@@ -103,13 +103,17 @@ class Chroot(Backend):
              source_path, full_target_path])
 
     def copy_out(self, source_path, target_path):
-        # We can just use a plain copy here, since the file ownership in the
-        # host system isn't important.
+        # Don't use install(1) here because running `os.stat` to get file mode
+        # may be impossible. Instead, copy the with `cp` and set file ownership
+        # to buildd (this is necessary so that buildd can read/write the copied
+        # file).
         full_source_path = os.path.join(
             self.chroot_path, source_path.lstrip("/"))
         subprocess.check_call(
             ["sudo", "cp", "--preserve=timestamps",
              full_source_path, target_path])
+        uid, gid = os.getuid(), os.getgid()
+        subprocess.check_call(["sudo", "chown", f"{uid}:{gid}", target_path])
 
     def kill_processes(self):
         """See `Backend`."""
