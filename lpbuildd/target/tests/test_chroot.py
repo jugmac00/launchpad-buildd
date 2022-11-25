@@ -181,10 +181,12 @@ class TestChroot(TestCase):
         Chroot("1", "xenial", "amd64").copy_out(
             "/path/to/source", "/path/to/target")
 
+        uid, gid = os.getuid(), os.getgid()
         expected_args = [
             ["sudo", "cp", "--preserve=timestamps",
              "/expected/home/build-1/chroot-autobuild/path/to/source",
              "/path/to/target"],
+            ["sudo", "chown", f"{uid}:{gid}", "/path/to/target"],
             ]
         self.assertEqual(
             expected_args,
