@@ -1,4 +1,4 @@
-launchpad-buildd (224) UNRELEASED; urgency=medium
+launchpad-buildd (224) focal; urgency=medium
 
   [ Colin Watson ]
   * Allow configuring builders to use a different ClamAV database URL.
@@ -11,7 +11,7 @@ launchpad-buildd (224) UNRELEASED; urgency=medium
   * `open` method is added to the backends providing access to the files
     in target environments via a file-like object.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 26 Oct 2022 08:55:39 +0200
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 12 Dec 2022 12:20:03 +0000
 
 launchpad-buildd (223) focal; urgency=medium
 
