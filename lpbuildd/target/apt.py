@@ -82,14 +82,18 @@ class AddTrustedKeys(Operation):
     def run(self):
         """Add trusted keys from an input file."""
         logger.info("Adding trusted keys to build-%s", self.args.build_id)
+        # We must read the input data before calling `backend.open`, since
+        # it may call `lxc exec` and that apparently drains stdin.
+        input_data = self.input_file.read()
         gpg_cmd = [
             "gpg", "--ignore-time-conflict", "--no-options", "--no-keyring",
             ]
         with self.backend.open(
             "/etc/apt/trusted.gpg.d/launchpad-buildd.gpg", mode="wb+"
         ) as keyring:
-            subprocess.check_call(
-                gpg_cmd + ["--dearmor"], stdin=self.input_file, stdout=keyring)
+            subprocess.run(
+                gpg_cmd + ["--dearmor"], input=input_data, stdout=keyring,
+                check=True)
             keyring.seek(0)
             subprocess.check_call(
                 gpg_cmd +
