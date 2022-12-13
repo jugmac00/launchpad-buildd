@@ -1,9 +1,9 @@
-launchpad-buildd (225) UNRELEASED; urgency=medium
+launchpad-buildd (225) focal; urgency=medium
 
   * Fix add-trusted-keys regression due to Backend.open calling "lxc exec"
     and draining stdin (LP: #1999420).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 12 Dec 2022 17:46:40 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 13 Dec 2022 12:16:46 +0000
 
 launchpad-buildd (224) focal; urgency=medium
 
