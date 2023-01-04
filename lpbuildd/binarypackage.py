@@ -118,7 +118,6 @@ class BinaryPackageBuildManager(DebianBuildManager):
             raise ValueError(files)
 
         self.archive_purpose = extra_args.get('archive_purpose')
-        self.distribution = extra_args['distribution']
         self.suite = extra_args['suite']
         self.component = extra_args['ogrecomponent']
         self.arch_indep = extra_args.get('arch_indep', False)
