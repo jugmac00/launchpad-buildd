@@ -72,7 +72,6 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
             'author_name': 'Steve\u1234',
             'author_email': 'stevea@example.org',
             'archive_purpose': 'puppies',
-            'distroseries_name': 'maverick',
             'archives': [
                 'deb http://archive.ubuntu.com/ubuntu maverick main universe',
                 'deb http://ppa.launchpad.net/launchpad/bzr-builder-dev/'

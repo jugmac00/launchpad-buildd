@@ -3,6 +3,8 @@ launchpad-buildd (226) UNRELEASED; urgency=medium
   * Remove unused "distribution" argument from the binarypackage manager.
     This was only used with the old internal sbuild fork, which we dropped
     in launchpad-buildd 127.
+  * Remove the old "distroseries_name" argument from the sourcepackagerecipe
+    manager, which duplicated the common "series" argument.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 04 Jan 2023 12:58:36 +0000
 
