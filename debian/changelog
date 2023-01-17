@@ -6,7 +6,7 @@ launchpad-buildd (226) UNRELEASED; urgency=medium
   * Remove the old "distroseries_name" argument from the sourcepackagerecipe
     manager, which duplicated the common "series" argument.
   * If the "gpu-nvidia" constraint is specified, then pass through an NVIDIA
-    GPU to the LXD container.
+    GPU to the LXD container, and pass the "--gpu-nvidia" option to lpcraft.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Wed, 04 Jan 2023 12:58:36 +0000
 

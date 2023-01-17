@@ -197,6 +197,9 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             lpcraft_args.extend(
                 ["--secrets", self.args.secrets])
 
+        if "gpu-nvidia" in self.backend.constraints:
+            lpcraft_args.append("--gpu-nvidia")
+
         escaped_lpcraft_args = (
             " ".join(shell_escape(arg) for arg in lpcraft_args))
         tee_args = ["tee", os.path.join(job_output_path, "log")]
