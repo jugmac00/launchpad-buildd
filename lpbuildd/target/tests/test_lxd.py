@@ -274,7 +274,7 @@ class TestLXD(TestCase):
             "lp-xenial-amd64", "lp-xenial-amd64")
 
     def assert_correct_profile(self, extra_raw_lxc_config=None,
-                               driver_version="2.0"):
+                               driver_version="2.0", gpu_nvidia_paths=False):
         if extra_raw_lxc_config is None:
             extra_raw_lxc_config = []
 
@@ -328,6 +328,14 @@ class TestLXD(TestCase):
                 "pool": "default",
                 "type": "disk",
                 }
+        if gpu_nvidia_paths:
+            expected_devices["gpu"] = {"type": "gpu"}
+            for i, path in enumerate(gpu_nvidia_paths):
+                expected_devices[f"nvidia-{i}"] = {
+                    "path": path,
+                    "source": path,
+                    "type": "disk",
+                    }
         client.profiles.create.assert_called_once_with(
             "lpbuildd", expected_config, expected_devices)
 
@@ -359,6 +367,28 @@ class TestLXD(TestCase):
                         driver_version=driver_version or "3.0"
                         )
 
+    def test_create_profile_gpu_nvidia(self):
+        with MockPatch("pylxd.Client"):
+            client = pylxd.Client()
+            client.reset_mock()
+            client.profiles.get.side_effect = FakeLXDAPIException
+            client.host_info = {"environment": {"driver_version": "3.0"}}
+            gpu_nvidia_paths = [
+                "/usr/bin/nvidia-smi",
+                "/usr/bin/nvidia-persistenced",
+                ]
+            processes_fixture = self.useFixture(FakeProcesses())
+            processes_fixture.add(
+                lambda _: {
+                    "stdout": io.StringIO(
+                        "".join(f"{path}\n" for path in gpu_nvidia_paths)),
+                    },
+                name="/snap/lxd/current/bin/nvidia-container-cli.real")
+            backend = LXD("1", "xenial", "amd64", constraints=["gpu-nvidia"])
+            backend.create_profile()
+            self.assert_correct_profile(
+                driver_version="3.0", gpu_nvidia_paths=gpu_nvidia_paths)
+
     def fakeFS(self):
         fs_fixture = self.useFixture(FakeFilesystem())
         fs_fixture.add("/proc")
@@ -379,7 +409,8 @@ class TestLXD(TestCase):
 
     # XXX cjwatson 2022-08-25: Refactor this to use some more sensible kind
     # of test parameterization.
-    def test_start(self, arch="amd64", unmounts_cpuinfo=False):
+    def test_start(self, arch="amd64", unmounts_cpuinfo=False,
+                   gpu_nvidia=False):
         self.fakeFS()
         DM_BLOCK_MAJOR = random.randrange(128, 255)
         with open("/proc/devices", "w") as f:
@@ -404,15 +435,29 @@ class TestLXD(TestCase):
         processes_fixture.add(lambda _: {}, name="lxc")
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
+        if gpu_nvidia:
+            gpu_nvidia_paths = [
+                "/usr/bin/nvidia-smi",
+                "/usr/bin/nvidia-persistenced",
+                ]
+            processes_fixture.add(
+                lambda _: {
+                    "stdout": io.StringIO(
+                        "".join(f"{path}\n" for path in gpu_nvidia_paths)),
+                    },
+                name="/snap/lxd/current/bin/nvidia-container-cli.real")
+        else:
+            gpu_nvidia_paths = None
 
         with mock.patch.object(
             LXD,
             "path_exists",
             side_effect=lambda path: path in existing_files
         ):
-            LXD("1", "xenial", arch).start()
+            constraints = ["gpu-nvidia"] if gpu_nvidia else []
+            LXD("1", "xenial", arch, constraints=constraints).start()
 
-        self.assert_correct_profile()
+        self.assert_correct_profile(gpu_nvidia_paths=gpu_nvidia_paths)
 
         ip = ["sudo", "ip"]
         iptables = ["sudo", "iptables", "-w"]
@@ -420,7 +465,14 @@ class TestLXD(TestCase):
             "-m", "comment", "--comment", "managed by launchpad-buildd"]
         setarch_cmd = "linux64" if get_arch_bits(arch) == 64 else "linux32"
         lxc = ["lxc", "exec", f"lp-xenial-{arch}", "--", setarch_cmd]
-        expected_args = [
+        expected_args = []
+        if gpu_nvidia:
+            expected_args.append(
+                Equals(
+                    ["/snap/lxd/current/bin/nvidia-container-cli.real",
+                     "list",
+                     "--binaries", "--firmwares", "--ipcs", "--libraries"]))
+        expected_args.extend([
             Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
                          "type", "bridge"]),
             Equals(ip + ["addr", "add", "10.10.10.1/24",
@@ -452,7 +504,7 @@ class TestLXD(TestCase):
                 lxc +
                 ["mknod", "-m", "0660", "/dev/loop-control",
                  "c", "10", "237"]),
-            ]
+            ])
         for minor in range(256):
             expected_args.append(
                 Equals(
@@ -465,6 +517,8 @@ class TestLXD(TestCase):
                     lxc +
                     ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
                      "b", str(DM_BLOCK_MAJOR), str(minor)]))
+        if gpu_nvidia:
+            expected_args.append(Equals(lxc + ["/sbin/ldconfig"]))
         expected_args.extend([
             Equals(
                 lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),
@@ -593,6 +647,9 @@ class TestLXD(TestCase):
 
     def test_start_armhf_unmounts_cpuinfo(self):
         self.test_start(arch="armhf", unmounts_cpuinfo=True)
+
+    def test_start_gpu_nvidia(self):
+        self.test_start(gpu_nvidia=True)
 
     def test_run(self):
         processes_fixture = self.useFixture(FakeProcesses())

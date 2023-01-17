@@ -180,8 +180,10 @@ class BuildManager:
             "--backend=%s" % self.backend_name,
             "--series=%s" % self.series,
             "--arch=%s" % self.arch_tag,
-            self._buildid,
             ]
+        for constraint in self.constraints:
+            base_args.append("--constraint=%s" % constraint)
+        base_args.append(self._buildid)
         self.runSubProcess(
             self._intargetpath, base_args + list(args), **kwargs)
 
@@ -256,6 +258,7 @@ class BuildManager:
         self.series = extra_args['series']
         self.arch_tag = extra_args.get('arch_tag', self._builder.getArch())
         self.fast_cleanup = extra_args.get('fast_cleanup', False)
+        self.constraints = extra_args.get('builder_constraints', [])
 
         # Check whether this is a build in a private archive and
         # whether the URLs in the buildlog file should be sanitized
@@ -266,7 +269,8 @@ class BuildManager:
 
         self.backend = make_backend(
             self.backend_name, self._buildid,
-            series=self.series, arch=self.arch_tag)
+            series=self.series, arch=self.arch_tag,
+            constraints=self.constraints)
 
         self.runSubProcess(self._preppath, ["builder-prep"])
 
