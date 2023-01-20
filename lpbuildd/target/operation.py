@@ -22,13 +22,18 @@ class Operation:
         parser.add_argument(
             "--arch", metavar="ARCH", help="operate on architecture ARCH")
         parser.add_argument(
+            "--constraint", metavar="CONSTRAINT", action="append",
+            dest="constraints",
+            help="add builder resource tag for this build")
+        parser.add_argument(
             "build_id", metavar="ID", help="operate on build ID")
 
     def __init__(self, args, parser):
         self.args = args
         self.backend = make_backend(
             self.args.backend, self.args.build_id,
-            series=self.args.series, arch=self.args.arch)
+            series=self.args.series, arch=self.args.arch,
+            constraints=self.args.constraints)
 
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.

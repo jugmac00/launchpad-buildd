@@ -62,7 +62,7 @@ class TestCIBuildManagerIteration(TestCase):
         return self.buildmanager._state
 
     @defer.inlineCallbacks
-    def startBuild(self, args=None, options=None):
+    def startBuild(self, args=None, options=None, constraints=None):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
         extra_args = {
@@ -86,8 +86,11 @@ class TestCIBuildManagerIteration(TestCase):
         self.assertEqual(CIBuildState.PREPARE, self.getState())
         expected_command = [
             "sharepath/bin/in-target", "in-target", "run-ci-prepare",
-            "--backend=lxd", "--series=focal", "--arch=amd64", self.buildid,
+            "--backend=lxd", "--series=focal", "--arch=amd64",
             ]
+        for constraint in constraints or []:
+            expected_command.append("--constraint=%s" % constraint)
+        expected_command.append(self.buildid)
         if options is not None:
             expected_command.extend(options)
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
@@ -399,3 +402,19 @@ class TestCIBuildManagerIteration(TestCase):
             "--clamav-database-url", "http://clamav.example/",
             ]
         yield self.startBuild(args, expected_prepare_options)
+
+    @defer.inlineCallbacks
+    def test_constraints(self):
+        # The build manager passes constraints to subprocesses.
+        args = {
+            "builder_constraints": ["one", "two"],
+            "git_repository": "https://git.launchpad.test/~example/+git/ci",
+            "git_path": "main",
+            "jobs": [[("build", "0")], [("test", "0")]],
+        }
+        expected_prepare_options = [
+            "--git-repository", "https://git.launchpad.test/~example/+git/ci",
+            "--git-path", "main",
+        ]
+        yield self.startBuild(
+            args, expected_prepare_options, constraints=["one", "two"])

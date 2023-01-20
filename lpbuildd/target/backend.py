@@ -31,10 +31,11 @@ class Backend:
 
     supports_snapd = False
 
-    def __init__(self, build_id, series=None, arch=None):
+    def __init__(self, build_id, series=None, arch=None, constraints=None):
         self.build_id = build_id
         self.series = series
         self.arch = arch
+        self.constraints = constraints or []
         self.build_path = os.path.join(os.environ["HOME"], "build-" + build_id)
 
     def create(self, image_path, image_type):
@@ -215,7 +216,7 @@ class Backend:
             rmtree(tmp_dir)
 
 
-def make_backend(name, build_id, series=None, arch=None):
+def make_backend(name, build_id, series=None, arch=None, constraints=None):
     if name == "chroot":
         from lpbuildd.target.chroot import Chroot
         backend_factory = Chroot
@@ -232,4 +233,6 @@ def make_backend(name, build_id, series=None, arch=None):
         backend_factory = UncontainedBackend
     else:
         raise KeyError("Unknown backend: %s" % name)
-    return backend_factory(build_id, series=series, arch=arch)
+    return backend_factory(
+        build_id, series=series, arch=arch, constraints=constraints
+    )

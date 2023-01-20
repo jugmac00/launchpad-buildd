@@ -78,6 +78,20 @@ class TestDebianBuildManagerIteration(TestCase):
         """Retrieve build manager's state."""
         return self.buildmanager._state
 
+    def test_no_constraints(self):
+        # If no `builder_constraints` argument is passed, the backend is set
+        # up with no constraints.
+        self.buildmanager.initiate({}, 'chroot.tar.gz', {'series': 'xenial'})
+        self.assertEqual([], self.buildmanager.backend.constraints)
+
+    def test_constraints(self):
+        # If a `builder_constraints` argument is passed, it is used to set
+        # up the backend's constraints.
+        self.buildmanager.initiate(
+            {}, 'chroot.tar.gz',
+            {'builder_constraints': ['gpu'], 'series': 'xenial'})
+        self.assertEqual(['gpu'], self.buildmanager.backend.constraints)
+
     def startBuild(self, extra_args):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.

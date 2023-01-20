@@ -20,8 +20,8 @@ from lpbuildd.util import (
 class Chroot(Backend):
     """Sets up a chroot."""
 
-    def __init__(self, build_id, series=None, arch=None):
-        super().__init__(build_id, series=series, arch=arch)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.chroot_path = os.path.join(self.build_path, "chroot-autobuild")
 
     def create(self, image_path, image_type):
