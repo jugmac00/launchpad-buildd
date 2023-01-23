@@ -1,4 +1,4 @@
-launchpad-buildd (226) UNRELEASED; urgency=medium
+launchpad-buildd (226) focal; urgency=medium
 
   * Remove unused "distribution" argument from the binarypackage manager.
     This was only used with the old internal sbuild fork, which we dropped
@@ -8,7 +8,7 @@ launchpad-buildd (226) UNRELEASED; urgency=medium
   * If the "gpu-nvidia" constraint is specified, then pass through an NVIDIA
     GPU to the LXD container, and pass the "--gpu-nvidia" option to lpcraft.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Wed, 04 Jan 2023 12:58:36 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 23 Jan 2023 17:42:51 +0000
 
 launchpad-buildd (225) focal; urgency=medium
 
