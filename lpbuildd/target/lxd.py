@@ -208,6 +208,9 @@ class LXD(Backend):
 
     def _init(self):
         """Configure LXD if necessary."""
+        # "lxd init" creates a key pair (see
+        # https://linuxcontainers.org/lxd/docs/master/authentication/), so
+        # check for that to see whether LXD has already been initialized.
         if not os.path.exists("/var/snap/lxd/common/lxd/server.key"):
             subprocess.check_call(["sudo", "lxd", "init", "--auto"])
             # Generate a LXD client certificate for the buildd user.
