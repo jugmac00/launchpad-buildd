@@ -189,7 +189,7 @@ class TestLXD(TestCase):
 
     def test_create_from_chroot(self):
         fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/var/lib/lxd")
+        fs_fixture.add("/var/snap/lxd/common/lxd")
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
@@ -219,7 +219,7 @@ class TestLXD(TestCase):
 
     def test_create_from_lxd(self):
         fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/var/lib/lxd")
+        fs_fixture.add("/var/snap/lxd/common/lxd")
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(lambda _: {}, name="sudo")
         processes_fixture.add(lambda _: {}, name="lxc")
@@ -249,9 +249,9 @@ class TestLXD(TestCase):
 
     def test_create_with_already_initialized_lxd(self):
         fs_fixture = self.useFixture(FakeFilesystem())
-        fs_fixture.add("/var/lib/lxd")
-        os.makedirs("/var/lib/lxd")
-        with open("/var/lib/lxd/server.key", "w"):
+        fs_fixture.add("/var/snap/lxd/common/lxd")
+        os.makedirs("/var/snap/lxd/common/lxd")
+        with open("/var/snap/lxd/common/lxd/server.key", "w"):
             pass
         processes_fixture = self.useFixture(FakeProcesses())
         tmp = self.useFixture(TempDir()).path
