@@ -258,7 +258,7 @@ class BuildManager:
         self.series = extra_args['series']
         self.arch_tag = extra_args.get('arch_tag', self._builder.getArch())
         self.fast_cleanup = extra_args.get('fast_cleanup', False)
-        self.constraints = extra_args.get('builder_constraints', [])
+        self.constraints = extra_args.get('builder_constraints') or []
 
         # Check whether this is a build in a private archive and
         # whether the URLs in the buildlog file should be sanitized
