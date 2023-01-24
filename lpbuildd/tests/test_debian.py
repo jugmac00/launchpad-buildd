@@ -472,7 +472,7 @@ class TestDebianBuildManagerIteration(TestCase):
 
     def test_iterate_no_constraints(self):
         # If no `builder_constraints` argument is passed, the build manager
-        # passes no --constraint options to backend processes.
+        # passes no `--constraint` options to backend processes.
         extra_args = {
             'arch_tag': 'amd64',
             'series': 'xenial',
@@ -494,7 +494,7 @@ class TestDebianBuildManagerIteration(TestCase):
 
     def test_iterate_constraints_None(self):
         # If a `builder_constraints` argument of None is passed, the build
-        # manager passes no --constraint options to backend processes.
+        # manager passes no `--constraint` options to backend processes.
         extra_args = {
             'arch_tag': 'amd64',
             'builder_constraints': None,
@@ -517,7 +517,7 @@ class TestDebianBuildManagerIteration(TestCase):
 
     def test_iterate_constraints(self):
         # If a `builder_constraints` argument is passed, the build manager
-        # passes corresponding --constraint options to backend processes.
+        # passes corresponding `--constraint` options to backend processes.
         extra_args = {
             'arch_tag': 'amd64',
             'builder_constraints': ['gpu', 'large'],
