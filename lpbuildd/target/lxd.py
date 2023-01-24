@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from contextlib import closing
+from functools import cached_property
 import io
 import json
 import os
@@ -41,30 +42,6 @@ def get_device_mapper_major():
         else:
             raise Exception(
                 "Cannot determine major device number for device-mapper")
-
-
-def get_nvidia_container_paths():
-    """Return the paths that need to be bind-mounted for NVIDIA CUDA support.
-
-    LXD's security.privileged=true and nvidia.runtime=true options are
-    unfortunately incompatible, but we can emulate the important bits of the
-    latter with some tactical bind-mounts.  There is no very good way to do
-    this; this seems like the least unpleasant approach.
-    """
-    env = dict(os.environ)
-    env["LD_LIBRARY_PATH"] = "/snap/lxd/current/lib"
-    return subprocess.check_output(
-        [
-            "/snap/lxd/current/bin/nvidia-container-cli.real",
-            "list",
-            "--binaries",
-            "--firmwares",
-            "--ipcs",
-            "--libraries",
-        ],
-        env=env,
-        universal_newlines=True,
-    ).splitlines()
 
 
 fallback_hosts = dedent("""\
@@ -312,6 +289,23 @@ class LXD(Backend):
             os.unlink(self.dnsmasq_pid_file)
         subprocess.call(["sudo", "ip", "link", "delete", self.bridge_name])
 
+    @cached_property
+    def _nvidia_container_paths(self):
+        """The paths that need to be bind-mounted for NVIDIA CUDA support.
+
+        LXD's security.privileged=true and nvidia.runtime=true options are
+        unfortunately incompatible, but we can emulate the important bits of
+        the latter with some tactical bind-mounts.  There is no very good
+        way to do this; this seems like the least unpleasant approach.
+        """
+        env = dict(os.environ)
+        env["LD_LIBRARY_PATH"] = "/snap/lxd/current/lib"
+        return subprocess.check_output(
+            ["/snap/lxd/current/bin/nvidia-container-cli.real", "list"],
+            env=env,
+            universal_newlines=True,
+        ).splitlines()
+
     def create_profile(self):
         for addr in self.ipv4_network:
             if addr not in (
@@ -381,13 +375,13 @@ class LXD(Backend):
                 "type": "disk",
                 }
         if "gpu-nvidia" in self.constraints:
-            devices["gpu"] = {"type": "gpu"}
-            for i, path in enumerate(get_nvidia_container_paths()):
-                devices[f"nvidia-{i}"] = {
-                    "path": path,
-                    "source": path,
-                    "type": "disk",
-                    }
+            for i, path in enumerate(self._nvidia_container_paths):
+                if not path.startswith("/dev/"):
+                    devices[f"nvidia-{i}"] = {
+                        "path": path,
+                        "source": path,
+                        "type": "disk",
+                        }
         self.client.profiles.create(self.profile_name, config, devices)
 
     def start(self):
@@ -495,6 +489,20 @@ class LXD(Backend):
                  "b", str(major), str(minor)])
 
         if "gpu-nvidia" in self.constraints:
+            # Create nvidia* devices.  We have to do this here rather than
+            # bind-mounting them into the container, because bind-mounts
+            # aren't propagated into snaps (such as lxd) installed inside
+            # the container.
+            for path in self._nvidia_container_paths:
+                if path.startswith("/dev/"):
+                    st = os.stat(path)
+                    if stat.S_ISCHR(st.st_mode):
+                        self.run(
+                            ["mknod", "-m", "0%o" % stat.S_IMODE(st.st_mode),
+                             path, "c",
+                             str(os.major(st.st_rdev)),
+                             str(os.minor(st.st_rdev))])
+
             # We bind-mounted several libraries into the container, so run
             # ldconfig to update the dynamic linker's cache.
             self.run(["/sbin/ldconfig"])
