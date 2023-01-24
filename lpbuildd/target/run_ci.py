@@ -157,6 +157,16 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             help="perform malware scans on output files",
         )
 
+    def run_build_command(self, args, **kwargs):
+        # Run build commands as the `buildd` user, since `lpcraft` can only
+        # start containers with `nvidia.runtime=true` if it's run as a
+        # non-root user.
+        super().run_build_command(
+            ["runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--"]
+            + args,
+            **kwargs,
+        )
+
     def run_job(self):
         logger.info("Running job phase...")
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
@@ -167,6 +177,7 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         job_output_path = os.path.join(
             output_path, self.args.job_name, str(self.args.job_index))
         self.backend.run(["mkdir", "-p", job_output_path])
+        self.backend.run(["chown", "-R", "buildd:buildd", output_path])
         lpcraft_args = [
             "lpcraft",
             "-v",
