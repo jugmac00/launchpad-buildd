@@ -21,11 +21,6 @@ make_buildd()
 
 case "$1" in
     configure)
-	if [ ! -d /var/snap/lxd ]; then
-	    echo "LXD is not installed.  Run 'snap install lxd' and retry." >&2
-	    exit 1
-	fi
-
 	getent group buildd >/dev/null 2>&1 ||
                 addgroup --gid $BUILDDGID buildd
 
@@ -33,9 +28,26 @@ case "$1" in
         adduser --ingroup buildd --disabled-login --gecos 'Buildd user' \
                 --uid $BUILDDUID ${USER}
         adduser --quiet buildd sbuild
-        # Note that any additional group memberships here must currently be
-        # reflected in the deluser hacks in sbuild-package.
-        adduser --quiet buildd lxd
+
+	if dpkg --compare-versions "$2" lt-nl 229~; then
+	    # We used to add the buildd user to the lxd group.  This had
+	    # problems with leaking through sbuild, and it required lxd to
+	    # be installed at postinst time, which is problematic now that
+	    # lxd is typically installed as a snap, so we now rely entirely
+	    # on SupplementaryGroups=lxd in the systemd service.  Clean up
+	    # the old group membership.
+	    code=0
+	    sudo deluser --quiet buildd lxd || code=$?
+	    # According to deluser(8):
+	    #   0   Success: The action was successfully executed.
+	    #   3   There is no such group. No action was performed.
+	    #   6   The user does not belong to the specified group.  No
+	    #       action was performed.
+	    case $code in
+		0|3|6) ;;
+		*) exit "$code" ;;
+	    esac
+	fi
 
 	SUDO_VERSION=$(sudo -V | sed -n '/^Sudo version/s/.* //p')
 	if dpkg --compare-versions $SUDO_VERSION lt 1.7 ||

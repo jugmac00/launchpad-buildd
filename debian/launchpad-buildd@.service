@@ -13,10 +13,6 @@ Type=simple
 RuntimeDirectory=launchpad-buildd
 LogsDirectory=launchpad-buildd
 User=buildd
-# The buildd user should normally already be a member of this group, but due
-# to the deluser hacks in sbuild-package it's possible for the group
-# membership to be missing if a non-virtualized builder crashes in the
-# middle of an sbuild job.  Make sure of it here.
 SupplementaryGroups=lxd
 EnvironmentFile=-/etc/default/launchpad-buildd
 Environment=BUILDD_CONFIG=/etc/launchpad-buildd/%i
