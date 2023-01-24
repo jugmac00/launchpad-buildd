@@ -469,3 +469,72 @@ class TestDebianBuildManagerIteration(TestCase):
             self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+    def test_iterate_no_constraints(self):
+        # If no `builder_constraints` argument is passed, the build manager
+        # passes no --constraint options to backend processes.
+        extra_args = {
+            'arch_tag': 'amd64',
+            'series': 'xenial',
+            }
+        self.startBuild(extra_args)
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.UNPACK, self.getState())
+        self.assertEqual(
+            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid,
+              '--image-type', 'chroot',
+              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+    def test_iterate_constraints_None(self):
+        # If a `builder_constraints` argument of None is passed, the build
+        # manager passes no --constraint options to backend processes.
+        extra_args = {
+            'arch_tag': 'amd64',
+            'builder_constraints': None,
+            'series': 'xenial',
+            }
+        self.startBuild(extra_args)
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.UNPACK, self.getState())
+        self.assertEqual(
+            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              self.buildid,
+              '--image-type', 'chroot',
+              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+
+    def test_iterate_constraints(self):
+        # If a `builder_constraints` argument is passed, the build manager
+        # passes corresponding --constraint options to backend processes.
+        extra_args = {
+            'arch_tag': 'amd64',
+            'builder_constraints': ['gpu', 'large'],
+            'series': 'xenial',
+            }
+        self.startBuild(extra_args)
+
+        self.buildmanager.iterate(0)
+        self.assertEqual(DebianBuildState.UNPACK, self.getState())
+        self.assertEqual(
+            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
+              '--backend=chroot', '--series=xenial', '--arch=amd64',
+              '--constraint=gpu', '--constraint=large',
+              self.buildid,
+              '--image-type', 'chroot',
+              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
+             None),
+            self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1])
