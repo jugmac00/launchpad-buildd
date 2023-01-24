@@ -208,7 +208,7 @@ class LXD(Backend):
 
     def _init(self):
         """Configure LXD if necessary."""
-        if not os.path.exists("/var/lib/lxd/server.key"):
+        if not os.path.exists("/var/snap/lxd/common/lxd/server.key"):
             subprocess.check_call(["sudo", "lxd", "init", "--auto"])
             # Generate a LXD client certificate for the buildd user.
             with open("/dev/null", "w") as devnull:

@@ -1,6 +1,7 @@
 launchpad-buildd (227) UNRELEASED; urgency=medium
 
   * Tolerate receiving "builder_constraints": None.
+  * Check the appropriate server.key path for the LXD snap.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 24 Jan 2023 13:13:27 +0000
 
