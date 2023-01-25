@@ -100,14 +100,22 @@ class FakeFilesystem(_FakeFilesystem):
     def _stat(self, real, path, *args, **kwargs):
         r = super()._stat(real, path, *args, **kwargs)
         if path in self._devices:
-            r = os.stat_result(list(r), {"st_rdev": self._devices[path]})
+            # Adjust the stat result to include `S_IFBLK` or `S_IFCHR`
+            # (depending on how `_mknod` was called) in the mode, and to
+            # include the device major and minor number.
+            flags, device = self._devices[path]
+            mode = stat.S_IMODE(r.st_mode) | flags
+            r = os.stat_result([mode] + list(r[1:]), {"st_rdev": device})
         return r
 
     def _mknod(self, real, path, mode=0o600, device=None):
-        fd = os.open(path, os.O_CREAT | os.O_EXCL, mode & 0o777)
+        fd = os.open(path, os.O_CREAT | os.O_EXCL)
+        os.fchmod(fd, stat.S_IMODE(mode))
         os.close(fd)
-        if mode & (stat.S_IFBLK | stat.S_IFCHR):
-            self._devices[path] = device
+        if stat.S_ISBLK(mode):
+            self._devices[path] = (stat.S_IFBLK, device)
+        elif stat.S_ISCHR(mode):
+            self._devices[path] = (stat.S_IFCHR, device)
 
 
 class TestLXD(TestCase):
@@ -329,13 +337,13 @@ class TestLXD(TestCase):
                 "type": "disk",
                 }
         if gpu_nvidia_paths:
-            expected_devices["gpu"] = {"type": "gpu"}
             for i, path in enumerate(gpu_nvidia_paths):
-                expected_devices[f"nvidia-{i}"] = {
-                    "path": path,
-                    "source": path,
-                    "type": "disk",
-                    }
+                if not path.startswith("/dev/"):
+                    expected_devices[f"nvidia-{i}"] = {
+                        "path": path,
+                        "source": path,
+                        "type": "disk",
+                        }
         client.profiles.create.assert_called_once_with(
             "lpbuildd", expected_config, expected_devices)
 
@@ -374,6 +382,7 @@ class TestLXD(TestCase):
             client.profiles.get.side_effect = FakeLXDAPIException
             client.host_info = {"environment": {"driver_version": "3.0"}}
             gpu_nvidia_paths = [
+                "/dev/nvidiactl",
                 "/usr/bin/nvidia-smi",
                 "/usr/bin/nvidia-persistenced",
                 ]
@@ -436,7 +445,13 @@ class TestLXD(TestCase):
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname")
         if gpu_nvidia:
+            os.mknod(
+                "/dev/nvidia0", stat.S_IFCHR | 0o666, os.makedev(195, 0))
+            os.mknod(
+                "/dev/nvidiactl", stat.S_IFCHR | 0o666, os.makedev(195, 255))
             gpu_nvidia_paths = [
+                "/dev/nvidia0",
+                "/dev/nvidiactl",
                 "/usr/bin/nvidia-smi",
                 "/usr/bin/nvidia-persistenced",
                 ]
@@ -470,8 +485,7 @@ class TestLXD(TestCase):
             expected_args.append(
                 Equals(
                     ["/snap/lxd/current/bin/nvidia-container-cli.real",
-                     "list",
-                     "--binaries", "--firmwares", "--ipcs", "--libraries"]))
+                     "list"]))
         expected_args.extend([
             Equals(ip + ["link", "add", "dev", "lpbuilddbr0",
                          "type", "bridge"]),
@@ -518,7 +532,17 @@ class TestLXD(TestCase):
                     ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
                      "b", str(DM_BLOCK_MAJOR), str(minor)]))
         if gpu_nvidia:
-            expected_args.append(Equals(lxc + ["/sbin/ldconfig"]))
+            expected_args.extend([
+                Equals(
+                    lxc +
+                    ["mknod", "-m", "0666", "/dev/nvidia0",
+                     "c", "195", "0"]),
+                Equals(
+                    lxc +
+                    ["mknod", "-m", "0666", "/dev/nvidiactl",
+                     "c", "195", "255"]),
+                Equals(lxc + ["/sbin/ldconfig"]),
+                ])
         expected_args.extend([
             Equals(
                 lxc + ["mkdir", "-p", "/etc/systemd/system/snapd.service.d"]),

@@ -3,6 +3,8 @@ launchpad-buildd (227) UNRELEASED; urgency=medium
   * Tolerate receiving "builder_constraints": None.
   * Check the appropriate server.key path for the LXD snap.
   * Run lpcraft as the buildd user to allow nvidia.runtime=true to work.
+  * Create nvidia* devices in such a way that they can be used by nested
+    containers.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 24 Jan 2023 13:13:27 +0000
 
