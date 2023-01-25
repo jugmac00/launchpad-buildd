@@ -388,7 +388,9 @@ class TestRunCI(TestCase):
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
                 "| tee /build/output/test/0/log",
@@ -412,7 +414,9 @@ class TestRunCI(TestCase):
             }
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
                 "| tee /build/output/test/0/log",
@@ -431,7 +435,9 @@ class TestRunCI(TestCase):
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
@@ -456,7 +462,9 @@ class TestRunCI(TestCase):
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
@@ -479,7 +487,9 @@ class TestRunCI(TestCase):
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
@@ -501,7 +511,9 @@ class TestRunCI(TestCase):
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
@@ -522,7 +534,9 @@ class TestRunCI(TestCase):
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
@@ -530,7 +544,8 @@ class TestRunCI(TestCase):
                 "| tee /build/output/test/0/log",
                 ], cwd="/build/tree"),
             RanBuildCommand(
-                ["clamscan", "--recursive", "/build/output/test/0"],
+                ["runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
+                 "clamscan", "--recursive", "/build/output/test/0"],
                 cwd="/build/tree"),
             ]))
 
@@ -538,7 +553,7 @@ class TestRunCI(TestCase):
         class FailClamscan(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
                 super().__call__(run_args, *args, **kwargs)
-                if run_args[0] == "clamscan":
+                if run_args[0] == "runuser" and "clamscan" in run_args:
                     raise subprocess.CalledProcessError(1, run_args)
 
         self.useFixture(FakeLogger())
@@ -563,7 +578,9 @@ class TestRunCI(TestCase):
         run_ci.run_job()
         self.assertThat(run_ci.backend.run.calls, MatchesListwise([
             RanCommand(["mkdir", "-p", "/build/output/test/0"]),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/output"]),
             RanBuildCommand([
+                "runuser", "-u", "buildd", "-g", "buildd", "-G", "lxd", "--",
                 "/bin/bash", "-o", "pipefail", "-c",
                 "lpcraft -v run-one --output-directory /build/output "
                 "test 0 "
@@ -590,7 +607,7 @@ class TestRunCI(TestCase):
         class FailInstall(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):
                 super().__call__(run_args, *args, **kwargs)
-                if run_args[0] == "/bin/bash":
+                if run_args[0] == "runuser" and "/bin/bash" in run_args:
                     raise subprocess.CalledProcessError(1, run_args)
 
         self.useFixture(FakeLogger())
