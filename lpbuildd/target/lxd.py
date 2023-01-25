@@ -376,6 +376,11 @@ class LXD(Backend):
                 }
         if "gpu-nvidia" in self.constraints:
             for i, path in enumerate(self._nvidia_container_paths):
+                # Skip devices here, because bind-mounted devices aren't
+                # propagated into snaps (such as lxd) installed inside the
+                # container, which causes LXC's nvidia hook to fail.  We'll
+                # create the relevant device nodes after the container has
+                # started.
                 if not path.startswith("/dev/"):
                     devices[f"nvidia-{i}"] = {
                         "path": path,

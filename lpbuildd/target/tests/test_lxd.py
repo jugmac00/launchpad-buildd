@@ -100,6 +100,9 @@ class FakeFilesystem(_FakeFilesystem):
     def _stat(self, real, path, *args, **kwargs):
         r = super()._stat(real, path, *args, **kwargs)
         if path in self._devices:
+            # Adjust the stat result to include `S_IFBLK` or `S_IFCHR`
+            # (depending on how `_mknod` was called) in the mode, and to
+            # include the device major and minor number.
             flags, device = self._devices[path]
             mode = stat.S_IMODE(r.st_mode) | flags
             r = os.stat_result([mode] + list(r[1:]), {"st_rdev": device})
