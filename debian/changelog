@@ -1,4 +1,4 @@
-launchpad-buildd (227) UNRELEASED; urgency=medium
+launchpad-buildd (227) focal; urgency=medium
 
   * Tolerate receiving "builder_constraints": None.
   * Check the appropriate server.key path for the LXD snap.
@@ -6,7 +6,7 @@ launchpad-buildd (227) UNRELEASED; urgency=medium
   * Create nvidia* devices in such a way that they can be used by nested
     containers.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 24 Jan 2023 13:13:27 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 26 Jan 2023 01:11:57 +0000
 
 launchpad-buildd (226) focal; urgency=medium
 
