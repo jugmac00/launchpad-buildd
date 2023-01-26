@@ -95,6 +95,7 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch("tree", cwd="/build", env=env)
         self.vcs_update_status(self.buildd_path)
+        self.backend.run(["chown", "-R", "buildd:buildd", "/build/tree"])
 
     def run(self):
         try:
