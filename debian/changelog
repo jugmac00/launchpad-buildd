@@ -1,10 +1,10 @@
-launchpad-buildd (228) UNRELEASED; urgency=medium
+launchpad-buildd (228) focal; urgency=medium
 
   * In CI jobs, chown the VCS tree to buildd:buildd after fetching it, since
     otherwise lpcraft running as the buildd user can't read its .git
     directory.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 26 Jan 2023 11:30:11 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 26 Jan 2023 15:06:30 +0000
 
 launchpad-buildd (227) focal; urgency=medium
 
