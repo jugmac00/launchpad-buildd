@@ -233,6 +233,7 @@ class TestRunCIPrepare(TestCase):
             RanBuildCommand(
                 ["git", "rev-parse", "HEAD^{}"],
                 cwd="/build/tree", get_output=True, universal_newlines=True),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/tree"]),
             ]))
         status_path = os.path.join(run_ci_prepare.backend.build_path, "status")
         with open(status_path) as status:
@@ -259,6 +260,7 @@ class TestRunCIPrepare(TestCase):
             RanBuildCommand(
                 ["git", "rev-parse", "next^{}"],
                 cwd="/build/tree", get_output=True, universal_newlines=True),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/tree"]),
             ]))
         status_path = os.path.join(run_ci_prepare.backend.build_path, "status")
         with open(status_path) as status:
@@ -285,6 +287,7 @@ class TestRunCIPrepare(TestCase):
             RanBuildCommand(
                 ["git", "rev-parse", "refs/tags/1.0^{}"],
                 cwd="/build/tree", get_output=True, universal_newlines=True),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/tree"]),
             ]))
         status_path = os.path.join(run_ci_prepare.backend.build_path, "status")
         with open(status_path) as status:
@@ -318,6 +321,7 @@ class TestRunCIPrepare(TestCase):
             RanBuildCommand(
                 ["git", "rev-parse", "HEAD^{}"],
                 cwd="/build/tree", get_output=True, universal_newlines=True),
+            RanCommand(["chown", "-R", "buildd:buildd", "/build/tree"]),
             ]))
         status_path = os.path.join(run_ci_prepare.backend.build_path, "status")
         with open(status_path) as status:
