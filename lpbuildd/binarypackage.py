@@ -74,10 +74,8 @@ class DpkgArchitectureCache:
 
     def match(self, arch, wildcard):
         if (arch, wildcard) not in self._matches:
-            command = ["dpkg-architecture", "-i%s" % wildcard]
-            env = dict(os.environ)
-            env["DEB_HOST_ARCH"] = arch
-            ret = (subprocess.call(command, env=env) == 0)
+            command = ["dpkg-architecture", "-a%s" % arch, "-i%s" % wildcard]
+            ret = (subprocess.call(command) == 0)
             self._matches[(arch, wildcard)] = ret
         return self._matches[(arch, wildcard)]
 
