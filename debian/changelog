@@ -2,6 +2,8 @@ launchpad-buildd (229) UNRELEASED; urgency=medium
 
   * Call dpkg-architecture with -a rather than setting DEB_HOST_ARCH, to
     avoid a warning if gcc isn't installed.
+  * Prevent the kernel from killing launchpad-buildd if it runs out of
+    memory.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 26 Jan 2023 15:54:35 +0000
 

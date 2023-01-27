@@ -26,6 +26,9 @@ Environment=BUILDD_CONFIG=/etc/launchpad-buildd/%i
 ExecStartPre=/usr/bin/test ${RUN_NETWORK_REQUESTS_AS_ROOT} = yes
 ExecStartPre=/usr/bin/install -d /home/buildd/filecache-default
 ExecStart=/usr/bin/twistd3 --no_save --pidfile /run/launchpad-buildd/%i.pid --python /usr/lib/launchpad-buildd/buildd.tac --logfile /var/log/launchpad-buildd/%i.log --umask 022 --nodaemon
+# If the machine runs out of memory, killing just about any other process is
+# better than killing launchpad-buildd.
+OOMScoreAdjust=-1000
 
 [Install]
 WantedBy=multi-user.target
