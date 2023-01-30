@@ -4,6 +4,8 @@ launchpad-buildd (229) UNRELEASED; urgency=medium
     avoid a warning if gcc isn't installed.
   * Prevent the kernel from killing launchpad-buildd if it runs out of
     memory.
+  * Restructure lxd group membership handling to avoid requiring the lxd
+    snap to be installed at postinst time.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 26 Jan 2023 15:54:35 +0000
 
