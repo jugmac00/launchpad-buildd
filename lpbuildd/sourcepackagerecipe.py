@@ -8,11 +8,7 @@ import os
 import re
 
 from lpbuildd.builder import get_build_path
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-)
-
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
@@ -27,7 +23,7 @@ def splat_file(path, contents):
     :param path: The path to store the string in.
     :param contents: The string to write to the file.
     """
-    file_obj = open(path, 'w')
+    file_obj = open(path, "w")
     try:
         file_obj.write(contents)
     finally:
@@ -42,11 +38,13 @@ def get_chroot_path(home, build_id, *extra):
     :param extra: Additional path elements.
     """
     return get_build_path(
-        home, build_id, 'chroot-autobuild', os.environ['HOME'][1:], *extra)
+        home, build_id, "chroot-autobuild", os.environ["HOME"][1:], *extra
+    )
 
 
 class SourcePackageRecipeBuildState(DebianBuildState):
     """The set of states that a recipe build can be in."""
+
     BUILD_RECIPE = "BUILD_RECIPE"
 
 
@@ -71,28 +69,35 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         :param chroot: The sha1sum of the chroot to use.
         :param extra_args: A dict of extra arguments.
         """
-        self.recipe_text = extra_args['recipe_text']
-        self.suite = extra_args['suite']
-        self.component = extra_args['ogrecomponent']
-        self.author_name = extra_args['author_name']
-        self.author_email = extra_args['author_email']
-        self.archive_purpose = extra_args['archive_purpose']
-        self.git = extra_args.get('git', False)
+        self.recipe_text = extra_args["recipe_text"]
+        self.suite = extra_args["suite"]
+        self.component = extra_args["ogrecomponent"]
+        self.author_name = extra_args["author_name"]
+        self.author_email = extra_args["author_email"]
+        self.archive_purpose = extra_args["archive_purpose"]
+        self.git = extra_args.get("git", False)
 
         super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
         """Run the build process to build the source package."""
-        os.makedirs(get_chroot_path(self.home, self._buildid, 'work'))
-        recipe_path = get_chroot_path(self.home, self._buildid, 'work/recipe')
+        os.makedirs(get_chroot_path(self.home, self._buildid, "work"))
+        recipe_path = get_chroot_path(self.home, self._buildid, "work/recipe")
         splat_file(recipe_path, self.recipe_text)
         args = ["buildrecipe"]
         if self.git:
             args.append("--git")
-        args.extend([
-            self._buildid, self.author_name.encode('utf-8'),
-            self.author_email, self.suite, self.series,
-            self.component, self.archive_purpose])
+        args.extend(
+            [
+                self._buildid,
+                self.author_name.encode("utf-8"),
+                self.author_email,
+                self.suite,
+                self.series,
+                self.component,
+                self.archive_purpose,
+            ]
+        )
         self.runSubProcess(self.build_recipe_path, args)
 
     def iterate_BUILD_RECIPE(self, retcode):
@@ -103,8 +108,9 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         elif retcode == RETCODE_FAILURE_INSTALL_BUILD_DEPS:
             if not self.alreadyfailed:
                 rx = (
-                    r'The following packages have unmet dependencies:\n'
-                    r'.*: Depends: ([^ ]*( \([^)]*\))?)')
+                    r"The following packages have unmet dependencies:\n"
+                    r".*: Depends: ([^ ]*( \([^)]*\))?)"
+                )
                 _, mo = self.searchLogContents([[rx, re.M]])
                 if mo:
                     missing_dep = mo.group(1).decode("UTF-8", "replace")
@@ -115,8 +121,10 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
                     print("Returning build status: Build failed")
                     self._builder.buildFail()
             self.alreadyfailed = True
-        elif (retcode >= RETCODE_FAILURE_INSTALL and
-              retcode <= RETCODE_FAILURE_BUILD_SOURCE_PACKAGE):
+        elif (
+            retcode >= RETCODE_FAILURE_INSTALL
+            and retcode <= RETCODE_FAILURE_BUILD_SOURCE_PACKAGE
+        ):
             # XXX AaronBentley 2009-01-13: We should handle depwait separately
             if not self.alreadyfailed:
                 self._builder.buildFail()
@@ -138,7 +146,7 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         """Return the path to the changes file."""
         work_path = get_build_path(self.home, self._buildid)
         for name in os.listdir(work_path):
-            if name.endswith('_source.changes'):
+            if name.endswith("_source.changes"):
                 return os.path.join(work_path, name)
 
     def gatherResults(self):
@@ -148,5 +156,6 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         The manifest is also a useful record.
         """
         DebianBuildManager.gatherResults(self)
-        self._builder.addWaitingFile(get_build_path(
-            self.home, self._buildid, 'manifest'))
+        self._builder.addWaitingFile(
+            get_build_path(self.home, self._buildid, "manifest")
+        )

@@ -25,7 +25,7 @@ class SudoUmount:
         args = parser.parse_args(proc_args["args"][1:])
         if self.delays.get(args.mount_path, 0) > 0:
             self.delays[args.mount_path] -= 1
-            return {'returncode': 1}
+            return {"returncode": 1}
         with open("/proc/mounts") as mounts_file:
             mounts = mounts_file.readlines()
         to_remove = None
@@ -34,7 +34,7 @@ class SudoUmount:
                 to_remove = i
                 break
         if to_remove is None:
-            return {'returncode': 1}
+            return {"returncode": 1}
         else:
             del mounts[to_remove]
             with open("/proc/mounts", "w") as mounts_file:
@@ -63,7 +63,6 @@ class Kill:
 
 
 class KillFixture(MonkeyPatch):
-
     def __init__(self, delays=None):
         super().__init__("os.kill", Kill(delays=delays))
 
@@ -134,4 +133,5 @@ class CarefulFakeProcessFixture(MonkeyPatch):
 
     def __init__(self):
         super().__init__(
-            "fixtures._fixtures.popen.FakeProcess", CarefulFakeProcess)
+            "fixtures._fixtures.popen.FakeProcess", CarefulFakeProcess
+        )

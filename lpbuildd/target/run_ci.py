@@ -11,7 +11,6 @@ from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 from lpbuildd.util import shell_escape
 
-
 RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
 
@@ -19,8 +18,12 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
-                   SnapStoreOperationMixin, Operation):
+class RunCIPrepare(
+    BuilderProxyOperationMixin,
+    VCSOperationMixin,
+    SnapStoreOperationMixin,
+    Operation,
+):
 
     description = "Prepare for running CI jobs."
     buildd_path = "/build/tree"
@@ -29,8 +32,13 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
     def add_arguments(cls, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
-            dest="channels", default={}, help="install SNAP from CHANNEL")
+            "--channel",
+            action=SnapChannelsAction,
+            metavar="SNAP=CHANNEL",
+            dest="channels",
+            default={},
+            help="install SNAP from CHANNEL",
+        )
         parser.add_argument(
             "--scan-malware",
             action="store_true",
@@ -61,7 +69,8 @@ class RunCIPrepare(BuilderProxyOperationMixin, VCSOperationMixin,
         for snap_name, channel in sorted(self.args.channels.items()):
             if snap_name not in ("lxd", "lpcraft"):
                 self.backend.run(
-                    ["snap", "install", "--channel=%s" % channel, snap_name])
+                    ["snap", "install", "--channel=%s" % channel, snap_name]
+                )
         for snap_name, classic in (("lxd", False), ("lpcraft", True)):
             cmd = ["snap", "install"]
             if classic:
@@ -121,7 +130,8 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         super().add_arguments(parser)
         parser.add_argument("job_name", help="job name to run")
         parser.add_argument(
-            "job_index", type=int, help="index within job name to run")
+            "job_index", type=int, help="index within job name to run"
+        )
         parser.add_argument(
             "--environment-variable",
             dest="environment_variables",
@@ -176,7 +186,8 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         output_path = os.path.join("/build", "output")
         # This matches the per-job output path used by lpcraft.
         job_output_path = os.path.join(
-            output_path, self.args.job_name, str(self.args.job_index))
+            output_path, self.args.job_name, str(self.args.job_index)
+        )
         self.backend.run(["mkdir", "-p", job_output_path])
         self.backend.run(["chown", "-R", "buildd:buildd", output_path])
         lpcraft_args = [
@@ -199,27 +210,29 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             lpcraft_args.extend(["--set-env", f"{key}={value}"])
 
         plugin_settings = dict(
-            pair.split("=", maxsplit=1)
-            for pair in self.args.plugin_settings
+            pair.split("=", maxsplit=1) for pair in self.args.plugin_settings
         )
         for key, value in plugin_settings.items():
             lpcraft_args.extend(["--plugin-setting", f"{key}={value}"])
 
         if self.args.secrets:
-            lpcraft_args.extend(
-                ["--secrets", self.args.secrets])
+            lpcraft_args.extend(["--secrets", self.args.secrets])
 
         if "gpu-nvidia" in self.backend.constraints:
             lpcraft_args.append("--gpu-nvidia")
 
-        escaped_lpcraft_args = (
-            " ".join(shell_escape(arg) for arg in lpcraft_args))
+        escaped_lpcraft_args = " ".join(
+            shell_escape(arg) for arg in lpcraft_args
+        )
         tee_args = ["tee", os.path.join(job_output_path, "log")]
         escaped_tee_args = " ".join(shell_escape(arg) for arg in tee_args)
         args = [
-            "/bin/bash", "-o", "pipefail", "-c",
+            "/bin/bash",
+            "-o",
+            "pipefail",
+            "-c",
             f"{escaped_lpcraft_args} 2>&1 | {escaped_tee_args}",
-            ]
+        ]
         self.run_build_command(args, env=env)
 
         if self.args.scan_malware:

@@ -5,4 +5,4 @@ import doctest
 
 
 def test_suite():
-    return doctest.DocTestSuite('lpbuildd.tests.harness')
+    return doctest.DocTestSuite("lpbuildd.tests.harness")

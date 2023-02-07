@@ -20,7 +20,8 @@ class InvalidBuildFilePath(Exception):
 def check_path_escape(buildd_path, path_to_check):
     """Check the build file path doesn't escape the build directory."""
     build_file_path = os.path.realpath(
-        os.path.join(buildd_path, path_to_check))
+        os.path.join(buildd_path, path_to_check)
+    )
     common_path = os.path.commonprefix((build_file_path, buildd_path))
     if common_path != buildd_path:
         raise InvalidBuildFilePath("Invalid build file path.")
@@ -52,8 +53,16 @@ class Backend:
         """
         raise NotImplementedError
 
-    def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
-            echo=False, **kwargs):
+    def run(
+        self,
+        args,
+        cwd=None,
+        env=None,
+        input_text=None,
+        get_output=False,
+        echo=False,
+        **kwargs,
+    ):
         """Run a command in the target environment.
 
         :param args: the command and arguments to run.
@@ -171,7 +180,10 @@ class Backend:
             with open("/dev/null", "w") as devnull:
                 output = self.run(
                     ["apt-cache", "show", package],
-                    get_output=True, stderr=devnull, universal_newlines=True)
+                    get_output=True,
+                    stderr=devnull,
+                    universal_newlines=True,
+                )
             return ("Package: %s" % package) in output.splitlines()
         except subprocess.CalledProcessError:
             return False
@@ -219,17 +231,21 @@ class Backend:
 def make_backend(name, build_id, series=None, arch=None, constraints=None):
     if name == "chroot":
         from lpbuildd.target.chroot import Chroot
+
         backend_factory = Chroot
     elif name == "lxd":
         from lpbuildd.target.lxd import LXD
+
         backend_factory = LXD
     elif name == "fake":
         # Only for use in tests.
         from lpbuildd.tests.fakebuilder import FakeBackend
+
         backend_factory = FakeBackend
     elif name == "uncontained":
         # Only for use in tests.
         from lpbuildd.tests.fakebuilder import UncontainedBackend
+
         backend_factory = UncontainedBackend
     else:
         raise KeyError("Unknown backend: %s" % name)

@@ -19,40 +19,39 @@
 import re
 from textwrap import dedent
 
-from setuptools import (
-    find_packages,
-    setup,
-    )
+from setuptools import find_packages, setup
 
+changelog_heading = re.compile(r"\w[-+0-9a-z.]* \(([^\(\) \t]+)\)")
 
-changelog_heading = re.compile(r'\w[-+0-9a-z.]* \(([^\(\) \t]+)\)')
-
-with open('debian/changelog') as changelog:
+with open("debian/changelog") as changelog:
     line = changelog.readline()
     match = changelog_heading.match(line)
     if match is None:
         raise ValueError(
-            "Failed to parse first line of debian/changelog: '%s'" % line)
+            "Failed to parse first line of debian/changelog: '%s'" % line
+        )
     version = match.group(1)
 
 
 setup(
-    name='launchpad-buildd',
+    name="launchpad-buildd",
     version=version,
-    description='Launchpad buildd slave',
-    long_description=dedent("""
+    description="Launchpad buildd slave",
+    long_description=dedent(
+        """
         The Launchpad buildd slave libraries.  The PyPI version of this
         package will not produce a complete installation on its own, and is
         mostly useful for testing other pieces of software against
         launchpad-buildd; for a real Launchpad buildd slave, install the
         launchpad-buildd package from ppa:launchpad/ubuntu/ppa.
-        """).strip(),
-    url='https://launchpad.net/launchpad-buildd',
+        """
+    ).strip(),
+    url="https://launchpad.net/launchpad-buildd",
     packages=find_packages(),
     include_package_data=True,
-    maintainer='Launchpad Developers',
-    maintainer_email='launchpad-dev@lists.launchpad.net',
-    license='Affero GPL v3',
+    maintainer="Launchpad Developers",
+    maintainer_email="launchpad-dev@lists.launchpad.net",
+    license="Affero GPL v3",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -70,21 +69,21 @@ setup(
         # that's normally shipped as a system package and specifying it here
         # causes problems for Launchpad's build system.
         # 'python-apt',
-        'python-debian',
-        'requests',
-        'Twisted',
-        'zope.interface',
-        ],
+        "python-debian",
+        "requests",
+        "Twisted",
+        "zope.interface",
+    ],
     extras_require={
-        'lxd': ['netaddr', 'pylxd'],
-        'docs': ['sphinx'],
-        },
-    test_suite='lpbuildd',
+        "lxd": ["netaddr", "pylxd"],
+        "docs": ["sphinx"],
+    },
+    test_suite="lpbuildd",
     tests_require=[
-        'fixtures',
-        'responses',
-        'systemfixtures',
-        'testtools',
-        'txfixtures',
-        ],
-    )
+        "fixtures",
+        "responses",
+        "systemfixtures",
+        "testtools",
+        "txfixtures",
+    ],
+)

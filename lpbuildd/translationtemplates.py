@@ -3,14 +3,11 @@
 
 import os
 
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-    )
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 from lpbuildd.target.generate_translation_templates import (
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
-    )
+)
 
 
 class TranslationTemplatesBuildState(DebianBuildState):
@@ -30,15 +27,16 @@ class TranslationTemplatesBuildManager(DebianBuildManager):
     def __init__(self, builder, buildid):
         super().__init__(builder, buildid)
         self._resultname = builder._config.get(
-            "translationtemplatesmanager", "resultarchive")
+            "translationtemplatesmanager", "resultarchive"
+        )
 
     def initiate(self, files, chroot, extra_args):
         """See `BuildManager`."""
-        self.branch = extra_args.get('branch')
+        self.branch = extra_args.get("branch")
         # XXX cjwatson 2017-11-10: Backward-compatibility; remove once the
         # manager passes branch instead.
         if self.branch is None:
-            self.branch = extra_args['branch_url']
+            self.branch = extra_args["branch_url"]
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
 

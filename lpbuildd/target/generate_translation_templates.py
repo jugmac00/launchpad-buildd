@@ -8,7 +8,6 @@ from lpbuildd.pottery import intltool
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.vcs import VCSOperationMixin
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -26,7 +25,8 @@ class GenerateTranslationTemplates(VCSOperationMixin, Operation):
         super().add_arguments(parser)
         parser.add_argument(
             "result_name",
-            help="the name of the result tarball; should end in '.tar.gz'")
+            help="the name of the result tarball; should end in '.tar.gz'",
+        )
 
     def __init__(self, args, parser):
         super().__init__(args, parser)
@@ -42,14 +42,15 @@ class GenerateTranslationTemplates(VCSOperationMixin, Operation):
     def fetch(self, quiet=False):
         logger.info("Fetching %s...", self.vcs_description)
         self.vcs_fetch(
-            os.path.basename(self.branch_dir), cwd=self.work_dir, quiet=quiet)
+            os.path.basename(self.branch_dir), cwd=self.work_dir, quiet=quiet
+        )
 
     def _makeTarball(self, files):
         """Put the given files into a tarball in the working directory."""
         tarname = os.path.join(self.work_dir, self.args.result_name)
         logger.info("Making tarball with templates in %s..." % tarname)
         cmd = ["tar", "-C", self.branch_dir, "-czf", tarname]
-        files = [name for name in files if not name.endswith('/')]
+        files = [name for name in files if not name.endswith("/")]
         for path in files:
             full_path = os.path.join(self.branch_dir, path)
             logger.info("Adding template %s..." % full_path)

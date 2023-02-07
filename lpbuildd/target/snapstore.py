@@ -1,11 +1,7 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from urllib.parse import (
-    urljoin,
-    urlparse,
-    urlunparse,
-    )
+from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
 
@@ -17,8 +13,10 @@ class SnapStoreOperationMixin:
     def add_arguments(cls, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "--snap-store-proxy-url", metavar="URL",
-            help="snap store proxy URL")
+            "--snap-store-proxy-url",
+            metavar="URL",
+            help="snap store proxy URL",
+        )
 
     def snap_store_set_proxy(self):
         if self.args.snap_store_proxy_url is None:
@@ -27,13 +25,17 @@ class SnapStoreOperationMixin:
         # domain.
         parsed_url = urlparse(self.args.snap_store_proxy_url)
         canonical_url = urlunparse(
-            [parsed_url.scheme, parsed_url.netloc, "", "", "", ""])
+            [parsed_url.scheme, parsed_url.netloc, "", "", "", ""]
+        )
         assertions_response = requests.get(
-            urljoin(canonical_url, "v2/auth/store/assertions"))
+            urljoin(canonical_url, "v2/auth/store/assertions")
+        )
         assertions_response.raise_for_status()
         self.backend.run(
-            ["snap", "ack", "/dev/stdin"], input_text=assertions_response.text)
+            ["snap", "ack", "/dev/stdin"], input_text=assertions_response.text
+        )
         store_id = assertions_response.headers.get("X-Assertion-Store-Id")
         if store_id is not None:
             self.backend.run(
-                ["snap", "set", "core", f"proxy.store={store_id}"])
+                ["snap", "set", "core", f"proxy.store={store_id}"]
+            )

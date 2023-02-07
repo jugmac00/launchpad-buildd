@@ -4,187 +4,321 @@
 import subprocess
 from textwrap import dedent
 
-from fixtures import FakeLogger
 import responses
+from fixtures import FakeLogger
 from testtools import TestCase
-from testtools.matchers import (
-    AnyMatch,
-    MatchesAll,
-    MatchesListwise,
-    )
+from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise
 
 from lpbuildd.target.build_livefs import (
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
-    )
+)
 from lpbuildd.target.cli import parse_args
 from lpbuildd.target.tests.matchers import (
     RanAptGet,
     RanBuildCommand,
     RanCommand,
-    )
+)
 from lpbuildd.tests.fakebuilder import FakeMethod
 
 
 class TestBuildLiveFS(TestCase):
-
     def test_install(self):
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.install()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "livecd-rootfs"),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet("install", "livecd-rootfs"),
+                ]
+            ),
+        )
 
     def test_install_locale(self):
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--locale=zh_CN",
-            ]
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.install()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "livecd-rootfs"),
-            RanAptGet(
-                "--install-recommends", "install", "ubuntu-defaults-builder"),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet("install", "livecd-rootfs"),
+                    RanAptGet(
+                        "--install-recommends",
+                        "install",
+                        "ubuntu-defaults-builder",
+                    ),
+                ]
+            ),
+        )
 
     @responses.activate
     def test_install_snap_store_proxy(self):
-        store_assertion = dedent("""\
+        store_assertion = dedent(
+            """\
             type: store
             store: store-id
             url: http://snap-store-proxy.example
 
             body
-            """)
+            """
+        )
 
         def respond(request):
             return 200, {"X-Assertion-Store-Id": "store-id"}, store_assertion
 
         responses.add_callback(
-            "GET", "http://snap-store-proxy.example/v2/auth/store/assertions",
-            callback=respond)
+            "GET",
+            "http://snap-store-proxy.example/v2/auth/store/assertions",
+            callback=respond,
+        )
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--snap-store-proxy-url", "http://snap-store-proxy.example/",
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--snap-store-proxy-url",
+            "http://snap-store-proxy.example/",
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.install()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "livecd-rootfs"),
-            RanCommand(
-                ["snap", "ack", "/dev/stdin"], input_text=store_assertion),
-            RanCommand(["snap", "set", "core", "proxy.store=store-id"]),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet("install", "livecd-rootfs"),
+                    RanCommand(
+                        ["snap", "ack", "/dev/stdin"],
+                        input_text=store_assertion,
+                    ),
+                    RanCommand(
+                        ["snap", "set", "core", "proxy.store=store-id"]
+                    ),
+                ]
+            ),
+        )
 
     def test_build(self):
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--project=ubuntu",
-            ]
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.build()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["rm", "-rf", "auto", "local"]),
-            RanBuildCommand(["mkdir", "-p", "auto"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/config", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/build", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/clean", "auto/"]),
-            RanBuildCommand(["lb", "clean", "--purge"]),
-            RanBuildCommand(
-                ["lb", "config"],
-                PROJECT="ubuntu", ARCH="amd64", SUITE="xenial"),
-            RanBuildCommand(["lb", "build"], PROJECT="ubuntu", ARCH="amd64"),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(["rm", "-rf", "auto", "local"]),
+                    RanBuildCommand(["mkdir", "-p", "auto"]),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/config",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/build",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/clean",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(["lb", "clean", "--purge"]),
+                    RanBuildCommand(
+                        ["lb", "config"],
+                        PROJECT="ubuntu",
+                        ARCH="amd64",
+                        SUITE="xenial",
+                    ),
+                    RanBuildCommand(
+                        ["lb", "build"], PROJECT="ubuntu", ARCH="amd64"
+                    ),
+                ]
+            ),
+        )
 
     def test_build_locale(self):
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--locale=zh_CN",
-            ]
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.build()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand(
-                ["ubuntu-defaults-image", "--locale", "zh_CN",
-                 "--arch", "amd64", "--release", "xenial"]),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        [
+                            "ubuntu-defaults-image",
+                            "--locale",
+                            "zh_CN",
+                            "--arch",
+                            "amd64",
+                            "--release",
+                            "xenial",
+                        ]
+                    ),
+                ]
+            ),
+        )
 
     def test_build_extra_ppas_and_snaps(self):
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--project=ubuntu-core",
-            "--extra-ppa=owner1/name1", "--extra-ppa=owner2/name2",
-            "--extra-snap=snap1", "--extra-snap=snap2",
-            ]
+            "--extra-ppa=owner1/name1",
+            "--extra-ppa=owner2/name2",
+            "--extra-snap=snap1",
+            "--extra-snap=snap2",
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.build()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["rm", "-rf", "auto", "local"]),
-            RanBuildCommand(["mkdir", "-p", "auto"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/config", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/build", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/clean", "auto/"]),
-            RanBuildCommand(["lb", "clean", "--purge"]),
-            RanBuildCommand(
-                ["lb", "config"],
-                PROJECT="ubuntu-core", ARCH="amd64", SUITE="xenial",
-                EXTRA_PPAS="owner1/name1 owner2/name2",
-                EXTRA_SNAPS="snap1 snap2"),
-            RanBuildCommand(
-                ["lb", "build"], PROJECT="ubuntu-core", ARCH="amd64"),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(["rm", "-rf", "auto", "local"]),
+                    RanBuildCommand(["mkdir", "-p", "auto"]),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/config",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/build",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/clean",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(["lb", "clean", "--purge"]),
+                    RanBuildCommand(
+                        ["lb", "config"],
+                        PROJECT="ubuntu-core",
+                        ARCH="amd64",
+                        SUITE="xenial",
+                        EXTRA_PPAS="owner1/name1 owner2/name2",
+                        EXTRA_SNAPS="snap1 snap2",
+                    ),
+                    RanBuildCommand(
+                        ["lb", "build"], PROJECT="ubuntu-core", ARCH="amd64"
+                    ),
+                ]
+            ),
+        )
 
     def test_build_debug(self):
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--project=ubuntu", "--debug",
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--project=ubuntu",
+            "--debug",
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.build()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["rm", "-rf", "auto", "local"]),
-            RanBuildCommand(["mkdir", "-p", "auto"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/config", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/build", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/clean", "auto/"]),
-            RanBuildCommand(["mkdir", "-p", "local/functions"]),
-            RanBuildCommand(
-                ["sh", "-c", "echo 'set -x' >local/functions/debug.sh"]),
-            RanBuildCommand(["lb", "clean", "--purge"]),
-            RanBuildCommand(
-                ["lb", "config"],
-                PROJECT="ubuntu", ARCH="amd64", SUITE="xenial"),
-            RanBuildCommand(["lb", "build"], PROJECT="ubuntu", ARCH="amd64"),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(["rm", "-rf", "auto", "local"]),
+                    RanBuildCommand(["mkdir", "-p", "auto"]),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/config",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/build",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/clean",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(["mkdir", "-p", "local/functions"]),
+                    RanBuildCommand(
+                        ["sh", "-c", "echo 'set -x' >local/functions/debug.sh"]
+                    ),
+                    RanBuildCommand(["lb", "clean", "--purge"]),
+                    RanBuildCommand(
+                        ["lb", "config"],
+                        PROJECT="ubuntu",
+                        ARCH="amd64",
+                        SUITE="xenial",
+                    ),
+                    RanBuildCommand(
+                        ["lb", "build"], PROJECT="ubuntu", ARCH="amd64"
+                    ),
+                ]
+            ),
+        )
 
     def test_build_with_http_proxy(self):
         proxy = "http://example.com:8000"
@@ -193,44 +327,79 @@ class TestBuildLiveFS(TestCase):
             "ARCH": "amd64",
             "http_proxy": proxy,
             "LB_APT_HTTP_PROXY": proxy,
-            }
+        }
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--project=ubuntu-cpc",
             f"--http-proxy={proxy}",
-            ]
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.build()
-        self.assertThat(build_livefs.backend.run.calls, MatchesListwise([
-            RanBuildCommand(["rm", "-rf", "auto", "local"]),
-            RanBuildCommand(["mkdir", "-p", "auto"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/config", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/build", "auto/"]),
-            RanBuildCommand(
-                ["ln", "-s",
-                 "/usr/share/livecd-rootfs/live-build/auto/clean", "auto/"]),
-            RanBuildCommand(["lb", "clean", "--purge"]),
-            RanBuildCommand(["lb", "config"], SUITE="xenial", **expected_env),
-            RanBuildCommand(["lb", "build"], **expected_env),
-            ]))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(["rm", "-rf", "auto", "local"]),
+                    RanBuildCommand(["mkdir", "-p", "auto"]),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/config",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/build",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/clean",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(["lb", "clean", "--purge"]),
+                    RanBuildCommand(
+                        ["lb", "config"], SUITE="xenial", **expected_env
+                    ),
+                    RanBuildCommand(["lb", "build"], **expected_env),
+                ]
+            ),
+        )
 
     def test_run_succeeds(self):
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--project=ubuntu",
-            ]
+        ]
         build_livefs = parse_args(args=args).operation
         self.assertEqual(0, build_livefs.run())
-        self.assertThat(build_livefs.backend.run.calls, MatchesAll(
-            AnyMatch(RanAptGet("install", "livecd-rootfs")),
-            AnyMatch(RanBuildCommand(
-                ["lb", "build"], PROJECT="ubuntu", ARCH="amd64"))))
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesAll(
+                AnyMatch(RanAptGet("install", "livecd-rootfs")),
+                AnyMatch(
+                    RanBuildCommand(
+                        ["lb", "build"], PROJECT="ubuntu", ARCH="amd64"
+                    )
+                ),
+            ),
+        )
 
     def test_run_install_fails(self):
         class FailInstall(FakeMethod):
@@ -242,9 +411,12 @@ class TestBuildLiveFS(TestCase):
         self.useFixture(FakeLogger())
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--project=ubuntu",
-            ]
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.backend.run = FailInstall()
         self.assertEqual(RETCODE_FAILURE_INSTALL, build_livefs.run())
@@ -259,9 +431,12 @@ class TestBuildLiveFS(TestCase):
         self.useFixture(FakeLogger())
         args = [
             "buildlivefs",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "--project=ubuntu",
-            ]
+        ]
         build_livefs = parse_args(args=args).operation
         build_livefs.backend.run = FailBuild()
         self.assertEqual(RETCODE_FAILURE_BUILD, build_livefs.run())

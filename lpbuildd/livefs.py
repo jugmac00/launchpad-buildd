@@ -1,17 +1,10 @@
 # Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 import os
+from configparser import NoOptionError, NoSectionError
 
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-    )
-
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
@@ -77,7 +70,8 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--cohort-key", self.cohort_key])
         try:
             snap_store_proxy_url = self._builder._config.get(
-                "proxy", "snapstore")
+                "proxy", "snapstore"
+            )
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
             pass
@@ -90,8 +84,10 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         if retcode == RETCODE_SUCCESS:
             print("Returning build status: OK")
             return self.deferGatherResults()
-        elif (retcode >= RETCODE_FAILURE_INSTALL and
-              retcode <= RETCODE_FAILURE_BUILD):
+        elif (
+            retcode >= RETCODE_FAILURE_INSTALL
+            and retcode <= RETCODE_FAILURE_BUILD
+        ):
             if not self.alreadyfailed:
                 self._builder.buildFail()
                 print("Returning build status: Build failed.")
@@ -112,6 +108,5 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         """Gather the results of the build and add them to the file cache."""
         for entry in sorted(self.backend.listdir("/build")):
             path = os.path.join("/build", entry)
-            if (entry.startswith("livecd.") and
-                    not self.backend.islink(path)):
+            if entry.startswith("livecd.") and not self.backend.islink(path):
                 self.addWaitingFileFromBackend(path)

@@ -9,10 +9,7 @@ import tempfile
 from testtools import TestCase
 from twisted.internet.task import Clock
 
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-    )
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 from lpbuildd.tests.fakebuilder import FakeBuilder
 
 
@@ -39,7 +36,7 @@ class MockBuildManager(DebianBuildManager):
         return 0
 
     def doRunBuild(self):
-        self.runSubProcess('/bin/true', ['true'])
+        self.runSubProcess("/bin/true", ["true"])
 
     def iterate_MAIN(self, success):
         if success != 0:
@@ -60,19 +57,21 @@ class TestDebianBuildManagerIteration(TestCase):
         super().setUp()
         self.working_dir = tempfile.mkdtemp()
         self.addCleanup(lambda: shutil.rmtree(self.working_dir))
-        builder_dir = os.path.join(self.working_dir, 'builder')
-        home_dir = os.path.join(self.working_dir, 'home')
+        builder_dir = os.path.join(self.working_dir, "builder")
+        home_dir = os.path.join(self.working_dir, "home")
         for dir in (builder_dir, home_dir):
             os.mkdir(dir)
         self.builder = FakeBuilder(builder_dir)
-        self.buildid = '123'
+        self.buildid = "123"
         self.clock = Clock()
         self.buildmanager = MockBuildManager(
-            self.builder, self.buildid, reactor=self.clock)
+            self.builder, self.buildid, reactor=self.clock
+        )
         self.buildmanager.home = home_dir
         self.buildmanager._cachepath = self.builder._cachepath
         self.chrootdir = os.path.join(
-            home_dir, 'build-%s' % self.buildid, 'chroot-autobuild')
+            home_dir, "build-%s" % self.buildid, "chroot-autobuild"
+        )
 
     def getState(self):
         """Retrieve build manager's state."""
@@ -81,252 +80,418 @@ class TestDebianBuildManagerIteration(TestCase):
     def test_no_constraints(self):
         # If no `builder_constraints` argument is passed, the backend is set
         # up with no constraints.
-        self.buildmanager.initiate({}, 'chroot.tar.gz', {'series': 'xenial'})
+        self.buildmanager.initiate({}, "chroot.tar.gz", {"series": "xenial"})
         self.assertEqual([], self.buildmanager.backend.constraints)
 
     def test_constraints(self):
         # If a `builder_constraints` argument is passed, it is used to set
         # up the backend's constraints.
         self.buildmanager.initiate(
-            {}, 'chroot.tar.gz',
-            {'builder_constraints': ['gpu'], 'series': 'xenial'})
-        self.assertEqual(['gpu'], self.buildmanager.backend.constraints)
+            {},
+            "chroot.tar.gz",
+            {"builder_constraints": ["gpu"], "series": "xenial"},
+        )
+        self.assertEqual(["gpu"], self.buildmanager.backend.constraints)
 
     def startBuild(self, extra_args):
         # The build manager's iterate() kicks off the consecutive states
         # after INIT.
-        self.buildmanager.initiate({}, 'chroot.tar.gz', extra_args)
+        self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
         self.assertEqual(DebianBuildState.INIT, self.getState())
         self.assertEqual(
-            (['sharepath/bin/builder-prep', 'builder-prep'], None),
-            self.buildmanager.commands[-1])
+            (["sharepath/bin/builder-prep", "builder-prep"], None),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
         extra_args = {
-            'arch_tag': 'amd64',
-            'archives': [
-                'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
-                ],
-            'series': 'xenial',
-            }
+            "arch_tag": "amd64",
+            "archives": [
+                "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main",
+            ],
+            "series": "xenial",
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              '--image-type', 'chroot',
-              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "unpack-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "--image-type",
+                    "chroot",
+                    os.path.join(
+                        self.buildmanager._cachepath, "chroot.tar.gz"
+                    ),
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.MOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'mount-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "mount-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'override-sources-list',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "override-sources-list",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial "
+                    "main",
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'update-debian-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "update-debian-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['/bin/true', 'true'], None), self.buildmanager.commands[-1])
+            (["/bin/true", "true"], None), self.buildmanager.commands[-1]
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "scan-for-processes",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(DebianBuildState.UMOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'umount-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "umount-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.CLEANUP, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'remove-build',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "remove-build",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
-        self.assertFalse(self.builder.wasCalled('builderFail'))
-        self.assertFalse(self.builder.wasCalled('chrootFail'))
-        self.assertFalse(self.builder.wasCalled('buildFail'))
-        self.assertFalse(self.builder.wasCalled('depFail'))
-        self.assertTrue(self.builder.wasCalled('buildOK'))
-        self.assertTrue(self.builder.wasCalled('buildComplete'))
+        self.assertFalse(self.builder.wasCalled("builderFail"))
+        self.assertFalse(self.builder.wasCalled("chrootFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("depFail"))
+        self.assertTrue(self.builder.wasCalled("buildOK"))
+        self.assertTrue(self.builder.wasCalled("buildComplete"))
 
     def test_iterate_trusted_keys(self):
         # The build manager iterates a build with trusted keys from start to
         # finish.
         extra_args = {
-            'arch_tag': 'amd64',
-            'archives': [
-                'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
-                ],
-            'series': 'xenial',
-            'trusted_keys': [base64.b64encode(b'key material')],
-            }
+            "arch_tag": "amd64",
+            "archives": [
+                "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main",
+            ],
+            "series": "xenial",
+            "trusted_keys": [base64.b64encode(b"key material")],
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              '--image-type', 'chroot',
-              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "unpack-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "--image-type",
+                    "chroot",
+                    os.path.join(
+                        self.buildmanager._cachepath, "chroot.tar.gz"
+                    ),
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.MOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'mount-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "mount-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'override-sources-list',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "override-sources-list",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial "
+                    "main",
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.KEYS, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'add-trusted-keys',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             b'key material'),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "add-trusted-keys",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                b"key material",
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'update-debian-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "update-debian-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['/bin/true', 'true'], None), self.buildmanager.commands[-1])
+            (["/bin/true", "true"], None), self.buildmanager.commands[-1]
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "scan-for-processes",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterateReap(self.getState(), 0)
         self.assertEqual(DebianBuildState.UMOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'umount-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "umount-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.CLEANUP, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'remove-build',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "remove-build",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
-        self.assertFalse(self.builder.wasCalled('builderFail'))
-        self.assertFalse(self.builder.wasCalled('chrootFail'))
-        self.assertFalse(self.builder.wasCalled('buildFail'))
-        self.assertFalse(self.builder.wasCalled('depFail'))
-        self.assertTrue(self.builder.wasCalled('buildOK'))
-        self.assertTrue(self.builder.wasCalled('buildComplete'))
+        self.assertFalse(self.builder.wasCalled("builderFail"))
+        self.assertFalse(self.builder.wasCalled("chrootFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("depFail"))
+        self.assertTrue(self.builder.wasCalled("buildOK"))
+        self.assertTrue(self.builder.wasCalled("buildComplete"))
 
     def test_iterate_fast_cleanup(self):
         # The build manager can be told that it doesn't need to do the final
@@ -334,99 +499,156 @@ class TestDebianBuildManagerIteration(TestCase):
         # iterates such a build from start to finish, but without calling
         # umount-chroot or remove-build.
         extra_args = {
-            'arch_tag': 'amd64',
-            'archives': [
-                'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
-                ],
-            'fast_cleanup': True,
-            'series': 'xenial',
-            }
+            "arch_tag": "amd64",
+            "archives": [
+                "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main",
+            ],
+            "fast_cleanup": True,
+            "series": "xenial",
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              '--image-type', 'chroot',
-              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "unpack-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "--image-type",
+                    "chroot",
+                    os.path.join(
+                        self.buildmanager._cachepath, "chroot.tar.gz"
+                    ),
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.MOUNT, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'mount-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "mount-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'override-sources-list',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "override-sources-list",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial "
+                    "main",
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UPDATE, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'update-debian-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "update-debian-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['/bin/true', 'true'], None), self.buildmanager.commands[-1])
+            (["/bin/true", "true"], None), self.buildmanager.commands[-1]
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterate(0)
         self.assertEqual(MockBuildState.MAIN, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'scan-for-processes',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "scan-for-processes",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
         self.buildmanager.iterateReap(self.getState(), 0)
-        self.assertFalse(self.builder.wasCalled('builderFail'))
-        self.assertFalse(self.builder.wasCalled('chrootFail'))
-        self.assertFalse(self.builder.wasCalled('buildFail'))
-        self.assertFalse(self.builder.wasCalled('depFail'))
-        self.assertTrue(self.builder.wasCalled('buildOK'))
-        self.assertTrue(self.builder.wasCalled('buildComplete'))
+        self.assertFalse(self.builder.wasCalled("builderFail"))
+        self.assertFalse(self.builder.wasCalled("chrootFail"))
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertFalse(self.builder.wasCalled("depFail"))
+        self.assertTrue(self.builder.wasCalled("buildOK"))
+        self.assertTrue(self.builder.wasCalled("buildComplete"))
 
     def test_iterate_apt_proxy(self):
         # The build manager can be configured to use an APT proxy.
         self.builder._config.set(
-            'proxy', 'apt', 'http://apt-proxy.example:3128/')
+            "proxy", "apt", "http://apt-proxy.example:3128/"
+        )
         extra_args = {
-            'arch_tag': 'amd64',
-            'archives': [
-                'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main',
-                ],
-            'series': 'xenial',
-            }
+            "arch_tag": "amd64",
+            "archives": [
+                "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main",
+            ],
+            "series": "xenial",
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
@@ -436,105 +658,170 @@ class TestDebianBuildManagerIteration(TestCase):
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.SOURCES, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'override-sources-list',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              '--apt-proxy-url', 'http://apt-proxy.example:3128/',
-              'deb http://ppa.launchpad.dev/owner/name/ubuntu xenial main'],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "override-sources-list",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "--apt-proxy-url",
+                    "http://apt-proxy.example:3128/",
+                    "deb http://ppa.launchpad.dev/owner/name/ubuntu xenial "
+                    "main",
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
     def test_iterate_lxd(self):
         # The build manager passes the image_type argument through to
         # unpack-chroot.
-        self.buildmanager.backend_name = 'lxd'
+        self.buildmanager.backend_name = "lxd"
         extra_args = {
-            'image_type': 'lxd',
-            'arch_tag': 'amd64',
-            'series': 'xenial',
-            }
+            "image_type": "lxd",
+            "arch_tag": "amd64",
+            "series": "xenial",
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
-              '--backend=lxd', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              '--image-type', 'lxd',
-              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "unpack-chroot",
+                    "--backend=lxd",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "--image-type",
+                    "lxd",
+                    os.path.join(
+                        self.buildmanager._cachepath, "chroot.tar.gz"
+                    ),
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
     def test_iterate_no_constraints(self):
         # If no `builder_constraints` argument is passed, the build manager
         # passes no `--constraint` options to backend processes.
         extra_args = {
-            'arch_tag': 'amd64',
-            'series': 'xenial',
-            }
+            "arch_tag": "amd64",
+            "series": "xenial",
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              '--image-type', 'chroot',
-              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "unpack-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "--image-type",
+                    "chroot",
+                    os.path.join(
+                        self.buildmanager._cachepath, "chroot.tar.gz"
+                    ),
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
     def test_iterate_constraints_None(self):
         # If a `builder_constraints` argument of None is passed, the build
         # manager passes no `--constraint` options to backend processes.
         extra_args = {
-            'arch_tag': 'amd64',
-            'builder_constraints': None,
-            'series': 'xenial',
-            }
+            "arch_tag": "amd64",
+            "builder_constraints": None,
+            "series": "xenial",
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              self.buildid,
-              '--image-type', 'chroot',
-              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "unpack-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    self.buildid,
+                    "--image-type",
+                    "chroot",
+                    os.path.join(
+                        self.buildmanager._cachepath, "chroot.tar.gz"
+                    ),
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
 
     def test_iterate_constraints(self):
         # If a `builder_constraints` argument is passed, the build manager
         # passes corresponding `--constraint` options to backend processes.
         extra_args = {
-            'arch_tag': 'amd64',
-            'builder_constraints': ['gpu', 'large'],
-            'series': 'xenial',
-            }
+            "arch_tag": "amd64",
+            "builder_constraints": ["gpu", "large"],
+            "series": "xenial",
+        }
         self.startBuild(extra_args)
 
         self.buildmanager.iterate(0)
         self.assertEqual(DebianBuildState.UNPACK, self.getState())
         self.assertEqual(
-            (['sharepath/bin/in-target', 'in-target', 'unpack-chroot',
-              '--backend=chroot', '--series=xenial', '--arch=amd64',
-              '--constraint=gpu', '--constraint=large',
-              self.buildid,
-              '--image-type', 'chroot',
-              os.path.join(self.buildmanager._cachepath, 'chroot.tar.gz')],
-             None),
-            self.buildmanager.commands[-1])
+            (
+                [
+                    "sharepath/bin/in-target",
+                    "in-target",
+                    "unpack-chroot",
+                    "--backend=chroot",
+                    "--series=xenial",
+                    "--arch=amd64",
+                    "--constraint=gpu",
+                    "--constraint=large",
+                    self.buildid,
+                    "--image-type",
+                    "chroot",
+                    os.path.join(
+                        self.buildmanager._cachepath, "chroot.tar.gz"
+                    ),
+                ],
+                None,
+            ),
+            self.buildmanager.commands[-1],
+        )
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )

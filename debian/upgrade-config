@@ -6,24 +6,21 @@
 """Upgrade a launchpad-buildd configuration file."""
 
 try:
-    from configparser import (
-        ConfigParser as SafeConfigParser,
-        NoOptionError,
-        NoSectionError,
-        )
+    from configparser import ConfigParser as SafeConfigParser
+    from configparser import NoOptionError, NoSectionError
 except ImportError:
     from ConfigParser import (
         SafeConfigParser,
         NoOptionError,
         NoSectionError,
-        )
+    )
+
 import os
 import re
-import sys
 import subprocess
+import sys
 
 import apt_pkg
-
 
 apt_pkg.init()
 
@@ -34,8 +31,8 @@ bin_path = "/usr/share/launchpad-buildd/slavebin"
 
 def upgrade_to_12():
     print("Upgrading %s to version 12" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev12~"])
-    in_file = open(conf_file+"-prev12~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev12~"])
+    in_file = open(conf_file + "-prev12~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[debianmanager]"):
@@ -49,8 +46,8 @@ def upgrade_to_12():
 
 def upgrade_to_34():
     print("Upgrading %s to version 34" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev34~"])
-    in_file = open(conf_file+"-prev34~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev34~"])
+    in_file = open(conf_file + "-prev34~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[debianmanager]"):
@@ -62,8 +59,8 @@ def upgrade_to_34():
 
 def upgrade_to_39():
     print("Upgrading %s to version 39" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev39~"])
-    in_file = open(conf_file+"-prev39~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev39~"])
+    in_file = open(conf_file + "-prev39~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("sbuildargs"):
@@ -77,8 +74,8 @@ def upgrade_to_39():
 
 def upgrade_to_57():
     print("Upgrading %s to version 57" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev57~"])
-    in_file = open(conf_file+"-prev57~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev57~"])
+    in_file = open(conf_file + "-prev57~")
     out_file = open(conf_file, "w")
     # We want to move all the sbuild lines to a new
     # 'binarypackagemanager' section at the end.
@@ -88,7 +85,7 @@ def upgrade_to_57():
             binarypackage_lines.append(line)
         else:
             out_file.write(line)
-    out_file.write('[binarypackagemanager]\n')
+    out_file.write("[binarypackagemanager]\n")
     for line in binarypackage_lines:
         out_file.write(line)
     in_file.close()
@@ -97,41 +94,43 @@ def upgrade_to_57():
 
 def upgrade_to_58():
     print("Upgrading %s to version 58" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev58~"])
-    in_file = open(conf_file+"-prev58~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev58~"])
+    in_file = open(conf_file + "-prev58~")
     out_file = open(conf_file, "w")
     out_file.write(in_file.read())
     out_file.write(
-        '\n[sourcepackagerecipemanager]\n'
-        'buildrecipepath = %s/buildrecipe\n' % bin_path)
+        "\n[sourcepackagerecipemanager]\n"
+        "buildrecipepath = %s/buildrecipe\n" % bin_path
+    )
 
 
 def upgrade_to_59():
     print("Upgrading %s to version 59" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev59~"])
-    in_file = open(conf_file+"-prev59~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev59~"])
+    in_file = open(conf_file + "-prev59~")
     out_file = open(conf_file, "w")
     out_file.write(in_file.read())
     out_file.write(
-        '\n[translationtemplatesmanager]\n'
-        'generatepath = %s/generate-translation-templates\n'
-        'resultarchive = translation-templates.tar.gz\n' % bin_path)
+        "\n[translationtemplatesmanager]\n"
+        "generatepath = %s/generate-translation-templates\n"
+        "resultarchive = translation-templates.tar.gz\n" % bin_path
+    )
 
 
 def upgrade_to_63():
     print("Upgrading %s to version 63" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev63~"])
-    in_file = open(conf_file+"-prev63~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev63~"])
+    in_file = open(conf_file + "-prev63~")
     out_file = open(conf_file, "w")
     for line in in_file:
-        if not line.startswith('ogrepath'):
+        if not line.startswith("ogrepath"):
             out_file.write(line)
 
 
 def upgrade_to_110():
     print("Upgrading %s to version 110" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev110~"])
-    in_file = open(conf_file+"-prev110~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev110~"])
+    in_file = open(conf_file + "-prev110~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[allmanagers]"):
@@ -143,16 +142,17 @@ def upgrade_to_110():
 
 def upgrade_to_115():
     print("Upgrading %s to version 115" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev115~"])
+    subprocess.call(["mv", conf_file, conf_file + "-prev115~"])
     in_allmanagers = False
-    in_file = open(conf_file+"-prev115~")
+    in_file = open(conf_file + "-prev115~")
     out_file = open(conf_file, "w")
     for line in in_file:
         if line.startswith("[allmanagers]"):
             in_allmanagers = True
         elif in_allmanagers and (line.startswith("[") or not line.strip()):
             out_file.write(
-                "processscanpath = %s/scan-for-processes\n" % bin_path)
+                "processscanpath = %s/scan-for-processes\n" % bin_path
+            )
             in_allmanagers = False
         if not line.startswith("processscanpath = "):
             out_file.write(line)
@@ -162,27 +162,28 @@ def upgrade_to_115():
 
 def upgrade_to_120():
     print("Upgrading %s to version 120" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev120~"])
-    in_file = open(conf_file+"-prev120~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev120~"])
+    in_file = open(conf_file + "-prev120~")
     out_file = open(conf_file, "w")
     out_file.write(in_file.read())
     out_file.write(
         "\n[livefilesystemmanager]\n"
-        "buildlivefspath = %s/buildlivefs\n" % bin_path)
+        "buildlivefspath = %s/buildlivefs\n" % bin_path
+    )
     in_file.close()
     out_file.close()
 
 
 def upgrade_to_126():
     print("Upgrading %s to version 126" % conf_file)
-    subprocess.call(["mv", conf_file, conf_file+"-prev126~"])
-    in_file = open(conf_file+"-prev126~")
+    subprocess.call(["mv", conf_file, conf_file + "-prev126~"])
+    in_file = open(conf_file + "-prev126~")
     out_file = open(conf_file, "w")
     archive_ubuntu = " --archive=ubuntu"
     for line in in_file:
         line = line.rstrip("\n")
         if line.endswith(archive_ubuntu):
-            line = line[:-len(archive_ubuntu)]
+            line = line[: -len(archive_ubuntu)]
         out_file.write(line + "\n")
     in_file.close()
     out_file.close()
@@ -195,13 +196,25 @@ def upgrade_to_127():
     in_file = open(conf_file + "-prev127~")
     out_file = open(conf_file, "w")
     obsolete_prefixes = [
-        '[allmanagers]', '[debianmanager]', '[binarypackagemanager]',
-        '[sourcepackagerecipemanager]', '[livefilesystemmanager]',
-        'preppath ', 'unpackpath ', 'cleanpath ', 'mountpath ', 'umountpath ',
-        'processscanpath ', 'updatepath ', 'sourcespath ', 'sbuildpath ',
-        'sbuildargs ', 'buildrecipepath ', 'generatepath ',
-        'buildlivefspath ',
-        ]
+        "[allmanagers]",
+        "[debianmanager]",
+        "[binarypackagemanager]",
+        "[sourcepackagerecipemanager]",
+        "[livefilesystemmanager]",
+        "preppath ",
+        "unpackpath ",
+        "cleanpath ",
+        "mountpath ",
+        "umountpath ",
+        "processscanpath ",
+        "updatepath ",
+        "sourcespath ",
+        "sbuildpath ",
+        "sbuildargs ",
+        "buildrecipepath ",
+        "generatepath ",
+        "buildlivefspath ",
+    ]
     wrote_blank = False
     for line in in_file:
         # Remove obsolete paths and sections.
@@ -229,9 +242,7 @@ def upgrade_to_162():
     with open(conf_file + "-prev162~") as in_file:
         with open(conf_file, "w") as out_file:
             out_file.write(in_file.read())
-            out_file.write(
-                "\n[snapmanager]\n"
-                "proxyport = 8222\n")
+            out_file.write("\n[snapmanager]\n" "proxyport = 8222\n")
 
 
 def upgrade_to_190():
@@ -283,14 +294,16 @@ def upgrade_to_200():
                     out_file.write(line)
                     wrote_blank = False
 
-                if (in_snapmanager and
-                        not line.startswith("[snapmanager]") and
-                        (line.startswith("[") or not line.strip())):
+                if (
+                    in_snapmanager
+                    and not line.startswith("[snapmanager]")
+                    and (line.startswith("[") or not line.strip())
+                ):
                     in_snapmanager = False
 
 
 if __name__ == "__main__":
-    old_version = re.sub(r'[~-].*', '', old_version)
+    old_version = re.sub(r"[~-].*", "", old_version)
     if apt_pkg.version_compare(old_version, "12") < 0:
         upgrade_to_12()
     if apt_pkg.version_compare(old_version, "34") < 0:

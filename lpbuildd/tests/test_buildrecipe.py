@@ -1,7 +1,6 @@
 # Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from contextlib import contextmanager
 import imp
 import io
 import os
@@ -9,21 +8,13 @@ import shutil
 import stat
 import sys
 import tempfile
+from contextlib import contextmanager
 from textwrap import dedent
 
-from fixtures import (
-    EnvironmentVariable,
-    MockPatch,
-    MockPatchObject,
-    TempDir,
-    )
+from fixtures import EnvironmentVariable, MockPatch, MockPatchObject, TempDir
 from systemfixtures import FakeProcesses
 from testtools import TestCase
-from testtools.matchers import (
-    Equals,
-    MatchesListwise,
-    StartsWith,
-    )
+from testtools.matchers import Equals, MatchesListwise, StartsWith
 
 
 @contextmanager
@@ -37,24 +28,26 @@ def disable_bytecode():
 # By-hand import to avoid having to put .py suffixes on builder binaries.
 with disable_bytecode():
     RecipeBuilder = imp.load_source(
-        "buildrecipe", "bin/buildrecipe").RecipeBuilder
+        "buildrecipe", "bin/buildrecipe"
+    ).RecipeBuilder
 
 
 class RanCommand(MatchesListwise):
-
     def __init__(self, *args):
         args_matchers = [
-            Equals(arg) if isinstance(arg, str) else arg
-            for arg in args]
+            Equals(arg) if isinstance(arg, str) else arg for arg in args
+        ]
         super().__init__(args_matchers)
 
 
 class RanInChroot(RanCommand):
-
     def __init__(self, home_dir, *args):
         super().__init__(
-            "sudo", "/usr/sbin/chroot",
-            os.path.join(home_dir, "build-1", "chroot-autobuild"), *args)
+            "sudo",
+            "/usr/sbin/chroot",
+            os.path.join(home_dir, "build-1", "chroot-autobuild"),
+            *args,
+        )
 
 
 class TestRecipeBuilder(TestCase):
@@ -66,8 +59,14 @@ class TestRecipeBuilder(TestCase):
         os.environ["HOME"] = self.home_dir
         self.build_id = "1"
         self.builder = RecipeBuilder(
-            self.build_id, "Recipe Builder", "builder@example.org>", "grumpy",
-            "grumpy", "main", "PPA")
+            self.build_id,
+            "Recipe Builder",
+            "builder@example.org>",
+            "grumpy",
+            "grumpy",
+            "main",
+            "PPA",
+        )
         os.makedirs(self.builder.work_dir)
 
     def resetEnvironment(self):
@@ -122,15 +121,24 @@ class TestRecipeBuilder(TestCase):
 
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo")
+            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo"
+        )
         processes_fixture.add(fake_git, name="git")
         processes_fixture.add(
             lambda _: {"stdout": io.StringIO("git-build-recipe\tx.y.z\n")},
-            name="dpkg-query")
+            name="dpkg-query",
+        )
         processes_fixture.add(fake_git_build_recipe, name="git-build-recipe")
         self.builder = RecipeBuilder(
-            self.build_id, "Recipe Builder", "builder@example.org>", "grumpy",
-            "grumpy", "main", "PPA", git=True)
+            self.build_id,
+            "Recipe Builder",
+            "builder@example.org>",
+            "grumpy",
+            "grumpy",
+            "main",
+            "PPA",
+            git=True,
+        )
         with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
             f.write("dummy recipe contents\n")
         mock_stdout = io.StringIO()
@@ -138,17 +146,25 @@ class TestRecipeBuilder(TestCase):
         self.assertEqual(0, self.builder.buildTree())
         self.assertEqual(
             os.path.join(self.builder.work_dir_relative, "tree", "foo"),
-            self.builder.source_dir_relative)
+            self.builder.source_dir_relative,
+        )
         expected_recipe_command = [
-            "git-build-recipe", "--safe", "--no-build",
-            "--manifest", os.path.join(self.builder.tree_path, "manifest"),
-            "--distribution", "grumpy", "--allow-fallback-to-native",
-            "--append-version", "~ubuntu5.10.1",
+            "git-build-recipe",
+            "--safe",
+            "--no-build",
+            "--manifest",
+            os.path.join(self.builder.tree_path, "manifest"),
+            "--distribution",
+            "grumpy",
+            "--allow-fallback-to-native",
+            "--append-version",
+            "~ubuntu5.10.1",
             os.path.join(self.builder.work_dir, "recipe"),
             self.builder.tree_path,
-            ]
+        ]
         self.assertEqual(
-            dedent("""\
+            dedent(
+                """\
                 Git version:
                 git version x.y.z
                 git-build-recipe x.y.z
@@ -157,8 +173,11 @@ class TestRecipeBuilder(TestCase):
 
                 RUN %s
                 dummy recipe build
-                """) % repr(expected_recipe_command),
-            mock_stdout.getvalue())
+                """
+            )
+            % repr(expected_recipe_command),
+            mock_stdout.getvalue(),
+        )
 
     def test_buildTree_brz(self):
         def fake_bzr(args):
@@ -178,31 +197,46 @@ class TestRecipeBuilder(TestCase):
 
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo")
+            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo"
+        )
         processes_fixture.add(fake_bzr, name="bzr")
         processes_fixture.add(
-            fake_brz_build_daily_recipe, name="brz-build-daily-recipe")
+            fake_brz_build_daily_recipe, name="brz-build-daily-recipe"
+        )
         with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
             f.write("dummy recipe contents\n")
         mock_stdout = io.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
-        self.useFixture(MockPatchObject(
-            self.builder, "_is_command_on_path",
-            side_effect=lambda command: command == "brz-build-daily-recipe"))
+        self.useFixture(
+            MockPatchObject(
+                self.builder,
+                "_is_command_on_path",
+                side_effect=lambda command: command
+                == "brz-build-daily-recipe",
+            )
+        )
         self.assertEqual(0, self.builder.buildTree())
         self.assertEqual(
             os.path.join(self.builder.work_dir_relative, "tree", "foo"),
-            self.builder.source_dir_relative)
+            self.builder.source_dir_relative,
+        )
         expected_recipe_command = [
-            "brz-build-daily-recipe", "--safe", "--no-build",
-            "--manifest", os.path.join(self.builder.tree_path, "manifest"),
-            "--distribution", "grumpy", "--allow-fallback-to-native",
-            "--append-version", "~ubuntu5.10.1",
+            "brz-build-daily-recipe",
+            "--safe",
+            "--no-build",
+            "--manifest",
+            os.path.join(self.builder.tree_path, "manifest"),
+            "--distribution",
+            "grumpy",
+            "--allow-fallback-to-native",
+            "--append-version",
+            "~ubuntu5.10.1",
             os.path.join(self.builder.work_dir, "recipe"),
             self.builder.tree_path,
-            ]
+        ]
         self.assertEqual(
-            dedent("""\
+            dedent(
+                """\
                 Bazaar versions:
                 brz version x.y.z
                 brz-plugin x.y.z
@@ -211,8 +245,11 @@ class TestRecipeBuilder(TestCase):
 
                 RUN %s
                 dummy recipe build
-                """) % repr(expected_recipe_command),
-            mock_stdout.getvalue())
+                """
+            )
+            % repr(expected_recipe_command),
+            mock_stdout.getvalue(),
+        )
 
     def test_buildTree_bzr(self):
         def fake_bzr(args):
@@ -231,28 +268,42 @@ class TestRecipeBuilder(TestCase):
 
         processes_fixture = self.useFixture(FakeProcesses())
         processes_fixture.add(
-            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo")
+            lambda _: {"stdout": io.StringIO("5.10\n")}, name="sudo"
+        )
         processes_fixture.add(fake_bzr, name="bzr")
         with open(os.path.join(self.builder.work_dir, "recipe"), "w") as f:
             f.write("dummy recipe contents\n")
         mock_stdout = io.StringIO()
         self.useFixture(MockPatch("sys.stdout", mock_stdout))
-        self.useFixture(MockPatchObject(
-            self.builder, "_is_command_on_path", return_value=False))
+        self.useFixture(
+            MockPatchObject(
+                self.builder, "_is_command_on_path", return_value=False
+            )
+        )
         self.assertEqual(0, self.builder.buildTree())
         self.assertEqual(
             os.path.join(self.builder.work_dir_relative, "tree", "foo"),
-            self.builder.source_dir_relative)
+            self.builder.source_dir_relative,
+        )
         expected_recipe_command = [
-            "bzr", "-Derror", "dailydeb", "--safe", "--no-build",
-            "--manifest", os.path.join(self.builder.tree_path, "manifest"),
-            "--distribution", "grumpy", "--allow-fallback-to-native",
-            "--append-version", "~ubuntu5.10.1",
+            "bzr",
+            "-Derror",
+            "dailydeb",
+            "--safe",
+            "--no-build",
+            "--manifest",
+            os.path.join(self.builder.tree_path, "manifest"),
+            "--distribution",
+            "grumpy",
+            "--allow-fallback-to-native",
+            "--append-version",
+            "~ubuntu5.10.1",
             os.path.join(self.builder.work_dir, "recipe"),
             self.builder.tree_path,
-            ]
+        ]
         self.assertEqual(
-            dedent("""\
+            dedent(
+                """\
                 Bazaar versions:
                 bzr version x.y.z
                 bzr-plugin x.y.z
@@ -261,29 +312,38 @@ class TestRecipeBuilder(TestCase):
 
                 RUN %s
                 dummy recipe build
-                """) % repr(expected_recipe_command),
-            mock_stdout.getvalue())
+                """
+            )
+            % repr(expected_recipe_command),
+            mock_stdout.getvalue(),
+        )
 
     def test_makeDummyDsc(self):
         self.builder.source_dir_relative = os.path.join(
-            self.builder.work_dir_relative, "tree", "foo")
+            self.builder.work_dir_relative, "tree", "foo"
+        )
         control_path = os.path.join(
-            self.builder.work_dir, "tree", "foo", "debian", "control")
+            self.builder.work_dir, "tree", "foo", "debian", "control"
+        )
         os.makedirs(os.path.dirname(control_path))
         os.makedirs(self.builder.apt_dir)
         with open(control_path, "w") as control:
             print(
-                dedent("""\
+                dedent(
+                    """\
                     Source: foo
                     Build-Depends: debhelper (>= 9~), libfoo-dev
 
                     Package: foo
-                    Depends: ${shlibs:Depends}"""),
-                file=control)
+                    Depends: ${shlibs:Depends}"""
+                ),
+                file=control,
+            )
         self.builder.makeDummyDsc("foo")
         with open(os.path.join(self.builder.apt_dir, "foo.dsc")) as dsc:
             self.assertEqual(
-                dedent("""\
+                dedent(
+                    """\
                     Format: 1.0
                     Source: foo
                     Architecture: any
@@ -291,21 +351,26 @@ class TestRecipeBuilder(TestCase):
                     Maintainer: invalid@example.org
                     Build-Depends: debhelper (>= 9~), libfoo-dev
 
-                    """),
-                dsc.read())
+                    """
+                ),
+                dsc.read(),
+            )
 
     def test_makeDummyDsc_comments(self):
         # apt_pkg.TagFile doesn't support comments, but python-debian's own
         # parser does.  Make sure we're using the right one.
         self.builder.source_dir_relative = os.path.join(
-            self.builder.work_dir_relative, "tree", "foo")
+            self.builder.work_dir_relative, "tree", "foo"
+        )
         control_path = os.path.join(
-            self.builder.work_dir, "tree", "foo", "debian", "control")
+            self.builder.work_dir, "tree", "foo", "debian", "control"
+        )
         os.makedirs(os.path.dirname(control_path))
         os.makedirs(self.builder.apt_dir)
         with open(control_path, "w") as control:
             print(
-                dedent("""\
+                dedent(
+                    """\
                     Source: foo
                     Build-Depends: debhelper (>= 9~),
                                    libfoo-dev,
@@ -313,12 +378,15 @@ class TestRecipeBuilder(TestCase):
                                    pkg-config
 
                     Package: foo
-                    Depends: ${shlibs:Depends}"""),
-                file=control)
+                    Depends: ${shlibs:Depends}"""
+                ),
+                file=control,
+            )
         self.builder.makeDummyDsc("foo")
         with open(os.path.join(self.builder.apt_dir, "foo.dsc")) as dsc:
             self.assertEqual(
-                dedent("""\
+                dedent(
+                    """\
                     Format: 1.0
                     Source: foo
                     Architecture: any
@@ -328,31 +396,43 @@ class TestRecipeBuilder(TestCase):
                                    libfoo-dev,
                                    pkg-config
 
-                    """),
-                dsc.read())
+                    """
+                ),
+                dsc.read(),
+            )
 
     def test_runAptFtparchive(self):
         os.makedirs(self.builder.apt_dir)
         with open(os.path.join(self.builder.apt_dir, "foo.dsc"), "w") as dsc:
             print(
-                dedent("""\
+                dedent(
+                    """\
                     Format: 1.0
                     Source: foo
                     Architecture: any
                     Version: 99:0
                     Maintainer: invalid@example.org
-                    Build-Depends: debhelper (>= 9~), libfoo-dev"""),
-                file=dsc)
+                    Build-Depends: debhelper (>= 9~), libfoo-dev"""
+                ),
+                file=dsc,
+            )
         self.assertEqual(0, self.builder.runAptFtparchive())
         self.assertEqual(
-            ["Release", "Sources", "Sources.bz2", "foo.dsc",
-             "ftparchive.conf"],
-            sorted(os.listdir(self.builder.apt_dir)))
+            [
+                "Release",
+                "Sources",
+                "Sources.bz2",
+                "foo.dsc",
+                "ftparchive.conf",
+            ],
+            sorted(os.listdir(self.builder.apt_dir)),
+        )
         with open(os.path.join(self.builder.apt_dir, "Sources")) as sources:
             sources_text = sources.read()
             self.assertIn("Package: foo\n", sources_text)
             self.assertIn(
-                "Build-Depends: debhelper (>= 9~), libfoo-dev\n", sources_text)
+                "Build-Depends: debhelper (>= 9~), libfoo-dev\n", sources_text
+            )
 
     def test_installBuildDeps(self):
         processes_fixture = self.useFixture(FakeProcesses())
@@ -362,64 +442,94 @@ class TestRecipeBuilder(TestCase):
         def mock_copy_in(source_path, target_path):
             with open(source_path, "rb") as source:
                 copies[target_path] = (
-                    source.read(), os.fstat(source.fileno()).st_mode)
+                    source.read(),
+                    os.fstat(source.fileno()).st_mode,
+                )
 
-        self.useFixture(
-            MockPatchObject(self.builder, "copy_in", mock_copy_in))
+        self.useFixture(MockPatchObject(self.builder, "copy_in", mock_copy_in))
         self.builder.source_dir_relative = os.path.join(
-            self.builder.work_dir_relative, "tree", "foo")
+            self.builder.work_dir_relative, "tree", "foo"
+        )
         changelog_path = os.path.join(
-            self.builder.work_dir, "tree", "foo", "debian", "changelog")
+            self.builder.work_dir, "tree", "foo", "debian", "changelog"
+        )
         control_path = os.path.join(
-            self.builder.work_dir, "tree", "foo", "debian", "control")
+            self.builder.work_dir, "tree", "foo", "debian", "control"
+        )
         os.makedirs(os.path.dirname(changelog_path))
         with open(changelog_path, "w") as changelog:
             # Not a valid changelog, but only the first line matters here.
             print("foo (1.0-1) bionic; urgency=medium", file=changelog)
         with open(control_path, "w") as control:
             print(
-                dedent("""\
+                dedent(
+                    """\
                     Source: foo
                     Build-Depends: debhelper (>= 9~), libfoo-dev
 
                     Package: foo
-                    Depends: ${shlibs:Depends}"""),
-                file=control)
+                    Depends: ${shlibs:Depends}"""
+                ),
+                file=control,
+            )
         self.assertEqual(0, self.builder.installBuildDeps())
         self.assertThat(
             [proc._args["args"] for proc in processes_fixture.procs],
-            MatchesListwise([
-                RanInChroot(
-                    self.home_dir, "apt-get",
-                    "-o", StartsWith("Dir::Etc::sourcelist="),
-                    "-o", "APT::Get::List-Cleanup=false",
-                    "update"),
-                RanCommand(
-                    "sudo", "mv",
-                    os.path.join(
-                        self.builder.apt_dir, "buildrecipe-archive.list"),
-                    os.path.join(
-                        self.builder.apt_sources_list_dir,
-                        "buildrecipe-archive.list")),
-                RanInChroot(
-                    self.home_dir, "apt-get",
-                    "build-dep", "-y", "--only-source", "foo"),
-                ]))
+            MatchesListwise(
+                [
+                    RanInChroot(
+                        self.home_dir,
+                        "apt-get",
+                        "-o",
+                        StartsWith("Dir::Etc::sourcelist="),
+                        "-o",
+                        "APT::Get::List-Cleanup=false",
+                        "update",
+                    ),
+                    RanCommand(
+                        "sudo",
+                        "mv",
+                        os.path.join(
+                            self.builder.apt_dir, "buildrecipe-archive.list"
+                        ),
+                        os.path.join(
+                            self.builder.apt_sources_list_dir,
+                            "buildrecipe-archive.list",
+                        ),
+                    ),
+                    RanInChroot(
+                        self.home_dir,
+                        "apt-get",
+                        "build-dep",
+                        "-y",
+                        "--only-source",
+                        "foo",
+                    ),
+                ]
+            ),
+        )
         self.assertEqual(
-            (dedent("""\
+            (
+                dedent(
+                    """\
                 Package: foo
                 Suite: grumpy
                 Component: main
                 Purpose: PPA
                 Build-Debug-Symbols: no
-                """).encode("UTF-8"), stat.S_IFREG | 0o644),
-            copies["/CurrentlyBuilding"])
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            copies["/CurrentlyBuilding"],
+        )
         # This is still in the temporary location, since we mocked the "sudo
         # mv" command.
-        with open(os.path.join(
-                self.builder.apt_dir,
-                "buildrecipe-archive.list")) as tmp_list:
+        with open(
+            os.path.join(self.builder.apt_dir, "buildrecipe-archive.list")
+        ) as tmp_list:
             self.assertEqual(
-                "deb-src [trusted=yes] file://%s ./\n" %
-                self.builder.apt_dir_relative,
-                tmp_list.read())
+                "deb-src [trusted=yes] file://%s ./\n"
+                % self.builder.apt_dir_relative,
+                tmp_list.read(),
+            )

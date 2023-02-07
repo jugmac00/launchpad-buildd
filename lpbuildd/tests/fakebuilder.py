@@ -2,28 +2,22 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'FakeBackend',
-    'FakeBuilder',
-    'FakeMethod',
-    'UncontainedBackend',
-    ]
+    "FakeBackend",
+    "FakeBuilder",
+    "FakeMethod",
+    "UncontainedBackend",
+]
 
-from collections import defaultdict
-from configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 import hashlib
 import os
 import shutil
 import stat
 import subprocess
+from collections import defaultdict
+from configparser import NoOptionError, NoSectionError
 
 from lpbuildd.target.backend import Backend
-from lpbuildd.util import (
-    set_personality,
-    shell_escape,
-    )
+from lpbuildd.util import set_personality, shell_escape
 
 
 class FakeMethod:
@@ -106,10 +100,16 @@ class FakeBuilder:
         self._config = FakeConfig()
         self.waitingfiles = {}
         for fake_method in (
-                "emptyLog", "log",
-                "chrootFail", "buildFail", "builderFail", "depFail", "buildOK",
-                "buildComplete", "sanitizeBuildlog",
-                ):
+            "emptyLog",
+            "log",
+            "chrootFail",
+            "buildFail",
+            "builderFail",
+            "depFail",
+            "buildOK",
+            "buildComplete",
+            "sanitizeBuildlog",
+        ):
             setattr(self, fake_method, FakeMethod())
 
     def cachePath(self, file):
@@ -131,7 +131,7 @@ class FakeBuilder:
         return getattr(self, name).call_count > 0
 
     def getArch(self):
-        return 'i386'
+        return "i386"
 
 
 class FakeBackend(Backend):
@@ -141,10 +141,13 @@ class FakeBackend(Backend):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         fake_methods = (
-            "create", "start",
+            "create",
+            "start",
             "run",
-            "kill_processes", "stop", "remove",
-            )
+            "kill_processes",
+            "stop",
+            "remove",
+        )
         for fake_method in fake_methods:
             setattr(self, fake_method, FakeMethod())
         self.backend_fs = {}
@@ -169,7 +172,8 @@ class FakeBackend(Backend):
     def copy_in(self, source_path, target_path):
         with open(source_path, "rb") as source:
             self.add_file(
-                target_path, source.read(), os.fstat(source.fileno()).st_mode)
+                target_path, source.read(), os.fstat(source.fileno()).st_mode
+            )
 
     def _get_inode(self, path):
         while True:
@@ -177,7 +181,8 @@ class FakeBackend(Backend):
             if not stat.S_ISLNK(mode):
                 return contents, mode
             path = os.path.normpath(
-                os.path.join(os.path.dirname(path), contents))
+                os.path.join(os.path.dirname(path), contents)
+            )
 
     def copy_out(self, source_path, target_path):
         contents, mode = self._get_inode(source_path)
@@ -220,7 +225,8 @@ class FakeBackend(Backend):
         return [
             os.path.relpath(backend_path, path)
             for backend_path, (_, mode) in self.backend_fs.items()
-            if match(backend_path, mode)]
+            if match(backend_path, mode)
+        ]
 
     def is_package_available(self, package):
         return package in self.available_packages
@@ -229,13 +235,26 @@ class FakeBackend(Backend):
 class UncontainedBackend(Backend):
     """A partial backend implementation with no containment."""
 
-    def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
-            echo=False, **kwargs):
+    def run(
+        self,
+        args,
+        cwd=None,
+        env=None,
+        input_text=None,
+        get_output=False,
+        echo=False,
+        **kwargs,
+    ):
         """See `Backend`."""
         if env:
-            args = ["env"] + [
-                f"{key}={shell_escape(value)}"
-                for key, value in env.items()] + args
+            args = (
+                ["env"]
+                + [
+                    f"{key}={shell_escape(value)}"
+                    for key, value in env.items()
+                ]
+                + args
+            )
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         if input_text is None and not get_output:
@@ -244,7 +263,8 @@ class UncontainedBackend(Backend):
             if get_output:
                 kwargs["stdout"] = subprocess.PIPE
             proc = subprocess.Popen(
-                args, stdin=subprocess.PIPE, cwd=cwd, **kwargs)
+                args, stdin=subprocess.PIPE, cwd=cwd, **kwargs
+            )
             output, _ = proc.communicate(input_text)
             if proc.returncode:
                 raise subprocess.CalledProcessError(proc.returncode, args)
@@ -255,9 +275,11 @@ class UncontainedBackend(Backend):
         if source_path == target_path:
             raise Exception(
                 "TrivialBackend copy operations require source_path and "
-                "target_path to differ.")
+                "target_path to differ."
+            )
         subprocess.check_call(
-            ["cp", "--preserve=timestamps", source_path, target_path])
+            ["cp", "--preserve=timestamps", source_path, target_path]
+        )
 
     def copy_in(self, source_path, target_path):
         """See `Backend`."""

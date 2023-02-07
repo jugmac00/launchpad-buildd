@@ -6,7 +6,6 @@
 
 # The basic builder implementation.
 
-from functools import partial
 import hashlib
 import json
 import os
@@ -14,24 +13,23 @@ import re
 import shutil
 import sys
 import tempfile
+from functools import partial
 from urllib.request import (
-    build_opener,
     HTTPBasicAuthHandler,
     HTTPPasswordMgrWithPriorAuth,
+    build_opener,
     urlopen,
-    )
+)
 from xmlrpc.client import Binary
 
 import apt
-from twisted.internet import protocol
+from twisted.internet import process, protocol
 from twisted.internet import reactor as default_reactor
-from twisted.internet import process
 from twisted.python import log
 from twisted.web import xmlrpc
 
 from lpbuildd.target.backend import make_backend
 from lpbuildd.util import shell_escape
-
 
 devnull = open("/dev/null")
 
@@ -47,13 +45,13 @@ def _sanitizeURLs(bytes_seq):
     """
     # This regular expression will be used to remove authentication
     # credentials from URLs.
-    password_re = re.compile(br'://([^:@/]*:[^:@/]+@)(\S+)')
+    password_re = re.compile(rb"://([^:@/]*:[^:@/]+@)(\S+)")
     # Builder proxy passwords are UUIDs.
-    proxy_auth_re = re.compile(br',proxyauth=[^:]+:[A-Za-z0-9-]+')
+    proxy_auth_re = re.compile(rb",proxyauth=[^:]+:[A-Za-z0-9-]+")
 
     for line in bytes_seq:
-        sanitized_line = password_re.sub(br'://\2', line)
-        sanitized_line = proxy_auth_re.sub(b'', sanitized_line)
+        sanitized_line = password_re.sub(rb"://\2", line)
+        sanitized_line = proxy_auth_re.sub(b"", sanitized_line)
         yield sanitized_line
 
 
@@ -144,7 +142,7 @@ class BuildManager:
         self._subprocess = None
         self._reaped_states = set()
         self.is_archive_private = False
-        self.home = os.environ['HOME']
+        self.home = os.environ["HOME"]
         self.abort_timeout = 120
         self.status_path = get_build_path(self.home, self._buildid, "status")
         self._final_extra_status = None
@@ -160,17 +158,23 @@ class BuildManager:
         self._subprocess = RunCapture(self._builder, iterate, stdin=stdin)
         text_args = [
             arg.decode("UTF-8", "replace") if isinstance(arg, bytes) else arg
-            for arg in args[1:]]
+            for arg in args[1:]
+        ]
         escaped_args = " ".join(shell_escape(arg) for arg in text_args)
         self._builder.log(f"RUN: {command} {escaped_args}\n")
         childfds = {
             0: devnull.fileno() if stdin is None else "w",
             1: "r",
             2: "r",
-            }
+        }
         self._reactor.spawnProcess(
-            self._subprocess, command, args, env=env,
-            path=self.home, childFDs=childfds)
+            self._subprocess,
+            command,
+            args,
+            env=env,
+            path=self.home,
+            childFDs=childfds,
+        )
 
     def runTargetSubProcess(self, command, *args, **kwargs):
         """Run a subprocess that operates on the target environment."""
@@ -180,18 +184,22 @@ class BuildManager:
             "--backend=%s" % self.backend_name,
             "--series=%s" % self.series,
             "--arch=%s" % self.arch_tag,
-            ]
+        ]
         for constraint in self.constraints:
             base_args.append("--constraint=%s" % constraint)
         base_args.append(self._buildid)
         self.runSubProcess(
-            self._intargetpath, base_args + list(args), **kwargs)
+            self._intargetpath, base_args + list(args), **kwargs
+        )
 
     def doUnpack(self):
         """Unpack the build chroot."""
         self.runTargetSubProcess(
-            "unpack-chroot", "--image-type", self.image_type,
-            self._chroottarfile)
+            "unpack-chroot",
+            "--image-type",
+            self.image_type,
+            self._chroottarfile,
+        )
 
     def doReapProcesses(self, state, notify=True):
         """Reap any processes left lying around in the chroot."""
@@ -207,8 +215,10 @@ class BuildManager:
             if notify:
                 iterate = partial(self.iterateReap, state)
             else:
+
                 def iterate(success):
                     pass
+
             self.runTargetSubProcess("scan-for-processes", iterate=iterate)
 
     def doCleanup(self):
@@ -245,32 +255,37 @@ class BuildManager:
         value keyed under the 'archive_private' string. If that value
         evaluates to True the build at hand is for a private archive.
         """
-        if 'build_url' in extra_args:
-            self._builder.log("%s\n" % extra_args['build_url'])
+        if "build_url" in extra_args:
+            self._builder.log("%s\n" % extra_args["build_url"])
 
         os.mkdir(get_build_path(self.home, self._buildid))
         for f in files:
-            os.symlink(self._builder.cachePath(files[f]),
-                       get_build_path(self.home, self._buildid, f))
+            os.symlink(
+                self._builder.cachePath(files[f]),
+                get_build_path(self.home, self._buildid, f),
+            )
         self._chroottarfile = self._builder.cachePath(chroot)
 
-        self.image_type = extra_args.get('image_type', 'chroot')
-        self.series = extra_args['series']
-        self.arch_tag = extra_args.get('arch_tag', self._builder.getArch())
-        self.fast_cleanup = extra_args.get('fast_cleanup', False)
-        self.constraints = extra_args.get('builder_constraints') or []
+        self.image_type = extra_args.get("image_type", "chroot")
+        self.series = extra_args["series"]
+        self.arch_tag = extra_args.get("arch_tag", self._builder.getArch())
+        self.fast_cleanup = extra_args.get("fast_cleanup", False)
+        self.constraints = extra_args.get("builder_constraints") or []
 
         # Check whether this is a build in a private archive and
         # whether the URLs in the buildlog file should be sanitized
         # so that they do not contain any embedded authentication
         # credentials.
-        if extra_args.get('archive_private'):
+        if extra_args.get("archive_private"):
             self.is_archive_private = True
 
         self.backend = make_backend(
-            self.backend_name, self._buildid,
-            series=self.series, arch=self.arch_tag,
-            constraints=self.constraints)
+            self.backend_name,
+            self._buildid,
+            series=self.series,
+            arch=self.arch_tag,
+            constraints=self.constraints,
+        )
 
         self.runSubProcess(self._preppath, ["builder-prep"])
 
@@ -290,7 +305,8 @@ class BuildManager:
         except Exception as e:
             print(
                 "Error deserialising extra status file: %s" % e,
-                file=sys.stderr)
+                file=sys.stderr,
+            )
         return {}
 
     def iterate(self, success, quiet=False):
@@ -301,8 +317,9 @@ class BuildManager:
         object created by runSubProcess to gather the results of the
         sub process.
         """
-        raise NotImplementedError("BuildManager should be subclassed to be "
-                                  "used")
+        raise NotImplementedError(
+            "BuildManager should be subclassed to be " "used"
+        )
 
     def iterateReap(self, state, success):
         """Perform an iteration of the builder following subprocess reaping.
@@ -312,8 +329,9 @@ class BuildManager:
         track of the state being reaped so that we can select the
         appropriate next state.
         """
-        raise NotImplementedError("BuildManager should be subclassed to be "
-                                  "used")
+        raise NotImplementedError(
+            "BuildManager should be subclassed to be " "used"
+        )
 
     def abortReap(self):
         """Abort by killing all processes in the chroot, as hard as we can.
@@ -339,8 +357,11 @@ class BuildManager:
         # forkbombing test suite, etc.).  In this case, fail the builder and
         # let an admin sort it out.
         self._subprocess.builderFailCall = self._reactor.callLater(
-            self.abort_timeout, self.builderFail,
-            "Failed to kill all processes.", primary_subprocess)
+            self.abort_timeout,
+            self.builderFail,
+            "Failed to kill all processes.",
+            primary_subprocess,
+        )
 
     def builderFail(self, reason, primary_subprocess):
         """Mark the builder as failed."""
@@ -353,7 +374,7 @@ class BuildManager:
         # doReapProcesses was called) may not have exited.  Kill it so that
         # we can proceed.
         try:
-            primary_subprocess.transport.signalProcess('KILL')
+            primary_subprocess.transport.signalProcess("KILL")
         except process.ProcessExitedAlready:
             self._builder.log("ABORTING: Process Exited Already\n")
         primary_subprocess.transport.loseConnection()
@@ -449,15 +470,16 @@ class Builder:
         the builder will fetch the file if it doesn't have it.
         Return a tuple containing: (<present>, <info>)
         """
-        extra_info = 'No URL'
+        extra_info = "No URL"
         cachefile = self.cachePath(sha1sum)
         if url is not None:
-            extra_info = 'Cache'
+            extra_info = "Cache"
             if not os.path.exists(cachefile):
-                self.log(f'Fetching {sha1sum} by url {url}')
+                self.log(f"Fetching {sha1sum} by url {url}")
                 if username or password:
                     opener = self.setupAuthHandler(
-                        url, username, password).open
+                        url, username, password
+                    ).open
                 else:
                     opener = urlopen
                 try:
@@ -467,23 +489,23 @@ class Builder:
                 # the PyLint warnings.
                 # pylint: disable-msg=W0703
                 except Exception as info:
-                    extra_info = 'Error accessing Librarian: %s' % info
+                    extra_info = "Error accessing Librarian: %s" % info
                     self.log(extra_info)
                 else:
-                    of = open(cachefile + '.tmp', "wb")
+                    of = open(cachefile + ".tmp", "wb")
                     # Upped for great justice to 256k
                     check_sum = hashlib.sha1()
-                    for chunk in iter(lambda: f.read(256*1024), b''):
+                    for chunk in iter(lambda: f.read(256 * 1024), b""):
                         of.write(chunk)
                         check_sum.update(chunk)
                     of.close()
                     f.close()
-                    extra_info = 'Download'
+                    extra_info = "Download"
                     if check_sum.hexdigest() != sha1sum:
-                        os.remove(cachefile + '.tmp')
+                        os.remove(cachefile + ".tmp")
                         extra_info = "Digests did not match, removing again!"
                     else:
-                        os.rename(cachefile + '.tmp', cachefile)
+                        os.rename(cachefile + ".tmp", cachefile)
                     self.log(extra_info)
         return (os.path.exists(cachefile), extra_info)
 
@@ -494,7 +516,7 @@ class Builder:
         of = open(tmppath, "wb")
         try:
             sha1 = hashlib.sha1()
-            for chunk in iter(lambda: f.read(256*1024), b''):
+            for chunk in iter(lambda: f.read(256 * 1024), b""):
                 sha1.update(chunk)
                 of.write(chunk)
             sha1sum = sha1.hexdigest()
@@ -534,7 +556,7 @@ class Builder:
     def clean(self):
         """Clean up pending files and reset the internal build state."""
         if self.builderstatus != BuilderStatus.WAITING:
-            raise ValueError('Builder is not WAITING when asked to clean')
+            raise ValueError("Builder is not WAITING when asked to clean")
         for f in set(self.waitingfiles.values()):
             os.remove(self.cachePath(f))
         self.builderstatus = BuilderStatus.IDLE
@@ -551,12 +573,13 @@ class Builder:
         """Write the provided data to the log."""
         if self._log is not None:
             data_bytes = (
-                data if isinstance(data, bytes) else data.encode("UTF-8"))
+                data if isinstance(data, bytes) else data.encode("UTF-8")
+            )
             self._log.write(data_bytes)
             self._log.flush()
         data_text = (
-            data if isinstance(data, str)
-            else data.decode("UTF-8", "replace"))
+            data if isinstance(data, str) else data.decode("UTF-8", "replace")
+        )
         if data_text.endswith("\n"):
             data_text = data_text[:-1]
         log.msg("Build log: " + data_text)
@@ -610,7 +633,7 @@ class Builder:
             # excerpt to be scrubbed) because it may be cut off thus
             # thwarting the detection of embedded passwords.
             clean_content_iter = _sanitizeURLs(log_lines[1:])
-            ret = b'\n'.join(clean_content_iter)
+            ret = b"\n".join(clean_content_iter)
 
         return ret
 
@@ -618,7 +641,8 @@ class Builder:
         """Start a build with the provided BuildManager instance."""
         if self.builderstatus != BuilderStatus.IDLE:
             raise ValueError(
-                "Builder is not IDLE when asked to start building")
+                "Builder is not IDLE when asked to start building"
+            )
         self.manager = manager
         self.builderstatus = BuilderStatus.BUILDING
         self.emptyLog()
@@ -631,10 +655,13 @@ class Builder:
 
     def builderFail(self):
         """Cease building because the builder has a problem."""
-        if self.builderstatus not in (BuilderStatus.BUILDING,
-                                      BuilderStatus.ABORTING):
+        if self.builderstatus not in (
+            BuilderStatus.BUILDING,
+            BuilderStatus.ABORTING,
+        ):
             raise ValueError(
-                "Builder is not BUILDING|ABORTING when set to BUILDERFAIL")
+                "Builder is not BUILDING|ABORTING when set to BUILDERFAIL"
+            )
         self.buildstatus = BuildStatus.BUILDERFAIL
 
     def chrootFail(self):
@@ -690,7 +717,8 @@ class Builder:
             self.builderstatus = BuilderStatus.WAITING
         else:
             raise ValueError(
-                "Builder is not BUILDING|ABORTING when told build is complete")
+                "Builder is not BUILDING|ABORTING when told build is complete"
+            )
 
     def sanitizeBuildlog(self, log_path):
         """Removes passwords from buildlog URLs.
@@ -706,18 +734,19 @@ class Builder:
         # First move the buildlog file that is to be sanitized out of
         # the way.
         unsanitized_path = self.cachePath(
-            os.path.basename(log_path) + '.unsanitized')
+            os.path.basename(log_path) + ".unsanitized"
+        )
         os.rename(log_path, unsanitized_path)
 
         # Open the unsanitized buildlog file for reading.
-        unsanitized_file = open(unsanitized_path, 'rb')
+        unsanitized_file = open(unsanitized_path, "rb")
 
         # Open the file that will hold the resulting, sanitized buildlog
         # content for writing.
         sanitized_file = None
 
         try:
-            sanitized_file = open(log_path, 'wb')
+            sanitized_file = open(log_path, "wb")
 
             # Scrub the buildlog file line by line
             clean_content_iter = _sanitizeURLs(unsanitized_file)
@@ -739,7 +768,7 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         # versions of the form 'MAJOR.MINOR', the protocol is '1.0' for now
         # implying the presence of /filecache/ /filecache/buildlog and
         # the reduced and optimised XMLRPC interface.
-        self.protocolversion = '1.0'
+        self.protocolversion = "1.0"
         self.builder = Builder(config)
         self._managers = {}
         cache = apt.Cache()
@@ -759,8 +788,11 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
 
     def xmlrpc_info(self):
         """Return the protocol version and the manager methods supported."""
-        return (self.protocolversion, self.builder.getArch(),
-                list(self._managers))
+        return (
+            self.protocolversion,
+            self.builder.getArch(),
+            list(self._managers),
+        )
 
     def xmlrpc_status(self):
         """Return the status of the build daemon, as a dictionary.
@@ -769,7 +801,7 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         but this always includes the builder status itself.
         """
         status = self.builder.builderstatus
-        statusname = status.split('.')[-1]
+        statusname = status.split(".")[-1]
         func = getattr(self, "status_" + statusname, None)
         if func is None:
             raise ValueError("Unknown status '%s'" % status)
@@ -803,9 +835,12 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         ret = {
             "build_status": self.builder.buildstatus,
             "build_id": self.buildid,
-            }
+        }
         if self.builder.buildstatus in (
-                BuildStatus.OK, BuildStatus.PACKAGEFAIL, BuildStatus.DEPFAIL):
+            BuildStatus.OK,
+            BuildStatus.PACKAGEFAIL,
+            BuildStatus.DEPFAIL,
+        ):
             ret["filemap"] = self.builder.waitingfiles
             ret["dependencies"] = self.builder.builddependencies
         return ret
@@ -870,6 +905,7 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         # filelist is consistent, chrootsum is available, let's initiate...
         self.buildid = buildid
         self.builder.startBuild(
-            self._managers[managertag](self.builder, buildid))
+            self._managers[managertag](self.builder, buildid)
+        )
         self.builder.manager.initiate(filemap, chrootsum, args)
         return (BuilderStatus.BUILDING, buildid)

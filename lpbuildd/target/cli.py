@@ -1,33 +1,26 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from argparse import ArgumentParser
 import logging
 import sys
+from argparse import ArgumentParser
 
-from lpbuildd.target.apt import (
-    AddTrustedKeys,
-    OverrideSourcesList,
-    Update,
-    )
+from lpbuildd.target.apt import AddTrustedKeys, OverrideSourcesList, Update
 from lpbuildd.target.build_charm import BuildCharm
-from lpbuildd.target.build_oci import BuildOCI
 from lpbuildd.target.build_livefs import BuildLiveFS
+from lpbuildd.target.build_oci import BuildOCI
 from lpbuildd.target.build_snap import BuildSnap
 from lpbuildd.target.generate_translation_templates import (
     GenerateTranslationTemplates,
-    )
+)
 from lpbuildd.target.lifecycle import (
     Create,
     KillProcesses,
     Remove,
     Start,
     Stop,
-    )
-from lpbuildd.target.run_ci import (
-    RunCI,
-    RunCIPrepare,
-    )
+)
+from lpbuildd.target.run_ci import RunCI, RunCIPrepare
 
 
 def configure_logging():
@@ -65,7 +58,7 @@ operations = {
     "umount-chroot": Stop,
     "unpack-chroot": Create,
     "update-debian-chroot": Update,
-    }
+}
 
 
 def parse_args(args=None):
@@ -73,7 +66,8 @@ def parse_args(args=None):
     subparsers = parser.add_subparsers(metavar="OPERATION")
     for name, factory in sorted(operations.items()):
         subparser = subparsers.add_parser(
-            name, description=factory.description, help=factory.description)
+            name, description=factory.description, help=factory.description
+        )
         factory.add_arguments(subparser)
         subparser.set_defaults(operation_factory=factory)
     args = parser.parse_args(args=args)

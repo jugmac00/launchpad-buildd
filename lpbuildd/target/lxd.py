@@ -1,8 +1,6 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from contextlib import closing
-from functools import cached_property
 import io
 import json
 import os
@@ -10,22 +8,17 @@ import re
 import stat
 import subprocess
 import tarfile
-from textwrap import dedent
 import time
+from contextlib import closing
+from functools import cached_property
+from textwrap import dedent
 
 import netaddr
 import pylxd
 from pylxd.exceptions import LXDAPIException
 
-from lpbuildd.target.backend import (
-    Backend,
-    BackendException,
-    )
-from lpbuildd.util import (
-    set_personality,
-    shell_escape,
-    )
-
+from lpbuildd.target.backend import Backend, BackendException
+from lpbuildd.util import set_personality, shell_escape
 
 LXD_RUNNING = 103
 
@@ -41,20 +34,24 @@ def get_device_mapper_major():
                 return int(line.split()[0])
         else:
             raise Exception(
-                "Cannot determine major device number for device-mapper")
+                "Cannot determine major device number for device-mapper"
+            )
 
 
-fallback_hosts = dedent("""\
+fallback_hosts = dedent(
+    """\
     127.0.0.1\tlocalhost
     ::1\tlocalhost ip6-localhost ip6-loopback
     fe00::0\tip6-localnet
     ff00::0\tip6-mcastprefix
     ff02::1\tip6-allnodes
     ff02::2\tip6-allrouters
-    """)
+    """
+)
 
 
-policy_rc_d = dedent("""\
+policy_rc_d = dedent(
+    """\
     #! /bin/sh
     while :; do
         case "$1" in
@@ -69,7 +66,8 @@ policy_rc_d = dedent("""\
                 ;;
         esac
     done
-    """)
+    """
+)
 
 
 class LXDException(Exception):
@@ -97,7 +95,7 @@ class LXD(Backend):
         "ppc64el": "ppc64le",
         "riscv64": "riscv64",
         "s390x": "s390x",
-        }
+    }
 
     profile_name = "lpbuildd"
     bridge_name = "lpbuilddbr0"
@@ -145,15 +143,23 @@ class LXD(Backend):
                 "os": "Ubuntu",
                 "series": self.series,
                 "architecture": self.arch,
-                "description":
-                    f"Launchpad chroot for Ubuntu {self.series} ({self.arch})",
-                },
-            }
+                "description": (
+                    f"Launchpad chroot for Ubuntu {self.series} ({self.arch})"
+                ),
+            },
+        }
         # Encoding this as JSON is good enough, and saves pulling in a YAML
         # library dependency.
-        metadata_yaml = json.dumps(
-            metadata, sort_keys=True, indent=4, separators=(",", ": "),
-            ensure_ascii=False).encode("UTF-8") + b"\n"
+        metadata_yaml = (
+            json.dumps(
+                metadata,
+                sort_keys=True,
+                indent=4,
+                separators=(",", ": "),
+                ensure_ascii=False,
+            ).encode("UTF-8")
+            + b"\n"
+        )
         metadata_file = tarfile.TarInfo(name="metadata.yaml")
         metadata_file.size = len(metadata_yaml)
         target_tarball.addfile(metadata_file, io.BytesIO(metadata_yaml))
@@ -175,8 +181,9 @@ class LXD(Backend):
                 elif entry.islnk():
                     # Update hardlinks to point to the right target
                     entry.linkname = (
-                        "rootfs" +
-                        entry.linkname.split("chroot-autobuild", 1)[-1])
+                        "rootfs"
+                        + entry.linkname.split("chroot-autobuild", 1)[-1]
+                    )
 
                 target_tarball.addfile(entry, fileobj=fileptr)
             finally:
@@ -206,11 +213,13 @@ class LXD(Backend):
             with io.BytesIO() as target_file:
                 with tarfile.open(name=image_path, mode="r") as source_tarball:
                     with tarfile.open(
-                            fileobj=target_file, mode="w") as target_tarball:
+                        fileobj=target_file, mode="w"
+                    ) as target_tarball:
                         self._convert(source_tarball, target_tarball)
 
                 image = self.client.images.create(
-                    target_file.getvalue(), wait=True)
+                    target_file.getvalue(), wait=True
+                )
         elif image_type == "lxd":
             with open(image_path, "rb") as image_file:
                 image = self.client.images.create(image_file.read(), wait=True)
@@ -230,52 +239,138 @@ class LXD(Backend):
     def iptables(self, args, check=True):
         call = subprocess.check_call if check else subprocess.call
         call(
-            ["sudo", "iptables", "-w"] + args +
-            ["-m", "comment", "--comment", "managed by launchpad-buildd"])
+            ["sudo", "iptables", "-w"]
+            + args
+            + ["-m", "comment", "--comment", "managed by launchpad-buildd"]
+        )
 
     def start_bridge(self):
         if not os.path.isdir(self.run_dir):
             os.makedirs(self.run_dir)
         subprocess.check_call(
-            ["sudo", "ip", "link", "add", "dev", self.bridge_name,
-             "type", "bridge"])
+            [
+                "sudo",
+                "ip",
+                "link",
+                "add",
+                "dev",
+                self.bridge_name,
+                "type",
+                "bridge",
+            ]
+        )
         subprocess.check_call(
-            ["sudo", "ip", "addr", "add", str(self.ipv4_network),
-             "dev", self.bridge_name])
+            [
+                "sudo",
+                "ip",
+                "addr",
+                "add",
+                str(self.ipv4_network),
+                "dev",
+                self.bridge_name,
+            ]
+        )
         subprocess.check_call(
-            ["sudo", "ip", "link", "set", "dev", self.bridge_name, "up"])
+            ["sudo", "ip", "link", "set", "dev", self.bridge_name, "up"]
+        )
         subprocess.check_call(
-            ["sudo", "sysctl", "-q", "-w", "net.ipv4.ip_forward=1"])
+            ["sudo", "sysctl", "-q", "-w", "net.ipv4.ip_forward=1"]
+        )
         self.iptables(
-            ["-t", "mangle", "-A", "FORWARD", "-i", self.bridge_name,
-             "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
-             "-j", "TCPMSS", "--clamp-mss-to-pmtu"])
+            [
+                "-t",
+                "mangle",
+                "-A",
+                "FORWARD",
+                "-i",
+                self.bridge_name,
+                "-p",
+                "tcp",
+                "--tcp-flags",
+                "SYN,RST",
+                "SYN",
+                "-j",
+                "TCPMSS",
+                "--clamp-mss-to-pmtu",
+            ]
+        )
         self.iptables(
-            ["-t", "nat", "-A", "POSTROUTING",
-             "-s", str(self.ipv4_network), "!", "-d", str(self.ipv4_network),
-             "-j", "MASQUERADE"])
+            [
+                "-t",
+                "nat",
+                "-A",
+                "POSTROUTING",
+                "-s",
+                str(self.ipv4_network),
+                "!",
+                "-d",
+                str(self.ipv4_network),
+                "-j",
+                "MASQUERADE",
+            ]
+        )
         subprocess.check_call(
-            ["sudo", "/usr/sbin/dnsmasq", "-s", "lpbuildd", "-S", "/lpbuildd/",
-             "-u", "buildd", "--strict-order", "--bind-interfaces",
-             "--pid-file=%s" % self.dnsmasq_pid_file,
-             "--except-interface=lo", "--interface=%s" % self.bridge_name,
-             "--listen-address=%s" % str(self.ipv4_network.ip)])
+            [
+                "sudo",
+                "/usr/sbin/dnsmasq",
+                "-s",
+                "lpbuildd",
+                "-S",
+                "/lpbuildd/",
+                "-u",
+                "buildd",
+                "--strict-order",
+                "--bind-interfaces",
+                "--pid-file=%s" % self.dnsmasq_pid_file,
+                "--except-interface=lo",
+                "--interface=%s" % self.bridge_name,
+                "--listen-address=%s" % str(self.ipv4_network.ip),
+            ]
+        )
 
     def stop_bridge(self):
         if not os.path.isdir(self.sys_dir):
             return
         subprocess.call(
-            ["sudo", "ip", "addr", "flush", "dev", self.bridge_name])
+            ["sudo", "ip", "addr", "flush", "dev", self.bridge_name]
+        )
         subprocess.call(
-            ["sudo", "ip", "link", "set", "dev", self.bridge_name, "down"])
+            ["sudo", "ip", "link", "set", "dev", self.bridge_name, "down"]
+        )
         self.iptables(
-            ["-t", "mangle", "-D", "FORWARD", "-i", self.bridge_name,
-             "-p", "tcp", "--tcp-flags", "SYN,RST", "SYN",
-             "-j", "TCPMSS", "--clamp-mss-to-pmtu"])
+            [
+                "-t",
+                "mangle",
+                "-D",
+                "FORWARD",
+                "-i",
+                self.bridge_name,
+                "-p",
+                "tcp",
+                "--tcp-flags",
+                "SYN,RST",
+                "SYN",
+                "-j",
+                "TCPMSS",
+                "--clamp-mss-to-pmtu",
+            ]
+        )
         self.iptables(
-            ["-t", "nat", "-D", "POSTROUTING",
-             "-s", str(self.ipv4_network), "!", "-d", str(self.ipv4_network),
-             "-j", "MASQUERADE"], check=False)
+            [
+                "-t",
+                "nat",
+                "-D",
+                "POSTROUTING",
+                "-s",
+                str(self.ipv4_network),
+                "!",
+                "-d",
+                str(self.ipv4_network),
+                "-j",
+                "MASQUERADE",
+            ],
+            check=False,
+        )
         if os.path.exists(self.dnsmasq_pid_file):
             with open(self.dnsmasq_pid_file) as f:
                 try:
@@ -309,14 +404,18 @@ class LXD(Backend):
     def create_profile(self):
         for addr in self.ipv4_network:
             if addr not in (
-                    self.ipv4_network.network, self.ipv4_network.ip,
-                    self.ipv4_network.broadcast):
+                self.ipv4_network.network,
+                self.ipv4_network.ip,
+                self.ipv4_network.broadcast,
+            ):
                 ipv4_address = netaddr.IPNetwork(
-                    (int(addr), self.ipv4_network.prefixlen))
+                    (int(addr), self.ipv4_network.prefixlen)
+                )
                 break
         else:
             raise BackendException(
-                "%s has no usable IP addresses" % self.ipv4_network)
+                "%s has no usable IP addresses" % self.ipv4_network
+            )
 
         try:
             old_profile = self.client.profiles.get(self.profile_name)
@@ -332,23 +431,27 @@ class LXD(Backend):
             ("lxc.cgroup.devices.allow", ""),
             ("lxc.mount.auto", ""),
             ("lxc.mount.auto", "proc:rw sys:rw"),
-            ]
+        ]
 
         lxc_version = self._client.host_info["environment"]["driver_version"]
         major, minor = (int(v) for v in lxc_version.split(".")[0:2])
 
         if major >= 3:
-            raw_lxc_config.extend([
-                ("lxc.apparmor.profile", "unconfined"),
-                ("lxc.net.0.ipv4.address", ipv4_address),
-                ("lxc.net.0.ipv4.gateway", self.ipv4_network.ip),
-                ])
+            raw_lxc_config.extend(
+                [
+                    ("lxc.apparmor.profile", "unconfined"),
+                    ("lxc.net.0.ipv4.address", ipv4_address),
+                    ("lxc.net.0.ipv4.gateway", self.ipv4_network.ip),
+                ]
+            )
         else:
-            raw_lxc_config.extend([
-                ("lxc.aa_profile", "unconfined"),
-                ("lxc.network.0.ipv4", ipv4_address),
-                ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
-                ])
+            raw_lxc_config.extend(
+                [
+                    ("lxc.aa_profile", "unconfined"),
+                    ("lxc.network.0.ipv4", ipv4_address),
+                    ("lxc.network.0.ipv4.gateway", self.ipv4_network.ip),
+                ]
+            )
 
         # Linux 4.4 on powerpc doesn't support all the seccomp bits that LXD
         # needs.
@@ -358,22 +461,23 @@ class LXD(Backend):
             "security.privileged": "true",
             "security.nesting": "true",
             "raw.lxc": "".join(
-                f"{key}={value}\n" for key, value in sorted(raw_lxc_config)),
-            }
+                f"{key}={value}\n" for key, value in sorted(raw_lxc_config)
+            ),
+        }
         devices = {
             "eth0": {
                 "name": "eth0",
                 "nictype": "bridged",
                 "parent": self.bridge_name,
                 "type": "nic",
-                },
-            }
+            },
+        }
         if major >= 3:
             devices["root"] = {
                 "path": "/",
                 "pool": "default",
                 "type": "disk",
-                }
+            }
         if "gpu-nvidia" in self.constraints:
             for i, path in enumerate(self._nvidia_container_paths):
                 # Skip devices here, because bind-mounted devices aren't
@@ -386,7 +490,7 @@ class LXD(Backend):
                         "path": path,
                         "source": path,
                         "type": "disk",
-                        }
+                    }
         self.client.profiles.create(self.profile_name, config, devices)
 
     def start(self):
@@ -396,16 +500,21 @@ class LXD(Backend):
         self.create_profile()
         self.start_bridge()
 
-        container = self.client.containers.create({
-            "name": self.name,
-            "profiles": [self.profile_name],
-            "source": {"type": "image", "alias": self.alias},
-            }, wait=True)
+        container = self.client.containers.create(
+            {
+                "name": self.name,
+                "profiles": [self.profile_name],
+                "source": {"type": "image", "alias": self.alias},
+            },
+            wait=True,
+        )
 
         hostname = subprocess.check_output(
-            ["hostname"], universal_newlines=True).rstrip("\n")
+            ["hostname"], universal_newlines=True
+        ).rstrip("\n")
         fqdn = subprocess.check_output(
-            ["hostname", "--fqdn"], universal_newlines=True).rstrip("\n")
+            ["hostname", "--fqdn"], universal_newlines=True
+        ).rstrip("\n")
         with self.open("/etc/hosts", mode="a") as hosts_file:
             hosts_file.seek(0, os.SEEK_END)
             if not hosts_file.tell():
@@ -421,8 +530,10 @@ class LXD(Backend):
 
         if os.path.islink(resolv_conf):
             resolv_conf = os.path.realpath(resolv_conf)
-            if (resolv_conf == "/run/systemd/resolve/stub-resolv.conf" and
-                    os.path.isfile("/run/systemd/resolve/resolv.conf")):
+            if (
+                resolv_conf == "/run/systemd/resolve/stub-resolv.conf"
+                and os.path.isfile("/run/systemd/resolve/resolv.conf")
+            ):
                 resolv_conf = "/run/systemd/resolve/resolv.conf"
 
         self.copy_in(resolv_conf, "/etc/resolv.conf")
@@ -443,7 +554,8 @@ class LXD(Backend):
                 for line in mounted_dev_file:
                     if in_script:
                         script += re.sub(
-                            r"^(\s*)(.*MAKEDEV)", r"\1: # \2", line)
+                            r"^(\s*)(.*MAKEDEV)", r"\1: # \2", line
+                        )
                         if line.strip() == "end script":
                             in_script = False
                     elif line.strip() == "script":
@@ -472,26 +584,44 @@ class LXD(Backend):
             time.sleep(1)
         if container is None or container.status_code != LXD_RUNNING:
             raise BackendException(
-                "Container failed to start within %d seconds" % timeout)
+                "Container failed to start within %d seconds" % timeout
+            )
 
         # Create loop devices.  We do this by hand rather than via the LXD
         # profile, as the latter approach creates lots of independent mounts
         # under /dev/, and that can cause confusion when building live
         # filesystems.
         self.run(
-            ["mknod", "-m", "0660", "/dev/loop-control", "c", "10", "237"])
+            ["mknod", "-m", "0660", "/dev/loop-control", "c", "10", "237"]
+        )
         for minor in range(256):
             self.run(
-                ["mknod", "-m", "0660", "/dev/loop%d" % minor,
-                 "b", "7", str(minor)])
+                [
+                    "mknod",
+                    "-m",
+                    "0660",
+                    "/dev/loop%d" % minor,
+                    "b",
+                    "7",
+                    str(minor),
+                ]
+            )
 
         # Create dm-# devices.  On focal kpartx looks for dm devices and hangs
         # in their absence.
         major = get_device_mapper_major()
         for minor in range(8):
             self.run(
-                ["mknod", "-m", "0660", "/dev/dm-%d" % minor,
-                 "b", str(major), str(minor)])
+                [
+                    "mknod",
+                    "-m",
+                    "0660",
+                    "/dev/dm-%d" % minor,
+                    "b",
+                    str(major),
+                    str(minor),
+                ]
+            )
 
         if "gpu-nvidia" in self.constraints:
             # Create nvidia* devices.  We have to do this here rather than
@@ -503,10 +633,16 @@ class LXD(Backend):
                     st = os.stat(path)
                     if stat.S_ISCHR(st.st_mode):
                         self.run(
-                            ["mknod", "-m", "0%o" % stat.S_IMODE(st.st_mode),
-                             path, "c",
-                             str(os.major(st.st_rdev)),
-                             str(os.minor(st.st_rdev))])
+                            [
+                                "mknod",
+                                "-m",
+                                "0%o" % stat.S_IMODE(st.st_mode),
+                                path,
+                                "c",
+                                str(os.major(st.st_rdev)),
+                                str(os.minor(st.st_rdev)),
+                            ]
+                        )
 
             # We bind-mounted several libraries into the container, so run
             # ldconfig to update the dynamic linker's cache.
@@ -519,10 +655,16 @@ class LXD(Backend):
         with self.open(
             "/etc/systemd/system/snapd.service.d/no-cdn.conf", mode="w+"
         ) as no_cdn_file:
-            print(dedent("""\
+            print(
+                dedent(
+                    """\
                 [Service]
                 Environment=SNAPPY_STORE_NO_CDN=1
-                """), file=no_cdn_file, end="")
+                """
+                ),
+                file=no_cdn_file,
+                end="",
+            )
             os.fchmod(no_cdn_file.fileno(), 0o644)
 
         # Refreshing snaps from a timer unit during a build isn't
@@ -530,8 +672,13 @@ class LXD(Backend):
         # systemctl existing.  This relies on /etc/systemd/system/ having
         # been created above.
         self.run(
-            ["ln", "-s", "/dev/null",
-             "/etc/systemd/system/snapd.refresh.timer"])
+            [
+                "ln",
+                "-s",
+                "/dev/null",
+                "/etc/systemd/system/snapd.refresh.timer",
+            ]
+        )
 
         if self.arch == "armhf":
             # Work around https://github.com/lxc/lxcfs/issues/553.  In
@@ -543,8 +690,17 @@ class LXD(Backend):
             except subprocess.CalledProcessError:
                 pass
 
-    def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
-            echo=False, return_process=False, **kwargs):
+    def run(
+        self,
+        args,
+        cwd=None,
+        env=None,
+        input_text=None,
+        get_output=False,
+        echo=False,
+        return_process=False,
+        **kwargs,
+    ):
         """See `Backend`."""
         env_params = []
         if env:
@@ -559,11 +715,15 @@ class LXD(Backend):
             # to use "env --chdir".
             escaped_args = " ".join(shell_escape(arg) for arg in args)
             args = [
-                "/bin/sh", "-c", f"cd {shell_escape(cwd)} && {escaped_args}",
-                ]
+                "/bin/sh",
+                "-c",
+                f"cd {shell_escape(cwd)} && {escaped_args}",
+            ]
         if echo:
-            print("Running in container: %s" % ' '.join(
-                shell_escape(arg) for arg in args))
+            print(
+                "Running in container: %s"
+                % " ".join(shell_escape(arg) for arg in args)
+            )
         # pylxd's Container.execute doesn't support sending stdin, and it's
         # tedious to implement ourselves.
         cmd = ["lxc", "exec", self.name] + env_params + ["--"] + args
@@ -602,20 +762,23 @@ class LXD(Backend):
                 # numbers as of Go 1.13, and it's not clear that we can
                 # assume this.  Use plain 0 prefixes instead.
                 "X-LXD-mode": "0%o" % mode if mode else "0",
-                }
+            }
             try:
                 container.api.files.post(
-                    params=params, data=data, headers=headers)
+                    params=params, data=data, headers=headers
+                )
             except LXDAPIException as e:
                 raise LXDException(
-                    f"Failed to push {self.name}:{target_path}", e)
+                    f"Failed to push {self.name}:{target_path}", e
+                )
 
     def _get_file(self, container, *args, **kwargs):
         # pylxd < 2.1.1 tries to validate the response as JSON in streaming
         # mode and ends up running out of memory on large files.  Work
         # around this.
         response = container.api.files.session.get(
-            container.api.files._api_endpoint, *args, **kwargs)
+            container.api.files._api_endpoint, *args, **kwargs
+        )
         if response.status_code != 200:
             raise LXDAPIException(response)
         return response
@@ -629,14 +792,14 @@ class LXD(Backend):
             params = {"path": source_path}
             try:
                 with closing(
-                        self._get_file(
-                            container, params=params,
-                            stream=True)) as response:
+                    self._get_file(container, params=params, stream=True)
+                ) as response:
                     for chunk in response.iter_content(chunk_size=65536):
                         target_file.write(chunk)
             except LXDAPIException as e:
                 raise LXDException(
-                    f"Failed to pull {self.name}:{source_path}", e)
+                    f"Failed to pull {self.name}:{source_path}", e
+                )
 
     def stop(self):
         """See `Backend`."""

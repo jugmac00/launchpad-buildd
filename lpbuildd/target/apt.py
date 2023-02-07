@@ -5,11 +5,10 @@ import logging
 import os
 import subprocess
 import sys
-from textwrap import dedent
 import time
+from textwrap import dedent
 
 from lpbuildd.target.operation import Operation
-
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +21,11 @@ class OverrideSourcesList(Operation):
     def add_arguments(cls, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "--apt-proxy-url", metavar="URL", help="APT proxy URL")
+            "--apt-proxy-url", metavar="URL", help="APT proxy URL"
+        )
         parser.add_argument(
-            "archives", metavar="ARCHIVE", nargs="+",
-            help="sources.list lines")
+            "archives", metavar="ARCHIVE", nargs="+", help="sources.list lines"
+        )
 
     def run(self):
         logger.info("Overriding sources.list in build-%s", self.args.build_id)
@@ -46,8 +46,10 @@ class OverrideSourcesList(Operation):
         with self.backend.open(
             "/etc/apt/apt.conf.d/99phasing", mode="w+"
         ) as apt_phasing_conf:
-            print('APT::Get::Always-Include-Phased-Updates "true";',
-                  file=apt_phasing_conf)
+            print(
+                'APT::Get::Always-Include-Phased-Updates "true";',
+                file=apt_phasing_conf,
+            )
             os.fchmod(apt_phasing_conf.fileno(), 0o644)
         if self.args.apt_proxy_url is not None:
             with self.backend.open(
@@ -55,17 +57,24 @@ class OverrideSourcesList(Operation):
             ) as apt_proxy_conf:
                 print(
                     f'Acquire::http::Proxy "{self.args.apt_proxy_url}";',
-                    file=apt_proxy_conf)
+                    file=apt_proxy_conf,
+                )
                 os.fchmod(apt_proxy_conf.fileno(), 0o644)
         for pocket in ("proposed", "backports"):
             with self.backend.open(
                 f"/etc/apt/preferences.d/{pocket}.pref", mode="w+"
             ) as preferences:
-                print(dedent(f"""\
+                print(
+                    dedent(
+                        f"""\
                     Package: *
                     Pin: release a=*-{pocket}
                     Pin-Priority: 500
-                    """), file=preferences, end="")
+                    """
+                    ),
+                    file=preferences,
+                    end="",
+                )
                 os.fchmod(preferences.fileno(), 0o644)
         return 0
 
@@ -86,19 +95,27 @@ class AddTrustedKeys(Operation):
         # it may call `lxc exec` and that apparently drains stdin.
         input_data = self.input_file.read()
         gpg_cmd = [
-            "gpg", "--ignore-time-conflict", "--no-options", "--no-keyring",
-            ]
+            "gpg",
+            "--ignore-time-conflict",
+            "--no-options",
+            "--no-keyring",
+        ]
         with self.backend.open(
             "/etc/apt/trusted.gpg.d/launchpad-buildd.gpg", mode="wb+"
         ) as keyring:
             subprocess.run(
-                gpg_cmd + ["--dearmor"], input=input_data, stdout=keyring,
-                check=True)
+                gpg_cmd + ["--dearmor"],
+                input=input_data,
+                stdout=keyring,
+                check=True,
+            )
             keyring.seek(0)
             subprocess.check_call(
-                gpg_cmd +
-                ["--show-keys", "--keyid-format", "long", "--fingerprint"],
-                stdin=keyring, stdout=self.show_keys_file)
+                gpg_cmd
+                + ["--show-keys", "--keyid-format", "long", "--fingerprint"],
+                stdin=keyring,
+                stdout=self.show_keys_file,
+            )
             os.fchmod(keyring.fileno(), 0o644)
         return 0
 
@@ -114,7 +131,7 @@ class Update(Operation):
                 "LANG": "C",
                 "DEBIAN_FRONTEND": "noninteractive",
                 "TTY": "unknown",
-                }
+            }
             apt_get = "/usr/bin/apt-get"
             update_args = [apt_get, "-uy", "update"]
             try:
@@ -124,8 +141,12 @@ class Update(Operation):
                 time.sleep(15)
                 self.backend.run(update_args, env=env, stdin=devnull)
             upgrade_args = [
-                apt_get, "-o", "DPkg::Options::=--force-confold", "-uy",
-                "--purge", "dist-upgrade",
-                ]
+                apt_get,
+                "-o",
+                "DPkg::Options::=--force-confold",
+                "-uy",
+                "--purge",
+                "dist-upgrade",
+            ]
             self.backend.run(upgrade_args, env=env, stdin=devnull)
         return 0

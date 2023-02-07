@@ -8,7 +8,6 @@ import sys
 from lpbuildd.target.backend import BackendException
 from lpbuildd.target.operation import Operation
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,7 +19,8 @@ class Create(Operation):
     def add_arguments(cls, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "--image-type", default="chroot", help="base image type")
+            "--image-type", default="chroot", help="base image type"
+        )
         parser.add_argument("image_path", help="path to base image")
 
     def run(self):
@@ -57,7 +57,8 @@ class KillProcesses(Operation):
 
     def _run(self):
         logger.info(
-            "Scanning for processes to kill in build %s", self.args.build_id)
+            "Scanning for processes to kill in build %s", self.args.build_id
+        )
         self.backend.kill_processes()
         return 0
 
@@ -71,7 +72,7 @@ class Stop(Operation):
         try:
             self.backend.stop()
         except BackendException:
-            logger.exception('Failed to stop target')
+            logger.exception("Failed to stop target")
             return 1
         return 0
 
