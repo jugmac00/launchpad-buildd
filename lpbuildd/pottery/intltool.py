@@ -4,13 +4,13 @@
 """Functions to build PO templates on the builder."""
 
 __all__ = [
-    'check_potfiles_in',
-    'generate_pot',
-    'generate_pots',
-    'get_translation_domain',
-    'find_intltool_dirs',
-    'find_potfiles_in',
-    ]
+    "check_potfiles_in",
+    "generate_pot",
+    "generate_pots",
+    "get_translation_domain",
+    "find_intltool_dirs",
+    "find_potfiles_in",
+]
 
 import os.path
 import re
@@ -27,7 +27,8 @@ def find_potfiles_in(backend, package_dir):
         POTFILES.in, relative to `package_dir`.
     """
     paths = backend.find(
-        package_dir, include_directories=False, name="POTFILES.in")
+        package_dir, include_directories=False, name="POTFILES.in"
+    )
     return [os.path.dirname(path) for path in paths]
 
 
@@ -56,13 +57,17 @@ def check_potfiles_in(backend, path):
         return False
     # Remove stale files from a previous run of intltool-update -m.
     backend.run(
-        ["rm", "-f"] +
-        [os.path.join(path, name) for name in ("missing", "notexist")])
+        ["rm", "-f"]
+        + [os.path.join(path, name) for name in ("missing", "notexist")]
+    )
     with open("/dev/null", "w") as devnull:
         try:
             backend.run(
                 ["/usr/bin/intltool-update", "-m"],
-                stdout=devnull, stderr=devnull, cwd=path)
+                stdout=devnull,
+                stderr=devnull,
+                cwd=path,
+            )
         except subprocess.CalledProcessError:
             return False
 
@@ -82,8 +87,10 @@ def find_intltool_dirs(backend, package_dir):
     :returns: A list of directory names, relative to `package_dir`.
     """
     return sorted(
-        podir for podir in find_potfiles_in(backend, package_dir)
-        if check_potfiles_in(backend, os.path.join(package_dir, podir)))
+        podir
+        for podir in find_potfiles_in(backend, package_dir)
+        if check_potfiles_in(backend, os.path.join(package_dir, podir))
+    )
 
 
 def _get_AC_PACKAGE_NAME(config_file):
@@ -143,10 +150,10 @@ def get_translation_domain(backend, dirname):
     substitutions or multi-level substitutions are not supported.
     """
     locations = [
-        ('../configure.ac', 'GETTEXT_PACKAGE', True),
-        ('../configure.in', 'GETTEXT_PACKAGE', True),
-        ('Makefile.in.in', 'GETTEXT_PACKAGE', False),
-        ('Makevars', 'DOMAIN', False),
+        ("../configure.ac", "GETTEXT_PACKAGE", True),
+        ("../configure.in", "GETTEXT_PACKAGE", True),
+        ("Makefile.in.in", "GETTEXT_PACKAGE", False),
+        ("Makevars", "DOMAIN", False),
     ]
     value = None
     substitution = None
@@ -170,7 +177,8 @@ def get_translation_domain(backend, dirname):
                 if substitution is not None:
                     # Try to substitute with value.
                     value = _try_substitution(
-                        config_files, varname, substitution)
+                        config_files, varname, substitution
+                    )
                     if value is None:
                         # No substitution found; the setup is broken.
                         break
@@ -201,7 +209,10 @@ def generate_pot(backend, podir, domain):
         try:
             backend.run(
                 ["/usr/bin/intltool-update", "-p", "-g", domain],
-                stdout=devnull, stderr=devnull, cwd=podir)
+                stdout=devnull,
+                stderr=devnull,
+                cwd=podir,
+            )
             return domain
         except subprocess.CalledProcessError:
             return None
@@ -247,8 +258,8 @@ class ConfigFile:
             ('"', '"'),
             ("'", "'"),
             ("[", "]"),
-            ]
-        for (left, right) in quote_pairs:
+        ]
+        for left, right in quote_pairs:
             if identifier.startswith(left) and identifier.endswith(right):
                 return identifier[1:-1]
 
@@ -257,14 +268,17 @@ class ConfigFile:
     def getVariable(self, name):
         """Search the file for a variable definition with this name."""
         pattern = re.compile(
-            r"^%s[ \t]*=[ \t]*([^\s]*)" % re.escape(name), re.M)
+            r"^%s[ \t]*=[ \t]*([^\s]*)" % re.escape(name), re.M
+        )
         result = pattern.search(self.content)
         if result is None:
             return None
         return self._stripQuotes(result.group(1))
 
     def getFunctionParams(self, name):
-        """Search file for a function call with this name, return parameters.
+        """Search file for a function call with this name.
+
+        Return its parameters.
         """
         pattern = re.compile(r"^%s\(([^)]*)\)" % re.escape(name), re.M)
         result = pattern.search(self.content)
@@ -273,8 +287,8 @@ class ConfigFile:
         else:
             return [
                 self._stripQuotes(param.strip())
-                for param in result.group(1).split(',')
-                ]
+                for param in result.group(1).split(",")
+            ]
 
 
 class Substitution:
@@ -327,7 +341,6 @@ class Substitution:
             self.name = result.group(1)
 
     def replace(self, value):
-        """Return a copy of the variable text with the substitution resolved.
-        """
+        """Return copy of the variable text with the substitution resolved."""
         self.replaced = True
         return self.text.replace(self._replacement, value)

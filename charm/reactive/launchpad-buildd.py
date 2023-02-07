@@ -12,7 +12,7 @@ from charms.reactive import (
     set_state,
     when,
     when_not,
-    )
+)
 
 
 @only_once

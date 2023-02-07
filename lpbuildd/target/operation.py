@@ -15,25 +15,36 @@ class Operation:
     @classmethod
     def add_arguments(cls, parser):
         parser.add_argument(
-            "--backend", choices=["chroot", "lxd", "fake", "uncontained"],
-            help="use this type of backend")
+            "--backend",
+            choices=["chroot", "lxd", "fake", "uncontained"],
+            help="use this type of backend",
+        )
         parser.add_argument(
-            "--series", metavar="SERIES", help="operate on series SERIES")
+            "--series", metavar="SERIES", help="operate on series SERIES"
+        )
         parser.add_argument(
-            "--arch", metavar="ARCH", help="operate on architecture ARCH")
+            "--arch", metavar="ARCH", help="operate on architecture ARCH"
+        )
         parser.add_argument(
-            "--constraint", metavar="CONSTRAINT", action="append",
+            "--constraint",
+            metavar="CONSTRAINT",
+            action="append",
             dest="constraints",
-            help="add builder resource tag for this build")
+            help="add builder resource tag for this build",
+        )
         parser.add_argument(
-            "build_id", metavar="ID", help="operate on build ID")
+            "build_id", metavar="ID", help="operate on build ID"
+        )
 
     def __init__(self, args, parser):
         self.args = args
         self.backend = make_backend(
-            self.args.backend, self.args.build_id,
-            series=self.args.series, arch=self.args.arch,
-            constraints=self.args.constraints)
+            self.args.backend,
+            self.args.build_id,
+            series=self.args.series,
+            arch=self.args.arch,
+            constraints=self.args.constraints,
+        )
 
     def run_build_command(self, args, env=None, **kwargs):
         """Run a build command in the target.

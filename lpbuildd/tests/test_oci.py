@@ -1,24 +1,17 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from collections import OrderedDict
 import json
 import os
+from collections import OrderedDict
 
-from fixtures import (
-    EnvironmentVariable,
-    MockPatch,
-    TempDir,
-    )
+from fixtures import EnvironmentVariable, MockPatch, TempDir
 from testtools import TestCase
-from testtools.matchers import Contains
 from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.matchers import Contains
 from twisted.internet import defer
 
-from lpbuildd.oci import (
-    OCIBuildManager,
-    OCIBuildState,
-    )
+from lpbuildd.oci import OCIBuildManager, OCIBuildState
 from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.oci_tarball import OCITarball
 
@@ -37,11 +30,11 @@ class MockBuildManager(OCIBuildManager):
         return 0
 
 
-class MockOCITarSave():
+class MockOCITarSave:
     @property
     def stdout(self):
         tar_path = OCITarball().build_tar_file()
-        return open(tar_path, 'rb')
+        return open(tar_path, "rb")
 
 
 class TestOCIBuildManagerIteration(TestCase):
@@ -74,7 +67,7 @@ class TestOCIBuildManagerIteration(TestCase):
             "series": "xenial",
             "arch_tag": "i386",
             "name": "test-image",
-            }
+        }
         if args is not None:
             extra_args.update(args)
         original_backend_name = self.buildmanager.backend_name
@@ -90,15 +83,21 @@ class TestOCIBuildManagerIteration(TestCase):
         yield self.buildmanager.iterate(0)
         self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
         expected_command = [
-            "sharepath/bin/in-target", "in-target", "build-oci",
-            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
-            ]
+            "sharepath/bin/in-target",
+            "in-target",
+            "build-oci",
+            "--backend=lxd",
+            "--series=xenial",
+            "--arch=i386",
+            self.buildid,
+        ]
         if options is not None:
             expected_command.extend(options)
         expected_command.append("test-image")
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
         self.assertFalse(self.builder.wasCalled("chrootFail"))
 
     @defer.inlineCallbacks
@@ -106,107 +105,19 @@ class TestOCIBuildManagerIteration(TestCase):
         # This sha would change as it includes file attributes in the
         # tar file. Fix it so we can test against a known value.
         sha_mock = self.useFixture(
-            MockPatch('lpbuildd.oci.OCIBuildManager._calculateLayerSha'))
+            MockPatch("lpbuildd.oci.OCIBuildManager._calculateLayerSha")
+        )
         sha_mock.mock.return_value = "testsha"
         # The build manager iterates a normal build from start to finish.
         args = {
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
             "git_path": "master",
-            }
+        }
         expected_options = [
-            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
-            "--git-path", "master",
-            ]
-        yield self.startBuild(args, expected_options)
-
-        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
-        with open(log_path, "w") as log:
-            log.write("I am a build log.")
-
-        self.buildmanager.backend.run.result = MockOCITarSave()
-
-        self.buildmanager.backend.add_file(
-            '/var/lib/docker/image/'
-            'vfs/distribution/v2metadata-by-diffid/sha256/diff1',
-            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]""")
-
-        # After building the package, reap processes.
-        yield self.buildmanager.iterate(0)
-        expected_command = [
-            "sharepath/bin/in-target", "in-target", "scan-for-processes",
-            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
-            ]
-        self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.builder.wasCalled("buildFail"))
-        expected_files = [
-            'manifest.json',
-            'layer-1.tar.gz',
-            'layer-2.tar.gz',
-            'layer-3.tar.gz',
-            'digests.json',
-            'config.json',
-            ]
-        for expected in expected_files:
-            self.assertThat(self.builder.waitingfiles, Contains(expected))
-
-        cache_path = self.builder.cachePath(
-            self.builder.waitingfiles['digests.json'])
-        with open(cache_path) as f:
-            digests_contents = f.read()
-        digests_expected = [{
-            "sha256:diff1": {
-                "source": "test",
-                "digest": "test_digest",
-                "layer_id": "layer-1"
-            },
-            "sha256:diff2": {
-                "source": "",
-                "digest": "testsha",
-                "layer_id": "layer-2"
-            },
-            "sha256:diff3": {
-                "source": "",
-                "digest": "testsha",
-                "layer_id": "layer-3"
-            }
-        }]
-        self.assertEqual(digests_expected, json.loads(digests_contents))
-        # Control returns to the DebianBuildManager in the UMOUNT state.
-        self.buildmanager.iterateReap(self.getState(), 0)
-        expected_command = [
-            "sharepath/bin/in-target", "in-target", "umount-chroot",
-            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
-            ]
-        self.assertEqual(OCIBuildState.UMOUNT, self.getState())
-        self.assertEqual(expected_command, self.buildmanager.commands[-1])
-        self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
-        self.assertFalse(self.builder.wasCalled("buildFail"))
-
-    @defer.inlineCallbacks
-    def test_iterate_with_file_and_args(self):
-        # This sha would change as it includes file attributes in the
-        # tar file. Fix it so we can test against a known value.
-        sha_mock = self.useFixture(
-            MockPatch('lpbuildd.oci.OCIBuildManager._calculateLayerSha'))
-        sha_mock.mock.return_value = "testsha"
-        # The build manager iterates a build that specifies a non-default
-        # Dockerfile location from start to finish.
-        args = {
-            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
-            "git_path": "master",
-            "build_file": "build-aux/Dockerfile",
-            "build_args": OrderedDict([("VAR1", "xxx"), ("VAR2", "yyy zzz")]),
-            }
-        expected_options = [
-            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
-            "--git-path", "master",
-            "--build-file", "build-aux/Dockerfile",
-            "--build-arg", "VAR1=xxx",
-            "--build-arg", "VAR2=yyy zzz",
+            "--git-repository",
+            "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path",
+            "master",
         ]
         yield self.startBuild(args, expected_options)
 
@@ -217,66 +128,194 @@ class TestOCIBuildManagerIteration(TestCase):
         self.buildmanager.backend.run.result = MockOCITarSave()
 
         self.buildmanager.backend.add_file(
-            '/var/lib/docker/image/'
-            'vfs/distribution/v2metadata-by-diffid/sha256/diff1',
-            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]"""
+            "/var/lib/docker/image/"
+            "vfs/distribution/v2metadata-by-diffid/sha256/diff1",
+            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]""",
         )
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/bin/in-target", "in-target", "scan-for-processes",
-            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
-            ]
+            "sharepath/bin/in-target",
+            "in-target",
+            "scan-for-processes",
+            "--backend=lxd",
+            "--series=xenial",
+            "--arch=i386",
+            self.buildid,
+        ]
         self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
         self.assertFalse(self.builder.wasCalled("buildFail"))
         expected_files = [
-            'manifest.json',
-            'layer-1.tar.gz',
-            'layer-2.tar.gz',
-            'layer-3.tar.gz',
-            'digests.json',
-            'config.json',
-            ]
+            "manifest.json",
+            "layer-1.tar.gz",
+            "layer-2.tar.gz",
+            "layer-3.tar.gz",
+            "digests.json",
+            "config.json",
+        ]
         for expected in expected_files:
             self.assertThat(self.builder.waitingfiles, Contains(expected))
 
         cache_path = self.builder.cachePath(
-            self.builder.waitingfiles['digests.json'])
+            self.builder.waitingfiles["digests.json"]
+        )
         with open(cache_path) as f:
             digests_contents = f.read()
-        digests_expected = [{
-            "sha256:diff1": {
-                "source": "test",
-                "digest": "test_digest",
-                "layer_id": "layer-1"
-            },
-            "sha256:diff2": {
-                "source": "",
-                "digest": "testsha",
-                "layer_id": "layer-2"
-            },
-            "sha256:diff3": {
-                "source": "",
-                "digest": "testsha",
-                "layer_id": "layer-3"
+        digests_expected = [
+            {
+                "sha256:diff1": {
+                    "source": "test",
+                    "digest": "test_digest",
+                    "layer_id": "layer-1",
+                },
+                "sha256:diff2": {
+                    "source": "",
+                    "digest": "testsha",
+                    "layer_id": "layer-2",
+                },
+                "sha256:diff3": {
+                    "source": "",
+                    "digest": "testsha",
+                    "layer_id": "layer-3",
+                },
             }
-        }]
+        ]
+        self.assertEqual(digests_expected, json.loads(digests_contents))
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target",
+            "in-target",
+            "umount-chroot",
+            "--backend=lxd",
+            "--series=xenial",
+            "--arch=i386",
+            self.buildid,
+        ]
+        self.assertEqual(OCIBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_with_file_and_args(self):
+        # This sha would change as it includes file attributes in the
+        # tar file. Fix it so we can test against a known value.
+        sha_mock = self.useFixture(
+            MockPatch("lpbuildd.oci.OCIBuildManager._calculateLayerSha")
+        )
+        sha_mock.mock.return_value = "testsha"
+        # The build manager iterates a build that specifies a non-default
+        # Dockerfile location from start to finish.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/snap",
+            "git_path": "master",
+            "build_file": "build-aux/Dockerfile",
+            "build_args": OrderedDict([("VAR1", "xxx"), ("VAR2", "yyy zzz")]),
+        }
+        expected_options = [
+            "--git-repository",
+            "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path",
+            "master",
+            "--build-file",
+            "build-aux/Dockerfile",
+            "--build-arg",
+            "VAR1=xxx",
+            "--build-arg",
+            "VAR2=yyy zzz",
+        ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("I am a build log.")
+
+        self.buildmanager.backend.run.result = MockOCITarSave()
+
+        self.buildmanager.backend.add_file(
+            "/var/lib/docker/image/"
+            "vfs/distribution/v2metadata-by-diffid/sha256/diff1",
+            b"""[{"Digest": "test_digest", "SourceRepository": "test"}]""",
+        )
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target",
+            "in-target",
+            "scan-for-processes",
+            "--backend=lxd",
+            "--series=xenial",
+            "--arch=i386",
+            self.buildid,
+        ]
+        self.assertEqual(OCIBuildState.BUILD_OCI, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        expected_files = [
+            "manifest.json",
+            "layer-1.tar.gz",
+            "layer-2.tar.gz",
+            "layer-3.tar.gz",
+            "digests.json",
+            "config.json",
+        ]
+        for expected in expected_files:
+            self.assertThat(self.builder.waitingfiles, Contains(expected))
+
+        cache_path = self.builder.cachePath(
+            self.builder.waitingfiles["digests.json"]
+        )
+        with open(cache_path) as f:
+            digests_contents = f.read()
+        digests_expected = [
+            {
+                "sha256:diff1": {
+                    "source": "test",
+                    "digest": "test_digest",
+                    "layer_id": "layer-1",
+                },
+                "sha256:diff2": {
+                    "source": "",
+                    "digest": "testsha",
+                    "layer_id": "layer-2",
+                },
+                "sha256:diff3": {
+                    "source": "",
+                    "digest": "testsha",
+                    "layer_id": "layer-3",
+                },
+            }
+        ]
         self.assertEqual(digests_expected, json.loads(digests_contents))
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/bin/in-target", "in-target", "umount-chroot",
-            "--backend=lxd", "--series=xenial", "--arch=i386", self.buildid,
-            ]
+            "sharepath/bin/in-target",
+            "in-target",
+            "umount-chroot",
+            "--backend=lxd",
+            "--series=xenial",
+            "--arch=i386",
+            self.buildid,
+        ]
         self.assertEqual(OCIBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
@@ -285,17 +324,20 @@ class TestOCIBuildManagerIteration(TestCase):
         # This sha would change as it includes file attributes in the
         # tar file. Fix it so we can test against a known value.
         sha_mock = self.useFixture(
-            MockPatch('lpbuildd.oci.OCIBuildManager._calculateLayerSha'))
+            MockPatch("lpbuildd.oci.OCIBuildManager._calculateLayerSha")
+        )
         sha_mock.mock.return_value = "testsha"
         # The build manager iterates a normal build from start to finish.
         args = {
             "git_repository": "https://git.launchpad.dev/~example/+git/snap",
             "git_path": "master",
-            }
+        }
         expected_options = [
-            "--git-repository", "https://git.launchpad.dev/~example/+git/snap",
-            "--git-path", "master",
-            ]
+            "--git-repository",
+            "https://git.launchpad.dev/~example/+git/snap",
+            "--git-path",
+            "master",
+        ]
         yield self.startBuild(args, expected_options)
 
         log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
@@ -310,7 +352,10 @@ class TestOCIBuildManagerIteration(TestCase):
     def test_iterate_snap_store_proxy(self):
         # The build manager can be told to use a snap store proxy.
         self.builder._config.set(
-            "proxy", "snapstore", "http://snap-store-proxy.example/")
+            "proxy", "snapstore", "http://snap-store-proxy.example/"
+        )
         expected_options = [
-            "--snap-store-proxy-url", "http://snap-store-proxy.example/"]
+            "--snap-store-proxy-url",
+            "http://snap-store-proxy.example/",
+        ]
         yield self.startBuild(options=expected_options)

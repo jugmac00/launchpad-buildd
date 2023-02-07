@@ -11,7 +11,7 @@ This file contains the following tests:
 
 """
 
-__all__ = ['LaunchpadBuilddTests']
+__all__ = ["LaunchpadBuilddTests"]
 
 import difflib
 import os
@@ -28,7 +28,7 @@ from lpbuildd.tests.harness import (
     BuilddTestCase,
     BuilddTestSetup,
     MockBuildManager,
-    )
+)
 
 
 def read_file(path):
@@ -55,8 +55,8 @@ class LaunchpadBuilddTests(BuilddTestCase):
                 basic_auth_handler = handler
                 break
         self.assertTrue(
-            basic_auth_handler is not None,
-            "No basic auth handler installed.")
+            basic_auth_handler is not None, "No basic auth handler installed."
+        )
 
         password_mgr = basic_auth_handler.passwd
         stored_user, stored_pass = password_mgr.find_user_password(None, url)
@@ -78,7 +78,8 @@ class LaunchpadBuilddTests(BuilddTestCase):
                 basic_auth_handler = handler
                 break
         self.assertIsNotNone(
-            basic_auth_handler, "No basic auth handler installed.")
+            basic_auth_handler, "No basic auth handler installed."
+        )
 
         password_mgr = basic_auth_handler.passwd
         stored_user, stored_pass = password_mgr.find_user_password(None, url)
@@ -89,14 +90,14 @@ class LaunchpadBuilddTests(BuilddTestCase):
     def testBuildlogScrubbing(self):
         """Tests the buildlog scrubbing (removal of passwords from URLs)."""
         # This is where the buildlog file lives.
-        log_path = self.builder.cachePath('buildlog')
+        log_path = self.builder.cachePath("buildlog")
 
         # This is where the builder leaves the original/unsanitized
         # buildlog file after scrubbing.
-        unsanitized_path = self.builder.cachePath('buildlog.unsanitized')
+        unsanitized_path = self.builder.cachePath("buildlog.unsanitized")
 
         # Copy the fake buildlog file to the cache path.
-        shutil.copy(os.path.join(self.here, 'buildlog'), log_path)
+        shutil.copy(os.path.join(self.here, "buildlog"), log_path)
 
         # Invoke the builder's buildlog scrubbing method.
         self.builder.sanitizeBuildlog(log_path)
@@ -107,16 +108,16 @@ class LaunchpadBuilddTests(BuilddTestCase):
         clean = read_file(log_path).splitlines()
 
         # Compare the scrubbed content with the unsanitized one.
-        differences = '\n'.join(difflib.unified_diff(unsanitized, clean))
+        differences = "\n".join(difflib.unified_diff(unsanitized, clean))
 
         # Read the expected differences from the prepared disk file.
-        expected = read_file(os.path.join(self.here, 'test_1.diff'))
+        expected = read_file(os.path.join(self.here, "test_1.diff"))
 
         # Python difflib slightly changed the formatting of the headers; we
         # don't care; let's make it look the same as it used to.
         differences = differences.replace(
-            '--- \n\n+++ \n\n',
-            '---  \n\n+++  \n\n')
+            "--- \n\n+++ \n\n", "---  \n\n+++  \n\n"
+        )
 
         # Make sure they match.
         self.assertEqual(differences, expected)
@@ -125,34 +126,34 @@ class LaunchpadBuilddTests(BuilddTestCase):
         """Test the scrubbing of the builder's getLogTail() output."""
 
         # This is where the buildlog file lives.
-        log_path = self.builder.cachePath('buildlog')
+        log_path = self.builder.cachePath("buildlog")
 
         # Copy the prepared, longer buildlog file so we can test lines
         # that are chopped off in the middle.
-        shutil.copy(os.path.join(self.here, 'buildlog.long'), log_path)
+        shutil.copy(os.path.join(self.here, "buildlog.long"), log_path)
 
         # First get the unfiltered log tail output (which is the default
         # behaviour because the BuildManager's 'is_archive_private'
         # property is initialized to False).
         self.builder.manager.is_archive_private = False
-        unsanitized = self.builder.getLogTail().decode('UTF-8').splitlines()
+        unsanitized = self.builder.getLogTail().decode("UTF-8").splitlines()
 
         # Make the builder believe we are building in a private archive to
         # obtain the scrubbed log tail output.
         self.builder.manager.is_archive_private = True
-        clean = self.builder.getLogTail().decode('UTF-8').splitlines()
+        clean = self.builder.getLogTail().decode("UTF-8").splitlines()
 
         # Get the differences ..
-        differences = '\n'.join(difflib.unified_diff(unsanitized, clean))
+        differences = "\n".join(difflib.unified_diff(unsanitized, clean))
 
         # .. and the expected differences.
-        expected = read_file(os.path.join(self.here, 'test_2.diff'))
+        expected = read_file(os.path.join(self.here, "test_2.diff"))
 
         # Python difflib slightly changed the formatting of the headers; we
         # don't care; let's make it look the same as it used to.
         differences = differences.replace(
-            '--- \n\n+++ \n\n',
-            '---  \n\n+++  \n\n')
+            "--- \n\n+++ \n\n", "---  \n\n+++  \n\n"
+        )
 
         # Finally make sure what we got is what we expected.
         self.assertEqual(differences, expected)
@@ -202,7 +203,7 @@ class LaunchpadBuilddTests(BuilddTestCase):
         self.assertEqual(len(log_tail), 2048)
 
         # Remove the buildlog file
-        os.remove(self.builder.cachePath('buildlog'))
+        os.remove(self.builder.cachePath("buildlog"))
 
         # Instead of shocking the getLogTail call, return an empty string.
         log_tail = self.builder.getLogTail()
@@ -215,39 +216,40 @@ class LaunchpadBuilddTests(BuilddTestCase):
         self.builder._log = None
         self.builder.startBuild(MockBuildManager())
         self.builder.buildComplete()
-        paths = [os.path.join(workdir, name) for name in ('a', 'b')]
+        paths = [os.path.join(workdir, name) for name in ("a", "b")]
         for path in paths:
-            with open(path, 'w') as f:
-                f.write('data')
+            with open(path, "w") as f:
+                f.write("data")
             self.builder.addWaitingFile(path)
         self.builder.clean()
         self.assertEqual([], os.listdir(self.builder._cachepath))
 
 
 class XMLRPCBuilderTests(unittest.TestCase):
-
     def setUp(self):
         super().setUp()
         self.builder = BuilddTestSetup()
         self.builder.setUp()
-        self.server = ServerProxy('http://localhost:8321/rpc/')
+        self.server = ServerProxy("http://localhost:8321/rpc/")
 
     def tearDown(self):
         self.builder.tearDown()
         super().tearDown()
 
     @unittest.skipIf(
-        sys.version >= '3' and
-        (twisted.version.major, twisted.version.minor) < (16, 4),
-        'twistd fails to daemonise on Python 3 before Twisted 16.4.0')
+        sys.version >= "3"
+        and (twisted.version.major, twisted.version.minor) < (16, 4),
+        "twistd fails to daemonise on Python 3 before Twisted 16.4.0",
+    )
     def test_build_unknown_builder(self):
         # If a bogus builder name is passed into build, it returns an
         # appropriate error message and not just 'None'.
-        buildername = 'nonexistentbuilder'
-        status, info = self.server.build('foo', buildername, 'sha1', {}, {})
+        buildername = "nonexistentbuilder"
+        status, info = self.server.build("foo", buildername, "sha1", {}, {})
 
-        self.assertEqual('BuilderStatus.UNKNOWNBUILDER', status)
+        self.assertEqual("BuilderStatus.UNKNOWNBUILDER", status)
         self.assertIsNotNone(info, "UNKNOWNBUILDER returns 'None' info.")
         self.assertTrue(
             info.startswith("%s not in [" % buildername),
-            'UNKNOWNBUILDER info is "%s"' % info)
+            'UNKNOWNBUILDER info is "%s"' % info,
+        )

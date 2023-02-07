@@ -5,28 +5,20 @@
 #      and Adam Conrad <adam.conrad@canonical.com>
 
 import base64
-from configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 import os
 import re
 import signal
+from configparser import NoOptionError, NoSectionError
 
-from twisted.internet import (
-    defer,
-    threads,
-    )
+from twisted.internet import defer, threads
 from twisted.python import log
 
-from lpbuildd.builder import (
-    BuildManager,
-    get_build_path,
-    )
+from lpbuildd.builder import BuildManager, get_build_path
 
 
 class DebianBuildState:
     """States for the DebianBuildManager."""
+
     INIT = "INIT"
     UNPACK = "UNPACK"
     MOUNT = "MOUNT"
@@ -54,8 +46,8 @@ class DebianBuildManager(BuildManager):
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
-        self.sources_list = extra_args.get('archives')
-        self.trusted_keys = extra_args.get('trusted_keys')
+        self.sources_list = extra_args.get("archives")
+        self.trusted_keys = extra_args.get("trusted_keys")
 
         BuildManager.initiate(self, files, chroot, extra_args)
 
@@ -76,7 +68,8 @@ class DebianBuildManager(BuildManager):
     def doTrustedKeys(self):
         """Add trusted keys."""
         trusted_keys = b"".join(
-            base64.b64decode(key) for key in self.trusted_keys)
+            base64.b64decode(key) for key in self.trusted_keys
+        )
         self.runTargetSubProcess("add-trusted-keys", stdin=trusted_keys)
 
     def doUpdateChroot(self):
@@ -103,9 +96,9 @@ class DebianBuildManager(BuildManager):
             if not seenfiles and line.startswith("Files:"):
                 seenfiles = True
             elif seenfiles:
-                if not line.startswith(' '):
+                if not line.startswith(" "):
                     break
-                filename = line.split(' ')[-1]
+                filename = line.split(" ")[-1]
                 yield filename
 
     def getChangesFilename(self):
@@ -123,10 +116,12 @@ class DebianBuildManager(BuildManager):
         with open(path, errors="replace") as chfile:
             for fn in self._parseChangesFile(chfile):
                 self._builder.addWaitingFile(
-                    get_build_path(self.home, self._buildid, fn))
+                    get_build_path(self.home, self._buildid, fn)
+                )
 
     def deferGatherResults(self, reap=True):
         """Gather the results of the build in a thread."""
+
         # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once we're
         # on Twisted >= 18.7.0 (https://twistedmatrix.com/trac/ticket/4632).
         def failed_to_gather(failure):
@@ -136,7 +131,8 @@ class DebianBuildManager(BuildManager):
                     self._builder.buildFail()
             else:
                 self._builder.log(
-                    "Failed to gather results: %s\n" % failure.value)
+                    "Failed to gather results: %s\n" % failure.value
+                )
                 self._builder.buildFail()
             self.alreadyfailed = True
 
@@ -144,7 +140,8 @@ class DebianBuildManager(BuildManager):
             self.doReapProcesses(self._state)
 
         d = threads.deferToThread(self.gatherResults).addErrback(
-            failed_to_gather)
+            failed_to_gather
+        )
         if reap:
             d.addCallback(reap_processes)
         return d
@@ -159,8 +156,10 @@ class DebianBuildManager(BuildManager):
             # we were terminated by a signal, which is close enough.
             success = 128 + signal.SIGKILL
         if not quiet:
-            log.msg("Iterating with success flag %s against stage %s"
-                    % (success, self._state))
+            log.msg(
+                "Iterating with success flag %s against stage %s"
+                % (success, self._state)
+            )
         func = getattr(self, "iterate_" + self._state, None)
         if func is None:
             raise ValueError("Unknown internal state " + self._state)
@@ -169,9 +168,10 @@ class DebianBuildManager(BuildManager):
         self._iterator = None
 
     def iterateReap(self, state, success):
-        log.msg("Iterating with success flag %s against stage %s after "
-                "reaping processes"
-                % (success, state))
+        log.msg(
+            "Iterating with success flag %s against stage %s after "
+            "reaping processes" % (success, state)
+        )
         func = getattr(self, "iterateReap_" + state, None)
         if func is None:
             raise ValueError("Unknown internal post-reap state " + state)
@@ -222,8 +222,9 @@ class DebianBuildManager(BuildManager):
                 self._state = DebianBuildState.UPDATE
                 self.doUpdateChroot()
 
-    def searchLogContents(self, patterns_and_flags,
-                          stop_patterns_and_flags=[]):
+    def searchLogContents(
+        self, patterns_and_flags, stop_patterns_and_flags=[]
+    ):
         """Search for any of a list of regex patterns in the build log.
 
         The build log is matched using a sliding window, which avoids having
@@ -239,10 +240,12 @@ class DebianBuildManager(BuildManager):
         chunk_size = 256 * 1024
         regexes = [
             re.compile(pattern.encode("UTF-8"), flags)
-            for pattern, flags in patterns_and_flags]
+            for pattern, flags in patterns_and_flags
+        ]
         stop_regexes = [
             re.compile(pattern.encode("UTF-8"), flags)
-            for pattern, flags in stop_patterns_and_flags]
+            for pattern, flags in stop_patterns_and_flags
+        ]
         buildlog_path = os.path.join(self._cachepath, "buildlog")
         with open(buildlog_path, "rb") as buildlog:
             window = b""

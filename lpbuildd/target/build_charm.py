@@ -11,7 +11,6 @@ from lpbuildd.target.proxy import BuilderProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
 
-
 RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
 
@@ -19,9 +18,12 @@ RETCODE_FAILURE_BUILD = 201
 logger = logging.getLogger(__name__)
 
 
-class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
-                 SnapStoreOperationMixin, Operation):
-
+class BuildCharm(
+    BuilderProxyOperationMixin,
+    VCSOperationMixin,
+    SnapStoreOperationMixin,
+    Operation,
+):
     description = "Build a charm."
 
     core_snap_names = ["core", "core16", "core18", "core20", "core22"]
@@ -30,13 +32,19 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
     def add_arguments(cls, parser):
         super().add_arguments(parser)
         parser.add_argument(
-            "--channel", action=SnapChannelsAction, metavar="SNAP=CHANNEL",
-            dest="channels", default={}, help=(
+            "--channel",
+            action=SnapChannelsAction,
+            metavar="SNAP=CHANNEL",
+            dest="channels",
+            default={},
+            help=(
                 f"install SNAP from CHANNEL (supported snaps: "
-                f"{', '.join(cls.core_snap_names)}, charmcraft)"))
+                f"{', '.join(cls.core_snap_names)}, charmcraft)"
+            ),
+        )
         parser.add_argument(
-            "--build-path", default=".",
-            help="location of charm to build.")
+            "--build-path", default=".", help="location of charm to build."
+        )
         parser.add_argument("name", help="name of charm to build")
 
     def __init__(self, args, parser):
@@ -57,24 +65,35 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
                     deps.append(dep)
         deps.extend(self.vcs_deps)
         # See charmcraft.provider.CharmcraftBuilddBaseConfiguration.setup.
-        deps.extend([
-            "python3-pip",
-            "python3-setuptools",
-            ])
+        deps.extend(
+            [
+                "python3-pip",
+                "python3-setuptools",
+            ]
+        )
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         for snap_name in self.core_snap_names:
             if snap_name in self.args.channels:
                 self.backend.run(
-                    ["snap", "install",
-                     "--channel=%s" % self.args.channels[snap_name],
-                     snap_name])
+                    [
+                        "snap",
+                        "install",
+                        "--channel=%s" % self.args.channels[snap_name],
+                        snap_name,
+                    ]
+                )
         if "charmcraft" in self.args.channels:
             self.backend.run(
-                ["snap", "install", "--classic",
-                 "--channel=%s" % self.args.channels["charmcraft"],
-                 "charmcraft"])
+                [
+                    "snap",
+                    "install",
+                    "--classic",
+                    "--channel=%s" % self.args.channels["charmcraft"],
+                    "charmcraft",
+                ]
+            )
         else:
             self.backend.run(["snap", "install", "--classic", "charmcraft"])
         # The charmcraft snap can't see /build, so we have to do our work under
@@ -91,9 +110,8 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
     def build(self):
         logger.info("Running build phase...")
         build_context_path = os.path.join(
-            "/home/buildd",
-            self.args.name,
-            self.args.build_path)
+            "/home/buildd", self.args.name, self.args.build_path
+        )
         check_path_escape(self.buildd_path, build_context_path)
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         args = ["charmcraft", "pack", "-v", "--destructive-mode"]
@@ -103,12 +121,12 @@ class BuildCharm(BuilderProxyOperationMixin, VCSOperationMixin,
         try:
             self.install()
         except Exception:
-            logger.exception('Install failed')
+            logger.exception("Install failed")
             return RETCODE_FAILURE_INSTALL
         try:
             self.repo()
             self.build()
         except Exception:
-            logger.exception('Build failed')
+            logger.exception("Build failed")
             return RETCODE_FAILURE_BUILD
         return 0

@@ -3,10 +3,7 @@
 
 import os
 
-from fixtures import (
-    EnvironmentVariable,
-    TempDir,
-    )
+from fixtures import EnvironmentVariable, TempDir
 from testtools import TestCase
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -14,7 +11,7 @@ from twisted.internet import defer
 from lpbuildd.livefs import (
     LiveFilesystemBuildManager,
     LiveFilesystemBuildState,
-    )
+)
 from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
 
@@ -64,7 +61,7 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             "series": "saucy",
             "pocket": "release",
             "arch_tag": "i386",
-            }
+        }
         if args is not None:
             extra_args.update(args)
         original_backend_name = self.buildmanager.backend_name
@@ -79,17 +76,25 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         # BUILD_LIVEFS: Run the builder's payload to build the live filesystem.
         yield self.buildmanager.iterate(0)
         self.assertEqual(
-            LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
+            LiveFilesystemBuildState.BUILD_LIVEFS, self.getState()
+        )
         expected_command = [
-            "sharepath/bin/in-target", "in-target", "buildlivefs",
-            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
-            "--project", "ubuntu",
-            ]
+            "sharepath/bin/in-target",
+            "in-target",
+            "buildlivefs",
+            "--backend=lxd",
+            "--series=saucy",
+            "--arch=i386",
+            self.buildid,
+            "--project",
+            "ubuntu",
+        ]
         if options is not None:
             expected_command.extend(options)
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
         self.assertFalse(self.builder.wasCalled("chrootFail"))
 
     @defer.inlineCallbacks
@@ -102,34 +107,53 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             log.write("I am a build log.")
 
         self.buildmanager.backend.add_file(
-            "/build/livecd.ubuntu.manifest", b"I am a manifest file.")
+            "/build/livecd.ubuntu.manifest", b"I am a manifest file."
+        )
 
         # After building the package, reap processes.
         yield self.buildmanager.iterate(0)
         expected_command = [
-            "sharepath/bin/in-target", "in-target", "scan-for-processes",
-            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
-            ]
+            "sharepath/bin/in-target",
+            "in-target",
+            "scan-for-processes",
+            "--backend=lxd",
+            "--series=saucy",
+            "--arch=i386",
+            self.buildid,
+        ]
         self.assertEqual(
-            LiveFilesystemBuildState.BUILD_LIVEFS, self.getState())
+            LiveFilesystemBuildState.BUILD_LIVEFS, self.getState()
+        )
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
         self.assertFalse(self.builder.wasCalled("buildFail"))
-        self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "livecd.ubuntu.manifest": b"I am a manifest file.",
-            }))
+        self.assertThat(
+            self.builder,
+            HasWaitingFiles.byEquality(
+                {
+                    "livecd.ubuntu.manifest": b"I am a manifest file.",
+                }
+            ),
+        )
 
         # Control returns to the DebianBuildManager in the UMOUNT state.
         self.buildmanager.iterateReap(self.getState(), 0)
         expected_command = [
-            "sharepath/bin/in-target", "in-target", "umount-chroot",
-            "--backend=lxd", "--series=saucy", "--arch=i386", self.buildid,
-            ]
+            "sharepath/bin/in-target",
+            "in-target",
+            "umount-chroot",
+            "--backend=lxd",
+            "--series=saucy",
+            "--arch=i386",
+            self.buildid,
+        ]
         self.assertEqual(LiveFilesystemBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
-            self.buildmanager.iterate, self.buildmanager.iterators[-1])
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
     @defer.inlineCallbacks
@@ -140,21 +164,29 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             args={
                 "extra_ppas": ["owner1/name1", "owner2/name2"],
                 "extra_snaps": ["snap1", "snap2"],
-                },
+            },
             options=[
-                "--extra-ppa", "owner1/name1",
-                "--extra-ppa", "owner2/name2",
-                "--extra-snap", "snap1",
-                "--extra-snap", "snap2",
-                ])
+                "--extra-ppa",
+                "owner1/name1",
+                "--extra-ppa",
+                "owner2/name2",
+                "--extra-snap",
+                "snap1",
+                "--extra-snap",
+                "snap2",
+            ],
+        )
 
     @defer.inlineCallbacks
     def test_iterate_snap_store_proxy(self):
         # The build manager can be told to use a snap store proxy.
         self.builder._config.set(
-            "proxy", "snapstore", "http://snap-store-proxy.example/")
+            "proxy", "snapstore", "http://snap-store-proxy.example/"
+        )
         expected_options = [
-            "--snap-store-proxy-url", "http://snap-store-proxy.example/"]
+            "--snap-store-proxy-url",
+            "http://snap-store-proxy.example/",
+        ]
         yield self.startBuild(options=expected_options)
 
     @defer.inlineCallbacks
@@ -167,11 +199,18 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
             log.write("I am a build log.")
 
         self.buildmanager.backend.add_file(
-            "/build/livecd.ubuntu.kernel-generic", b"I am a kernel.")
+            "/build/livecd.ubuntu.kernel-generic", b"I am a kernel."
+        )
         self.buildmanager.backend.add_link(
-            "/build/livecd.ubuntu.kernel", "livefs.ubuntu.kernel-generic")
+            "/build/livecd.ubuntu.kernel", "livefs.ubuntu.kernel-generic"
+        )
 
         yield self.buildmanager.iterate(0)
-        self.assertThat(self.builder, HasWaitingFiles.byEquality({
-            "livecd.ubuntu.kernel-generic": b"I am a kernel.",
-            }))
+        self.assertThat(
+            self.builder,
+            HasWaitingFiles.byEquality(
+                {
+                    "livecd.ubuntu.kernel-generic": b"I am a kernel.",
+                }
+            ),
+        )

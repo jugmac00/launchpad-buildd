@@ -2,12 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os
-try:
-    from shlex import quote
-except ImportError:
-    from pipes import quote
 import subprocess
 import sys
+from shlex import quote
 
 
 def shell_escape(s):
@@ -30,7 +27,9 @@ def get_arch_bits(arch):
         env.pop("DEB_HOST_ARCH_BITS", None)
         bits = subprocess.check_output(
             ["dpkg-architecture", "-a%s" % arch, "-qDEB_HOST_ARCH_BITS"],
-            env=env, universal_newlines=True).rstrip("\n")
+            env=env,
+            universal_newlines=True,
+        ).rstrip("\n")
         if bits == "32":
             return 32
         elif bits == "64":
@@ -38,7 +37,8 @@ def get_arch_bits(arch):
         else:
             raise RuntimeError(
                 "Don't know how to deal with architecture %s "
-                "(DEB_HOST_ARCH_BITS=%s)" % (arch, bits))
+                "(DEB_HOST_ARCH_BITS=%s)" % (arch, bits)
+            )
 
 
 def set_personality(args, arch, series=None):

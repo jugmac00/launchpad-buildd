@@ -3,12 +3,8 @@
 
 import os
 
-from lpbuildd.debian import (
-    DebianBuildState,
-    DebianBuildManager,
-    )
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 from lpbuildd.proxy import BuildManagerProxyMixin
-
 
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
@@ -69,8 +65,10 @@ class CharmBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         if retcode == RETCODE_SUCCESS:
             print("Returning build status: OK")
             return self.deferGatherResults()
-        elif (retcode >= RETCODE_FAILURE_INSTALL and
-              retcode <= RETCODE_FAILURE_BUILD):
+        elif (
+            retcode >= RETCODE_FAILURE_INSTALL
+            and retcode <= RETCODE_FAILURE_BUILD
+        ):
             if not self.alreadyfailed:
                 self._builder.buildFail()
                 print("Returning build status: Build failed.")

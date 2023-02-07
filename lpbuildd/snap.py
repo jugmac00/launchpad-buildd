@@ -1,18 +1,11 @@
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 import os
+from configparser import NoOptionError, NoSectionError
 
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-    )
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 from lpbuildd.proxy import BuildManagerProxyMixin
-
 
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
@@ -39,7 +32,8 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.channels = extra_args.get("channels", {})
         self.build_request_id = extra_args.get("build_request_id")
         self.build_request_timestamp = extra_args.get(
-            "build_request_timestamp")
+            "build_request_timestamp"
+        )
         self.build_url = extra_args.get("build_url")
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
@@ -47,7 +41,8 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.build_source_tarball = extra_args.get(
-            "build_source_tarball", False)
+            "build_source_tarball", False
+        )
         self.private = extra_args.get("private", False)
         self.proxy_service = None
         self.target_architectures = extra_args.get("target_architectures")
@@ -63,7 +58,8 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--build-request-id", str(self.build_request_id)])
         if self.build_request_timestamp:
             args.extend(
-                ["--build-request-timestamp", self.build_request_timestamp])
+                ["--build-request-timestamp", self.build_request_timestamp]
+            )
         if self.build_url:
             args.extend(["--build-url", self.build_url])
         args.extend(self.startProxy())
@@ -81,7 +77,8 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.append("--private")
         try:
             snap_store_proxy_url = self._builder._config.get(
-                "proxy", "snapstore")
+                "proxy", "snapstore"
+            )
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
             pass
@@ -98,8 +95,10 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         if retcode == RETCODE_SUCCESS:
             print("Returning build status: OK")
             return self.deferGatherResults()
-        elif (retcode >= RETCODE_FAILURE_INSTALL and
-              retcode <= RETCODE_FAILURE_BUILD):
+        elif (
+            retcode >= RETCODE_FAILURE_INSTALL
+            and retcode <= RETCODE_FAILURE_BUILD
+        ):
             if not self.alreadyfailed:
                 self._builder.buildFail()
                 print("Returning build status: Build failed.")
@@ -125,10 +124,12 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 if self.backend.islink(path):
                     continue
                 if entry.endswith(
-                        (".snap", ".manifest", ".debug", ".dpkg.yaml")):
+                    (".snap", ".manifest", ".debug", ".dpkg.yaml")
+                ):
                     self.addWaitingFileFromBackend(path)
         if self.build_source_tarball:
             source_tarball_path = os.path.join(
-                "/build", "%s.tar.gz" % self.name)
+                "/build", "%s.tar.gz" % self.name
+            )
             if self.backend.path_exists(source_tarball_path):
                 self.addWaitingFileFromBackend(source_tarball_path)

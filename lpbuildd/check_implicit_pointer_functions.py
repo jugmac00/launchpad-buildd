@@ -35,19 +35,21 @@
 import re
 
 implicit_pattern = re.compile(
-    br"([^:]*):(\d+):(\d+:)? warning: implicit declaration "
-    br"of function [`']([^']*)'")
+    rb"([^:]*):(\d+):(\d+:)? warning: implicit declaration "
+    rb"of function [`']([^']*)'"
+)
 pointer_pattern = re.compile(
-    br"([^:]*):(\d+):(\d+:)? warning: "
-    br"("
-    br"(assignment"
-    br"|initialization"
-    br"|return"
-    br"|passing arg \d+ of `[^']*'"
-    br"|passing arg \d+ of pointer to function"
-    br") makes pointer from integer without a cast"
-    br"|"
-    br"cast to pointer from integer of different size)")
+    rb"([^:]*):(\d+):(\d+:)? warning: "
+    rb"("
+    rb"(assignment"
+    rb"|initialization"
+    rb"|return"
+    rb"|passing arg \d+ of `[^']*'"
+    rb"|passing arg \d+ of pointer to function"
+    rb") makes pointer from integer without a cast"
+    rb"|"
+    rb"cast to pointer from integer of different size)"
+)
 
 
 def filter_log(in_file, out_file, in_line=False):
@@ -62,7 +64,7 @@ def filter_log(in_file, out_file, in_line=False):
         if in_line:
             out_file.write(line)
             out_file.flush()
-        if line == b'':
+        if line == b"":
             break
         m = implicit_pattern.match(line)
         if m:
@@ -74,20 +76,27 @@ def filter_log(in_file, out_file, in_line=False):
             if m:
                 pointer_filename = m.group(1)
                 pointer_linenum = int(m.group(2))
-                if (last_implicit_filename == pointer_filename
-                        and last_implicit_linenum == pointer_linenum):
+                if (
+                    last_implicit_filename == pointer_filename
+                    and last_implicit_linenum == pointer_linenum
+                ):
                     err = (
                         b"Function `%s' implicitly converted to pointer at "
-                        b"%s:%d" % (
-                            last_implicit_func, last_implicit_filename,
-                            last_implicit_linenum))
+                        b"%s:%d"
+                        % (
+                            last_implicit_func,
+                            last_implicit_filename,
+                            last_implicit_linenum,
+                        )
+                    )
                     errlist.append(err)
                     out_file.write(err + b"\n")
 
     if errlist:
         if in_line:
             out_file.write(b"\n".join(errlist) + b"\n\n")
-            out_file.write(b"""
+            out_file.write(
+                b"""
 
 Our automated build log filter detected the problem(s) above that will
 likely cause your package to segfault on architectures where the size of
@@ -101,5 +110,6 @@ on ia64, they are errors.  Please correct them for your next upload.
 More information can be found at:
 http://wiki.debian.org/ImplicitPointerConversions
 
-    """)
+    """
+            )
     return len(errlist)

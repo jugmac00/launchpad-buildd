@@ -1,9 +1,9 @@
 # Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from collections import OrderedDict
 import os
 import sys
+from collections import OrderedDict
 
 
 class BuilderProxyOperationMixin:
@@ -19,7 +19,8 @@ class BuilderProxyOperationMixin:
         parser.add_argument("--proxy-url", help="builder proxy url")
         parser.add_argument(
             "--revocation-endpoint",
-            help="builder proxy token revocation endpoint")
+            help="builder proxy token revocation endpoint",
+        )
 
     @property
     def proxy_deps(self):
@@ -28,7 +29,8 @@ class BuilderProxyOperationMixin:
     def install_git_proxy(self):
         self.backend.copy_in(
             os.path.join(self.bin, "lpbuildd-git-proxy"),
-            "/usr/local/bin/lpbuildd-git-proxy")
+            "/usr/local/bin/lpbuildd-git-proxy",
+        )
 
     def build_proxy_environment(self, proxy_url=None, env=None):
         """Extend a command environment to include http proxy variables."""

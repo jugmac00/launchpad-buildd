@@ -1,15 +1,14 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-from unittest.mock import patch, ANY
+from unittest.mock import ANY, patch
 
-from testtools import TestCase
 from fixtures import TempDir
+from testtools import TestCase
 
 from lpbuildd.tests.fakebuilder import UncontainedBackend
 
 
 class TestBackend(TestCase):
-
     def test_open(self):
         backend = UncontainedBackend("1")
         backend_root = self.useFixture(TempDir())
@@ -20,7 +19,6 @@ class TestBackend(TestCase):
         ) as copy_in, patch.object(
             backend, "copy_out", wraps=backend.copy_out
         ) as copy_out:
-
             with backend.open(target_path, "w") as f:
                 f.write("text")
 

@@ -1,21 +1,14 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 import os
-import yaml
+from configparser import NoOptionError, NoSectionError
 
+import yaml
 from twisted.internet import defer
 
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-    )
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 from lpbuildd.proxy import BuildManagerProxyMixin
-
 
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
@@ -72,7 +65,8 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.proxy_args = self.startProxy()
         if self.revocation_endpoint:
             self.proxy_args.extend(
-                ["--revocation-endpoint", self.revocation_endpoint])
+                ["--revocation-endpoint", self.revocation_endpoint]
+            )
         args = list(self.proxy_args)
         for snap, channel in sorted(self.channels.items()):
             args.extend(["--channel", f"{snap}={channel}"])
@@ -91,13 +85,15 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             # in the default configuration is convenient for our production
             # deployments.
             clamav_database_url = self._builder._config.get(
-                "proxy", "clamavdatabase")
+                "proxy", "clamavdatabase"
+            )
             args.extend(["--clamav-database-url", clamav_database_url])
         except (NoSectionError, NoOptionError):
             pass
         try:
             snap_store_proxy_url = self._builder._config.get(
-                "proxy", "snapstore")
+                "proxy", "snapstore"
+            )
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
             pass
@@ -121,8 +117,10 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.job_index = 0
         if retcode == RETCODE_SUCCESS:
             pass
-        elif (retcode >= RETCODE_FAILURE_INSTALL and
-              retcode <= RETCODE_FAILURE_BUILD):
+        elif (
+            retcode >= RETCODE_FAILURE_INSTALL
+            and retcode <= RETCODE_FAILURE_BUILD
+        ):
             if not self.alreadyfailed:
                 self._builder.log("Preparation failed.")
                 self._builder.buildFail()
@@ -159,20 +157,17 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 args.extend(["--package-repository", repository])
         if self.environment_variables is not None:
             for key, value in self.environment_variables.items():
-                args.extend(
-                    ["--environment-variable", f"{key}={value}"])
+                args.extend(["--environment-variable", f"{key}={value}"])
         if self.plugin_settings is not None:
             for key, value in self.plugin_settings.items():
-                args.extend(
-                    ["--plugin-setting", f"{key}={value}"])
+                args.extend(["--plugin-setting", f"{key}={value}"])
         if self.secrets is not None:
             text = yaml.dump(self.secrets)
             with self.backend.open(
                 "/build/.launchpad-secrets.yaml", mode="w"
             ) as f:
                 f.write(text)
-            args.extend(
-                ["--secrets", "/build/.launchpad-secrets.yaml"])
+            args.extend(["--secrets", "/build/.launchpad-secrets.yaml"])
         if self.scan_malware:
             args.append("--scan-malware")
 
@@ -191,8 +186,10 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             result = RESULT_SUCCEEDED
         else:
             result = RESULT_FAILED
-            if (retcode >= RETCODE_FAILURE_INSTALL and
-                    retcode <= RETCODE_FAILURE_BUILD):
+            if (
+                retcode >= RETCODE_FAILURE_INSTALL
+                and retcode <= RETCODE_FAILURE_BUILD
+            ):
                 self._builder.log("Job %s failed." % self.current_job_id)
                 if len(self.jobs[self.stage_index]) == 1:
                     # Single-job stage, so fail straight away in order to
@@ -212,15 +209,17 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             # End of stage.  Fail if any job in this stage has failed.
             current_stage_job_ids = [
                 _make_job_id(job_name, job_index)
-                for job_name, job_index in self.jobs[self.stage_index]]
+                for job_name, job_index in self.jobs[self.stage_index]
+            ]
             if any(
                 self.job_status[job_id]["result"] != RESULT_SUCCEEDED
                 for job_id in current_stage_job_ids
             ):
                 if not self.alreadyfailed:
                     self._builder.log(
-                        "Some jobs in %s failed; stopping." %
-                        current_stage_job_ids)
+                        "Some jobs in %s failed; stopping."
+                        % current_stage_job_ids
+                    )
                     self._builder.buildFail()
                 self.alreadyfailed = True
             self.stage_index += 1
@@ -254,7 +253,8 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         job_status = {}
         job_name, job_index = self.current_job
         job_output_path = os.path.join(
-            "/build", "output", job_name, str(job_index))
+            "/build", "output", job_name, str(job_index)
+        )
         for item_name in ("log", "properties"):
             item_path = os.path.join(job_output_path, item_name)
             if self.backend.path_exists(item_path):
@@ -263,16 +263,18 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 job_status[item_name] = self._builder.waitingfiles[item_id]
         files_path = os.path.join(job_output_path, "files")
         if self.backend.path_exists(files_path):
-            for entry in sorted(self.backend.find(
-                    files_path, include_directories=False)):
+            for entry in sorted(
+                self.backend.find(files_path, include_directories=False)
+            ):
                 path = os.path.join(files_path, entry)
                 if self.backend.islink(path):
                     continue
                 entry_base = os.path.basename(entry)
                 name = os.path.join(self.current_job_id, entry_base)
                 self.addWaitingFileFromBackend(path, name=name)
-                job_status.setdefault("output", {})[entry_base] = (
-                    self._builder.waitingfiles[name])
+                job_status.setdefault("output", {})[
+                    entry_base
+                ] = self._builder.waitingfiles[name]
 
         # Save a file map for this job in the extra status file.  This
         # allows buildd-manager to fetch job logs/output incrementally

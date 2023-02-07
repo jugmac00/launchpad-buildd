@@ -2,23 +2,21 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    'BuilddTestCase',
-    ]
+    "BuilddTestCase",
+]
 
 try:
     from configparser import ConfigParser as SafeConfigParser
 except ImportError:
     from ConfigParser import SafeConfigParser
+
 import os
 import shutil
 import tempfile
-from textwrap import dedent
 import unittest
+from textwrap import dedent
 
-from fixtures import (
-    EnvironmentVariable,
-    TempDir,
-    )
+from fixtures import EnvironmentVariable, TempDir
 from txfixtures.tachandler import TacTestFixture
 
 from lpbuildd.builder import Builder
@@ -29,6 +27,7 @@ class MockBuildManager:
 
     Only implements 'is_archive_private' and 'needs_sanitized_logs' as False.
     """
+
     is_archive_private = False
 
     @property
@@ -58,7 +57,7 @@ class BuilddTestCase(unittest.TestCase):
 
     def makeLog(self, size):
         """Inject data into the default buildlog file."""
-        f = open(self.builder.cachePath('buildlog'), 'w')
+        f = open(self.builder.cachePath("buildlog"), "w")
         f.write("x" * size)
         f.close()
 
@@ -118,20 +117,24 @@ class BuilddTestSetup(TacTestFixture):
         super().setUp(**kwargs)
 
     def setUpRoot(self):
-        filecache = os.path.join(self.root, 'filecache')
+        filecache = os.path.join(self.root, "filecache")
         os.mkdir(filecache)
-        self.useFixture(EnvironmentVariable('HOME', self.root))
+        self.useFixture(EnvironmentVariable("HOME", self.root))
         test_conffile = os.path.join(self.root, "buildd.conf")
         with open(test_conffile, "w") as f:
-            f.write(dedent(f"""\
+            f.write(
+                dedent(
+                    f"""\
                 [builder]
                 architecturetag = i386
                 filecache = {filecache}
                 bindhost = localhost
                 bindport = {self.daemon_port}
                 sharepath = {self.root}
-                """))
-        self.useFixture(EnvironmentVariable('BUILDD_CONFIG', test_conffile))
+                """
+                )
+            )
+        self.useFixture(EnvironmentVariable("BUILDD_CONFIG", test_conffile))
         # XXX cprov 2005-05-30:
         # When we are about running it seriously we need :
         # * install sbuild package
@@ -145,19 +148,19 @@ class BuilddTestSetup(TacTestFixture):
 
     @property
     def tacfile(self):
-        return os.path.abspath(os.path.join(
-            os.path.dirname(__file__),
-            os.path.pardir,
-            'buildd.tac'
-            ))
+        return os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__), os.path.pardir, "buildd.tac"
+            )
+        )
 
     @property
     def pidfile(self):
-        return os.path.join(self.root, 'buildd.pid')
+        return os.path.join(self.root, "buildd.pid")
 
     @property
     def logfile(self):
-        return '/var/tmp/buildd.log'
+        return "/var/tmp/buildd.log"
 
     @property
     def daemon_port(self):

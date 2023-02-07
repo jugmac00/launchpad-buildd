@@ -1,11 +1,7 @@
 # Copyright 2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from testtools.matchers import (
-    Equals,
-    Matcher,
-    MatchesDict,
-    )
+from testtools.matchers import Equals, Matcher, MatchesDict
 
 
 class HasWaitingFiles(Matcher):
@@ -17,7 +13,8 @@ class HasWaitingFiles(Matcher):
     @classmethod
     def byEquality(cls, files):
         return cls(
-            {name: Equals(contents) for name, contents in files.items()})
+            {name: Equals(contents) for name, contents in files.items()}
+        )
 
     def match(self, builder):
         waiting_file_contents = {}

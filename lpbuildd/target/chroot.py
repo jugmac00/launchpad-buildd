@@ -7,14 +7,8 @@ import stat
 import subprocess
 import time
 
-from lpbuildd.target.backend import (
-    Backend,
-    BackendException,
-    )
-from lpbuildd.util import (
-    set_personality,
-    shell_escape,
-    )
+from lpbuildd.target.backend import Backend, BackendException
+from lpbuildd.util import set_personality, shell_escape
 
 
 class Chroot(Backend):
@@ -28,7 +22,8 @@ class Chroot(Backend):
         """See `Backend`."""
         if image_type == "chroot":
             subprocess.check_call(
-                ["sudo", "tar", "-C", self.build_path, "-xf", image_path])
+                ["sudo", "tar", "-C", self.build_path, "-xf", image_path]
+            )
         else:
             raise ValueError("Unhandled image type: %s" % image_type)
 
@@ -39,7 +34,7 @@ class Chroot(Backend):
             ("devpts", "gid=5,mode=620", "none", "dev/pts"),
             ("sysfs", None, "none", "sys"),
             ("tmpfs", None, "none", "dev/shm"),
-            )
+        )
         for mount in mounts:
             cmd = ["sudo", "mount", "-t", mount[0]]
             if mount[1]:
@@ -51,12 +46,23 @@ class Chroot(Backend):
         for path in ("/etc/hosts", "/etc/hostname", "/etc/resolv.conf"):
             self.copy_in(path, path)
 
-    def run(self, args, cwd=None, env=None, input_text=None, get_output=False,
-            echo=False, **kwargs):
+    def run(
+        self,
+        args,
+        cwd=None,
+        env=None,
+        input_text=None,
+        get_output=False,
+        echo=False,
+        **kwargs,
+    ):
         """See `Backend`."""
         if env:
-            args = ["env"] + [
-                f"{key}={value}" for key, value in env.items()] + args
+            args = (
+                ["env"]
+                + [f"{key}={value}" for key, value in env.items()]
+                + args
+            )
         if self.arch is not None:
             args = set_personality(args, self.arch, series=self.series)
         if cwd is not None:
@@ -66,11 +72,15 @@ class Chroot(Backend):
             # to use "env --chdir".
             escaped_args = " ".join(shell_escape(arg) for arg in args)
             args = [
-                "/bin/sh", "-c", f"cd {shell_escape(cwd)} && {escaped_args}",
-                ]
+                "/bin/sh",
+                "-c",
+                f"cd {shell_escape(cwd)} && {escaped_args}",
+            ]
         if echo:
-            print("Running in chroot: %s" % ' '.join(
-                shell_escape(arg) for arg in args))
+            print(
+                "Running in chroot: %s"
+                % " ".join(shell_escape(arg) for arg in args)
+            )
         cmd = ["sudo", "/usr/sbin/chroot", self.chroot_path] + args
         if input_text is None and not get_output:
             subprocess.check_call(cmd, **kwargs)
@@ -97,10 +107,22 @@ class Chroot(Backend):
         # in the target.
         mode = stat.S_IMODE(os.stat(source_path).st_mode)
         full_target_path = os.path.join(
-            self.chroot_path, target_path.lstrip("/"))
+            self.chroot_path, target_path.lstrip("/")
+        )
         subprocess.check_call(
-            ["sudo", "install", "-o", "root", "-g", "root", "-m", "%o" % mode,
-             source_path, full_target_path])
+            [
+                "sudo",
+                "install",
+                "-o",
+                "root",
+                "-g",
+                "root",
+                "-m",
+                "%o" % mode,
+                source_path,
+                full_target_path,
+            ]
+        )
 
     def copy_out(self, source_path, target_path):
         # Don't use install(1) here because running `os.stat` to get file mode
@@ -108,10 +130,17 @@ class Chroot(Backend):
         # to buildd (this is necessary so that buildd can read/write the copied
         # file).
         full_source_path = os.path.join(
-            self.chroot_path, source_path.lstrip("/"))
+            self.chroot_path, source_path.lstrip("/")
+        )
         subprocess.check_call(
-            ["sudo", "cp", "--preserve=timestamps",
-             full_source_path, target_path])
+            [
+                "sudo",
+                "cp",
+                "--preserve=timestamps",
+                full_source_path,
+                target_path,
+            ]
+        )
         uid, gid = os.getuid(), os.getgid()
         subprocess.check_call(["sudo", "chown", f"{uid}:{gid}", target_path])
 
@@ -151,12 +180,13 @@ class Chroot(Backend):
             if not mounts:
                 break
             retcodes = [
-                subprocess.call(["sudo", "umount", mount])
-                for mount in mounts]
+                subprocess.call(["sudo", "umount", mount]) for mount in mounts
+            ]
             if any(retcodes):
                 time.sleep(1)
         else:
             if list(self._get_chroot_mounts()):
                 subprocess.check_call(["lsof", self.chroot_path])
                 raise BackendException(
-                    "Failed to unmount %s" % self.chroot_path)
+                    "Failed to unmount %s" % self.chroot_path
+                )

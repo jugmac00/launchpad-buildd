@@ -1,10 +1,6 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from configparser import (
-    NoOptionError,
-    NoSectionError,
-    )
 import gzip
 import hashlib
 import json
@@ -12,13 +8,10 @@ import os
 import shutil
 import tarfile
 import tempfile
+from configparser import NoOptionError, NoSectionError
 
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-    )
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 from lpbuildd.proxy import BuildManagerProxyMixin
-
 
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
@@ -75,7 +68,8 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--build-path", self.build_path])
         try:
             snap_store_proxy_url = self._builder._config.get(
-                "proxy", "snapstore")
+                "proxy", "snapstore"
+            )
             args.extend(["--snap-store-proxy-url", snap_store_proxy_url])
         except (NoSectionError, NoOptionError):
             pass
@@ -89,8 +83,10 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         if retcode == RETCODE_SUCCESS:
             print("Returning build status: OK")
             return self.deferGatherResults()
-        elif (retcode >= RETCODE_FAILURE_INSTALL and
-              retcode <= RETCODE_FAILURE_BUILD):
+        elif (
+            retcode >= RETCODE_FAILURE_INSTALL
+            and retcode <= RETCODE_FAILURE_BUILD
+        ):
             if not self.alreadyfailed:
                 self._builder.buildFail()
                 print("Returning build status: Build failed.")
@@ -108,7 +104,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.doUnmounting()
 
     def _calculateLayerSha(self, layer_path):
-        with open(layer_path, 'rb') as layer_tar:
+        with open(layer_path, "rb") as layer_tar:
             sha256_hash = hashlib.sha256()
             for byte_block in iter(lambda: layer_tar.read(4096), b""):
                 sha256_hash.update(byte_block)
@@ -122,9 +118,9 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             config = json.load(config_fp)
         diff_ids = config["rootfs"]["diff_ids"]
         digest_diff_map = {}
-        for diff_id, layer_id in zip(diff_ids, section['Layers']):
-            layer_id = layer_id.split('/')[0]
-            diff_file = os.path.join(sha_directory, diff_id.split(':')[1])
+        for diff_id, layer_id in zip(diff_ids, section["Layers"]):
+            layer_id = layer_id.split("/")[0]
+            diff_file = os.path.join(sha_directory, diff_id.split(":")[1])
             layer_path = os.path.join(extract_path, f"{layer_id}.tar.gz")
             self._builder.addWaitingFile(layer_path)
             # If we have a mapping between diff and existing digest,
@@ -145,7 +141,7 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             digest_diff_map[diff_id] = {
                 "digest": digest,
                 "source": source,
-                "layer_id": layer_id
+                "layer_id": layer_id,
             }
 
         return digest_diff_map
@@ -155,14 +151,16 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         extract_path = tempfile.mkdtemp(prefix=self.name)
         try:
             proc = self.backend.run(
-                ['docker', 'save', self.name],
-                get_output=True, return_process=True)
+                ["docker", "save", self.name],
+                get_output=True,
+                return_process=True,
+            )
             tar = tarfile.open(fileobj=proc.stdout, mode="r|")
         except Exception as e:
             self._builder.log(f"Unable to save image: {e}")
             raise
 
-        current_dir = ''
+        current_dir = ""
         gzip_layer = None
         symlinks = []
         try:
@@ -183,10 +181,11 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     # we can deal with it later
                     self._builder.log(
                         f"Found symlink at {file.name} referencing "
-                        f"{file.linkpath}")
+                        f"{file.linkpath}"
+                    )
                     symlinks.append(file)
                     continue
-                if current_dir and file.name.endswith('layer.tar'):
+                if current_dir and file.name.endswith("layer.tar"):
                     # This is the actual layer data.
                     # Instead of adding the layer.tar to a gzip directory
                     # we add the contents of untarred layer.tar to a gzip.
@@ -197,8 +196,8 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     # (directory_name.tar.gz/contents) otherwise we will endup
                     # with multiple gzips with the same name "layer.tar.gz".
                     fileobj = tar.extractfile(file)
-                    name = os.path.join(extract_path, f'{current_dir}.tar.gz')
-                    with gzip.GzipFile(name, 'wb') as gzip_layer:
+                    name = os.path.join(extract_path, f"{current_dir}.tar.gz")
+                    with gzip.GzipFile(name, "wb") as gzip_layer:
                         byte = fileobj.read(1)
                         while len(byte) > 0:
                             gzip_layer.write(byte)
@@ -224,14 +223,15 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             # we want the directory name, which should always be
             # the second component
             source_name = os.path.join(
-                extract_path,
-                f"{symlink.linkpath.split('/')[-2]}.tar.gz")
+                extract_path, f"{symlink.linkpath.split('/')[-2]}.tar.gz"
+            )
             target_name = os.path.join(
-                extract_path,
-                f"{symlink.name.split('/')[-2]}.tar.gz")
+                extract_path, f"{symlink.name.split('/')[-2]}.tar.gz"
+            )
             # Do a copy to dereference the symlink
             self._builder.log(
-                f"Dereferencing symlink from {source_name} to {target_name}")
+                f"Dereferencing symlink from {source_name} to {target_name}"
+            )
             shutil.copy(source_name, target_name)
 
         # We need these mapping files
@@ -239,24 +239,29 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         # This can change depending on the kernel options / docker package
         # used. This is correct for bionic buildd image
         # with apt installed docker.
-        sha_path = ('/var/lib/docker/image/'
-                    'vfs/distribution/v2metadata-by-diffid/sha256')
+        sha_path = (
+            "/var/lib/docker/image/"
+            "vfs/distribution/v2metadata-by-diffid/sha256"
+        )
         # If there have been no images pulled in the build process
         # (FROM scratch), then this directory will not exist and
         # we will have no contents from it.
         if self.backend.path_exists(sha_path):
-            sha_files = [x for x in self.backend.listdir(sha_path)
-                         if not x.startswith('.')]
+            sha_files = [
+                x
+                for x in self.backend.listdir(sha_path)
+                if not x.startswith(".")
+            ]
             for file in sha_files:
                 self.backend.copy_out(
                     os.path.join(sha_path, file),
-                    os.path.join(sha_directory, file)
+                    os.path.join(sha_directory, file),
                 )
         else:
             self._builder.log(f"No metadata directory at {sha_path}")
 
         # Parse the manifest for the other files we need
-        manifest_path = os.path.join(extract_path, 'manifest.json')
+        manifest_path = os.path.join(extract_path, "manifest.json")
         self._builder.addWaitingFile(manifest_path)
         with open(manifest_path) as manifest_fp:
             manifest = json.load(manifest_fp)
@@ -265,10 +270,12 @@ class OCIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         try:
             for section in manifest:
                 digest_maps.append(
-                    self._gatherManifestSection(section, extract_path,
-                                                sha_directory))
-            digest_map_file = os.path.join(extract_path, 'digests.json')
-            with open(digest_map_file, 'w') as digest_map_fp:
+                    self._gatherManifestSection(
+                        section, extract_path, sha_directory
+                    )
+                )
+            digest_map_file = os.path.join(extract_path, "digests.json")
+            with open(digest_map_file, "w") as digest_map_fp:
                 json.dump(digest_maps, digest_map_fp)
             self._builder.addWaitingFile(digest_map_file)
         except Exception as e:

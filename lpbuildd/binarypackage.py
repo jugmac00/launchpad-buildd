@@ -1,29 +1,24 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from collections import defaultdict
 import os
 import re
 import subprocess
 import tempfile
-from textwrap import dedent
 import traceback
+from collections import defaultdict
+from textwrap import dedent
 
 import apt_pkg
-from debian.deb822 import (
-    Dsc,
-    PkgRelation,
-    )
+from debian.deb822 import Dsc, PkgRelation
 from debian.debian_support import Version
 
-from lpbuildd.debian import (
-    DebianBuildManager,
-    DebianBuildState,
-    )
+from lpbuildd.debian import DebianBuildManager, DebianBuildState
 
 
 class SBuildExitCodes:
     """SBUILD process result codes."""
+
     OK = 0
     FAILED = 1
     ATTEMPTED = 2
@@ -32,17 +27,17 @@ class SBuildExitCodes:
 
 
 APT_MISSING_DEP_PATTERNS = [
-    r'but [^ ]* is to be installed',
-    r'but [^ ]* is installed',
-    r'but it is not installable',
-    r'but it is a virtual package',
-    ]
+    r"but [^ ]* is to be installed",
+    r"but [^ ]* is installed",
+    r"but it is not installable",
+    r"but it is a virtual package",
+]
 
 
 APT_DUBIOUS_DEP_PATTERNS = [
-    r'but it is not installed',
-    r'but it is not going to be installed',
-    ]
+    r"but it is not installed",
+    r"but it is not going to be installed",
+]
 
 
 class BuildLogRegexes:
@@ -51,19 +46,20 @@ class BuildLogRegexes:
     These allow performing actions based on regexes, and extracting
     dependencies for auto dep-waits.
     """
+
     GIVENBACK = [
         (r"^E: There are problems and -y was used without --force-yes"),
-        ]
+    ]
     MAYBEDEPFAIL = [
-        r'The following packages have unmet dependencies:\n'
-        r'.* Depends: [^ ]*( \([^)]*\))? (%s)\n'
-        % r'|'.join(APT_DUBIOUS_DEP_PATTERNS),
-        ]
+        r"The following packages have unmet dependencies:\n"
+        r".* Depends: [^ ]*( \([^)]*\))? (%s)\n"
+        % r"|".join(APT_DUBIOUS_DEP_PATTERNS),
+    ]
     DEPFAIL = {
-        r'The following packages have unmet dependencies:\n'
-        r'.* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n'
-        % r'|'.join(APT_MISSING_DEP_PATTERNS): r"\g<p>",
-        }
+        r"The following packages have unmet dependencies:\n"
+        r".* Depends: (?P<p>[^ ]*( \([^)]*\))?) (%s)\n"
+        % r"|".join(APT_MISSING_DEP_PATTERNS): r"\g<p>",
+    }
 
 
 class DpkgArchitectureCache:
@@ -77,7 +73,7 @@ class DpkgArchitectureCache:
             command = ["dpkg-architecture", "-a%s" % arch, "-i%s" % wildcard]
             env = dict(os.environ)
             env.pop("DEB_HOST_ARCH", None)
-            ret = (subprocess.call(command, env=env) == 0)
+            ret = subprocess.call(command, env=env) == 0
             self._matches[(arch, wildcard)] = ret
         return self._matches[(arch, wildcard)]
 
@@ -101,11 +97,12 @@ class BinaryPackageBuildManager(DebianBuildManager):
     @property
     def chroot_path(self):
         return os.path.join(
-            self.home, "build-" + self._buildid, 'chroot-autobuild')
+            self.home, "build-" + self._buildid, "chroot-autobuild"
+        )
 
     @property
     def schroot_config_path(self):
-        return os.path.join('/etc/schroot/chroot.d', 'build-' + self._buildid)
+        return os.path.join("/etc/schroot/chroot.d", "build-" + self._buildid)
 
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
@@ -117,11 +114,11 @@ class BinaryPackageBuildManager(DebianBuildManager):
         if self._dscfile is None:
             raise ValueError(files)
 
-        self.archive_purpose = extra_args.get('archive_purpose')
-        self.suite = extra_args['suite']
-        self.component = extra_args['ogrecomponent']
-        self.arch_indep = extra_args.get('arch_indep', False)
-        self.build_debug_symbols = extra_args.get('build_debug_symbols', False)
+        self.archive_purpose = extra_args.get("archive_purpose")
+        self.suite = extra_args["suite"]
+        self.component = extra_args["ogrecomponent"]
+        self.arch_indep = extra_args.get("arch_indep", False)
+        self.build_debug_symbols = extra_args.get("build_debug_symbols", False)
 
         super().initiate(files, chroot, extra_args)
 
@@ -132,31 +129,51 @@ class BinaryPackageBuildManager(DebianBuildManager):
             # and teardown ourselves: it's easier to do this the same way
             # for all build types.
             print(
-                dedent(f'''\
+                dedent(
+                    f"""\
                     [build-{self._buildid}]
                     description=build-{self._buildid}
                     groups=sbuild,root
                     root-groups=sbuild,root
                     type=plain
                     directory={self.chroot_path}
-                    '''),
-                file=schroot_file, end='')
+                    """
+                ),
+                file=schroot_file,
+                end="",
+            )
             schroot_file.flush()
             subprocess.check_call(
-                ['sudo', 'install', '-o', 'root', '-g', 'root', '-m', '0644',
-                 schroot_file.name, self.schroot_config_path])
+                [
+                    "sudo",
+                    "install",
+                    "-o",
+                    "root",
+                    "-g",
+                    "root",
+                    "-m",
+                    "0644",
+                    schroot_file.name,
+                    self.schroot_config_path,
+                ]
+            )
 
         currently_building_contents = (
-            'Package: %s\n'
-            'Component: %s\n'
-            'Suite: %s\n'
-            'Purpose: %s\n'
-            % (self._dscfile.split('_')[0], self.component, self.suite,
-               self.archive_purpose))
+            "Package: %s\n"
+            "Component: %s\n"
+            "Suite: %s\n"
+            "Purpose: %s\n"
+            % (
+                self._dscfile.split("_")[0],
+                self.component,
+                self.suite,
+                self.archive_purpose,
+            )
+        )
         if self.build_debug_symbols:
-            currently_building_contents += 'Build-Debug-Symbols: yes\n'
+            currently_building_contents += "Build-Debug-Symbols: yes\n"
         with self.backend.open(
-            '/CurrentlyBuilding', mode='w+'
+            "/CurrentlyBuilding", mode="w+"
         ) as currently_building:
             currently_building.write(currently_building_contents)
             os.fchmod(currently_building.fileno(), 0o644)
@@ -184,10 +201,18 @@ class BinaryPackageBuildManager(DebianBuildManager):
         if os.path.exists(os.path.join(self.chroot_path, apt_helper[1:])):
             try:
                 paths = subprocess.check_output(
-                    ["sudo", "chroot", self.chroot_path,
-                     "apt-get", "indextargets", "--format", "$(FILENAME)",
-                     "Created-By: Packages"],
-                    universal_newlines=True).splitlines()
+                    [
+                        "sudo",
+                        "chroot",
+                        self.chroot_path,
+                        "apt-get",
+                        "indextargets",
+                        "--format",
+                        "$(FILENAME)",
+                        "Created-By: Packages",
+                    ],
+                    universal_newlines=True,
+                ).splitlines()
             except subprocess.CalledProcessError:
                 # This might be e.g. Ubuntu 14.04, where
                 # /usr/lib/apt/apt-helper exists but "apt-get indextargets"
@@ -196,9 +221,16 @@ class BinaryPackageBuildManager(DebianBuildManager):
         if paths is not None:
             for path in paths:
                 helper = subprocess.Popen(
-                    ["sudo", "chroot", self.chroot_path,
-                     apt_helper, "cat-file", path],
-                    stdout=subprocess.PIPE)
+                    [
+                        "sudo",
+                        "chroot",
+                        self.chroot_path,
+                        apt_helper,
+                        "cat-file",
+                        path,
+                    ],
+                    stdout=subprocess.PIPE,
+                )
                 try:
                     yield helper.stdout
                 finally:
@@ -206,7 +238,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
                     helper.wait()
         else:
             apt_lists = os.path.join(
-                self.chroot_path, "var", "lib", "apt", "lists")
+                self.chroot_path, "var", "lib", "apt", "lists"
+            )
             for name in sorted(os.listdir(apt_lists)):
                 if name.endswith("_Packages"):
                     path = os.path.join(apt_lists, name)
@@ -234,7 +267,8 @@ class BinaryPackageBuildManager(DebianBuildManager):
                         if provide[0][1] and provide[0][2] != "=":
                             continue
                         available[provide[0][0]].add(
-                            provide[0][1] if provide[0][1] else None)
+                            provide[0][1] if provide[0][1] else None
+                        )
         return available
 
     def getBuildDepends(self, dscpath, arch_indep):
@@ -285,8 +319,10 @@ class BinaryPackageBuildManager(DebianBuildManager):
                 return True
         dep_restrictions = dep.get("restrictions")
         if dep_restrictions is not None:
-            if all(any(restriction.enabled for restriction in restrlist)
-                   for restrlist in dep_restrictions):
+            if all(
+                any(restriction.enabled for restriction in restrlist)
+                for restrlist in dep_restrictions
+            ):
                 # This dependency "matches" in the sense that it's ignored
                 # when no build profiles are enabled.
                 return True
@@ -301,12 +337,13 @@ class BinaryPackageBuildManager(DebianBuildManager):
             "=": (lambda a, b: a == b),
             ">=": (lambda a, b: a >= b),
             ">>": (lambda a, b: a > b),
-            }
+        }
         operator = operator_map[dep_version[0]]
         want_version = dep_version[1]
         for version in available[dep["name"]]:
-            if (version is not None and
-                    operator(Version(version), want_version)):
+            if version is not None and operator(
+                Version(version), want_version
+            ):
                 return True
         return False
 
@@ -410,19 +447,24 @@ class BinaryPackageBuildManager(DebianBuildManager):
             elif rx in BuildLogRegexes.MAYBEDEPFAIL:
                 # These matches need further analysis.
                 dscpath = os.path.join(
-                    self.home, "build-%s" % self._buildid, self._dscfile)
+                    self.home, "build-%s" % self._buildid, self._dscfile
+                )
                 missing_dep = self.analyseDepWait(
                     self.getBuildDepends(dscpath, self.arch_indep),
-                    self.getAvailablePackages())
+                    self.getAvailablePackages(),
+                )
                 if missing_dep is None:
                     success = SBuildExitCodes.FAILED
             elif rx in BuildLogRegexes.DEPFAIL:
                 # A depwait match forces depwait.
                 missing_dep = mo.expand(
-                    BuildLogRegexes.DEPFAIL[rx].encode("UTF-8"))
+                    BuildLogRegexes.DEPFAIL[rx].encode("UTF-8")
+                )
                 missing_dep = self.stripDependencies(
                     PkgRelation.parse_relations(
-                        missing_dep.decode("UTF-8", "replace")))
+                        missing_dep.decode("UTF-8", "replace")
+                    )
+                )
             else:
                 # Otherwise it was a givenback pattern, so leave it
                 # in givenback.
@@ -449,7 +491,7 @@ class BinaryPackageBuildManager(DebianBuildManager):
     def iterateReap_SBUILD(self, success):
         """Finished reaping after sbuild run."""
         # Ignore errors from tearing down schroot configuration.
-        subprocess.call(['sudo', 'rm', '-f', self.schroot_config_path])
+        subprocess.call(["sudo", "rm", "-f", self.schroot_config_path])
 
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()

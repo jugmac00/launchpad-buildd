@@ -5,8 +5,8 @@
 
 """Scan for compiler warnings that are likely to cause 64-bit problems."""
 
-from argparse import ArgumentParser
 import sys
+from argparse import ArgumentParser
 
 from lpbuildd.check_implicit_pointer_functions import filter_log
 
@@ -14,11 +14,17 @@ from lpbuildd.check_implicit_pointer_functions import filter_log
 def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--inline", default=False, action="store_true",
-        help="Pass through input, inserting errors in-line")
+        "--inline",
+        default=False,
+        action="store_true",
+        help="Pass through input, inserting errors in-line",
+    )
     parser.add_argument(
-        "--warnonly", default=False, action="store_true",
-        help="Exit zero even if problems are found")
+        "--warnonly",
+        default=False,
+        action="store_true",
+        help="Exit zero even if problems are found",
+    )
     args = parser.parse_args()
     stdin = sys.stdin
     stdout = sys.stdout

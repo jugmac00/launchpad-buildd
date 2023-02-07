@@ -3,32 +3,23 @@
 
 import base64
 import io
-from urllib.error import (
-    HTTPError,
-    URLError,
-    )
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import (
-    Request,
-    urlopen,
-    )
+from urllib.request import Request, urlopen
 
 from twisted.application import strports
 from twisted.internet import reactor
 from twisted.internet.interfaces import IHalfCloseableProtocol
 from twisted.python.compat import intToBytes
-from twisted.web import (
-    http,
-    proxy,
-    )
+from twisted.web import http, proxy
 from zope.interface import implementer
 
 
 class BuilderProxyClient(proxy.ProxyClient):
-
     def __init__(self, command, rest, version, headers, data, father):
         proxy.ProxyClient.__init__(
-            self, command, rest, version, headers, data, father)
+            self, command, rest, version, headers, data, father
+        )
         # Why doesn't ProxyClient at least store this?
         self.version = version
         # We must avoid calling self.father.finish in the event that its
@@ -46,7 +37,8 @@ class BuilderProxyClient(proxy.ProxyClient):
         # For some reason, HTTPClient.sendCommand doesn't preserve the
         # protocol version.
         self.transport.writeSequence(
-            [command, b' ', path, b' ', self.version, b'\r\n'])
+            [command, b" ", path, b" ", self.version, b"\r\n"]
+        )
 
     def handleEndHeaders(self):
         self.father.handleEndHeaders()
@@ -64,12 +56,10 @@ class BuilderProxyClient(proxy.ProxyClient):
 
 
 class BuilderProxyClientFactory(proxy.ProxyClientFactory):
-
     protocol = BuilderProxyClient
 
 
 class BuilderProxyRequest(http.Request):
-
     child_client = None
     _request_buffer = None
     _request_data_done = False
@@ -95,14 +85,17 @@ class BuilderProxyRequest(http.Request):
         if b"host" not in headers and request_parsed.netloc:
             headers[b"host"] = request_parsed.netloc
         if remote_parsed.username:
-            auth = (remote_parsed.username + ":" +
-                    remote_parsed.password).encode("ASCII")
+            auth = (
+                remote_parsed.username + ":" + remote_parsed.password
+            ).encode("ASCII")
             authHeader = b"Basic " + base64.b64encode(auth)
             headers[b"proxy-authorization"] = authHeader
         self.client_factory = BuilderProxyClientFactory(
-            command, path, version, headers, b"", self)
+            command, path, version, headers, b"", self
+        )
         reactor.connectTCP(
-            remote_parsed.hostname, remote_parsed.port, self.client_factory)
+            remote_parsed.hostname, remote_parsed.port, self.client_factory
+        )
 
     def requestReceived(self, command, path, version):
         # We do most of our work in `allHeadersReceived` instead.
@@ -126,8 +119,13 @@ class BuilderProxyRequest(http.Request):
         self.startedWriting = 1
         lines = []
         lines.append(
-            self.clientproto + b" " + intToBytes(self.code) + b" " +
-            self.code_message + b"\r\n")
+            self.clientproto
+            + b" "
+            + intToBytes(self.code)
+            + b" "
+            + self.code_message
+            + b"\r\n"
+        )
         for name, values in self.responseHeaders.getAllRawHeaders():
             for value in values:
                 lines.extend([name, b": ", value, b"\r\n"])
@@ -163,7 +161,8 @@ class BuilderProxy(http.HTTPChannel):
     def allHeadersReceived(self):
         http.HTTPChannel.allHeadersReceived(self)
         self.requests[-1].allHeadersReceived(
-            self._command, self._path, self._version)
+            self._command, self._path, self._version
+        )
         if self._command == b"CONNECT":
             # This is a lie, but we don't want HTTPChannel to decide that
             # the request is finished just because a CONNECT request
@@ -184,7 +183,6 @@ class BuilderProxy(http.HTTPChannel):
 
 
 class BuilderProxyFactory(http.HTTPFactory):
-
     protocol = BuilderProxy
 
     def __init__(self, manager, remote_url, *args, **kwargs):
@@ -200,21 +198,22 @@ class BuilderProxyFactory(http.HTTPFactory):
         agent = http._escape(request.getHeader(b"user-agent") or b"-")
         line = (
             '%(timestamp)s "%(method)s %(uri)s %(protocol)s" '
-            '%(code)d %(length)s "%(referrer)s" "%(agent)s"\n' % {
-                'timestamp': self._logDateTime,
-                'method': http._escape(request.method),
-                'uri': http._escape(request.uri),
-                'protocol': http._escape(request.clientproto),
-                'code': request.code,
-                'length': request.sentLength or "-",
-                'referrer': referrer,
-                'agent': agent,
-                })
+            '%(code)d %(length)s "%(referrer)s" "%(agent)s"\n'
+            % {
+                "timestamp": self._logDateTime,
+                "method": http._escape(request.method),
+                "uri": http._escape(request.uri),
+                "protocol": http._escape(request.clientproto),
+                "code": request.code,
+                "length": request.sentLength or "-",
+                "referrer": referrer,
+                "agent": agent,
+            }
+        )
         self.manager._builder.log(line.encode("UTF-8"))
 
 
 class BuildManagerProxyMixin:
-
     def startProxy(self):
         """Start the local builder proxy, if necessary."""
         if not self.proxy_url:
@@ -222,7 +221,8 @@ class BuildManagerProxyMixin:
         proxy_port = self._builder._config.get("builder", "proxyport")
         proxy_factory = BuilderProxyFactory(self, self.proxy_url, timeout=60)
         self.proxy_service = strports.service(
-            "tcp:%s" % proxy_port, proxy_factory)
+            "tcp:%s" % proxy_port, proxy_factory
+        )
         self.proxy_service.setServiceParent(self._builder.service)
         if self.backend_name == "lxd":
             proxy_host = self.backend.ipv4_network.ip
@@ -252,4 +252,5 @@ class BuildManagerProxyMixin:
             urlopen(req, timeout=15)
         except (HTTPError, URLError) as e:
             self._builder.log(
-                f"Unable to revoke token for {url.username}: {e}")
+                f"Unable to revoke token for {url.username}: {e}"
+            )

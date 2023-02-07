@@ -4,8 +4,8 @@
 import stat
 import subprocess
 import tempfile
-from textwrap import dedent
 import time
+from textwrap import dedent
 
 from fixtures import FakeLogger
 from systemfixtures import FakeTime
@@ -15,14 +15,13 @@ from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesListwise,
-    )
+)
 
 from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakebuilder import FakeMethod
 
 
 class MockCopyIn(FakeMethod):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.source_bytes = None
@@ -34,71 +33,116 @@ class MockCopyIn(FakeMethod):
 
 
 class TestOverrideSourcesList(TestCase):
-
     def test_succeeds(self):
         args = [
             "override-sources-list",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
             "deb http://archive.ubuntu.com/ubuntu xenial main",
             "deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main",
-            ]
+        ]
         override_sources_list = parse_args(args=args).operation
         self.assertEqual(0, override_sources_list.run())
         self.assertEqual(
-            (dedent("""\
+            (
+                dedent(
+                    """\
                 deb http://archive.ubuntu.com/ubuntu xenial main
                 deb http://ppa.launchpad.net/launchpad/ppa/ubuntu xenial main
-                """).encode("UTF-8"), stat.S_IFREG | 0o644),
-            override_sources_list.backend.backend_fs["/etc/apt/sources.list"])
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            override_sources_list.backend.backend_fs["/etc/apt/sources.list"],
+        )
         self.assertEqual(
             (b'Acquire::Retries "3";\n', stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99retries"])
+                "/etc/apt/apt.conf.d/99retries"
+            ],
+        )
         self.assertEqual(
-            (b'APT::Get::Always-Include-Phased-Updates "true";\n',
-             stat.S_IFREG | 0o644),
+            (
+                b'APT::Get::Always-Include-Phased-Updates "true";\n',
+                stat.S_IFREG | 0o644,
+            ),
             override_sources_list.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99phasing"])
+                "/etc/apt/apt.conf.d/99phasing"
+            ],
+        )
         self.assertEqual(
-            (b"Package: *\nPin: release a=*-proposed\nPin-Priority: 500\n",
-             stat.S_IFREG | 0o644),
+            (
+                b"Package: *\nPin: release a=*-proposed\nPin-Priority: 500\n",
+                stat.S_IFREG | 0o644,
+            ),
             override_sources_list.backend.backend_fs[
-                "/etc/apt/preferences.d/proposed.pref"])
+                "/etc/apt/preferences.d/proposed.pref"
+            ],
+        )
         self.assertEqual(
-            (b"Package: *\nPin: release a=*-backports\nPin-Priority: 500\n",
-             stat.S_IFREG | 0o644),
+            (
+                b"Package: *\nPin: release a=*-backports\nPin-Priority: 500\n",
+                stat.S_IFREG | 0o644,
+            ),
             override_sources_list.backend.backend_fs[
-                "/etc/apt/preferences.d/backports.pref"])
+                "/etc/apt/preferences.d/backports.pref"
+            ],
+        )
 
     def test_apt_proxy(self):
         args = [
             "override-sources-list",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--apt-proxy-url", "http://apt-proxy.example:3128/",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--apt-proxy-url",
+            "http://apt-proxy.example:3128/",
             "deb http://archive.ubuntu.com/ubuntu xenial main",
-            ]
+        ]
         override_sources_list = parse_args(args=args).operation
         self.assertEqual(0, override_sources_list.run())
         self.assertEqual(
-            (dedent("""\
+            (
+                dedent(
+                    """\
                 deb http://archive.ubuntu.com/ubuntu xenial main
-                """).encode("UTF-8"), stat.S_IFREG | 0o644),
-            override_sources_list.backend.backend_fs["/etc/apt/sources.list"])
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            override_sources_list.backend.backend_fs["/etc/apt/sources.list"],
+        )
         self.assertEqual(
             (b'Acquire::Retries "3";\n', stat.S_IFREG | 0o644),
             override_sources_list.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99retries"])
+                "/etc/apt/apt.conf.d/99retries"
+            ],
+        )
         self.assertEqual(
-            (b'APT::Get::Always-Include-Phased-Updates "true";\n',
-             stat.S_IFREG | 0o644),
+            (
+                b'APT::Get::Always-Include-Phased-Updates "true";\n',
+                stat.S_IFREG | 0o644,
+            ),
             override_sources_list.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99phasing"])
+                "/etc/apt/apt.conf.d/99phasing"
+            ],
+        )
         self.assertEqual(
-            (dedent("""\
+            (
+                dedent(
+                    """\
                 Acquire::http::Proxy "http://apt-proxy.example:3128/";
-                """).encode("UTF-8"), stat.S_IFREG | 0o644),
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
             override_sources_list.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99proxy"])
+                "/etc/apt/apt.conf.d/99proxy"
+            ],
+        )
 
 
 # Output of:
@@ -108,7 +152,8 @@ class TestOverrideSourcesList(TestCase):
 #         F6ECB3762474EDA9D21B7022871920D1991BC93C
 # (For test purposes, the exact key ID isn't particularly important.  This
 # just needs to be some kind of valid GPG public key.)
-TEST_GPG_KEY = dedent("""\
+TEST_GPG_KEY = dedent(
+    """\
     -----BEGIN PGP PUBLIC KEY BLOCK-----
 
     mQINBFufwdoBEADv/Gxytx/LcSXYuM0MwKojbBye81s0G1nEx+lz6VAUpIUZnbkq
@@ -138,16 +183,19 @@ TEST_GPG_KEY = dedent("""\
     uOgcXny1UlwtCUzlrSaP
     =9AdM
     -----END PGP PUBLIC KEY BLOCK-----
-    """)
+    """
+)
 
 
 class TestAddTrustedKeys(TestCase):
-
     def test_add_trusted_keys(self):
         args = [
             "add-trusted-keys",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+        ]
         add_trusted_keys = parse_args(args=args).operation
         with tempfile.NamedTemporaryFile(mode="wb+") as keys_file:
             keys_file.write(TEST_GPG_KEY.encode())
@@ -157,54 +205,81 @@ class TestAddTrustedKeys(TestCase):
                 add_trusted_keys.show_keys_file = show_keys_file
                 self.assertEqual(0, add_trusted_keys.run())
                 expected_dearmored_key = subprocess.run(
-                    ["gpg", "--ignore-time-conflict", "--no-options",
-                     "--no-keyring", "--dearmor"],
-                    input=TEST_GPG_KEY.encode(), capture_output=True).stdout
+                    [
+                        "gpg",
+                        "--ignore-time-conflict",
+                        "--no-options",
+                        "--no-keyring",
+                        "--dearmor",
+                    ],
+                    input=TEST_GPG_KEY.encode(),
+                    capture_output=True,
+                ).stdout
                 self.assertEqual(
                     (expected_dearmored_key, stat.S_IFREG | 0o644),
                     add_trusted_keys.backend.backend_fs[
-                        "/etc/apt/trusted.gpg.d/launchpad-buildd.gpg"])
+                        "/etc/apt/trusted.gpg.d/launchpad-buildd.gpg"
+                    ],
+                )
                 show_keys_file.seek(0)
                 self.assertIn(
                     "Key fingerprint = F6EC B376 2474 EDA9 D21B  "
                     "7022 8719 20D1 991B C93C",
-                    show_keys_file.read().decode())
+                    show_keys_file.read().decode(),
+                )
 
 
 class RanAptGet(MatchesListwise):
-
     def __init__(self, args_list):
-        super().__init__([
-            MatchesListwise([
-                Equals((["/usr/bin/apt-get"] + args,)),
-                ContainsDict({
-                    "env": MatchesDict({
-                        "LANG": Equals("C"),
-                        "DEBIAN_FRONTEND": Equals("noninteractive"),
-                        "TTY": Equals("unknown"),
-                        }),
-                    }),
-                ]) for args in args_list
-            ])
+        super().__init__(
+            [
+                MatchesListwise(
+                    [
+                        Equals((["/usr/bin/apt-get"] + args,)),
+                        ContainsDict(
+                            {
+                                "env": MatchesDict(
+                                    {
+                                        "LANG": Equals("C"),
+                                        "DEBIAN_FRONTEND": Equals(
+                                            "noninteractive"
+                                        ),
+                                        "TTY": Equals("unknown"),
+                                    }
+                                ),
+                            }
+                        ),
+                    ]
+                )
+                for args in args_list
+            ]
+        )
 
 
 class TestUpdate(TestCase):
-
     def test_succeeds(self):
         self.useFixture(FakeTime())
         start_time = time.time()
         args = [
             "update-debian-chroot",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+        ]
         update = parse_args(args=args).operation
         self.assertEqual(0, update.run())
 
         expected_args = [
             ["-uy", "update"],
-            ["-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
-             "dist-upgrade"],
-            ]
+            [
+                "-o",
+                "DPkg::Options::=--force-confold",
+                "-uy",
+                "--purge",
+                "dist-upgrade",
+            ],
+        ]
         self.assertThat(update.backend.run.calls, RanAptGet(expected_args))
         self.assertEqual(start_time, time.time())
 
@@ -220,8 +295,11 @@ class TestUpdate(TestCase):
         start_time = time.time()
         args = [
             "update-debian-chroot",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+        ]
         update = parse_args(args=args).operation
         update.backend.run = FailFirstTime()
         self.assertEqual(0, update.run())
@@ -229,12 +307,18 @@ class TestUpdate(TestCase):
         expected_args = [
             ["-uy", "update"],
             ["-uy", "update"],
-            ["-o", "DPkg::Options::=--force-confold", "-uy", "--purge",
-             "dist-upgrade"],
-            ]
+            [
+                "-o",
+                "DPkg::Options::=--force-confold",
+                "-uy",
+                "--purge",
+                "dist-upgrade",
+            ],
+        ]
         self.assertThat(update.backend.run.calls, RanAptGet(expected_args))
         self.assertEqual(
             "Updating target for build 1\n"
             "Waiting 15 seconds and trying again ...\n",
-            logger.output)
+            logger.output,
+        )
         self.assertEqual(start_time + 15, time.time())

@@ -6,23 +6,12 @@ import subprocess
 import tarfile
 from unittest import mock
 
-from fixtures import (
-    EnvironmentVariable,
-    FakeLogger,
-    TempDir,
-    )
+from fixtures import EnvironmentVariable, FakeLogger, TempDir
 from testtools import TestCase
-from testtools.matchers import (
-    Equals,
-    MatchesListwise,
-    MatchesSetwise,
-    )
+from testtools.matchers import Equals, MatchesListwise, MatchesSetwise
 
 from lpbuildd.target.cli import parse_args
-from lpbuildd.target.tests.matchers import (
-    RanAptGet,
-    RanCommand,
-    )
+from lpbuildd.target.tests.matchers import RanAptGet, RanCommand
 
 
 class TestGenerateTranslationTemplates(TestCase):
@@ -46,7 +35,7 @@ class TestGenerateTranslationTemplates(TestCase):
         """
         branch_path = self.useFixture(TempDir()).path
         for name, contents in content_map.items():
-            with open(os.path.join(branch_path, name), 'wb') as f:
+            with open(os.path.join(branch_path, name), "wb") as f:
                 f.write(contents)
         return branch_path
 
@@ -66,78 +55,118 @@ class TestGenerateTranslationTemplates(TestCase):
             with EnvironmentVariable("BRZ_EMAIL", committer_id):
                 subprocess.check_call(
                     ["bzr", "commit", "-q", "-m", "Populating branch."],
-                    cwd=branch_path)
+                    cwd=branch_path,
+                )
 
     def make_git_branch(self, branch_path):
         subprocess.check_call(["git", "init", "-q"], cwd=branch_path)
         subprocess.check_call(
-            ["git", "config", "user.name", "Committer"], cwd=branch_path)
+            ["git", "config", "user.name", "Committer"], cwd=branch_path
+        )
         subprocess.check_call(
             ["git", "config", "user.email", "committer@example.com"],
-            cwd=branch_path)
+            cwd=branch_path,
+        )
         subprocess.check_call(["git", "add", "."], cwd=branch_path)
         subprocess.check_call(
-            ["git", "commit", "-q", "--allow-empty",
-             "-m", "Populating branch"],
-            cwd=branch_path)
+            [
+                "git",
+                "commit",
+                "-q",
+                "--allow-empty",
+                "-m",
+                "Populating branch",
+            ],
+            cwd=branch_path,
+        )
 
     def test_install_bzr(self):
         args = [
             "generate-translation-templates",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--branch", "lp:foo", self.result_name,
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            self.result_name,
+        ]
         generator = parse_args(args=args).operation
         generator.install()
-        self.assertThat(generator.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "intltool", "bzr"),
-            ]))
+        self.assertThat(
+            generator.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet("install", "intltool", "bzr"),
+                ]
+            ),
+        )
 
     def test_install_git(self):
         args = [
             "generate-translation-templates",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", "lp:foo", self.result_name,
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            self.result_name,
+        ]
         generator = parse_args(args=args).operation
         generator.install()
-        self.assertThat(generator.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "intltool", "git"),
-            ]))
+        self.assertThat(
+            generator.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet("install", "intltool", "git"),
+                ]
+            ),
+        )
 
     def test_fetch_bzr(self):
         # fetch can retrieve branch contents from a Bazaar branch.
         marker_text = b"Ceci n'est pas cet branch."
-        branch_path = self.make_branch_contents({'marker.txt': marker_text})
+        branch_path = self.make_branch_contents({"marker.txt": marker_text})
         self.make_bzr_branch(branch_path)
 
         args = [
             "generate-translation-templates",
-            "--backend=uncontained", "--series=xenial", "--arch=amd64", "1",
-            "--branch", branch_path, self.result_name,
-            ]
+            "--backend=uncontained",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            branch_path,
+            self.result_name,
+        ]
         generator = parse_args(args=args).operation
         generator.fetch(quiet=True)
 
-        marker_path = os.path.join(generator.branch_dir, 'marker.txt')
+        marker_path = os.path.join(generator.branch_dir, "marker.txt")
         with open(marker_path, "rb") as marker_file:
             self.assertEqual(marker_text, marker_file.read())
 
     def test_fetch_git(self):
         # fetch can retrieve branch contents from a Git repository.
         marker_text = b"Ceci n'est pas cet branch."
-        branch_path = self.make_branch_contents({'marker.txt': marker_text})
+        branch_path = self.make_branch_contents({"marker.txt": marker_text})
         self.make_git_branch(branch_path)
 
         args = [
             "generate-translation-templates",
-            "--backend=uncontained", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", branch_path, self.result_name,
-            ]
+            "--backend=uncontained",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            branch_path,
+            self.result_name,
+        ]
         generator = parse_args(args=args).operation
         generator.fetch(quiet=True)
 
-        marker_path = os.path.join(generator.branch_dir, 'marker.txt')
+        marker_path = os.path.join(generator.branch_dir, "marker.txt")
         with open(marker_path, "rb") as marker_file:
             self.assertEqual(marker_text, marker_file.read())
 
@@ -145,46 +174,61 @@ class TestGenerateTranslationTemplates(TestCase):
         # fetch can retrieve branch contents from a Git repository and
         # branch name.
         marker_text = b"Ceci n'est pas cet branch."
-        branch_path = self.make_branch_contents({'marker.txt': marker_text})
+        branch_path = self.make_branch_contents({"marker.txt": marker_text})
         self.make_git_branch(branch_path)
         subprocess.call(
-            ["git", "branch", "-m", "master", "next"], cwd=branch_path)
+            ["git", "branch", "-m", "master", "next"], cwd=branch_path
+        )
 
         args = [
             "generate-translation-templates",
-            "--backend=uncontained", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", branch_path, "--git-path", "next",
+            "--backend=uncontained",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            branch_path,
+            "--git-path",
+            "next",
             self.result_name,
-            ]
+        ]
         generator = parse_args(args=args).operation
         generator.fetch(quiet=True)
 
-        marker_path = os.path.join(generator.branch_dir, 'marker.txt')
+        marker_path = os.path.join(generator.branch_dir, "marker.txt")
         with open(marker_path, "rb") as marker_file:
             self.assertEqual(marker_text, marker_file.read())
 
     def test_templates_tarball(self):
         # Create a tarball from pot files.
-        branchdir = os.path.join(self.home_dir, 'branchdir')
+        branchdir = os.path.join(self.home_dir, "branchdir")
         dummy_tar = os.path.join(
-            os.path.dirname(__file__), 'dummy_templates.tar.gz')
-        with tarfile.open(dummy_tar, 'r|*') as tar:
+            os.path.dirname(__file__), "dummy_templates.tar.gz"
+        )
+        with tarfile.open(dummy_tar, "r|*") as tar:
             tar.extractall(branchdir)
             potnames = [
                 member.name
-                for member in tar.getmembers() if not member.isdir()]
+                for member in tar.getmembers()
+                if not member.isdir()
+            ]
         self.make_bzr_branch(branchdir)
 
         args = [
             "generate-translation-templates",
-            "--backend=uncontained", "--series=xenial", "--arch=amd64", "1",
-            "--branch", branchdir, self.result_name,
-            ]
+            "--backend=uncontained",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            branchdir,
+            self.result_name,
+        ]
         generator = parse_args(args=args).operation
         generator.fetch(quiet=True)
         generator._makeTarball(potnames)
         result_path = os.path.join(self.home_dir, self.result_name)
-        with tarfile.open(result_path, 'r|*') as tar:
+        with tarfile.open(result_path, "r|*") as tar:
             tarnames = tar.getnames()
         self.assertThat(tarnames, MatchesSetwise(*(map(Equals, potnames))))
 
@@ -197,32 +241,64 @@ class TestGenerateTranslationTemplates(TestCase):
 
         args = [
             "generate-translation-templates",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--branch", branch_url, self.result_name,
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            branch_url,
+            self.result_name,
+        ]
         generator = parse_args(args=args).operation
         generator.backend.add_file(os.path.join(po_dir, "POTFILES.in"), b"")
         generator.backend.add_file(
-            os.path.join(po_dir, "Makevars"), b"DOMAIN = test\n")
+            os.path.join(po_dir, "Makevars"), b"DOMAIN = test\n"
+        )
         generator.run()
-        self.assertThat(generator.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "intltool", "bzr"),
-            RanCommand(
-                ["bzr", "branch", "lp:~my/branch", "source-tree"],
-                cwd=self.home_dir, LANG="C.UTF-8", SHELL="/bin/sh"),
-            RanCommand(
-                ["rm", "-f",
-                 os.path.join(po_dir, "missing"),
-                 os.path.join(po_dir, "notexist")]),
-            RanCommand(
-                ["/usr/bin/intltool-update", "-m"],
-                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
-            RanCommand(
-                ["/usr/bin/intltool-update", "-p", "-g", "test"],
-                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
-            RanCommand(
-                ["tar", "-C", branch_dir, "-czf", result_path, "po/test.pot"]),
-            ]))
+        self.assertThat(
+            generator.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet("install", "intltool", "bzr"),
+                    RanCommand(
+                        ["bzr", "branch", "lp:~my/branch", "source-tree"],
+                        cwd=self.home_dir,
+                        LANG="C.UTF-8",
+                        SHELL="/bin/sh",
+                    ),
+                    RanCommand(
+                        [
+                            "rm",
+                            "-f",
+                            os.path.join(po_dir, "missing"),
+                            os.path.join(po_dir, "notexist"),
+                        ]
+                    ),
+                    RanCommand(
+                        ["/usr/bin/intltool-update", "-m"],
+                        stdout=mock.ANY,
+                        stderr=mock.ANY,
+                        cwd=po_dir,
+                    ),
+                    RanCommand(
+                        ["/usr/bin/intltool-update", "-p", "-g", "test"],
+                        stdout=mock.ANY,
+                        stderr=mock.ANY,
+                        cwd=po_dir,
+                    ),
+                    RanCommand(
+                        [
+                            "tar",
+                            "-C",
+                            branch_dir,
+                            "-czf",
+                            result_path,
+                            "po/test.pot",
+                        ]
+                    ),
+                ]
+            ),
+        )
 
     def test_run_git(self):
         # Install dependencies and generate a templates tarball from Git.
@@ -233,35 +309,85 @@ class TestGenerateTranslationTemplates(TestCase):
 
         args = [
             "generate-translation-templates",
-            "--backend=fake", "--series=xenial", "--arch=amd64", "1",
-            "--git-repository", repository_url, self.result_name,
-            ]
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            repository_url,
+            self.result_name,
+        ]
         generator = parse_args(args=args).operation
         generator.backend.add_file(os.path.join(po_dir, "POTFILES.in"), b"")
         generator.backend.add_file(
-            os.path.join(po_dir, "Makevars"), b"DOMAIN = test\n")
+            os.path.join(po_dir, "Makevars"), b"DOMAIN = test\n"
+        )
         generator.run()
-        self.assertThat(generator.backend.run.calls, MatchesListwise([
-            RanAptGet("install", "intltool", "git"),
-            RanCommand(
-                ["git", "clone", "-n", "lp:~my/repository", "source-tree"],
-                cwd=self.home_dir, LANG="C.UTF-8", SHELL="/bin/sh"),
-            RanCommand(
-                ["git", "checkout", "-q", "HEAD"],
-                cwd=branch_dir, LANG="C.UTF-8", SHELL="/bin/sh"),
-            RanCommand(
-                ["git", "submodule", "update", "--init", "--recursive"],
-                cwd=branch_dir, LANG="C.UTF-8", SHELL="/bin/sh"),
-            RanCommand(
-                ["rm", "-f",
-                 os.path.join(po_dir, "missing"),
-                 os.path.join(po_dir, "notexist")]),
-            RanCommand(
-                ["/usr/bin/intltool-update", "-m"],
-                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
-            RanCommand(
-                ["/usr/bin/intltool-update", "-p", "-g", "test"],
-                stdout=mock.ANY, stderr=mock.ANY, cwd=po_dir),
-            RanCommand(
-                ["tar", "-C", branch_dir, "-czf", result_path, "po/test.pot"]),
-            ]))
+        self.assertThat(
+            generator.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet("install", "intltool", "git"),
+                    RanCommand(
+                        [
+                            "git",
+                            "clone",
+                            "-n",
+                            "lp:~my/repository",
+                            "source-tree",
+                        ],
+                        cwd=self.home_dir,
+                        LANG="C.UTF-8",
+                        SHELL="/bin/sh",
+                    ),
+                    RanCommand(
+                        ["git", "checkout", "-q", "HEAD"],
+                        cwd=branch_dir,
+                        LANG="C.UTF-8",
+                        SHELL="/bin/sh",
+                    ),
+                    RanCommand(
+                        [
+                            "git",
+                            "submodule",
+                            "update",
+                            "--init",
+                            "--recursive",
+                        ],
+                        cwd=branch_dir,
+                        LANG="C.UTF-8",
+                        SHELL="/bin/sh",
+                    ),
+                    RanCommand(
+                        [
+                            "rm",
+                            "-f",
+                            os.path.join(po_dir, "missing"),
+                            os.path.join(po_dir, "notexist"),
+                        ]
+                    ),
+                    RanCommand(
+                        ["/usr/bin/intltool-update", "-m"],
+                        stdout=mock.ANY,
+                        stderr=mock.ANY,
+                        cwd=po_dir,
+                    ),
+                    RanCommand(
+                        ["/usr/bin/intltool-update", "-p", "-g", "test"],
+                        stdout=mock.ANY,
+                        stderr=mock.ANY,
+                        cwd=po_dir,
+                    ),
+                    RanCommand(
+                        [
+                            "tar",
+                            "-C",
+                            branch_dir,
+                            "-czf",
+                            result_path,
+                            "po/test.pot",
+                        ]
+                    ),
+                ]
+            ),
+        )

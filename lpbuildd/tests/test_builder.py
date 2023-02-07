@@ -13,17 +13,9 @@ from fixtures import TempDir
 from testtools import TestCase
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from twisted.internet import defer
-from twisted.logger import (
-    FileLogObserver,
-    formatEvent,
-    globalLogPublisher,
-    )
+from twisted.logger import FileLogObserver, formatEvent, globalLogPublisher
 
-from lpbuildd.builder import (
-    Builder,
-    BuildManager,
-    _sanitizeURLs,
-    )
+from lpbuildd.builder import Builder, BuildManager, _sanitizeURLs
 from lpbuildd.tests.fakebuilder import FakeConfig
 
 
@@ -73,14 +65,14 @@ class TestSanitizeURLs(TestCase):
 
 
 class TestBuildManager(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
         super().setUp()
         self.log_file = io.StringIO()
         observer = FileLogObserver(
-            self.log_file, lambda event: formatEvent(event) + "\n")
+            self.log_file, lambda event: formatEvent(event) + "\n"
+        )
         globalLogPublisher.addObserver(observer)
         self.addCleanup(globalLogPublisher.removeObserver, observer)
 
@@ -97,13 +89,13 @@ class TestBuildManager(TestCase):
         code = yield d
         self.assertEqual(0, code)
         self.assertEqual(
-            b"RUN: echo 'hello world'\n"
-            b"hello world\n",
-            builder._log.getvalue())
+            b"RUN: echo 'hello world'\n" b"hello world\n",
+            builder._log.getvalue(),
+        )
         self.assertEqual(
-            "Build log: RUN: echo 'hello world'\n"
-            "Build log: hello world\n",
-            self.log_file.getvalue())
+            "Build log: RUN: echo 'hello world'\n" "Build log: hello world\n",
+            self.log_file.getvalue(),
+        )
 
     @defer.inlineCallbacks
     def test_runSubProcess_bytes(self):
@@ -118,10 +110,13 @@ class TestBuildManager(TestCase):
         code = yield d
         self.assertEqual(0, code)
         self.assertEqual(
-            "RUN: echo '\N{SNOWMAN}'\n"
-            "\N{SNOWMAN}\n".encode(),
-            builder._log.getvalue())
+            "RUN: echo '\N{SNOWMAN}'\n" "\N{SNOWMAN}\n".encode(),
+            builder._log.getvalue(),
+        )
         self.assertEqual(
             ["Build log: RUN: echo '\N{SNOWMAN}'", "Build log: \N{SNOWMAN}"],
-            [re.sub(r".*? \[-\] (.*)", r"\1", line)
-             for line in self.log_file.getvalue().splitlines()])
+            [
+                re.sub(r".*? \[-\] (.*)", r"\1", line)
+                for line in self.log_file.getvalue().splitlines()
+            ],
+        )

@@ -4,7 +4,6 @@
 
 """A script that builds a package from a recipe and a chroot."""
 
-from optparse import OptionParser
 import os
 import pwd
 import socket
@@ -12,10 +11,10 @@ import stat
 import subprocess
 import sys
 import tempfile
+from optparse import OptionParser
 from textwrap import dedent
 
 from debian.deb822 import Deb822
-
 
 RETCODE_SUCCESS = 0
 RETCODE_FAILURE_INSTALL = 200
@@ -31,16 +30,24 @@ def call_report(args, env):
 
     :return: The process exit status.
     """
-    print('RUN %r' % args)
+    print("RUN %r" % args)
     return subprocess.call(args, env=env)
 
 
 class RecipeBuilder:
     """Builds a package from a recipe."""
 
-    def __init__(self, build_id, author_name, author_email,
-                 suite, distroseries_name, component, archive_purpose,
-                 git=False):
+    def __init__(
+        self,
+        build_id,
+        author_name,
+        author_email,
+        suite,
+        distroseries_name,
+        component,
+        archive_purpose,
+        git=False,
+    ):
         """Constructor.
 
         :param build_id: The id of the build (a str).
@@ -52,7 +59,7 @@ class RecipeBuilder:
         """
         self.build_id = build_id
         if isinstance(author_name, bytes):
-            author_name = author_name.decode('utf-8')
+            author_name = author_name.decode("utf-8")
         self.author_name = author_name
         self.author_email = author_email
         self.archive_purpose = archive_purpose
@@ -60,24 +67,26 @@ class RecipeBuilder:
         self.distroseries_name = distroseries_name
         self.suite = suite
         self.git = git
-        self.chroot_path = get_build_path(build_id, 'chroot-autobuild')
-        self.work_dir_relative = os.environ['HOME'] + '/work'
-        self.work_dir = os.path.join(self.chroot_path,
-                                     self.work_dir_relative[1:])
+        self.chroot_path = get_build_path(build_id, "chroot-autobuild")
+        self.work_dir_relative = os.environ["HOME"] + "/work"
+        self.work_dir = os.path.join(
+            self.chroot_path, self.work_dir_relative[1:]
+        )
 
-        self.tree_path = os.path.join(self.work_dir, 'tree')
-        self.apt_dir_relative = os.path.join(self.work_dir_relative, 'apt')
-        self.apt_dir = os.path.join(self.work_dir, 'apt')
+        self.tree_path = os.path.join(self.work_dir, "tree")
+        self.apt_dir_relative = os.path.join(self.work_dir_relative, "apt")
+        self.apt_dir = os.path.join(self.work_dir, "apt")
         self.username = pwd.getpwuid(os.getuid())[0]
         self.apt_sources_list_dir = os.path.join(
-            self.chroot_path, "etc/apt/sources.list.d")
+            self.chroot_path, "etc/apt/sources.list.d"
+        )
 
     def install(self):
         """Install all the requirements for building recipes.
 
         :return: A retcode from apt.
         """
-        return self.chroot(['apt-get', 'install', '-y', 'lsb-release'])
+        return self.chroot(["apt-get", "install", "-y", "lsb-release"])
 
     # XXX cjwatson 2021-11-23: Use shutil.which instead once we can assume
     # Python >= 3.3.
@@ -101,102 +110,136 @@ class RecipeBuilder:
         :return: a retcode from `bzr dailydeb` or `git-build-recipe`.
         """
         assert not os.path.exists(self.tree_path)
-        recipe_path = os.path.join(self.work_dir, 'recipe')
-        manifest_path = os.path.join(self.tree_path, 'manifest')
+        recipe_path = os.path.join(self.work_dir, "recipe")
+        manifest_path = os.path.join(self.tree_path, "manifest")
         with open(recipe_path) as recipe_file:
             recipe = recipe_file.read()
         # As of bzr 2.2, a defined identity is needed.  In this case, we're
         # using buildd@<hostname>.
         hostname = socket.gethostname()
-        email = 'buildd@%s' % hostname
-        lsb_release = subprocess.Popen([
-            'sudo', '/usr/sbin/chroot', self.chroot_path, 'lsb_release',
-            '-r', '-s'], stdout=subprocess.PIPE, universal_newlines=True)
+        email = "buildd@%s" % hostname
+        lsb_release = subprocess.Popen(
+            [
+                "sudo",
+                "/usr/sbin/chroot",
+                self.chroot_path,
+                "lsb_release",
+                "-r",
+                "-s",
+            ],
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
         distroseries_version = lsb_release.communicate()[0].rstrip()
         assert lsb_release.returncode == 0
 
         if self.git:
-            print('Git version:')
-            subprocess.check_call(['git', '--version'])
-            print(subprocess.check_output(
-                ['dpkg-query', '-W', 'git-build-recipe'],
-                universal_newlines=True).rstrip('\n').replace('\t', ' '))
+            print("Git version:")
+            subprocess.check_call(["git", "--version"])
+            print(
+                subprocess.check_output(
+                    ["dpkg-query", "-W", "git-build-recipe"],
+                    universal_newlines=True,
+                )
+                .rstrip("\n")
+                .replace("\t", " ")
+            )
         else:
-            print('Bazaar versions:')
-            subprocess.check_call(['bzr', 'version'])
-            subprocess.check_call(['bzr', 'plugins'])
+            print("Bazaar versions:")
+            subprocess.check_call(["bzr", "version"])
+            subprocess.check_call(["bzr", "plugins"])
 
-        print('Building recipe:')
+        print("Building recipe:")
         print(recipe)
         sys.stdout.flush()
         env = {
-            'DEBEMAIL': self.author_email,
-            'DEBFULLNAME': self.author_name.encode('utf-8'),
-            'EMAIL': email,
-            'LANG': 'C.UTF-8',
-            }
+            "DEBEMAIL": self.author_email,
+            "DEBFULLNAME": self.author_name.encode("utf-8"),
+            "EMAIL": email,
+            "LANG": "C.UTF-8",
+        }
         if self.git:
-            cmd = ['git-build-recipe']
-        elif self._is_command_on_path('brz-build-daily-recipe'):
-            cmd = ['brz-build-daily-recipe']
+            cmd = ["git-build-recipe"]
+        elif self._is_command_on_path("brz-build-daily-recipe"):
+            cmd = ["brz-build-daily-recipe"]
         else:
-            cmd = ['bzr', '-Derror', 'dailydeb']
-        cmd.extend([
-            '--safe', '--no-build',
-            '--manifest', manifest_path,
-            '--distribution', self.distroseries_name,
-            '--allow-fallback-to-native',
-            '--append-version', '~ubuntu%s.1' % distroseries_version,
-            recipe_path, self.tree_path,
-            ])
+            cmd = ["bzr", "-Derror", "dailydeb"]
+        cmd.extend(
+            [
+                "--safe",
+                "--no-build",
+                "--manifest",
+                manifest_path,
+                "--distribution",
+                self.distroseries_name,
+                "--allow-fallback-to-native",
+                "--append-version",
+                "~ubuntu%s.1" % distroseries_version,
+                recipe_path,
+                self.tree_path,
+            ]
+        )
         retcode = call_report(cmd, env=env)
         if retcode != 0:
             return retcode
-        (source,) = (name for name in os.listdir(self.tree_path)
-                     if os.path.isdir(os.path.join(self.tree_path, name)))
+        (source,) = (
+            name
+            for name in os.listdir(self.tree_path)
+            if os.path.isdir(os.path.join(self.tree_path, name))
+        )
         self.source_dir_relative = os.path.join(
-            self.work_dir_relative, 'tree', source)
+            self.work_dir_relative, "tree", source
+        )
         return retcode
 
     def getPackageName(self):
         source_dir = os.path.join(
-            self.chroot_path, self.source_dir_relative.lstrip('/'))
-        changelog = os.path.join(source_dir, 'debian/changelog')
-        return open(
-            changelog, errors='replace').readline().split(' ')[0]
+            self.chroot_path, self.source_dir_relative.lstrip("/")
+        )
+        changelog = os.path.join(source_dir, "debian/changelog")
+        return open(changelog, errors="replace").readline().split(" ")[0]
 
     def getSourceControl(self):
         """Return the parsed source control stanza from the source tree."""
         source_dir = os.path.join(
-            self.chroot_path, self.source_dir_relative.lstrip('/'))
+            self.chroot_path, self.source_dir_relative.lstrip("/")
+        )
         # Open as bytes to allow debian.deb822 to apply its own encoding
         # handling.  We'll get text back from it.
         with open(
-                os.path.join(source_dir, 'debian/control'),
-                'rb') as control_file:
+            os.path.join(source_dir, "debian/control"), "rb"
+        ) as control_file:
             # Don't let Deb822.iter_paragraphs use apt_pkg.TagFile
             # internally, since that only handles real tag files and not the
             # slightly more permissive syntax of debian/control which also
             # allows comments.
-            return next(Deb822.iter_paragraphs(
-                control_file, use_apt_pkg=False))
+            return next(
+                Deb822.iter_paragraphs(control_file, use_apt_pkg=False)
+            )
 
     def makeDummyDsc(self, package):
         control = self.getSourceControl()
-        with open(os.path.join(
-                self.apt_dir, "%s.dsc" % package), "w") as dummy_dsc:
+        with open(
+            os.path.join(self.apt_dir, "%s.dsc" % package), "w"
+        ) as dummy_dsc:
             print(
-                dedent("""\
+                dedent(
+                    """\
                     Format: 1.0
                     Source: %(package)s
                     Architecture: any
                     Version: 99:0
-                    Maintainer: invalid@example.org""") % {"package": package},
-                file=dummy_dsc)
+                    Maintainer: invalid@example.org"""
+                )
+                % {"package": package},
+                file=dummy_dsc,
+            )
             for field in (
-                    "Build-Depends", "Build-Depends-Indep",
-                    "Build-Conflicts", "Build-Conflicts-Indep",
-                    ):
+                "Build-Depends",
+                "Build-Depends-Indep",
+                "Build-Conflicts",
+                "Build-Conflicts-Indep",
+            ):
                 if field in control:
                     print(f"{field}: {control[field]}", file=dummy_dsc)
             print(file=dummy_dsc)
@@ -205,7 +248,8 @@ class RecipeBuilder:
         conf_path = os.path.join(self.apt_dir, "ftparchive.conf")
         with open(conf_path, "w") as conf:
             print(
-                dedent("""\
+                dedent(
+                    """\
                     Dir::ArchiveDir "%(apt_dir)s";
                     Default::Sources::Compress ". bzip2";
                     BinDirectory "%(apt_dir)s" { Sources "Sources"; };
@@ -215,21 +259,33 @@ class RecipeBuilder:
                         Suite "invalid";
                         Codename "invalid";
                         Description "buildrecipe temporary archive";
-                    };""") % {"apt_dir": self.apt_dir},
-                file=conf)
+                    };"""
+                )
+                % {"apt_dir": self.apt_dir},
+                file=conf,
+            )
         ftparchive_env = dict(os.environ)
         ftparchive_env.pop("APT_CONFIG", None)
         ret = subprocess.call(
             ["apt-ftparchive", "-q=2", "generate", conf_path],
-            env=ftparchive_env)
+            env=ftparchive_env,
+        )
         if ret != 0:
             return ret
 
         with open(os.path.join(self.apt_dir, "Release"), "w") as release:
             return subprocess.call(
-                ["apt-ftparchive", "-q=2", "-c", conf_path, "release",
-                 self.apt_dir],
-                stdout=release, env=ftparchive_env)
+                [
+                    "apt-ftparchive",
+                    "-q=2",
+                    "-c",
+                    conf_path,
+                    "release",
+                    self.apt_dir,
+                ],
+                stdout=release,
+                env=ftparchive_env,
+            )
 
     def enableAptArchive(self):
         """Enable the dummy apt archive.
@@ -241,20 +297,28 @@ class RecipeBuilder:
         """
         tmp_list_path = os.path.join(self.apt_dir, "buildrecipe-archive.list")
         tmp_list_path_relative = os.path.join(
-            self.apt_dir_relative, "buildrecipe-archive.list")
+            self.apt_dir_relative, "buildrecipe-archive.list"
+        )
         with open(tmp_list_path, "w") as tmp_list:
-            print("deb-src [trusted=yes] file://%s ./" % self.apt_dir_relative,
-                  file=tmp_list)
-        ret = self.chroot([
-                'apt-get',
-                '-o', 'Dir::Etc::sourcelist=%s' % tmp_list_path_relative,
-                '-o', 'APT::Get::List-Cleanup=false',
-                'update',
-                ])
+            print(
+                "deb-src [trusted=yes] file://%s ./" % self.apt_dir_relative,
+                file=tmp_list,
+            )
+        ret = self.chroot(
+            [
+                "apt-get",
+                "-o",
+                "Dir::Etc::sourcelist=%s" % tmp_list_path_relative,
+                "-o",
+                "APT::Get::List-Cleanup=false",
+                "update",
+            ]
+        )
         if ret == 0:
             list_path = os.path.join(
-                self.apt_sources_list_dir, "buildrecipe-archive.list")
-            return subprocess.call(['sudo', 'mv', tmp_list_path, list_path])
+                self.apt_sources_list_dir, "buildrecipe-archive.list"
+            )
+            return subprocess.call(["sudo", "mv", tmp_list_path, list_path])
         return ret
 
     def setUpAptArchive(self, package):
@@ -273,20 +337,22 @@ class RecipeBuilder:
         """Install the build-depends of the source tree."""
         package = self.getPackageName()
         currently_building_contents = (
-            'Package: %s\n'
-            'Suite: %s\n'
-            'Component: %s\n'
-            'Purpose: %s\n'
-            'Build-Debug-Symbols: no\n' %
-            (package, self.suite, self.component, self.archive_purpose))
-        with tempfile.NamedTemporaryFile(mode='w+') as currently_building:
+            "Package: %s\n"
+            "Suite: %s\n"
+            "Component: %s\n"
+            "Purpose: %s\n"
+            "Build-Debug-Symbols: no\n"
+            % (package, self.suite, self.component, self.archive_purpose)
+        )
+        with tempfile.NamedTemporaryFile(mode="w+") as currently_building:
             currently_building.write(currently_building_contents)
             currently_building.flush()
             os.fchmod(currently_building.fileno(), 0o644)
-            self.copy_in(currently_building.name, '/CurrentlyBuilding')
+            self.copy_in(currently_building.name, "/CurrentlyBuilding")
         self.setUpAptArchive(package)
         return self.chroot(
-            ['apt-get', 'build-dep', '-y', '--only-source', package])
+            ["apt-get", "build-dep", "-y", "--only-source", package]
+        )
 
     def chroot(self, args, echo=False):
         """Run a command in the chroot.
@@ -295,11 +361,14 @@ class RecipeBuilder:
         :return: the status code.
         """
         if echo:
-            print("Running in chroot: %s" %
-                  ' '.join("'%s'" % arg for arg in args))
+            print(
+                "Running in chroot: %s"
+                % " ".join("'%s'" % arg for arg in args)
+            )
             sys.stdout.flush()
         return subprocess.call(
-            ['sudo', '/usr/sbin/chroot', self.chroot_path] + args)
+            ["sudo", "/usr/sbin/chroot", self.chroot_path] + args
+        )
 
     def copy_in(self, source_path, target_path):
         """Copy a file into the target environment.
@@ -318,20 +387,37 @@ class RecipeBuilder:
         # in the target.
         mode = stat.S_IMODE(os.stat(source_path).st_mode)
         full_target_path = os.path.join(
-            self.chroot_path, target_path.lstrip("/"))
+            self.chroot_path, target_path.lstrip("/")
+        )
         subprocess.check_call(
-            ["sudo", "install", "-o", "root", "-g", "root", "-m", "%o" % mode,
-             source_path, full_target_path])
+            [
+                "sudo",
+                "install",
+                "-o",
+                "root",
+                "-g",
+                "root",
+                "-m",
+                "%o" % mode,
+                source_path,
+                full_target_path,
+            ]
+        )
 
     def buildSourcePackage(self):
         """Build the source package.
 
         :return: a retcode from dpkg-buildpackage.
         """
-        retcode = self.chroot([
-            'su', '-c',
-            'cd %s && /usr/bin/dpkg-buildpackage -i -I -us -uc -S -sa'
-            % self.source_dir_relative, self.username])
+        retcode = self.chroot(
+            [
+                "su",
+                "-c",
+                "cd %s && /usr/bin/dpkg-buildpackage -i -I -us -uc -S -sa"
+                % self.source_dir_relative,
+                self.username,
+            ]
+        )
         for filename in os.listdir(self.tree_path):
             path = os.path.join(self.tree_path, filename)
             if os.path.isfile(path):
@@ -346,17 +432,22 @@ def get_build_path(build_id, *extra):
     :param extra: the extra path segments within the build directory.
     :return: the generated path.
     """
-    return os.path.join(
-        os.environ["HOME"], "build-" + build_id, *extra)
+    return os.path.join(os.environ["HOME"], "build-" + build_id, *extra)
 
 
 def main():
-    parser = OptionParser(usage=(
-        "usage: %prog BUILD-ID AUTHOR-NAME AUTHOR-EMAIL SUITE "
-        "DISTROSERIES-NAME COMPONENT ARCHIVE-PURPOSE"))
+    parser = OptionParser(
+        usage=(
+            "usage: %prog BUILD-ID AUTHOR-NAME AUTHOR-EMAIL SUITE "
+            "DISTROSERIES-NAME COMPONENT ARCHIVE-PURPOSE"
+        )
+    )
     parser.add_option(
-        "--git", default=False, action="store_true",
-        help="build a git recipe (default: bzr)")
+        "--git",
+        default=False,
+        action="store_true",
+        help="build a git recipe (default: bzr)",
+    )
     options, args = parser.parse_args()
 
     builder = RecipeBuilder(*args, git=options.git)
@@ -371,5 +462,5 @@ def main():
     return RETCODE_SUCCESS
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
