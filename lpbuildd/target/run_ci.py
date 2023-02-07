@@ -24,7 +24,6 @@ class RunCIPrepare(
     SnapStoreOperationMixin,
     Operation,
 ):
-
     description = "Prepare for running CI jobs."
     buildd_path = "/build/tree"
 
@@ -121,7 +120,6 @@ class RunCIPrepare(
 
 
 class RunCI(BuilderProxyOperationMixin, Operation):
-
     description = "Run a CI job."
     buildd_path = "/build/tree"
 

@@ -24,7 +24,6 @@ class BuildCharm(
     SnapStoreOperationMixin,
     Operation,
 ):
-
     description = "Build a charm."
 
     core_snap_names = ["core", "core16", "core18", "core20", "core22"]

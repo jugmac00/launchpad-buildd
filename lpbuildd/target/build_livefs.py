@@ -26,7 +26,6 @@ def get_build_path(build_id, *extra):
 
 
 class BuildLiveFS(SnapStoreOperationMixin, Operation):
-
     description = "Build a live file system."
 
     @classmethod

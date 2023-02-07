@@ -135,7 +135,6 @@ class FakeBuilder:
 
 
 class FakeBackend(Backend):
-
     supports_snapd = True
 
     def __init__(self, *args, **kwargs):

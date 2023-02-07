@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class Create(Operation):
-
     description = "Create the target environment."
 
     @classmethod
@@ -30,7 +29,6 @@ class Create(Operation):
 
 
 class Start(Operation):
-
     description = "Start the target environment."
 
     def run(self):
@@ -40,7 +38,6 @@ class Start(Operation):
 
 
 class KillProcesses(Operation):
-
     description = "Kill any processes in the target."
 
     def run(self):
@@ -64,7 +61,6 @@ class KillProcesses(Operation):
 
 
 class Stop(Operation):
-
     description = "Stop the target environment."
 
     def run(self):
@@ -78,7 +74,6 @@ class Stop(Operation):
 
 
 class Remove(Operation):
-
     description = "Remove the target environment."
 
     def run(self):

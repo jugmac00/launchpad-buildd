@@ -259,7 +259,7 @@ class ConfigFile:
             ("'", "'"),
             ("[", "]"),
         ]
-        for (left, right) in quote_pairs:
+        for left, right in quote_pairs:
             if identifier.startswith(left) and identifier.endswith(right):
                 return identifier[1:-1]
 

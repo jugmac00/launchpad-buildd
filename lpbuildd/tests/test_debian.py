@@ -14,12 +14,10 @@ from lpbuildd.tests.fakebuilder import FakeBuilder
 
 
 class MockBuildState(DebianBuildState):
-
     MAIN = "MAIN"
 
 
 class MockBuildManager(DebianBuildManager):
-
     initial_build_state = MockBuildState.MAIN
 
     def __init__(self, *args, **kwargs):

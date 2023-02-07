@@ -121,6 +121,7 @@ class DebianBuildManager(BuildManager):
 
     def deferGatherResults(self, reap=True):
         """Gather the results of the build in a thread."""
+
         # XXX cjwatson 2018-10-04: Refactor using inlineCallbacks once we're
         # on Twisted >= 18.7.0 (https://twistedmatrix.com/trac/ticket/4632).
         def failed_to_gather(failure):

@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class OverrideSourcesList(Operation):
-
     description = "Override sources.list in the target environment."
 
     @classmethod
@@ -80,7 +79,6 @@ class OverrideSourcesList(Operation):
 
 
 class AddTrustedKeys(Operation):
-
     description = "Write out new trusted keys."
 
     def __init__(self, args, parser):
@@ -121,7 +119,6 @@ class AddTrustedKeys(Operation):
 
 
 class Update(Operation):
-
     description = "Update the target environment."
 
     def run(self):

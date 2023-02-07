@@ -24,7 +24,6 @@ from lpbuildd.tests.fakebuilder import FakeMethod, UncontainedBackend
 
 
 class SetupTestPackageMixin:
-
     test_data_dir = "pottery_test_data"
 
     def prepare_package(self, packagename, buildfiles=None):

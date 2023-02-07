@@ -24,7 +24,6 @@ class BuildOCI(
     SnapStoreOperationMixin,
     Operation,
 ):
-
     description = "Build an OCI image."
 
     @classmethod

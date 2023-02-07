@@ -82,7 +82,6 @@ class LXDException(Exception):
 
 
 class LXD(Backend):
-
     supports_snapd = True
 
     # Architecture mapping

@@ -2,13 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os
-
-try:
-    from shlex import quote
-except ImportError:
-    from pipes import quote
 import subprocess
 import sys
+from shlex import quote
 
 
 def shell_escape(s):

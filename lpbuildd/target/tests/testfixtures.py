@@ -12,7 +12,6 @@ from systemfixtures import FakeFilesystem as _FakeFilesystem
 
 
 class SudoUmount:
-
     name = "sudo"
 
     def __init__(self, delays=None):

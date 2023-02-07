@@ -19,7 +19,6 @@ class TestBackend(TestCase):
         ) as copy_in, patch.object(
             backend, "copy_out", wraps=backend.copy_out
         ) as copy_out:
-
             with backend.open(target_path, "w") as f:
                 f.write("text")
 

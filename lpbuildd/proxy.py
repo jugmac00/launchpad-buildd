@@ -56,12 +56,10 @@ class BuilderProxyClient(proxy.ProxyClient):
 
 
 class BuilderProxyClientFactory(proxy.ProxyClientFactory):
-
     protocol = BuilderProxyClient
 
 
 class BuilderProxyRequest(http.Request):
-
     child_client = None
     _request_buffer = None
     _request_data_done = False
@@ -185,7 +183,6 @@ class BuilderProxy(http.HTTPChannel):
 
 
 class BuilderProxyFactory(http.HTTPFactory):
-
     protocol = BuilderProxy
 
     def __init__(self, manager, remote_url, *args, **kwargs):

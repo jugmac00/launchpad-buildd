@@ -65,7 +65,6 @@ class TestSanitizeURLs(TestCase):
 
 
 class TestBuildManager(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
     def setUp(self):
