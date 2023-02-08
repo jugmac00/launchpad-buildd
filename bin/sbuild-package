@@ -39,19 +39,17 @@ NR_PROCESSORS=$ACTUAL_NR_PROCESSORS
 
 echo "Initiating build $BUILDID with $NR_PROCESSORS jobs across $ACTUAL_NR_PROCESSORS processor cores."
 
-if [ $NR_PROCESSORS -gt 1 ]; then
+if [ "$NR_PROCESSORS" -gt 1 ]; then
   export DEB_BUILD_OPTIONS="${DEB_BUILD_OPTIONS:+$DEB_BUILD_OPTIONS }parallel=$NR_PROCESSORS"
 fi
 
-cd "$HOME/build-$BUILDID"
+cd "$HOME/build-$BUILDID" || exit 2
 
 # sbuild tries to do this itself, but can end up trying to mkdir in
 # /build too early.
 getent group sbuild | sudo tee -a chroot-autobuild/etc/group > /dev/null || exit 2
 getent passwd sbuild | sudo tee -a chroot-autobuild/etc/passwd > /dev/null || exit 2
 sudo chown sbuild:sbuild chroot-autobuild/build || exit 2
-
-hostarch=$(dpkg --print-architecture)
 
 UNAME26=""
 case $SUITE in
