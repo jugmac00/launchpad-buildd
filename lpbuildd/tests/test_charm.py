@@ -1,9 +1,10 @@
 # Copyright 2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import base64
 import os
-from unittest import mock
 
+import responses
 from fixtures import EnvironmentVariable, TempDir
 from testtools import TestCase
 from testtools.deferredruntest import AsynchronousDeferredRunTest
@@ -243,17 +244,23 @@ class TestCharmBuildManagerIteration(TestCase):
         )
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
-    @mock.patch("lpbuildd.proxy.urlopen")
-    def test_revokeProxyToken(self, urlopen_mock):
-        self.buildmanager.revocation_endpoint = "http://revoke_endpoint"
-        self.buildmanager.proxy_url = "http://username:password@proxy_url"
-        self.buildmanager.revokeProxyToken()
-        self.assertEqual(1, urlopen_mock.call_count)
-        args, kwargs = urlopen_mock.call_args
-        request = args[0]
-        self.assertEqual(
-            {"Authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="},
-            request.headers,
+    @responses.activate
+    def test_revokeProxyToken(self):
+        responses.add(
+            "DELETE", f"http://proxy-auth.example/tokens/{self.buildid}"
         )
-        self.assertEqual("http://revoke_endpoint", request.get_full_url())
-        self.assertEqual({"timeout": 15}, kwargs)
+        self.buildmanager.revocation_endpoint = (
+            f"http://proxy-auth.example/tokens/{self.buildid}"
+        )
+        self.buildmanager.proxy_url = "http://username:password@proxy.example"
+        self.buildmanager.revokeProxyToken()
+        self.assertEqual(1, len(responses.calls))
+        request = responses.calls[0].request
+        auth = base64.b64encode(b"username:password").decode()
+        self.assertEqual(f"Basic {auth}", request.headers["Authorization"])
+        self.assertEqual(
+            f"http://proxy-auth.example/tokens/{self.buildid}", request.url
+        )
+        # XXX cjwatson 2023-02-07: Ideally we'd check the timeout as well,
+        # but the version of responses in Ubuntu 20.04 doesn't store it
+        # anywhere we can get at it.

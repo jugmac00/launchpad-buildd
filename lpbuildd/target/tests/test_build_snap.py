@@ -1,6 +1,7 @@
 # Copyright 2017-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import base64
 import json
 import os.path
 import stat
@@ -544,6 +545,63 @@ class TestBuildSnap(TestCase):
                 ]
             ),
         )
+
+    @responses.activate
+    def test_pull_disable_proxy_after_pull(self):
+        self.useFixture(FakeLogger())
+        responses.add("DELETE", "http://proxy-auth.example/tokens/1")
+        args = [
+            "buildsnap",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--build-url",
+            "https://launchpad.example/build",
+            "--branch",
+            "lp:foo",
+            "--proxy-url",
+            "http://localhost:8222/",
+            "--upstream-proxy-url",
+            "http://username:password@proxy.example:3128/",
+            "--revocation-endpoint",
+            "http://proxy-auth.example/tokens/1",
+            "--disable-proxy-after-pull",
+            "test-snap",
+        ]
+        build_snap = parse_args(args=args).operation
+        build_snap.pull()
+        env = {
+            "SNAPCRAFT_LOCAL_SOURCES": "1",
+            "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": (
+                '{"build_url": "https://launchpad.example/build"}'
+            ),
+            "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
+            "http_proxy": "http://localhost:8222/",
+            "https_proxy": "http://localhost:8222/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+        }
+        self.assertThat(
+            build_snap.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["snapcraft", "pull"], cwd="/build/test-snap", **env
+                    ),
+                ]
+            ),
+        )
+        self.assertEqual(1, len(responses.calls))
+        request = responses.calls[0].request
+        auth = base64.b64encode(b"username:password").decode()
+        self.assertEqual(f"Basic {auth}", request.headers["Authorization"])
+        self.assertEqual("http://proxy-auth.example/tokens/1", request.url)
+        # XXX cjwatson 2023-02-07: Ideally we'd check the timeout as well,
+        # but the version of responses in Ubuntu 20.04 doesn't store it
+        # anywhere we can get at it.
 
     def test_pull_build_source_tarball(self):
         args = [

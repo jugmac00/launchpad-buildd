@@ -46,6 +46,9 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.private = extra_args.get("private", False)
         self.proxy_service = None
         self.target_architectures = extra_args.get("target_architectures")
+        self.disable_proxy_after_pull = extra_args.get(
+            "disable_proxy_after_pull"
+        )
 
         super().initiate(files, chroot, extra_args)
 
@@ -65,6 +68,18 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         args.extend(self.startProxy())
         if self.revocation_endpoint:
             args.extend(["--revocation-endpoint", self.revocation_endpoint])
+        if (
+            self.disable_proxy_after_pull
+            and self.proxy_url
+            and self.revocation_endpoint
+        ):
+            args.extend(
+                [
+                    "--upstream-proxy-url",
+                    self.proxy_url,
+                    "--disable-proxy-after-pull",
+                ]
+            )
         if self.branch is not None:
             args.extend(["--branch", self.branch])
         if self.git_repository is not None:

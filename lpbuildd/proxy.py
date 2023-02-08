@@ -3,9 +3,7 @@
 
 import base64
 import io
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
 
 from twisted.application import strports
 from twisted.internet import reactor
@@ -13,6 +11,8 @@ from twisted.internet.interfaces import IHalfCloseableProtocol
 from twisted.python.compat import intToBytes
 from twisted.web import http, proxy
 from zope.interface import implementer
+
+from lpbuildd.util import RevokeProxyTokenError, revoke_proxy_token
 
 
 class BuilderProxyClient(proxy.ProxyClient):
@@ -224,7 +224,7 @@ class BuildManagerProxyMixin:
             "tcp:%s" % proxy_port, proxy_factory
         )
         self.proxy_service.setServiceParent(self._builder.service)
-        if self.backend_name == "lxd":
+        if hasattr(self.backend, "ipv4_network"):
             proxy_host = self.backend.ipv4_network.ip
         else:
             proxy_host = "localhost"
@@ -242,15 +242,7 @@ class BuildManagerProxyMixin:
         if not self.revocation_endpoint:
             return
         self._builder.log("Revoking proxy token...\n")
-        url = urlparse(self.proxy_url)
-        auth = f"{url.username}:{url.password}"
-        encoded_auth = base64.b64encode(auth.encode()).decode()
-        headers = {"Authorization": f"Basic {encoded_auth}"}
-        req = Request(self.revocation_endpoint, None, headers)
-        req.get_method = lambda: "DELETE"
         try:
-            urlopen(req, timeout=15)
-        except (HTTPError, URLError) as e:
-            self._builder.log(
-                f"Unable to revoke token for {url.username}: {e}"
-            )
+            revoke_proxy_token(self.proxy_url, self.revocation_endpoint)
+        except RevokeProxyTokenError as e:
+            self._builder.log(f"{e}\n")
