@@ -1,6 +1,7 @@
 launchpad-buildd (230) UNRELEASED; urgency=medium
 
   * Apply black and isort.
+  * Enforce shellcheck in pre-commit.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Tue, 07 Feb 2023 20:02:04 +0000
 
