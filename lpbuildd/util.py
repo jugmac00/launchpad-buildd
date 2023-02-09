@@ -5,6 +5,9 @@ import os
 import subprocess
 import sys
 from shlex import quote
+from urllib.parse import urlparse
+
+import requests
 
 
 def shell_escape(s):
@@ -53,3 +56,27 @@ def set_personality(args, arch, series=None):
         setarch_cmd.append("--uname-2.6")
 
     return setarch_cmd + args
+
+
+class RevokeProxyTokenError(Exception):
+    def __init__(self, username, exception):
+        super().__init__(self)
+        self.username = username
+        self.exception = exception
+
+    def __str__(self):
+        return f"Unable to revoke token for {self.username}: {self.exception}"
+
+
+def revoke_proxy_token(proxy_url, revocation_endpoint):
+    """Revoke builder proxy token.
+
+    :raises RevokeProxyTokenError: if attempting to revoke the token failed.
+    """
+    url = urlparse(proxy_url)
+    try:
+        requests.delete(
+            revocation_endpoint, auth=(url.username, url.password), timeout=15
+        )
+    except requests.RequestException as e:
+        raise RevokeProxyTokenError(url.username, e)

@@ -16,6 +16,8 @@ import subprocess
 from collections import defaultdict
 from configparser import NoOptionError, NoSectionError
 
+from twisted.application import service
+
 from lpbuildd.target.backend import Backend
 from lpbuildd.util import set_personality, shell_escape
 
@@ -99,6 +101,9 @@ class FakeBuilder:
         self._cachepath = tempdir
         self._config = FakeConfig()
         self.waitingfiles = {}
+        self.service = service.IServiceCollection(
+            service.Application("FakeBuilder")
+        )
         for fake_method in (
             "emptyLog",
             "log",

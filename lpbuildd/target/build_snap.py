@@ -12,6 +12,7 @@ from lpbuildd.target.operation import Operation
 from lpbuildd.target.proxy import BuilderProxyOperationMixin
 from lpbuildd.target.snapstore import SnapStoreOperationMixin
 from lpbuildd.target.vcs import VCSOperationMixin
+from lpbuildd.util import RevokeProxyTokenError, revoke_proxy_token
 
 RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
@@ -92,6 +93,19 @@ class BuildSnap(
             dest="target_architectures",
             action="append",
             help="build for the specified architectures",
+        )
+        parser.add_argument(
+            "--upstream-proxy-url",
+            help=(
+                "URL of the builder proxy upstream of the one run internally "
+                "by launchpad-buildd"
+            ),
+        )
+        parser.add_argument(
+            "--disable-proxy-after-pull",
+            default=False,
+            action="store_true",
+            help="disable proxy access after the pull phase has finished",
         )
         parser.add_argument("name", help="name of snap to build")
 
@@ -212,6 +226,18 @@ class BuildSnap(
                 ],
                 cwd="/build",
             )
+        if (
+            self.args.disable_proxy_after_pull
+            and self.args.upstream_proxy_url
+            and self.args.revocation_endpoint
+        ):
+            logger.info("Revoking proxy token...")
+            try:
+                revoke_proxy_token(
+                    self.args.upstream_proxy_url, self.args.revocation_endpoint
+                )
+            except RevokeProxyTokenError as e:
+                logger.info(str(e))
 
     def build(self):
         """Run all build, stage and snap phases."""
