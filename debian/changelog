@@ -1,11 +1,11 @@
-launchpad-buildd (230) UNRELEASED; urgency=medium
+launchpad-buildd (230) focal; urgency=medium
 
   * Apply black and isort.
   * Enforce shellcheck in pre-commit.
   * Add an option to disable the proxy after the "pull" phase of a snap
     recipe build.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 07 Feb 2023 20:02:04 +0000
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 10 Feb 2023 18:22:21 +0000
 
 launchpad-buildd (229) focal; urgency=medium
 
