@@ -155,6 +155,12 @@ class BuildSnap(
                 self.backend.run(
                     ["snap", "install", "--channel=%s" % channel, snap_name]
                 )
+                # If a given snap is pre-installed on the host image,
+                # refresh is required instead to change channel to the
+                # desired one.
+                self.backend.run(
+                    ["snap", "refresh", "--channel=%s" % channel, snap_name]
+                )
         if "snapcraft" in self.args.channels:
             self.backend.run(
                 [
