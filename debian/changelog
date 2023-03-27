@@ -1,3 +1,10 @@
+launchpad-buildd (231) UNRELEASED; urgency=medium
+
+  * Only ignore .bzr and .git when building source packages from recipes,
+    not all the things that "dpkg-source -I" ignores.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Mon, 27 Mar 2023 17:56:08 +0100
+
 launchpad-buildd (230) focal; urgency=medium
 
   * Apply black and isort.
