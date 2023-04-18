@@ -1,10 +1,10 @@
-launchpad-buildd (231) UNRELEASED; urgency=medium
+launchpad-buildd (231) focal; urgency=medium
 
   * Only ignore .bzr and .git when building source packages from recipes,
     not all the things that "dpkg-buildpackage -I" ignores.
   * Use lpci rather than lpcraft, following its rename.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Mon, 27 Mar 2023 17:56:08 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 18 Apr 2023 18:05:50 +0100
 
 launchpad-buildd (230) focal; urgency=medium
 
