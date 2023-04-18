@@ -413,7 +413,8 @@ class RecipeBuilder:
             [
                 "su",
                 "-c",
-                "cd %s && /usr/bin/dpkg-buildpackage -i -I -us -uc -S -sa"
+                "cd %s && "
+                "/usr/bin/dpkg-buildpackage -i -I.bzr -I.git -us -uc -S -sa"
                 % self.source_dir_relative,
                 self.username,
             ]
