@@ -66,11 +66,11 @@ class RunCIPrepare(
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         for snap_name, channel in sorted(self.args.channels.items()):
-            if snap_name not in ("lxd", "lpcraft"):
+            if snap_name not in ("lxd", "lpci"):
                 self.backend.run(
                     ["snap", "install", "--channel=%s" % channel, snap_name]
                 )
-        for snap_name, classic in (("lxd", False), ("lpcraft", True)):
+        for snap_name, classic in (("lxd", False), ("lpci", True)):
             cmd = ["snap", "install"]
             if classic:
                 cmd.append("--classic")
@@ -167,7 +167,7 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         )
 
     def run_build_command(self, args, **kwargs):
-        # Run build commands as the `buildd` user, since `lpcraft` can only
+        # Run build commands as the `buildd` user, since `lpci` can only
         # start containers with `nvidia.runtime=true` if it's run as a
         # non-root user.
         super().run_build_command(
@@ -182,14 +182,14 @@ class RunCI(BuilderProxyOperationMixin, Operation):
         job_id = f"{self.args.job_name}:{self.args.job_index}"
         logger.info("Running %s" % job_id)
         output_path = os.path.join("/build", "output")
-        # This matches the per-job output path used by lpcraft.
+        # This matches the per-job output path used by lpci.
         job_output_path = os.path.join(
             output_path, self.args.job_name, str(self.args.job_index)
         )
         self.backend.run(["mkdir", "-p", job_output_path])
         self.backend.run(["chown", "-R", "buildd:buildd", output_path])
-        lpcraft_args = [
-            "lpcraft",
+        lpci_args = [
+            "lpci",
             "-v",
             "run-one",
             "--output-directory",
@@ -198,30 +198,28 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             str(self.args.job_index),
         ]
         for repository in self.args.package_repositories:
-            lpcraft_args.extend(["--package-repository", repository])
+            lpci_args.extend(["--package-repository", repository])
 
         environment_variables = dict(
             pair.split("=", maxsplit=1)
             for pair in self.args.environment_variables
         )
         for key, value in environment_variables.items():
-            lpcraft_args.extend(["--set-env", f"{key}={value}"])
+            lpci_args.extend(["--set-env", f"{key}={value}"])
 
         plugin_settings = dict(
             pair.split("=", maxsplit=1) for pair in self.args.plugin_settings
         )
         for key, value in plugin_settings.items():
-            lpcraft_args.extend(["--plugin-setting", f"{key}={value}"])
+            lpci_args.extend(["--plugin-setting", f"{key}={value}"])
 
         if self.args.secrets:
-            lpcraft_args.extend(["--secrets", self.args.secrets])
+            lpci_args.extend(["--secrets", self.args.secrets])
 
         if "gpu-nvidia" in self.backend.constraints:
-            lpcraft_args.append("--gpu-nvidia")
+            lpci_args.append("--gpu-nvidia")
 
-        escaped_lpcraft_args = " ".join(
-            shell_escape(arg) for arg in lpcraft_args
-        )
+        escaped_lpci_args = " ".join(shell_escape(arg) for arg in lpci_args)
         tee_args = ["tee", os.path.join(job_output_path, "log")]
         escaped_tee_args = " ".join(shell_escape(arg) for arg in tee_args)
         args = [
@@ -229,7 +227,7 @@ class RunCI(BuilderProxyOperationMixin, Operation):
             "-o",
             "pipefail",
             "-c",
-            f"{escaped_lpcraft_args} 2>&1 | {escaped_tee_args}",
+            f"{escaped_lpci_args} 2>&1 | {escaped_tee_args}",
         ]
         self.run_build_command(args, env=env)
 

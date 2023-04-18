@@ -57,7 +57,7 @@ class TestRunCIPrepare(TestCase):
                 [
                     RanAptGet("install", "git"),
                     RanSnap("install", "lxd"),
-                    RanSnap("install", "--classic", "lpcraft"),
+                    RanSnap("install", "--classic", "lpci"),
                     RanCommand(["lxd", "init", "--auto"]),
                 ]
             ),
@@ -104,7 +104,7 @@ class TestRunCIPrepare(TestCase):
                     RanSnap("ack", "/dev/stdin", input_text=store_assertion),
                     RanSnap("set", "core", "proxy.store=store-id"),
                     RanSnap("install", "lxd"),
-                    RanSnap("install", "--classic", "lpcraft"),
+                    RanSnap("install", "--classic", "lpci"),
                     RanCommand(["lxd", "init", "--auto"]),
                 ]
             ),
@@ -136,7 +136,7 @@ class TestRunCIPrepare(TestCase):
                 [
                     RanAptGet("install", "python3", "socat", "git"),
                     RanSnap("install", "lxd"),
-                    RanSnap("install", "--classic", "lpcraft"),
+                    RanSnap("install", "--classic", "lpci"),
                     RanCommand(["lxd", "init", "--auto"]),
                 ]
             ),
@@ -158,7 +158,7 @@ class TestRunCIPrepare(TestCase):
             "--channel=core=candidate",
             "--channel=core20=beta",
             "--channel=lxd=beta",
-            "--channel=lpcraft=edge",
+            "--channel=lpci=edge",
             "--git-repository",
             "lp:foo",
         ]
@@ -172,9 +172,7 @@ class TestRunCIPrepare(TestCase):
                     RanSnap("install", "--channel=candidate", "core"),
                     RanSnap("install", "--channel=beta", "core20"),
                     RanSnap("install", "--channel=beta", "lxd"),
-                    RanSnap(
-                        "install", "--classic", "--channel=edge", "lpcraft"
-                    ),
+                    RanSnap("install", "--classic", "--channel=edge", "lpci"),
                     RanCommand(["lxd", "init", "--auto"]),
                 ]
             ),
@@ -199,7 +197,7 @@ class TestRunCIPrepare(TestCase):
                 [
                     RanAptGet("install", "git", "clamav"),
                     RanSnap("install", "lxd"),
-                    RanSnap("install", "--classic", "lpcraft"),
+                    RanSnap("install", "--classic", "lpci"),
                     RanCommand(["lxd", "init", "--auto"]),
                     RanCommand(["freshclam", "--quiet"]),
                 ]
@@ -239,7 +237,7 @@ class TestRunCIPrepare(TestCase):
                 [
                     RanAptGet("install", "python3", "socat", "git", "clamav"),
                     RanSnap("install", "lxd"),
-                    RanSnap("install", "--classic", "lpcraft"),
+                    RanSnap("install", "--classic", "lpci"),
                     RanCommand(["lxd", "init", "--auto"]),
                     RanCommand(["freshclam", "--quiet"], **env),
                 ]
@@ -270,7 +268,7 @@ class TestRunCIPrepare(TestCase):
                 [
                     RanAptGet("install", "git", "clamav"),
                     RanSnap("install", "lxd"),
-                    RanSnap("install", "--classic", "lpcraft"),
+                    RanSnap("install", "--classic", "lpci"),
                     RanCommand(["lxd", "init", "--auto"]),
                     RanCommand(["freshclam", "--quiet"]),
                 ]
@@ -520,7 +518,7 @@ class TestRunCIPrepare(TestCase):
         self.assertThat(
             run_ci_prepare.backend.run.calls,
             MatchesAll(
-                AnyMatch(RanSnap("install", "--classic", "lpcraft")),
+                AnyMatch(RanSnap("install", "--classic", "lpci")),
                 AnyMatch(
                     RanBuildCommand(
                         ["git", "clone", "-n", "lp:foo", "tree"], cwd="/build"
@@ -607,7 +605,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
+                            "lpci -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
                             "| tee /build/output/test/0/log",
                         ],
                         cwd="/build/tree",
@@ -658,7 +656,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
+                            "lpci -v run-one --output-directory /build/output test 0 2>&1 "  # noqa: E501
                             "| tee /build/output/test/0/log",
                         ],
                         cwd="/build/tree",
@@ -706,7 +704,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory "
+                            "lpci -v run-one --output-directory "
                             "/build/output test 0 "
                             "--set-env PIP_INDEX_URL=http://example "
                             "--set-env SOME_PATH=/etc/some_path "
@@ -757,7 +755,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory "
+                            "lpci -v run-one --output-directory "
                             "/build/output test 0 "
                             "--package-repository 'deb http://archive.ubuntu.com/ubuntu/ focal main restricted' "  # noqa: E501
                             "--package-repository 'deb http://archive.ubuntu.com/ubuntu/ focal universe' "  # noqa: E501
@@ -806,7 +804,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory "
+                            "lpci -v run-one --output-directory "
                             "/build/output test 0 "
                             "--plugin-setting "
                             "miniconda_conda_channel=https://user:pass@canonical.example.com/artifactory/soss-conda-stable-local/ "  # noqa: E501
@@ -855,7 +853,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory "
+                            "lpci -v run-one --output-directory "
                             "/build/output test 0 "
                             "--secrets /build/.launchpad-secrets.yaml "
                             "2>&1 "
@@ -902,7 +900,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory "
+                            "lpci -v run-one --output-directory "
                             "/build/output test 0 "
                             "2>&1 "
                             "| tee /build/output/test/0/log",
@@ -986,7 +984,7 @@ class TestRunCI(TestCase):
                             "-o",
                             "pipefail",
                             "-c",
-                            "lpcraft -v run-one --output-directory "
+                            "lpci -v run-one --output-directory "
                             "/build/output test 0 "
                             "--gpu-nvidia "
                             "2>&1 "
