@@ -39,7 +39,6 @@ Package: launchpad-buildd
 Section: misc
 Architecture: all
 Depends: adduser,
-         apt-transport-https,
          bzip2,
          debootstrap,
          dmsetup,
