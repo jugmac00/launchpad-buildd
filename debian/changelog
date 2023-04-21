@@ -1,3 +1,10 @@
+launchpad-buildd (232) UNRELEASED; urgency=medium
+
+  * Drop dependency on apt-transport-https; HTTPS support is integrated into
+    apt these days.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 21 Apr 2023 01:10:46 +0100
+
 launchpad-buildd (231) focal; urgency=medium
 
   * Only ignore .bzr and .git when building source packages from recipes,
