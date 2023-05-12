@@ -309,6 +309,8 @@ class TestLXD(TestCase):
             ("lxc.cgroup.devices.allow", ""),
             ("lxc.mount.auto", ""),
             ("lxc.mount.auto", "proc:rw sys:rw"),
+            ("lxc.mount.entry","udev /dev devtmpfs rw,nosuid,relatime,mode=755,inode64"),
+            ("lxc.autodev", "0"),
         ]
 
         major, minor = (int(v) for v in driver_version.split(".")[0:2])
@@ -589,35 +591,8 @@ class TestLXD(TestCase):
                 ),
                 Equals(["hostname"]),
                 Equals(["hostname", "--fqdn"]),
-                Equals(
-                    lxc
-                    + [
-                        "mknod",
-                        "-m",
-                        "0660",
-                        "/dev/loop-control",
-                        "c",
-                        "10",
-                        "237",
-                    ]
-                ),
             ]
         )
-        for minor in range(256):
-            expected_args.append(
-                Equals(
-                    lxc
-                    + [
-                        "mknod",
-                        "-m",
-                        "0660",
-                        "/dev/loop%d" % minor,
-                        "b",
-                        "7",
-                        str(minor),
-                    ]
-                )
-            )
         for minor in range(8):
             expected_args.append(
                 Equals(
@@ -636,30 +611,6 @@ class TestLXD(TestCase):
         if gpu_nvidia:
             expected_args.extend(
                 [
-                    Equals(
-                        lxc
-                        + [
-                            "mknod",
-                            "-m",
-                            "0666",
-                            "/dev/nvidia0",
-                            "c",
-                            "195",
-                            "0",
-                        ]
-                    ),
-                    Equals(
-                        lxc
-                        + [
-                            "mknod",
-                            "-m",
-                            "0666",
-                            "/dev/nvidiactl",
-                            "c",
-                            "195",
-                            "255",
-                        ]
-                    ),
                     Equals(lxc + ["/sbin/ldconfig"]),
                 ]
             )
