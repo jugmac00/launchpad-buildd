@@ -431,6 +431,7 @@ class LXD(Backend):
             ("lxc.mount.auto", ""),
             ("lxc.mount.auto", "proc:rw sys:rw"),
             ("lxc.mount.entry","udev /dev devtmpfs rw,nosuid,relatime,size=16181316k,nr_inodes=4045329,mode=755,inode64"),
+            ("lxc.autodev", "0"),
         ]
 
         lxc_version = self._client.host_info["environment"]["driver_version"]
