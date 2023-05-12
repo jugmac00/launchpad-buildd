@@ -611,6 +611,30 @@ class TestLXD(TestCase):
         if gpu_nvidia:
             expected_args.extend(
                 [
+                    Equals(
+                        lxc
+                        + [
+                            "mknod",
+                            "-m",
+                            "0666",
+                            "/dev/nvidia0",
+                            "c",
+                            "195",
+                            "0",
+                        ]
+                    ),
+                    Equals(
+                        lxc
+                        + [
+                            "mknod",
+                            "-m",
+                            "0666",
+                            "/dev/nvidiactl",
+                            "c",
+                            "195",
+                            "255",
+                        ]
+                    ),
                     Equals(lxc + ["/sbin/ldconfig"]),
                 ]
             )
