@@ -588,26 +588,6 @@ class LXD(Backend):
                 "Container failed to start within %d seconds" % timeout
             )
 
-        # Create loop devices.  We do this by hand rather than via the LXD
-        # profile, as the latter approach creates lots of independent mounts
-        # under /dev/, and that can cause confusion when building live
-        # filesystems.
-        self.run(
-            ["mknod", "-m", "0660", "/dev/loop-control", "c", "10", "237"]
-        )
-        for minor in range(256):
-            self.run(
-                [
-                    "mknod",
-                    "-m",
-                    "0660",
-                    "/dev/loop%d" % minor,
-                    "b",
-                    "7",
-                    str(minor),
-                ]
-            )
-
         # Create dm-# devices.  On focal kpartx looks for dm devices and hangs
         # in their absence.
         major = get_device_mapper_major()
@@ -625,26 +605,6 @@ class LXD(Backend):
             )
 
         if "gpu-nvidia" in self.constraints:
-            # Create nvidia* devices.  We have to do this here rather than
-            # bind-mounting them into the container, because bind-mounts
-            # aren't propagated into snaps (such as lxd) installed inside
-            # the container.
-            for path in self._nvidia_container_paths:
-                if path.startswith("/dev/"):
-                    st = os.stat(path)
-                    if stat.S_ISCHR(st.st_mode):
-                        self.run(
-                            [
-                                "mknod",
-                                "-m",
-                                "0%o" % stat.S_IMODE(st.st_mode),
-                                path,
-                                "c",
-                                str(os.major(st.st_rdev)),
-                                str(os.minor(st.st_rdev)),
-                            ]
-                        )
-
             # We bind-mounted several libraries into the container, so run
             # ldconfig to update the dynamic linker's cache.
             self.run(["/sbin/ldconfig"])
