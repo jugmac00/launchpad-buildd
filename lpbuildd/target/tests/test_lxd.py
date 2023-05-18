@@ -309,7 +309,10 @@ class TestLXD(TestCase):
             ("lxc.cgroup.devices.allow", ""),
             ("lxc.mount.auto", ""),
             ("lxc.mount.auto", "proc:rw sys:rw"),
-            ("lxc.mount.entry","udev /dev devtmpfs rw,nosuid,relatime,mode=755,inode64"),
+            (
+                "lxc.mount.entry",
+                "udev /dev devtmpfs rw,nosuid,relatime,mode=755,inode64",
+            ),
             ("lxc.autodev", "0"),
         ]
 
