@@ -430,6 +430,8 @@ class LXD(Backend):
             ("lxc.cgroup.devices.allow", ""),
             ("lxc.mount.auto", ""),
             ("lxc.mount.auto", "proc:rw sys:rw"),
+            ("lxc.mount.entry","udev /dev devtmpfs rw,nosuid,relatime,mode=755,inode64"),
+            ("lxc.autodev", "0"),
         ]
 
         lxc_version = self._client.host_info["environment"]["driver_version"]
@@ -584,26 +586,6 @@ class LXD(Backend):
         if container is None or container.status_code != LXD_RUNNING:
             raise BackendException(
                 "Container failed to start within %d seconds" % timeout
-            )
-
-        # Create loop devices.  We do this by hand rather than via the LXD
-        # profile, as the latter approach creates lots of independent mounts
-        # under /dev/, and that can cause confusion when building live
-        # filesystems.
-        self.run(
-            ["mknod", "-m", "0660", "/dev/loop-control", "c", "10", "237"]
-        )
-        for minor in range(256):
-            self.run(
-                [
-                    "mknod",
-                    "-m",
-                    "0660",
-                    "/dev/loop%d" % minor,
-                    "b",
-                    "7",
-                    str(minor),
-                ]
             )
 
         # Create dm-# devices.  On focal kpartx looks for dm devices and hangs
