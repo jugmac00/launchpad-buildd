@@ -615,7 +615,7 @@ class LXD(Backend):
             for path in self._nvidia_container_paths:
                 if path.startswith("/dev/"):
                     st = os.stat(path)
-                    if stat.S_ISCHR(st.st_mode):
+                    if stat.S_ISCHR(st.st_mode) and not self.path_exists(path):
                         self.run(
                             [
                                 "mknod",
