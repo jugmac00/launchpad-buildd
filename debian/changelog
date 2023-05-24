@@ -1,7 +1,11 @@
 launchpad-buildd (232) UNRELEASED; urgency=medium
 
+  [ Colin Watson ]
   * Drop dependency on apt-transport-https; HTTPS support is integrated into
     apt these days.
+
+  [ Steve Langasek ]
+  * Mount devtmpfs in the lxd container, to make losetup -P work.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Fri, 21 Apr 2023 01:10:46 +0100
 
