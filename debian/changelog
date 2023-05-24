@@ -1,4 +1,4 @@
-launchpad-buildd (232) UNRELEASED; urgency=medium
+launchpad-buildd (232) focal; urgency=medium
 
   [ Colin Watson ]
   * Drop dependency on apt-transport-https; HTTPS support is integrated into
@@ -7,7 +7,7 @@ launchpad-buildd (232) UNRELEASED; urgency=medium
   [ Steve Langasek ]
   * Mount devtmpfs in the lxd container, to make losetup -P work.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Fri, 21 Apr 2023 01:10:46 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 24 May 2023 18:23:02 +0100
 
 launchpad-buildd (231) focal; urgency=medium
 
