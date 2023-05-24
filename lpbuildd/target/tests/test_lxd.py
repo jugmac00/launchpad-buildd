@@ -449,7 +449,11 @@ class TestLXD(TestCase):
     # XXX cjwatson 2022-08-25: Refactor this to use some more sensible kind
     # of test parameterization.
     def test_start(
-        self, arch="amd64", unmounts_cpuinfo=False, gpu_nvidia=False
+        self,
+        arch="amd64",
+        unmounts_cpuinfo=False,
+        gpu_nvidia=False,
+        gpu_nvidia_device_nodes_exist=False,
     ):
         self.fakeFS()
         DM_BLOCK_MAJOR = random.randrange(128, 255)
@@ -482,6 +486,9 @@ class TestLXD(TestCase):
             os.mknod(
                 "/dev/nvidiactl", stat.S_IFCHR | 0o666, os.makedev(195, 255)
             )
+            if gpu_nvidia_device_nodes_exist:
+                existing_files["/dev/nvidia0"] = []
+                existing_files["/dev/nvidiactl"] = []
             gpu_nvidia_paths = [
                 "/dev/nvidia0",
                 "/dev/nvidiactl",
@@ -612,35 +619,36 @@ class TestLXD(TestCase):
                 )
             )
         if gpu_nvidia:
-            expected_args.extend(
-                [
-                    Equals(
-                        lxc
-                        + [
-                            "mknod",
-                            "-m",
-                            "0666",
-                            "/dev/nvidia0",
-                            "c",
-                            "195",
-                            "0",
-                        ]
-                    ),
-                    Equals(
-                        lxc
-                        + [
-                            "mknod",
-                            "-m",
-                            "0666",
-                            "/dev/nvidiactl",
-                            "c",
-                            "195",
-                            "255",
-                        ]
-                    ),
-                    Equals(lxc + ["/sbin/ldconfig"]),
-                ]
-            )
+            if not gpu_nvidia_device_nodes_exist:
+                expected_args.extend(
+                    [
+                        Equals(
+                            lxc
+                            + [
+                                "mknod",
+                                "-m",
+                                "0666",
+                                "/dev/nvidia0",
+                                "c",
+                                "195",
+                                "0",
+                            ]
+                        ),
+                        Equals(
+                            lxc
+                            + [
+                                "mknod",
+                                "-m",
+                                "0666",
+                                "/dev/nvidiactl",
+                                "c",
+                                "195",
+                                "255",
+                            ]
+                        ),
+                    ]
+                )
+            expected_args.append(Equals(lxc + ["/sbin/ldconfig"]))
         expected_args.extend(
             [
                 Equals(
@@ -808,6 +816,12 @@ class TestLXD(TestCase):
 
     def test_start_gpu_nvidia(self):
         self.test_start(gpu_nvidia=True)
+
+    def test_start_gpu_nvidia_device_nodes_exist(self):
+        # Starting a container with NVIDIA GPU support works even if
+        # mounting devtmpfs inside the container causes the device nodes to
+        # exist.
+        self.test_start(gpu_nvidia=True, gpu_nvidia_device_nodes_exist=True)
 
     def test_run(self):
         processes_fixture = self.useFixture(FakeProcesses())
