@@ -595,17 +595,18 @@ class LXD(Backend):
         # in their absence.
         major = get_device_mapper_major()
         for minor in range(8):
-            self.run(
-                [
-                    "mknod",
-                    "-m",
-                    "0660",
-                    "/dev/dm-%d" % minor,
-                    "b",
-                    str(major),
-                    str(minor),
-                ]
-            )
+            if not self.path_exists(f"/dev/dm-{minor}"):
+                self.run(
+                    [
+                        "mknod",
+                        "-m",
+                        "0660",
+                        f"/dev/dm-{minor}",
+                        "b",
+                        str(major),
+                        str(minor),
+                    ]
+                )
 
         if "gpu-nvidia" in self.constraints:
             # Create nvidia* devices.  We have to do this here rather than

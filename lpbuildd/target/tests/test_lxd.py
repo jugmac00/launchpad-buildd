@@ -452,6 +452,7 @@ class TestLXD(TestCase):
         self,
         arch="amd64",
         unmounts_cpuinfo=False,
+        dm_device_nodes_exist=False,
         gpu_nvidia=False,
         gpu_nvidia_device_nodes_exist=False,
     ):
@@ -481,6 +482,9 @@ class TestLXD(TestCase):
         processes_fixture.add(
             FakeHostname("example", "example.buildd"), name="hostname"
         )
+        if dm_device_nodes_exist:
+            for minor in range(8):
+                existing_files[f"/dev/dm-{minor}"] = []
         if gpu_nvidia:
             os.mknod("/dev/nvidia0", stat.S_IFCHR | 0o666, os.makedev(195, 0))
             os.mknod(
@@ -603,21 +607,22 @@ class TestLXD(TestCase):
                 Equals(["hostname", "--fqdn"]),
             ]
         )
-        for minor in range(8):
-            expected_args.append(
-                Equals(
-                    lxc
-                    + [
-                        "mknod",
-                        "-m",
-                        "0660",
-                        "/dev/dm-%d" % minor,
-                        "b",
-                        str(DM_BLOCK_MAJOR),
-                        str(minor),
-                    ]
+        if not dm_device_nodes_exist:
+            for minor in range(8):
+                expected_args.append(
+                    Equals(
+                        lxc
+                        + [
+                            "mknod",
+                            "-m",
+                            "0660",
+                            f"/dev/dm-{minor}",
+                            "b",
+                            str(DM_BLOCK_MAJOR),
+                            str(minor),
+                        ]
+                    )
                 )
-            )
         if gpu_nvidia:
             if not gpu_nvidia_device_nodes_exist:
                 expected_args.extend(
@@ -813,6 +818,11 @@ class TestLXD(TestCase):
 
     def test_start_armhf_unmounts_cpuinfo(self):
         self.test_start(arch="armhf", unmounts_cpuinfo=True)
+
+    def test_start_dm_device_nodes_exist(self):
+        # Starting a container works even if mounting devtmpfs inside the
+        # container causes dm-* device nodes to exist.
+        self.test_start(dm_device_nodes_exist=True)
 
     def test_start_gpu_nvidia(self):
         self.test_start(gpu_nvidia=True)
