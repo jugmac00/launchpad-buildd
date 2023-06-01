@@ -1,9 +1,9 @@
-launchpad-buildd (233) UNRELEASED; urgency=medium
+launchpad-buildd (233) focal; urgency=medium
 
   * Only create /dev/dm-* in LXD containers if they don't already exist
     (fixes devtmpfs-related failures on riscv64).
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 30 May 2023 16:44:15 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 01 Jun 2023 08:24:53 +0100
 
 launchpad-buildd (232) focal; urgency=medium
 
