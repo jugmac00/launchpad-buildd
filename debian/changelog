@@ -1,3 +1,9 @@
+launchpad-buildd (234) UNRELEASED; urgency=medium
+
+  * Add basic documentation of malware scanning for CI builds.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Tue, 06 Jun 2023 11:42:23 +0100
+
 launchpad-buildd (233) focal; urgency=medium
 
   * Only create /dev/dm-* in LXD containers if they don't already exist
