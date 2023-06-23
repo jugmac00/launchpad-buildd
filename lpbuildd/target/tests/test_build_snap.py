@@ -204,6 +204,7 @@ class TestBuildSnap(TestCase):
             "--channel=core=candidate",
             "--channel=core18=beta",
             "--channel=snapcraft=edge",
+            "--channel=snapd=edge",
             "--branch",
             "lp:foo",
             "test-snap",
@@ -216,7 +217,11 @@ class TestBuildSnap(TestCase):
                 [
                     RanAptGet("install", "bzr", "sudo"),
                     RanSnap("install", "--channel=candidate", "core"),
+                    RanSnap("refresh", "--channel=candidate", "core"),
                     RanSnap("install", "--channel=beta", "core18"),
+                    RanSnap("refresh", "--channel=beta", "core18"),
+                    RanSnap("install", "--channel=edge", "snapd"),
+                    RanSnap("refresh", "--channel=edge", "snapd"),
                     RanSnap(
                         "install", "--classic", "--channel=edge", "snapcraft"
                     ),
