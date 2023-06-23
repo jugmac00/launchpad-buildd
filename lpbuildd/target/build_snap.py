@@ -150,6 +150,7 @@ class BuildSnap(
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         for snap_name, channel in sorted(self.args.channels.items()):
+            # snapcraft is handled separately, since it requires --classic.
             if snap_name != "snapcraft":
                 self.backend.run(
                     ["snap", "install", "--channel=%s" % channel, snap_name]
