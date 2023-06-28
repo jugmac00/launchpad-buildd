@@ -1,4 +1,4 @@
-launchpad-buildd (234) UNRELEASED; urgency=medium
+launchpad-buildd (234) focal; urgency=medium
 
   [ Colin Watson ]
   * Add basic documentation of malware scanning for CI builds.
@@ -11,7 +11,7 @@ launchpad-buildd (234) UNRELEASED; urgency=medium
   [ Jürgen Gmach ]
   * Add additional information about production architecture.
 
- -- Colin Watson <cjwatson@ubuntu.com>  Tue, 06 Jun 2023 11:42:23 +0100
+ -- Colin Watson <cjwatson@ubuntu.com>  Wed, 28 Jun 2023 14:55:35 +0100
 
 launchpad-buildd (233) focal; urgency=medium
 
