@@ -20,4 +20,11 @@ for the following reasons:
 Additional context
 ------------------
 
-Charm recipe builds, `Launchpad CI <https://help.launchpad.net/Code/ContinuousIntegration>`_, live filesystem builds, OCI recipe builds, and snap recipe builds all build in LXD containers.  Everything else builds in chroots.
+Charm recipe builds, `Launchpad CI`_, live filesystem builds, OCI recipe
+builds, and snap recipe builds all build in LXD containers.
+Everything else builds in chroots.
+
+ .. _Launchpad CI: https://help.launchpad.net/Code/ContinuousIntegration
+
+Please note that the LXD containers do not share basic system directories with
+the host.
