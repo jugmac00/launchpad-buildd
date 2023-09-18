@@ -6,6 +6,7 @@
 
 import os
 import re
+import subprocess
 
 from lpbuildd.builder import get_build_path
 from lpbuildd.debian import DebianBuildManager, DebianBuildState
@@ -15,19 +16,6 @@ RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD_TREE = 201
 RETCODE_FAILURE_INSTALL_BUILD_DEPS = 202
 RETCODE_FAILURE_BUILD_SOURCE_PACKAGE = 203
-
-
-def splat_file(path, contents):
-    """Write a string to the specified path.
-
-    :param path: The path to store the string in.
-    :param contents: The string to write to the file.
-    """
-    file_obj = open(path, "w")
-    try:
-        file_obj.write(contents)
-    finally:
-        file_obj.close()
 
 
 def get_chroot_path(home, build_id, *extra):
@@ -81,9 +69,26 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
 
     def doRunBuild(self):
         """Run the build process to build the source package."""
-        os.makedirs(get_chroot_path(self.home, self._buildid, "work"))
-        recipe_path = get_chroot_path(self.home, self._buildid, "work/recipe")
-        splat_file(recipe_path, self.recipe_text)
+        work_dir = os.path.join(os.environ["HOME"], "work")
+        self.backend.run(["mkdir", "-p", work_dir])
+        # buildrecipe needs to be able to write directly to the work
+        # directory.  (That directory needs to be inside the chroot so that
+        # buildrecipe can run dpkg-buildpackage on it from inside the
+        # chroot.)
+        subprocess.run(
+            [
+                "sudo",
+                "chown",
+                "-R",
+                "buildd:",
+                get_chroot_path(self.home, self._buildid, "work"),
+            ],
+            check=True,
+        )
+        with self.backend.open(
+            os.path.join(work_dir, "recipe"), "w"
+        ) as recipe_file:
+            recipe_file.write(self.recipe_text)
         args = ["buildrecipe"]
         if self.git:
             args.append("--git")

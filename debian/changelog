@@ -1,3 +1,10 @@
+launchpad-buildd (235) UNRELEASED; urgency=medium
+
+  * sourcepackagerecipe: Create /home/buildd inside the chroot if it doesn't
+    already exist.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Fri, 15 Sep 2023 17:30:59 +0100
+
 launchpad-buildd (234) focal; urgency=medium
 
   [ Colin Watson ]
