@@ -22,7 +22,7 @@ copyright = "2009-2022, Canonical Ltd"
 author = "Launchpad developers"
 
 # The full version, including alpha/beta/rc tags
-release = "207"
+release = "235"
 
 
 # -- General configuration ---------------------------------------------------
