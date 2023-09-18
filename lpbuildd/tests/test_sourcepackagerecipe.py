@@ -6,6 +6,7 @@ import shutil
 import tempfile
 from textwrap import dedent
 
+from systemfixtures import FakeProcesses
 from testtools import TestCase
 from testtools.deferredruntest import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -83,16 +84,39 @@ class TestSourcePackageRecipeBuildManagerIteration(TestCase):
         }
         if git:
             extra_args["git"] = True
+        original_backend_name = self.buildmanager.backend_name
+        self.buildmanager.backend_name = "fake"
         self.buildmanager.initiate({}, "chroot.tar.gz", extra_args)
+        self.buildmanager.backend_name = original_backend_name
 
         # Skip states that are done in DebianBuildManager to the state
         # directly before BUILD_RECIPE.
         self.buildmanager._state = SourcePackageRecipeBuildState.UPDATE
 
         # BUILD_RECIPE: Run the builder's payload to build the source package.
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
         yield self.buildmanager.iterate(0)
         self.assertEqual(
             SourcePackageRecipeBuildState.BUILD_RECIPE, self.getState()
+        )
+        self.assertEqual(
+            [(["mkdir", "-p", os.path.join(os.environ["HOME"], "work")],)],
+            self.buildmanager.backend.run.extract_args(),
+        )
+        self.assertEqual(
+            [
+                [
+                    "sudo",
+                    "chown",
+                    "-R",
+                    "buildd:",
+                    os.path.join(
+                        self.chrootdir, os.environ["HOME"][1:], "work"
+                    ),
+                ]
+            ],
+            [proc._args["args"] for proc in processes_fixture.procs],
         )
         expected_command = ["sharepath/bin/buildrecipe", "buildrecipe"]
         if git:
