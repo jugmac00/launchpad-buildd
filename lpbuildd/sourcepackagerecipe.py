@@ -71,9 +71,9 @@ class SourcePackageRecipeBuildManager(DebianBuildManager):
         """Run the build process to build the source package."""
         work_dir = os.path.join(os.environ["HOME"], "work")
         self.backend.run(["mkdir", "-p", work_dir])
-        # buildrecipe currently needs to be able to write directly to the
-        # work directory.  (That directory needs to be inside the chroot so
-        # that buildrecipe can run dpkg-buildpackage on it from inside the
+        # buildrecipe needs to be able to write directly to the work
+        # directory.  (That directory needs to be inside the chroot so that
+        # buildrecipe can run dpkg-buildpackage on it from inside the
         # chroot.)
         subprocess.run(
             [
