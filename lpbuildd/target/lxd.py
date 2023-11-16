@@ -428,6 +428,8 @@ class LXD(Backend):
             ("lxc.cap.drop", "sys_time sys_module"),
             ("lxc.cgroup.devices.deny", ""),
             ("lxc.cgroup.devices.allow", ""),
+            ("lxc.cgroup2.devices.deny", ""),
+            ("lxc.cgroup2.devices.allow", ""),
             ("lxc.mount.auto", ""),
             ("lxc.mount.auto", "proc:rw sys:rw"),
             (
