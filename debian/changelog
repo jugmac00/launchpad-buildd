@@ -1,3 +1,13 @@
+launchpad-buildd (236) UNRELEASED; urgency=medium
+
+  * Add lxc.cgroup2.* configuration, for compatibility with future
+    environments where we use unified cgroup2.  (However, we should keep
+    using systemd.unified_cgroup_hierarchy=false until we drop support for
+    building xenial; see
+    https://bugs.launchpad.net/ubuntu/xenial/+source/systemd/+bug/1962332.)
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Nov 2023 16:06:07 +0000
+
 launchpad-buildd (235) focal; urgency=medium
 
   * sourcepackagerecipe: Create /home/buildd inside the chroot if it doesn't
