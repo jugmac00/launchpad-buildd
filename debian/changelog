@@ -5,6 +5,8 @@ launchpad-buildd (236) UNRELEASED; urgency=medium
     using systemd.unified_cgroup_hierarchy=false until we drop support for
     building xenial; see
     https://bugs.launchpad.net/ubuntu/xenial/+source/systemd/+bug/1962332.)
+  * Update deployment docs: riscv64 builders are no longer managed
+    separately.
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Nov 2023 16:06:07 +0000
 
