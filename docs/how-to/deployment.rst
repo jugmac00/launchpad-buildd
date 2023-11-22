@@ -7,22 +7,22 @@ rebuild the VM images.
 
 Each environment uses its own PPA and management environment:
 
-+--------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
-| Environment                                      | PPA and management environment                                                                                     |
-+==================================================+====================================================================================================================+
-| `production <https://launchpad.net/builders>`_   | `ppa:launchpad/ubuntu/buildd <https://launchpad.net/~launchpad/+archive/ubuntu/buildd/+packages>`_                 |
-|                                                  | ``prod-launchpad-vbuilders@is-bastion-ps5``                                                                        |
-+--------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
-| `dogfood <https://dogfood.paddev.net/builders>`_ | `ppa:launchpad/ubuntu/buildd-staging <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`_ |
-|                                                  | ``stg-vbuilder@launchpad-bastion-ps5``                                                                             |
-+--------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
++---------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
+| Environment                                             | PPA and management environment                                                                                     |
++=========================================================+====================================================================================================================+
+| `production <https://launchpad.net/builders>`_          | `ppa:launchpad/ubuntu/buildd <https://launchpad.net/~launchpad/+archive/ubuntu/buildd/+packages>`_                 |
+|                                                         | ``prod-launchpad-vbuilders@is-bastion-ps5``                                                                        |
++---------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
+| `qastaging <https://qastaging.launchpad.net/builders>`_ | `ppa:launchpad/ubuntu/buildd-staging <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`_ |
+|                                                         | ``stg-vbuilder-qastaging@launchpad-bastion-ps5``                                                                   |
++---------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
 
 These instructions use various tools from `ubuntu-archive-tools
 <https://git.launchpad.net/ubuntu-archive-tools>`_ (``copy-package`` and
 ``manage-builders``).
 
-Testing on dogfood
-------------------
+Testing on qastaging
+--------------------
 
 #. Ensure everything has been merged to master.
 
@@ -36,7 +36,7 @@ Testing on dogfood
    --to=ppa:launchpad/ubuntu/buildd-staging -b launchpad-buildd``
    (from ``ubuntu-archive-tools``) to copy the current version of launchpad-buildd
    to the deployment PPA (``jammy`` here refers to the series being used on
-   dogfood builder instances).
+   qastaging builder instances).
 
 #. `Wait for PPA publishing to complete
    <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`__.
@@ -48,12 +48,12 @@ Testing on dogfood
    been rebuilt.
 
 #. Builders will get the new image after they finish their next build (or
-   are disabled) and go through being reset.  Since dogfood's build farm is
-   typically mostly idle, you can use ``manage-builders -l dogfood --reset``
-   to reset all builders and force them to pick up the new image
+   are disabled) and go through being reset.  Since qastaging's build farm
+   is typically mostly idle, you can use ``manage-builders -l qastaging
+   --reset`` to reset all builders and force them to pick up the new image
    (from ``ubuntu-archive-tools``).
 
-#. Perform QA on dogfood until satisfied, see :doc:`/how-to/qa`.
+#. Perform QA on qastaging until satisfied, see :doc:`/how-to/qa`.
 
 Releasing to production
 -----------------------
