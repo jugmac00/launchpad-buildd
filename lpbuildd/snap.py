@@ -138,8 +138,10 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 path = os.path.join(output_path, entry)
                 if self.backend.islink(path):
                     continue
+                # `.comp` files are the binary result of building snap
+                # components, see spec SD149.
                 if entry.endswith(
-                    (".snap", ".manifest", ".debug", ".dpkg.yaml")
+                    (".snap", ".manifest", ".debug", ".dpkg.yaml", ".comp")
                 ):
                     self.addWaitingFileFromBackend(path)
         if self.build_source_tarball:
