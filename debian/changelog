@@ -1,4 +1,4 @@
-launchpad-buildd (236) UNRELEASED; urgency=medium
+launchpad-buildd (236) focal; urgency=medium
 
   [ Colin Watson ]
   * Add lxc.cgroup2.* configuration, for compatibility with future
@@ -14,11 +14,11 @@ launchpad-buildd (236) UNRELEASED; urgency=medium
   * Add support for snap components.
     Snap components are already built by our build jobs but not 
     added to `built files`. 
-    Add `.comp` filetype to the filter in the `gatherResults` function
+    Add `.comp` filetype to the filter in `gatherResults` function
     to process components correctly. 
     Snap components and `.comp` file type reference: SD149
 
- -- Colin Watson <cjwatson@ubuntu.com>  Thu, 16 Nov 2023 16:06:07 +0000
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Fri, 16 Feb 2024 10:21:07 +0100
 
 launchpad-buildd (235) focal; urgency=medium
 
