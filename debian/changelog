@@ -1,3 +1,10 @@
+launchpad-buildd (237) UNRELEASED; urgency=medium
+
+  [ Simone Pelosi ]
+  * Improve documentation for qastaging deployment.
+
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Thu, 22 Feb 2024 17:16:55 +0100
+
 launchpad-buildd (236) focal; urgency=medium
 
   [ Colin Watson ]
