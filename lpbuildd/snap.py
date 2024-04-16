@@ -38,6 +38,7 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.branch = extra_args.get("branch")
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
+        self.use_fetch_service = extra_args.get("use_fetch_service")
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.build_source_tarball = extra_args.get(
@@ -100,6 +101,8 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         if self.target_architectures:
             for arch in self.target_architectures:
                 args.extend(["--target-arch", arch])
+        if self.use_fetch_service:
+            args.append("--use_fetch_service")
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 

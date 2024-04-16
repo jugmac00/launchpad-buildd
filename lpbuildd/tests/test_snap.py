@@ -283,7 +283,8 @@ class TestSnapBuildManagerIteration(TestCase):
             "/build/test-snap/test-snap_0_all.snap", b"I am a snap package."
         )
         self.buildmanager.backend.add_file(
-            "/build/test-snap/test-snap+somecomponent_0.comp", b"I am a component."
+            "/build/test-snap/test-snap+somecomponent_0.comp",
+            b"I am a component.",
         )
 
         # After building the package, reap processes.
@@ -754,6 +755,13 @@ class TestSnapBuildManagerIteration(TestCase):
         yield self.startBuild(args, expected_options)
 
     @defer.inlineCallbacks
+    def test_iterate_use_fetch_service(self):
+        # The build manager can be told to use the fetch service as its proxy.
+        args = {"use_fetch_service": True}
+        expected_options = ["--use_fetch_service"]
+        yield self.startBuild(args, expected_options)
+
+    @defer.inlineCallbacks
     def test_iterate_disable_proxy_after_pull(self):
         self.builder._config.set("builder", "proxyport", "8222")
         args = {
@@ -874,3 +882,29 @@ class TestSnapBuildManagerIteration(TestCase):
         # XXX cjwatson 2023-02-07: Ideally we'd check the timeout as well,
         # but the version of responses in Ubuntu 20.04 doesn't store it
         # anywhere we can get at it.
+
+    @responses.activate
+    def test_revokeProxyToken_fetch_service(self):
+        session_id = "123"
+
+        responses.add(
+            "DELETE",
+            f"http://control.fetch-service.example/{session_id}/token",
+        )
+
+        self.buildmanager.use_fetch_service = True
+        self.buildmanager.revocation_endpoint = (
+            f"http://control.fetch-service.example/{session_id}/token"
+        )
+        self.buildmanager.proxy_url = (
+            "http://session_id:token@proxy.fetch-service.example"
+        )
+
+        self.buildmanager.revokeProxyToken()
+
+        self.assertEqual(1, len(responses.calls))
+        request = responses.calls[0].request
+        self.assertEqual(
+            f"http://control.fetch-service.example/{session_id}/token",
+            request.url,
+        )

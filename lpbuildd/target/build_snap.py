@@ -102,6 +102,12 @@ class BuildSnap(
             action="store_true",
             help="disable proxy access after the pull phase has finished",
         )
+        parser.add_argument(
+            "--use_fetch_service",
+            default=False,
+            action="store_true",
+            help="use the fetch service instead of the builder proxy",
+        )
         parser.add_argument("name", help="name of snap to build")
 
     def install_svn_servers(self):
@@ -231,7 +237,9 @@ class BuildSnap(
             logger.info("Revoking proxy token...")
             try:
                 revoke_proxy_token(
-                    self.args.upstream_proxy_url, self.args.revocation_endpoint
+                    self.args.upstream_proxy_url,
+                    self.args.revocation_endpoint,
+                    self.args.use_fetch_service,
                 )
             except RevokeProxyTokenError as e:
                 logger.info(str(e))
