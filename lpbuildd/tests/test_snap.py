@@ -283,7 +283,8 @@ class TestSnapBuildManagerIteration(TestCase):
             "/build/test-snap/test-snap_0_all.snap", b"I am a snap package."
         )
         self.buildmanager.backend.add_file(
-            "/build/test-snap/test-snap+somecomponent_0.comp", b"I am a component."
+            "/build/test-snap/test-snap+somecomponent_0.comp",
+            b"I am a component.",
         )
 
         # After building the package, reap processes.
