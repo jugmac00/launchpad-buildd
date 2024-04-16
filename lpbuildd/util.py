@@ -68,15 +68,34 @@ class RevokeProxyTokenError(Exception):
         return f"Unable to revoke token for {self.username}: {self.exception}"
 
 
-def revoke_proxy_token(proxy_url, revocation_endpoint):
+def revoke_proxy_token(
+    proxy_url, revocation_endpoint, use_fetch_service=False
+):
     """Revoke builder proxy token.
+
+    If not using the fetch service:
+        The proxy_url for the current Builder Proxy has the following format:
+        http://{username}:{password}@{host}:{port}
+
+        We use the username-password combo from the proxy_url for
+        authentication to revoke its token.
+
+    If using the fetch service:
+        The call to revoke a token does not require authentication.
+
+        XXX ines-almeida 2024-04-15: this might change depending on
+        conversations about fetch service authentication. We might decide to
+        instead use the token itself as the authentication.
 
     :raises RevokeProxyTokenError: if attempting to revoke the token failed.
     """
     url = urlparse(proxy_url)
+
+    auth = None
+    if not use_fetch_service:
+        auth = (url.username, url.password)
+
     try:
-        requests.delete(
-            revocation_endpoint, auth=(url.username, url.password), timeout=15
-        )
+        requests.delete(revocation_endpoint, auth=auth, timeout=15)
     except requests.RequestException as e:
         raise RevokeProxyTokenError(url.username, e)

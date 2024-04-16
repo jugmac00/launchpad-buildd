@@ -214,8 +214,20 @@ class BuilderProxyFactory(http.HTTPFactory):
 
 
 class BuildManagerProxyMixin:
+    @property
+    def _use_fetch_service(self):
+        return hasattr(self, "use_fetch_service") and getattr(
+            self, "use_fetch_service"
+        )
+
     def startProxy(self):
-        """Start the local builder proxy, if necessary."""
+        """Start the local builder proxy, if necessary.
+
+        This starts an internal proxy that stands before the Builder
+        Proxy/Fetch Service, so build systems, which do not comply
+        with standard `http(s)_proxy` environment variables, would
+        still work with the builder proxy.
+        """
         if not self.proxy_url:
             return []
         proxy_port = self._builder._config.get("builder", "proxyport")
@@ -231,7 +243,7 @@ class BuildManagerProxyMixin:
         return ["--proxy-url", f"http://{proxy_host}:{proxy_port}/"]
 
     def stopProxy(self):
-        """Stop the local builder proxy, if necessary."""
+        """Stop the internal local proxy (see `startProxy`), if necessary."""
         if self.proxy_service is None:
             return
         self.proxy_service.disownServiceParent()
@@ -243,6 +255,10 @@ class BuildManagerProxyMixin:
             return
         self._builder.log("Revoking proxy token...\n")
         try:
-            revoke_proxy_token(self.proxy_url, self.revocation_endpoint)
+            revoke_proxy_token(
+                self.proxy_url,
+                self.revocation_endpoint,
+                self._use_fetch_service,
+            )
         except RevokeProxyTokenError as e:
             self._builder.log(f"{e}\n")
