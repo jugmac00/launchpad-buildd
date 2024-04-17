@@ -40,6 +40,8 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.git_path = extra_args.get("git_path")
         self.use_fetch_service = extra_args.get("use_fetch_service")
         self.proxy_url = extra_args.get("proxy_url")
+        # currently only used to transport the mitm certificate
+        self.secrets = extra_args.get("secrets")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.build_source_tarball = extra_args.get(
             "build_source_tarball", False
@@ -103,6 +105,15 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 args.extend(["--target-arch", arch])
         if self.use_fetch_service:
             args.append("--use_fetch_service")
+            # XXX 2024-04-17 jugmac00: I do not think we need to add checks
+            # whether this information is present, as otherwise the fetch
+            # service won't work anyway
+            args.extend(
+                [
+                    "--fetch-service-mitm-certificate",
+                    self.secrets["fetch_service_mitm_certificate"],
+                ]
+            )
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 
