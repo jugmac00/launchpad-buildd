@@ -92,7 +92,8 @@ class TestRevokeToken(TestCase):
     def test_revoke_fetch_service_token(self):
         """Proxy token revocation for the fetch service"""
 
-        proxy_url = "http://session_id:token@proxy.fetch-service.example"
+        token = "token"
+        proxy_url = f"http://session_id:{token}@proxy.fetch-service.example"
         revocation_endpoint = (
             "http://control.fetch-service.example/session_id/token"
         )
@@ -111,3 +112,4 @@ class TestRevokeToken(TestCase):
             "http://control.fetch-service.example/session_id/token",
             request.url,
         )
+        self.assertEqual(f"Basic {token}", request.headers["Authorization"])
