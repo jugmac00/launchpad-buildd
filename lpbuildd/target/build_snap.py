@@ -108,6 +108,10 @@ class BuildSnap(
             action="store_true",
             help="use the fetch service instead of the builder proxy",
         )
+        parser.add_argument(
+            "--fetch-service-mitm-certificate",
+            help=("content of the ca certificate"),
+        )
         parser.add_argument("name", help="name of snap to build")
 
     def install_svn_servers(self):
