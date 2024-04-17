@@ -1,6 +1,7 @@
 # Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import base64
 import os
 import subprocess
 import sys
@@ -81,21 +82,25 @@ def revoke_proxy_token(
         authentication to revoke its token.
 
     If using the fetch service:
-        The call to revoke a token does not require authentication.
+        The proxy_url for the Fetch Service has the following format:
+        http://{session_id}:{token}@{host}:{port}
 
-        XXX ines-almeida 2024-04-15: this might change depending on
-        conversations about fetch service authentication. We might decide to
-        instead use the token itself as the authentication.
+        We use the token from the proxy_url for authentication to revoke
+        elself.
 
     :raises RevokeProxyTokenError: if attempting to revoke the token failed.
     """
     url = urlparse(proxy_url)
 
-    auth = None
     if not use_fetch_service:
-        auth = (url.username, url.password)
+        auth_string = f"{url.username}:{url.password}"
+        token = base64.b64encode(auth_string.encode()).decode()
+    else:
+        token = url.password
+
+    headers = {"Authorization": f"Basic {token}"}
 
     try:
-        requests.delete(revocation_endpoint, auth=auth, timeout=15)
+        requests.delete(revocation_endpoint, headers=headers, timeout=15)
     except requests.RequestException as e:
         raise RevokeProxyTokenError(url.username, e)
