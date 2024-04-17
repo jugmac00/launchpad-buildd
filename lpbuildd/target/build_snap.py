@@ -110,9 +110,25 @@ class BuildSnap(
         )
         parser.add_argument(
             "--fetch-service-mitm-certificate",
-            help=("content of the ca certificate"),
+            type=str,
+            help="content of the ca certificate",
         )
         parser.add_argument("name", help="name of snap to build")
+
+    def install_mitm_certificate(self):
+        """Install ca certificate for the fetch service
+
+        This is necessary so the fetch service can man-in-the-middle all
+        requests when fetching dependencies.
+        """
+        with self.backend.open(
+            "/usr/local/share/ca-certificates/local-ca.crt", mode="w"
+        ) as local_ca_cert:
+            local_ca_cert.write(self.args.fetch_service_mitm_certificate)
+        self.backend.run(["update-ca-certificates"])
+        # XXX jugmac00 2024-04-17: We might need to restart snapd
+        # so the new certificate will be used
+        # snapd folks are unsure, so we need to try ourselves
 
     def install_svn_servers(self):
         proxy = urlparse(self.args.proxy_url)
@@ -182,7 +198,13 @@ class BuildSnap(
                 ]
             )
         if self.args.proxy_url:
+            # XXX jugmac00 2024-04-17: this is configuring an SVN server;
+            # it is currently unclear whether this is still necessary for
+            # building snaps
+            # jugmac00 reached out both to William and Claudio to figure out
             self.install_svn_servers()
+        if self.args.use_fetch_service:
+            self.install_mitm_certificate()
 
     def repo(self):
         """Collect git or bzr branch."""

@@ -194,6 +194,65 @@ class TestBuildSnap(TestCase):
             build_snap.backend.backend_fs["/root/.subversion/servers"],
         )
 
+    def test_install_certificate(self):
+        args = [
+            "buildsnap",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-snap",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            "content_of_cert",
+        ]
+        build_snap = parse_args(args=args).operation
+        build_snap.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_snap.install()
+        self.assertThat(
+            build_snap.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet(
+                        "install", "python3", "socat", "git", "snapcraft"
+                    ),
+                    RanCommand(["mkdir", "-p", "/root/.subversion"]),
+                    RanCommand(["update-ca-certificates"]),
+                ]
+            ),
+        )
+        self.assertEqual(
+            (b"proxy script\n", stat.S_IFREG | 0o755),
+            build_snap.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"],
+        )
+        self.assertEqual(
+            (
+                b"[global]\n"
+                b"http-proxy-host = proxy.example\n"
+                b"http-proxy-port = 3128\n",
+                stat.S_IFREG | 0o644,
+            ),
+            build_snap.backend.backend_fs["/root/.subversion/servers"],
+        )
+        self.assertEqual(
+            (
+                b"content_of_cert",
+                stat.S_IFREG | 0o644,
+            ),
+            build_snap.backend.backend_fs[
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ],
+        )
+
     def test_install_channels(self):
         args = [
             "buildsnap",
