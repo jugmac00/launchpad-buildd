@@ -36,7 +36,10 @@ Testing on qastaging
    --to=ppa:launchpad/ubuntu/buildd-staging -b launchpad-buildd``
    (from ``ubuntu-archive-tools``) to copy the current version of launchpad-buildd
    to the deployment PPA (``jammy`` here refers to the series being used on
-   qastaging builder instances).
+   the builder instances).
+
+   For example, in qastaging, we have builders in ``focal`` and in ``jammy``,
+   so you should run the command for both series.
 
 #. `Wait for PPA publishing to complete
    <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`__.
@@ -46,17 +49,6 @@ Testing on qastaging
    After a minute or so, ``juju status glance-simplestreams-sync-\*`` will
    show "Synchronising images"; once this says "Sync completed", images have
    been rebuilt.
-
-   Note that if ``mojo run -m manifest-rebuild-images`` fails, run ``mojo run``
-   instead.
-
-   .. note::
-      Some glance-simplestreams-sync units may be in an unknown state:
-      as a consequence, the images that we have in OpenStack for the 
-      affected units are not updated. This will cause an `error
-      <https://pastebin.canonical.com/p/ChfGwsQNGJ/>`_ 
-      when you try to rebuild images blocking the execution of the script.
-      This doesn't happen using `mojo run`.
 
 #. Builders will get the new image after they finish their next build (or
    are disabled) and go through being reset.  Since qastaging's build farm
