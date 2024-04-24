@@ -125,6 +125,7 @@ class BuildSnap(
             "/usr/local/share/ca-certificates/local-ca.crt", mode="w"
         ) as local_ca_cert:
             local_ca_cert.write(self.args.fetch_service_mitm_certificate)
+            os.fchmod(local_ca_cert.fileno(), 0o644)
         self.backend.run(["update-ca-certificates"])
         # XXX jugmac00 2024-04-17: We might need to restart snapd
         # so the new certificate will be used
