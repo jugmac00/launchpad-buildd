@@ -208,7 +208,8 @@ class TestBuildSnap(TestCase):
             "test-snap",
             "--use_fetch_service",
             "--fetch-service-mitm-certificate",
-            "content_of_cert",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
         ]
         build_snap = parse_args(args=args).operation
         build_snap.bin = "/builderbin"
