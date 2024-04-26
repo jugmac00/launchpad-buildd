@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import argparse
+import base64
 import json
 import logging
 import os.path
@@ -122,9 +123,15 @@ class BuildSnap(
         requests when fetching dependencies.
         """
         with self.backend.open(
-            "/usr/local/share/ca-certificates/local-ca.crt", mode="w"
+            "/usr/local/share/ca-certificates/local-ca.crt",
+            mode="wb"
         ) as local_ca_cert:
-            local_ca_cert.write(self.args.fetch_service_mitm_certificate)
+            # Certificate is passed as a Base64 encoded string.
+            # It's encoded using `base64 -w0` on the cert file.
+            decoded_certificate = base64.b64decode(
+                self.args.fetch_service_mitm_certificate.encode("ASCII")
+            )
+            local_ca_cert.write(decoded_certificate)
             os.fchmod(local_ca_cert.fileno(), 0o644)
         self.backend.run(["update-ca-certificates"])
         # XXX jugmac00 2024-04-17: We might need to restart snapd
