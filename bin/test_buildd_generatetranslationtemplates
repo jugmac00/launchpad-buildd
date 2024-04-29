@@ -19,6 +19,7 @@ chroot_sha1 = sys.argv[1]
 
 proxy = ServerProxy("http://localhost:8221/rpc")
 print(proxy.info())
+print(proxy.proxy_info())
 print(proxy.status())
 buildid = "1-2"
 build_type = "translation-templates"
