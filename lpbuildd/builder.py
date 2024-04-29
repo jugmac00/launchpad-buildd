@@ -786,6 +786,11 @@ class XMLRPCBuilder(xmlrpc.XMLRPC):
         """Echo the argument back."""
         return args
 
+    def xmlrpc_proxy_info(self):
+        """Return the details for the proxy used by the manager."""
+        proxy_fields = ["use_fetch_service", "revocation_endpoint"]
+        return {k: getattr(self.builder.manager, k) for k in proxy_fields}
+
     def xmlrpc_info(self):
         """Return the protocol version and the manager methods supported."""
         return (

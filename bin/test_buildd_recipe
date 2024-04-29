@@ -25,6 +25,7 @@ def deb_line(host, suites):
 proxy = ServerProxy("http://localhost:8221/rpc")
 print(proxy.echo("Hello World"))
 print(proxy.info())
+print(proxy.proxy_info())
 status = proxy.status()
 print(status)
 if status[0] != "BuilderStatus.IDLE":
