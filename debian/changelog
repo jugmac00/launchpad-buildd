@@ -1,9 +1,18 @@
-launchpad-buildd (237) UNRELEASED; urgency=medium
+launchpad-buildd (237) focal; urgency=medium
 
   [ Simone Pelosi ]
   * Improve documentation for qastaging deployment.
 
- -- Simone Pelosi <simone.pelosi@canonical.com>  Thu, 22 Feb 2024 17:16:55 +0100
+  [ Inês Almeida ]
+  * Add logic to allow using fetch-service as the builder proxy for snaps that
+    have the `use_fetch_service` flag on.
+    Update token revocation authentication when using the fetch service.
+    Install mitm-certificates that are now injected from the buildd-manager.
+  * Improve documentation for qastaging deployment.
+  * Add `proxy_info()` xmlrpc endpoint that can be used to retrieve proxy
+    details from a builder.
+
+ -- Inês Almeida <ines.almeida@canonical.com>  Wed, 24 Apr 2024 13:20:40 +0200
 
 launchpad-buildd (236) focal; urgency=medium
 
