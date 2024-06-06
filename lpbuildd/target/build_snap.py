@@ -116,6 +116,20 @@ class BuildSnap(
         )
         parser.add_argument("name", help="name of snap to build")
 
+    def install_snapd_proxy(self, proxy_url):
+        """Install snapd proxy
+
+        This is necessary so the proxy can communicate properly
+        with snapcraft.
+        """
+        if proxy_url:
+            self.backend.run(
+                ["snap", "set", "system", f"proxy.http={proxy_url}"]
+            )
+            self.backend.run(
+                ["snap", "set", "system", f"proxy.https={proxy_url}"]
+            )
+
     def install_mitm_certificate(self):
         """Install ca certificate for the fetch service
 
@@ -123,8 +137,7 @@ class BuildSnap(
         requests when fetching dependencies.
         """
         with self.backend.open(
-            "/usr/local/share/ca-certificates/local-ca.crt",
-            mode="wb"
+            "/usr/local/share/ca-certificates/local-ca.crt", mode="wb"
         ) as local_ca_cert:
             # Certificate is passed as a Base64 encoded string.
             # It's encoded using `base64 -w0` on the cert file.
@@ -213,6 +226,7 @@ class BuildSnap(
             self.install_svn_servers()
         if self.args.use_fetch_service:
             self.install_mitm_certificate()
+            self.install_snapd_proxy(proxy_url=self.args.proxy_url)
 
     def repo(self):
         """Collect git or bzr branch."""
