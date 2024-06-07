@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import base64
+import json
 
 import responses
 from testtools import TestCase
@@ -112,4 +113,5 @@ class TestRevokeToken(TestCase):
             "http://control.fetch-service.example/session_id/token",
             request.url,
         )
-        self.assertEqual(f"Basic {token}", request.headers["Authorization"])
+        request_body = json.loads(request.body.decode("utf8"))
+        self.assertEqual({"token": token}, request_body)

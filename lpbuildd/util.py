@@ -85,22 +85,28 @@ def revoke_proxy_token(
         The proxy_url for the Fetch Service has the following format:
         http://{session_id}:{token}@{host}:{port}
 
-        We use the token from the proxy_url for authentication to revoke
-        elself.
+        We use the token from the proxy_url and send it as a json payload (no
+        authentication required).
 
     :raises RevokeProxyTokenError: if attempting to revoke the token failed.
     """
     url = urlparse(proxy_url)
 
+    headers = None
+    json_data = None
+
     if not use_fetch_service:
         auth_string = f"{url.username}:{url.password}"
         token = base64.b64encode(auth_string.encode()).decode()
+        headers = {"Authorization": f"Basic {token}"}
     else:
-        token = url.password
-
-    headers = {"Authorization": f"Basic {token}"}
+        # When using the fetch service, we don't require authentication, but we
+        # need to send the token we want to revoke in the payload.
+        json_data = {"token": url.password}
 
     try:
-        requests.delete(revocation_endpoint, headers=headers, timeout=15)
+        requests.delete(
+            revocation_endpoint, headers=headers, json=json_data, timeout=15
+        )
     except requests.RequestException as e:
         raise RevokeProxyTokenError(url.username, e)
