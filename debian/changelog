@@ -1,3 +1,14 @@
+launchpad-buildd (238) focal; urgency=medium
+
+  [ Simone Pelosi ]
+  * Add snapd proxy configuration.
+
+  [ Inês Almeida ]
+  * Update fetch service token revocation to send token in payload
+    instead of auth headers.
+
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Fri, 07 Jun 2024 17:05:35 +0200
+
 launchpad-buildd (237) focal; urgency=medium
 
   [ Simone Pelosi ]
