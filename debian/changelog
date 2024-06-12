@@ -1,3 +1,9 @@
+launchpad-buildd (239) focal; urgency=medium
+
+  * Restart snapd after certificate installation and proxy initialization.
+
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Wed, 12 Jun 2024 16:28:26 +0200
+
 launchpad-buildd (238) focal; urgency=medium
 
   [ Simone Pelosi ]
