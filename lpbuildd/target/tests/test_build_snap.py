@@ -244,6 +244,13 @@ class TestBuildSnap(TestCase):
                             "proxy.https=http://proxy.example:3128/",
                         ]
                     ),
+                    RanCommand(
+                        [
+                            "systemctl",
+                            "restart",
+                            "snapd",
+                        ]
+                    ),
                 ]
             ),
         )
@@ -318,6 +325,13 @@ class TestBuildSnap(TestCase):
                             "set",
                             "system",
                             "proxy.https=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanCommand(
+                        [
+                            "systemctl",
+                            "restart",
+                            "snapd",
                         ]
                     ),
                 ]

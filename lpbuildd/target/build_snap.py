@@ -147,9 +147,10 @@ class BuildSnap(
             local_ca_cert.write(decoded_certificate)
             os.fchmod(local_ca_cert.fileno(), 0o644)
         self.backend.run(["update-ca-certificates"])
-        # XXX jugmac00 2024-04-17: We might need to restart snapd
-        # so the new certificate will be used
-        # snapd folks are unsure, so we need to try ourselves
+
+    def restart_snapd(self):
+        # This is required to pick up the certificate
+        self.backend.run(["systemctl", "restart", "snapd"])
 
     def install_svn_servers(self):
         proxy = urlparse(self.args.proxy_url)
@@ -227,6 +228,7 @@ class BuildSnap(
         if self.args.use_fetch_service:
             self.install_mitm_certificate()
             self.install_snapd_proxy(proxy_url=self.args.proxy_url)
+            self.restart_snapd()
 
     def repo(self):
         """Collect git or bzr branch."""
