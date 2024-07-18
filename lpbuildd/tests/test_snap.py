@@ -8,7 +8,7 @@ import responses
 from fixtures import EnvironmentVariable, TempDir
 from testtools import TestCase
 from testtools.content import text_content
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer, reactor, utils
 from twisted.web import http, proxy, resource, server, static
 

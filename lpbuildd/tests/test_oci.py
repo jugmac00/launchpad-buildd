@@ -7,8 +7,8 @@ from collections import OrderedDict
 
 from fixtures import EnvironmentVariable, MockPatch, TempDir
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
 from testtools.matchers import Contains
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
 from lpbuildd.oci import OCIBuildManager, OCIBuildState

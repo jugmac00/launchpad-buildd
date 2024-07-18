@@ -11,7 +11,7 @@ import re
 
 from fixtures import TempDir
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from twisted.logger import FileLogObserver, formatEvent, globalLogPublisher
 
