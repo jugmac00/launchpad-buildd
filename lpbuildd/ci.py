@@ -272,9 +272,9 @@ class CIBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 entry_base = os.path.basename(entry)
                 name = os.path.join(self.current_job_id, entry_base)
                 self.addWaitingFileFromBackend(path, name=name)
-                job_status.setdefault("output", {})[
-                    entry_base
-                ] = self._builder.waitingfiles[name]
+                job_status.setdefault("output", {})[entry_base] = (
+                    self._builder.waitingfiles[name]
+                )
 
         # Save a file map for this job in the extra status file.  This
         # allows buildd-manager to fetch job logs/output incrementally
