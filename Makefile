@@ -18,8 +18,19 @@ realclean:
 	rm -f ../launchpad-buildd*deb
 	rm -f ../launchpad-buildd*changes
 
-.PHONY: all clean deb
+.PHONY: all clean deb install realclean src check docs
 
 check:
 	PYTHONPATH=$(CURDIR):$(PYTHONPATH) python3 -m testtools.run \
 		discover -v
+
+install:
+	sudo add-apt-repository ppa:launchpad/ppa \
+	&& sudo apt-get update \
+	&& cat system-dependencies.txt | sudo xargs apt-get install -y \
+
+install-build-deps: install
+	sudo apt install -y dpkg-dev dh-exec dh-python
+
+docs:
+	sphinx-build -M html docs  docs/_build
