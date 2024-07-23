@@ -1,22 +1,20 @@
 How to build the project
 ************************
 
-In order to build the package you need ``dpkg-dev`` and ``fakeroot``.
-
-To build the package, do:
+You can use `make` to build the package:
 
 .. code:: bash
 
-    debian/rules package
-    dpkg-buildpackage -rfakeroot -b
+    make install-build-deps
+    make deb
 
-It will "fail" because the package built in the "wrong" place.
-Don't worry about that.
+To clean up, there are 2 targets:
 
-To clean up, do:
+`clean`: It simulates root privileges to remove build artifacts and reset the source directory to a clean state
+
+`realclean`: Removes additional artifacts (.deb, .dsc, .changes, .tar.gz) in the parent directory. 
 
 .. code:: bash
 
-    fakeroot debian/rules clean
-    rm launchpad-buildd*deb
-    rm ../launchpad-buildd*changes
+    make clean
+    make realclean
