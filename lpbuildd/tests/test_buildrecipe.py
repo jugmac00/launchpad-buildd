@@ -1,7 +1,8 @@
 # Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import imp
+import importlib.machinery
+import importlib.util
 import io
 import os
 import shutil
@@ -17,6 +18,22 @@ from testtools import TestCase
 from testtools.matchers import Equals, MatchesListwise, StartsWith
 
 
+# imp was removed in python3.12(used by noble)
+# docs suggests the below migration snippet for imp.load_source
+# https://docs.python.org/dev/whatsnew/3.12.html#imp
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(
+        modname, filename, loader=loader
+    )
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
+
+
 @contextmanager
 def disable_bytecode():
     original = sys.dont_write_bytecode
@@ -27,9 +44,7 @@ def disable_bytecode():
 
 # By-hand import to avoid having to put .py suffixes on builder binaries.
 with disable_bytecode():
-    RecipeBuilder = imp.load_source(
-        "buildrecipe", "bin/buildrecipe"
-    ).RecipeBuilder
+    RecipeBuilder = load_source("buildrecipe", "bin/buildrecipe").RecipeBuilder
 
 
 class RanCommand(MatchesListwise):

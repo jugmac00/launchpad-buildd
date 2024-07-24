@@ -12,7 +12,6 @@ from textwrap import dedent
 from debian.deb822 import PkgRelation
 from fixtures import MonkeyPatch
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -21,6 +20,7 @@ from testtools.matchers import (
     MatchesListwise,
     Not,
 )
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from twisted.internet.task import Clock
 

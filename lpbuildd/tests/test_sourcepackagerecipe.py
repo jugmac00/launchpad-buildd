@@ -8,7 +8,7 @@ from textwrap import dedent
 
 from systemfixtures import FakeProcesses
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
 from lpbuildd.sourcepackagerecipe import (

@@ -6,7 +6,7 @@ import shutil
 
 from fixtures import EnvironmentVariable, TempDir
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
 from lpbuildd.builder import get_build_path

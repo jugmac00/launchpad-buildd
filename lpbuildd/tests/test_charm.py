@@ -7,7 +7,7 @@ import os
 import responses
 from fixtures import EnvironmentVariable, TempDir
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
 from lpbuildd.charm import CharmBuildManager, CharmBuildState
