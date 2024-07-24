@@ -92,7 +92,10 @@ class BuildOCI(
         logger.info("Running repo phase...")
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
         self.vcs_fetch(
-            self.args.name, cwd="/home/buildd", env=env, git_shallow_clone=True
+            self.args.name,
+            cwd="/home/buildd",
+            env=env,
+            git_shallow_clone_with_single_branch=True,
         )
 
     def build(self):
