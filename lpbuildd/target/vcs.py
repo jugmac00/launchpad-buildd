@@ -74,6 +74,8 @@ class VCSOperationMixin(StatusOperationMixin):
         # XXX: jugmac00 2024-07-24: this method could be refactored to make it
         # more clear that we both handle the bzr and the git case
         # or even better, we should have separate classes to handle git and bzr
+
+        # this handles the bzr case
         if self.args.branch is not None:
             cmd = ["bzr", "branch"]
             if quiet:
@@ -82,6 +84,7 @@ class VCSOperationMixin(StatusOperationMixin):
             if not self.ssl_verify:
                 cmd.insert(1, "-Ossl.cert_reqs=none")
         else:
+            # this handles the git case
             assert self.args.git_repository is not None
             cmd = ["git", "clone", "-n"]
             if quiet:
@@ -95,6 +98,7 @@ class VCSOperationMixin(StatusOperationMixin):
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"
         self.backend.run(cmd, cwd=cwd, env=full_env)
+        # this handles the git case
         if self.args.git_repository is not None:
             repository = os.path.join(cwd, name)
             self.backend.run(
