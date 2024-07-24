@@ -1,3 +1,10 @@
+launchpad-buildd (240) UNRELEASED; urgency=medium
+
+  * Prefer `--single-branch` over `--no-single-branch` when cloning
+    repositories to avoid branch scalability issues. Fixes LP:#2067047
+
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Wed, 24 Jul 2024 08:22:42 +0200
+
 launchpad-buildd (239) focal; urgency=medium
 
   * Restart snapd after certificate installation and proxy initialization.

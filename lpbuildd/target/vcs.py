@@ -59,13 +59,23 @@ class VCSOperationMixin(StatusOperationMixin):
             return ["git"]
 
     def vcs_fetch(
-        self, name, cwd, env=None, quiet=False, git_shallow_clone=False
+        self,
+        name,
+        cwd,
+        env=None,
+        quiet=False,
+        git_shallow_clone_with_single_branch=False,
     ):
         full_env = OrderedDict()
         full_env["LANG"] = "C.UTF-8"
         full_env["SHELL"] = "/bin/sh"
         if env:
             full_env.update(env)
+        # XXX: jugmac00 2024-07-24: this method could be refactored to make it
+        # more clear that we both handle the bzr and the git case
+        # or even better, we should have separate classes to handle git and bzr
+
+        # this handles the bzr case
         if self.args.branch is not None:
             cmd = ["bzr", "branch"]
             if quiet:
@@ -74,21 +84,23 @@ class VCSOperationMixin(StatusOperationMixin):
             if not self.ssl_verify:
                 cmd.insert(1, "-Ossl.cert_reqs=none")
         else:
+            # this handles the git case
             assert self.args.git_repository is not None
             cmd = ["git", "clone", "-n"]
             if quiet:
                 cmd.append("-q")
-            if git_shallow_clone:
-                cmd.extend(["--depth", "1", "--no-single-branch"])
+            git_path = self.args.git_path
+            if self.args.git_path is None:
+                git_path = "HEAD"
+            if git_shallow_clone_with_single_branch:
+                cmd.extend(["--depth", "1", "-b", git_path, "--single-branch"])
             cmd.extend([self.args.git_repository, name])
             if not self.ssl_verify:
                 env["GIT_SSL_NO_VERIFY"] = "1"
         self.backend.run(cmd, cwd=cwd, env=full_env)
+        # this handles the git case
         if self.args.git_repository is not None:
             repository = os.path.join(cwd, name)
-            git_path = self.args.git_path
-            if self.args.git_path is None:
-                git_path = "HEAD"
             self.backend.run(
                 ["git", "checkout", "-q", git_path],
                 cwd=repository,
