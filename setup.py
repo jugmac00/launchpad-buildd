@@ -30,7 +30,19 @@ with open("debian/changelog") as changelog:
         raise ValueError(
             "Failed to parse first line of debian/changelog: '%s'" % line
         )
+
     version = match.group(1)
+
+    # Versions are picked from debian/changelog file.
+    # With setuptools >= 66, it's mandated to follow PEP 440
+    # based versioning for python packages
+    try:
+        # version naming on Launchpad recipe,
+        # follows {debupstream}~{revno}~{ubuntu-release-suffix}
+        # we just need the {debupstream}
+        version = version.split("~")[0]
+    except IndexError:
+        raise ValueError("Invalid version format in debian/changelog")
 
 
 setup(
