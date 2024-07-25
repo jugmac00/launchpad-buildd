@@ -41,6 +41,10 @@ with open("debian/changelog") as changelog:
         # follows {debupstream}~{revno}~{ubuntu-release-suffix}
         # we just need the {debupstream}
         version = version.split("~")[0]
+
+    # TODO: use packaging.version module to test whether PEP 440 is followed
+    # This can be done after we deprecate focal, as packaging does not come
+    # explicitly installed with setuptools in python 3.8 (ubuntu-focal)
     except IndexError:
         raise ValueError("Invalid version format in debian/changelog")
 
