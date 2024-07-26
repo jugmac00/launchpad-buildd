@@ -1,9 +1,14 @@
-launchpad-buildd (240) UNRELEASED; urgency=medium
+launchpad-buildd (240) focal; urgency=medium
 
-  * Prefer `--single-branch` over `--no-single-branch` when cloning
+    [ Tushar Gupta ]
+    * Fix compatibility issues with Noble.
+    * Adapt version schema for the Python build to adhere to PEP 440.
+
+    [ Jürgen Gmach ]
+    * Prefer `--single-branch` over `--no-single-branch` when cloning
     repositories to avoid branch scalability issues. Fixes LP:#2067047
 
- -- Jürgen Gmach <juergen.gmach@canonical.com>  Wed, 24 Jul 2024 08:22:42 +0200
+ -- Jürgen Gmach <juergen.gmach@canonical.com>  Fri, 26 Jul 2024 16:14:16 +0200
 
 launchpad-buildd (239) focal; urgency=medium
 
