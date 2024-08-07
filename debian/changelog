@@ -1,3 +1,10 @@
+launchpad-buildd (241) UNRELEASED; urgency=medium
+
+    [ Quentin Debhi ]
+    * Add rockcraft build type.
+
+ -- Quentin Debhi <quentin.debhi@canonical.com>  Wed, 07 Aug 2024 16:33:34 +0200
+
 launchpad-buildd (240) focal; urgency=medium
 
     [ Tushar Gupta ]
