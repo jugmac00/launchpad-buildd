@@ -1,4 +1,4 @@
-launchpad-buildd (241) UNRELEASED; urgency=medium
+launchpad-buildd (241) focal; urgency=medium
 
     [ Quentin Debhi ]
     * Add rockcraft build type.
@@ -6,7 +6,7 @@ launchpad-buildd (241) UNRELEASED; urgency=medium
     [ Simone Pelosi ]
     * Add LimitNOFILE configuration to launchpad-buildd daemon.
 
- -- Quentin Debhi <quentin.debhi@canonical.com>  Wed, 07 Aug 2024 16:33:34 +0200
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Wed, 21 Aug 2024 12:35:08 +0200
 
 launchpad-buildd (240) focal; urgency=medium
 
