@@ -25,6 +25,7 @@ ExecStart=/usr/bin/twistd3 --no_save --pidfile /run/launchpad-buildd/%i.pid --py
 # If the machine runs out of memory, killing just about any other process is
 # better than killing launchpad-buildd.
 OOMScoreAdjust=-1000
+LimitNOFILE=65536
 
 [Install]
 WantedBy=multi-user.target
