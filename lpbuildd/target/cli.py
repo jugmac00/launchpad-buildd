@@ -11,6 +11,7 @@ from lpbuildd.target.build_livefs import BuildLiveFS
 from lpbuildd.target.build_oci import BuildOCI
 from lpbuildd.target.build_rock import BuildRock
 from lpbuildd.target.build_snap import BuildSnap
+from lpbuildd.target.build_source import BuildSource
 from lpbuildd.target.generate_translation_templates import (
     GenerateTranslationTemplates,
 )
@@ -48,6 +49,7 @@ operations = {
     "build-oci": BuildOCI,
     "build-charm": BuildCharm,
     "build-rock": BuildRock,
+    "build-source": BuildSource,
     "buildlivefs": BuildLiveFS,
     "buildsnap": BuildSnap,
     "generate-translation-templates": GenerateTranslationTemplates,
