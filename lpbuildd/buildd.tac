@@ -23,6 +23,7 @@ from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.log import RotatableFileLogObserver
 from lpbuildd.oci import OCIBuildManager
 from lpbuildd.rock import RockBuildManager
+from lpbuildd.source import SourceBuildManager
 from lpbuildd.snap import SnapBuildManager
 from lpbuildd.sourcepackagerecipe import SourcePackageRecipeBuildManager
 from lpbuildd.translationtemplates import TranslationTemplatesBuildManager
@@ -47,6 +48,7 @@ builder.registerManager(OCIBuildManager, "oci")
 builder.registerManager(CharmBuildManager, "charm")
 builder.registerManager(CIBuildManager, "ci")
 builder.registerManager(RockBuildManager, "rock")
+builder.registerManager(SourceBuildManager, "source")
 
 application = service.Application("Builder")
 application.addComponent(
