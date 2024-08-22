@@ -131,7 +131,7 @@ class TestBuildSource(TestCase):
                     RanAptGet(
                         "install", "bzr"
                     ),
-                    RanSnap("install", "--classic", "sourcecraft"),
+                    RanSnap("install", "--classic", "--beta", "sourcecraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
@@ -157,7 +157,7 @@ class TestBuildSource(TestCase):
                     RanAptGet(
                         "install", "git"
                     ),
-                    RanSnap("install", "--classic", "sourcecraft"),
+                    RanSnap("install", "--classic", "--beta", "sourcecraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
@@ -211,7 +211,7 @@ class TestBuildSource(TestCase):
                     RanCommand(
                         ["snap", "set", "core", "proxy.store=store-id"]
                     ),
-                    RanSnap("install", "--classic", "sourcecraft"),
+                    RanSnap("install", "--classic", "--beta", "sourcecraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
@@ -248,7 +248,7 @@ class TestBuildSource(TestCase):
                         "socat",
                         "git",
                     ),
-                    RanSnap("install", "--classic", "sourcecraft"),
+                    RanSnap("install", "--classic", "--beta", "sourcecraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
