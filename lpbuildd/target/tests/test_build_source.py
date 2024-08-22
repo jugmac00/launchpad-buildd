@@ -530,7 +530,7 @@ class TestBuildSource(TestCase):
             MatchesListwise(
                 [
                     RanBuildCommand(
-                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        ["sourcecraft", "pack", "-v"],
                         cwd="/home/buildd/test-image/.",
                     ),
                 ]
@@ -558,7 +558,7 @@ class TestBuildSource(TestCase):
             MatchesListwise(
                 [
                     RanBuildCommand(
-                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        ["sourcecraft", "pack", "-v"],
                         cwd="/home/buildd/test-image/build-aux/",
                     ),
                 ]
@@ -591,7 +591,7 @@ class TestBuildSource(TestCase):
             MatchesListwise(
                 [
                     RanBuildCommand(
-                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        ["sourcecraft", "pack", "-v"],
                         cwd="/home/buildd/test-image/.",
                         **env,
                     ),
@@ -630,7 +630,7 @@ class TestBuildSource(TestCase):
                 ),
                 AnyMatch(
                     RanBuildCommand(
-                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        ["sourcecraft", "pack", "-v"],
                         cwd="/home/buildd/test-image/.",
                     )
                 ),

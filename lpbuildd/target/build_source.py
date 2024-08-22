@@ -102,7 +102,7 @@ class BuildSource(
         )
         check_path_escape(self.buildd_path, build_context_path)
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
-        args = ["sourcecraft", "pack", "-v", "--destructive-mode"]
+        args = ["sourcecraft", "pack", "-v"]
         self.run_build_command(args, env=env, cwd=build_context_path)
 
     def run(self):
