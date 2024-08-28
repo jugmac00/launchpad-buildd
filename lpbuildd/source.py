@@ -92,5 +92,5 @@ class SourceBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 path = os.path.join(output_path, entry)
                 if self.backend.islink(path):
                     continue
-                # 
-                self.addWaitingFileFromBackend(path)
+                if entry.endswith(".tar.xz"):
+                    self.addWaitingFileFromBackend(path)

@@ -120,7 +120,7 @@ class TestSourceBuildManagerIteration(TestCase):
             log.write("I am a build log.")
 
         self.buildmanager.backend.add_file(
-            "/home/buildd/test-source/test-source_0_all.source", b"I am sourceing."
+            "/home/buildd/test-source/test-source_0_all.tar.xz", b"I am sourceing."
         )
 
         # After building the package, reap processes.
@@ -145,7 +145,7 @@ class TestSourceBuildManagerIteration(TestCase):
             self.builder,
             HasWaitingFiles.byEquality(
                 {
-                    "test-source_0_all.source": b"I am sourceing.",
+                    "test-source_0_all.tar.xz": b"I am sourceing.",
                 }
             ),
         )
@@ -192,7 +192,7 @@ class TestSourceBuildManagerIteration(TestCase):
             log.write("I am a build log.")
 
         self.buildmanager.backend.add_file(
-            "/home/buildd/test-source/source/test-source_0_all.source",
+            "/home/buildd/test-source/source/test-source_0_all.tar.xz",
             b"I am sourceing.",
         )
 
@@ -218,7 +218,7 @@ class TestSourceBuildManagerIteration(TestCase):
             self.builder,
             HasWaitingFiles.byEquality(
                 {
-                    "test-source_0_all.source": b"I am sourceing.",
+                    "test-source_0_all.tar.xz": b"I am sourceing.",
                 }
             ),
         )

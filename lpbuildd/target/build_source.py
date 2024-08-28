@@ -82,7 +82,7 @@ class BuildSource(
                 ]
             )
         else:
-            self.backend.run(["snap", "install", "--classic", "--beta", "sourcecraft"])
+            self.backend.run(["snap", "install", "--classic", "--channel=latest/edge/craftctl", "sourcecraft"])
         # With classic confinement, the snap can access the whole system.
         # We could build the source in /build, but we are using /home/buildd
         # for consistency with other build types.
