@@ -1,10 +1,8 @@
-import base64
 import os
 
-import responses
 from fixtures import EnvironmentVariable, TempDir
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
 from lpbuildd.source import SourceBuildManager, SourceBuildState
@@ -24,7 +22,7 @@ class MockBuildManager(SourceBuildManager):
             iterate = self.iterate
         self.iterators.append(iterate)
         return 0
-    
+
 
 class TestSourceBuildManagerIteration(TestCase):
     """Run SourceBuildManager through its iteration steps."""
@@ -120,7 +118,8 @@ class TestSourceBuildManagerIteration(TestCase):
             log.write("I am a build log.")
 
         self.buildmanager.backend.add_file(
-            "/home/buildd/test-source/test-source_0_all.tar.xz", b"I am sourceing."
+            "/home/buildd/test-source/test-source_0_all.tar.xz",
+            b"I am sourceing.",
         )
 
         # After building the package, reap processes.

@@ -1,10 +1,8 @@
-import base64
 import os
 
-import responses
 from fixtures import EnvironmentVariable, TempDir
 from testtools import TestCase
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
 from lpbuildd.rock import RockBuildManager, RockBuildState
@@ -24,7 +22,7 @@ class MockBuildManager(RockBuildManager):
             iterate = self.iterate
         self.iterators.append(iterate)
         return 0
-    
+
 
 class TestRockBuildManagerIteration(TestCase):
     """Run RockBuildManager through its iteration steps."""
