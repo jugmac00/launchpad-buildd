@@ -52,3 +52,7 @@ $run_lintian = 0;
 }
 
 $sbuild_mode="buildd";
+
+# Do not give build up with E: Disk space is probably not sufficient for
+# building (LP:2077943).
+$check_space = 0;
