@@ -1,9 +1,9 @@
-launchpad-buildd (242) UNRELEASED; urgency=medium
+launchpad-buildd (242) focal; urgency=medium
   
   [ Quentin Debhi ]
   * Add sourcecraft build type.
 
- -- Quentin Debhi <quentin.debhi@canonical.com>  Thu, 22 Aug 2024 14:09:58 +0200
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Thu, 05 Sep 2024 15:31:54 +0200
 
 launchpad-buildd (241) focal; urgency=medium
 
