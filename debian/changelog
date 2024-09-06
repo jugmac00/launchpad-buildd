@@ -5,6 +5,7 @@ launchpad-buildd (244) UNRELEASED; urgency=medium
 
   [ Simone Pelosi ]
   * Add deb822 support for series >= 24.04.
+  * Enable snapshot service for livefs builds.
 
  -- Simone Pelosi <simone.pelosi@canonical.com>  Tue, 24 Sep 2024 15:50:13 +0200
 

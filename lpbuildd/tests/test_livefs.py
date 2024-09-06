@@ -178,6 +178,14 @@ class TestLiveFilesystemBuildManagerIteration(TestCase):
         )
 
     @defer.inlineCallbacks
+    def test_iterate_snapshot_service(self):
+        # The build manager can be told to use snapshot service.
+        yield self.startBuild(
+            args={"snapshot_service_timestamp": "20190101T123456Z"},
+            options=["--snapshot-service-timestamp", "20190101T123456Z"],
+        )
+
+    @defer.inlineCallbacks
     def test_iterate_snap_store_proxy(self):
         # The build manager can be told to use a snap store proxy.
         self.builder._config.set(

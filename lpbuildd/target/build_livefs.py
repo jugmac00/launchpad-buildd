@@ -65,6 +65,12 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
             help="build against package repo state at TIMESTAMP",
         )
         parser.add_argument(
+            "--snapshot-service-timestamp",
+            dest="snapshot_service_timestamp",
+            metavar="SNAPSHOT_SERVICE_TIMESTAMP",
+            help="snapshot stamp in the YYYYMMDDTHHMMSSZ format"
+        )
+        parser.add_argument(
             "--cohort-key",
             dest="cohort_key",
             metavar="COHORT_KEY",
@@ -176,6 +182,10 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
             if self.args.repo_snapshot_stamp:
                 base_lb_env["REPO_SNAPSHOT_STAMP"] = (
                     self.args.repo_snapshot_stamp
+                )
+            if self.args.snapshot_service_timestamp:
+                base_lb_env["SNAPSHOT_SERVICE_TIMESTAMP"] = (
+                    self.args.snapshot_service_timestamp
                 )
             if self.args.cohort_key:
                 base_lb_env["COHORT_KEY"] = self.args.cohort_key
