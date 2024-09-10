@@ -226,8 +226,15 @@ class BuildSnap(
             # jugmac00 reached out both to William and Claudio to figure out
             self.install_svn_servers()
         if self.args.use_fetch_service:
+            # Deleting apt cache /var/lib/apt/lists before
+            # installing the fetch service
+            self.backend.run(
+                ["rm", "-rf", "/var/lib/apt/lists/*"]
+            )
             self.install_mitm_certificate()
             self.install_snapd_proxy(proxy_url=self.args.proxy_url)
+            # Call apt update to refresh the apt cache
+            self.backend.run(["apt-get", "-y", "update"])
             self.restart_snapd()
 
     def repo(self):
