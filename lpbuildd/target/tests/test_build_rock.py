@@ -262,6 +262,179 @@ class TestBuildRock(TestCase):
             ],
         )
 
+    def test_install_certificate(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_rock.install()
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet(
+                        "install",
+                        "python3",
+                        "socat",
+                        "git",
+                        "python3-pip",
+                        "python3-setuptools",
+                    ),
+                    RanSnap("install", "--classic", "rockcraft"),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists/*"]),
+                    RanCommand(["update-ca-certificates"]),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.http=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.https=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanAptGet("update"),
+                    RanCommand(
+                        [
+                            "systemctl",
+                            "restart",
+                            "snapd",
+                        ]
+                    ),
+                    RanCommand(["mkdir", "-p", "/home/buildd"]),
+                ]
+            ),
+        )
+        self.assertEqual(
+            (b"proxy script\n", stat.S_IFREG | 0o755),
+            build_rock.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"],
+        )
+        self.assertEqual(
+            (
+                b"[global]\n"
+                b"http-proxy-host = proxy.example\n"
+                b"http-proxy-port = 3128\n",
+                stat.S_IFREG | 0o644,
+            ),
+            build_rock.backend.backend_fs["/root/.subversion/servers"],
+        )
+        self.assertEqual(
+            (
+                b"content_of_cert",
+                stat.S_IFREG | 0o644,
+            ),
+            build_rock.backend.backend_fs[
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ],
+        )
+
+    def test_install_snapd_proxy(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_rock.install()
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet(
+                        "install",
+                        "python3",
+                        "socat",
+                        "git",
+                        "python3-pip",
+                        "python3-setuptools",
+                    ),
+                    RanSnap("install", "--classic", "rockcraft"),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists/*"]),
+                    RanCommand(["update-ca-certificates"]),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.http=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.https=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanAptGet("update"),
+                    RanCommand(
+                        [
+                            "systemctl",
+                            "restart",
+                            "snapd",
+                        ]
+                    ),
+                    RanCommand(["mkdir", "-p", "/home/buildd"]),
+                ]
+            ),
+        )
+        self.assertEqual(
+            (b"proxy script\n", stat.S_IFREG | 0o755),
+            build_rock.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"],
+        )
+        self.assertEqual(
+            (
+                b"[global]\n"
+                b"http-proxy-host = proxy.example\n"
+                b"http-proxy-port = 3128\n",
+                stat.S_IFREG | 0o644,
+            ),
+            build_rock.backend.backend_fs["/root/.subversion/servers"],
+        )
+
     def test_repo_bzr(self):
         args = [
             "build-rock",
@@ -587,6 +760,46 @@ class TestBuildRock(TestCase):
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
+        }
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["rockcraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                        **env,
+                    ),
+                ]
+            ),
+        )
+
+    def test_build_fetch_service(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.build()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+            'CARGO_HTTP_CAINFO': '/usr/local/share/ca-certificates/local-ca.crt',
+            'GOPROXY': 'direct',
         }
         self.assertThat(
             build_rock.backend.run.calls,

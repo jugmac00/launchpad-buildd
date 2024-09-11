@@ -32,6 +32,7 @@ class RockBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.channels = extra_args.get("channels", {})
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
+        self.use_fetch_service = extra_args.get("use_fetch_service")
         self.proxy_service = None
 
         super().initiate(files, chroot, extra_args)
@@ -52,6 +53,14 @@ class RockBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--git-path", self.git_path])
         if self.build_path is not None:
             args.extend(["--build-path", self.build_path])
+        if self.use_fetch_service:
+            args.append("--use_fetch_service")
+            args.extend(
+                [
+                    "--fetch-service-mitm-certificate",
+                    self.secrets["fetch_service_mitm_certificate"],
+                ]
+            )
         args.append(self.name)
         self.runTargetSubProcess("build-rock", *args)
 
