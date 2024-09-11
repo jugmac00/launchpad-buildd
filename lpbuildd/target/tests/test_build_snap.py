@@ -227,6 +227,7 @@ class TestBuildSnap(TestCase):
                         "install", "python3", "socat", "git", "snapcraft"
                     ),
                     RanCommand(["mkdir", "-p", "/root/.subversion"]),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists/*"]),
                     RanCommand(["update-ca-certificates"]),
                     RanCommand(
                         [
@@ -244,6 +245,7 @@ class TestBuildSnap(TestCase):
                             "proxy.https=http://proxy.example:3128/",
                         ]
                     ),
+                    RanAptGet("update"),
                     RanCommand(
                         [
                             "systemctl",
@@ -310,6 +312,7 @@ class TestBuildSnap(TestCase):
                         "install", "python3", "socat", "git", "snapcraft"
                     ),
                     RanCommand(["mkdir", "-p", "/root/.subversion"]),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists/*"]),
                     RanCommand(["update-ca-certificates"]),
                     RanCommand(
                         [
@@ -327,6 +330,7 @@ class TestBuildSnap(TestCase):
                             "proxy.https=http://proxy.example:3128/",
                         ]
                     ),
+                    RanAptGet("update"),
                     RanCommand(
                         [
                             "systemctl",
