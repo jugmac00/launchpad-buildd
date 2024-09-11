@@ -88,7 +88,8 @@ class BuildRock(
             )
 
     def build_rock_proxy_environment(self, env):
-        """Extend a command environment to include rockcraftproxy variables."""
+        """Extend a command environment to include rockcraft proxy variables.
+        """
         env["CARGO_HTTP_CAINFO"] = MITM_CERTIFICATE_PATH
         env["GOPROXY"] = "direct"
         return env
