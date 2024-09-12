@@ -2,12 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import argparse
-import base64
 import json
 import logging
 import os.path
-from textwrap import dedent
-from urllib.parse import urlparse
 
 from lpbuildd.target.operation import Operation
 from lpbuildd.target.proxy import BuilderProxyOperationMixin
@@ -116,65 +113,6 @@ class BuildSnap(
         )
         parser.add_argument("name", help="name of snap to build")
 
-    def install_snapd_proxy(self, proxy_url):
-        """Install snapd proxy
-
-        This is necessary so the proxy can communicate properly
-        with snapcraft.
-        """
-        if proxy_url:
-            self.backend.run(
-                ["snap", "set", "system", f"proxy.http={proxy_url}"]
-            )
-            self.backend.run(
-                ["snap", "set", "system", f"proxy.https={proxy_url}"]
-            )
-
-    def install_mitm_certificate(self):
-        """Install ca certificate for the fetch service
-
-        This is necessary so the fetch service can man-in-the-middle all
-        requests when fetching dependencies.
-        """
-        with self.backend.open(
-            "/usr/local/share/ca-certificates/local-ca.crt", mode="wb"
-        ) as local_ca_cert:
-            # Certificate is passed as a Base64 encoded string.
-            # It's encoded using `base64 -w0` on the cert file.
-            decoded_certificate = base64.b64decode(
-                self.args.fetch_service_mitm_certificate.encode("ASCII")
-            )
-            local_ca_cert.write(decoded_certificate)
-            os.fchmod(local_ca_cert.fileno(), 0o644)
-        self.backend.run(["update-ca-certificates"])
-
-    def restart_snapd(self):
-        # This is required to pick up the certificate
-        self.backend.run(["systemctl", "restart", "snapd"])
-
-    def install_svn_servers(self):
-        proxy = urlparse(self.args.proxy_url)
-        svn_servers = dedent(
-            f"""\
-            [global]
-            http-proxy-host = {proxy.hostname}
-            http-proxy-port = {proxy.port}
-            """
-        )
-        # We should never end up with an authenticated proxy here since
-        # lpbuildd.snap deals with it, but it's almost as easy to just
-        # handle it as to assert that we don't need to.
-        if proxy.username:
-            svn_servers += f"http-proxy-username = {proxy.username}\n"
-        if proxy.password:
-            svn_servers += f"http-proxy-password = {proxy.password}\n"
-        self.backend.run(["mkdir", "-p", "/root/.subversion"])
-        with self.backend.open(
-            "/root/.subversion/servers", mode="w+"
-        ) as svn_servers_file:
-            svn_servers_file.write(svn_servers)
-            os.fchmod(svn_servers_file.fileno(), 0o644)
-
     def install(self):
         logger.info("Running install phase...")
         deps = []
@@ -224,16 +162,13 @@ class BuildSnap(
             # it is currently unclear whether this is still necessary for
             # building snaps
             # jugmac00 reached out both to William and Claudio to figure out
-            self.install_svn_servers()
+            self.install_svn_servers(self.args.proxy_url)
         if self.args.use_fetch_service:
             # Deleting apt cache /var/lib/apt/lists before
             # installing the fetch service
-            self.backend.run(
-                ["rm", "-rf", "/var/lib/apt/lists/*"]
-            )
+            self.delete_apt_cache()
             self.install_mitm_certificate()
             self.install_snapd_proxy(proxy_url=self.args.proxy_url)
-            # Call apt update to refresh the apt cache
             self.backend.run(["apt-get", "-y", "update"])
             self.restart_snapd()
 

@@ -11,7 +11,6 @@ from lpbuildd.target.vcs import VCSOperationMixin
 RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +37,17 @@ class BuildRock(
             "--build-path", default=".", help="location of rock to build."
         )
         parser.add_argument("name", help="name of rock to build")
+        parser.add_argument(
+            "--use_fetch_service",
+            default=False,
+            action="store_true",
+            help="use the fetch service instead of the builder proxy",
+        )
+        parser.add_argument(
+            "--fetch-service-mitm-certificate",
+            type=str,
+            help="content of the ca certificate",
+        )
 
     def __init__(self, args, parser):
         super().__init__(args, parser)
@@ -89,6 +99,16 @@ class BuildRock(
             )
         else:
             self.backend.run(["snap", "install", "--classic", "rockcraft"])
+
+        if self.args.use_fetch_service:
+            # Deleting apt cache /var/lib/apt/lists before
+            # installing the fetch service
+            self.delete_apt_cache()
+            self.install_mitm_certificate()
+            self.install_snapd_proxy(proxy_url=self.args.proxy_url)
+            self.backend.run(["apt-get", "-y", "update"])
+            self.restart_snapd()
+
         # With classic confinement, the snap can access the whole system.
         # We could build the rock in /build, but we are using /home/buildd
         # for consistency with other build types.
@@ -97,7 +117,10 @@ class BuildRock(
     def repo(self):
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
-        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+        env = self.build_proxy_environment(
+            proxy_url=self.args.proxy_url,
+            use_fetch_service=self.args.use_fetch_service
+        )
         self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
         self.vcs_update_status(self.buildd_path)
 
@@ -107,7 +130,10 @@ class BuildRock(
             "/home/buildd", self.args.name, self.args.build_path
         )
         check_path_escape(self.buildd_path, build_context_path)
-        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+        env = self.build_proxy_environment(
+            proxy_url=self.args.proxy_url,
+            use_fetch_service=self.args.use_fetch_service
+        )
         args = ["rockcraft", "pack", "-v", "--destructive-mode"]
         self.run_build_command(args, env=env, cwd=build_context_path)
 
