@@ -32,6 +32,8 @@ class RockBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.channels = extra_args.get("channels", {})
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
+        # currently only used to transport the mitm certificate
+        self.secrets = extra_args.get("secrets")
         self.use_fetch_service = extra_args.get("use_fetch_service")
         self.proxy_service = None
 
