@@ -1,11 +1,11 @@
-launchpad-buildd (243) UNRELEASED; urgency=medium
+launchpad-buildd (243) focal; urgency=medium
 
   [ Simone Pelosi ]
   * Delete apt cache before fetch-service set up. 
   * Enable fetch service for rock builds.
   * Refactor fetch service initialization.
 
- -- Simone Pelosi <simone.pelosi@canonical.com>  Tue, 10 Sep 2024 16:38:55 +0200
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Mon, 23 Sep 2024 16:47:24 +0200
 
 launchpad-buildd (242) focal; urgency=medium
   
