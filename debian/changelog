@@ -1,7 +1,10 @@
 launchpad-buildd (244) UNRELEASED; urgency=medium
 
+  [ Yuliy Schwartzburg ]
+  * Enable git protocol v2 in focal.
+
   [ Simone Pelosi ]
-  * Add deb822 support for series >= 24.04
+  * Add deb822 support for series >= 24.04.
 
  -- Simone Pelosi <simone.pelosi@canonical.com>  Tue, 24 Sep 2024 15:50:13 +0200
 
