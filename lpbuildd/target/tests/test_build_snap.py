@@ -640,6 +640,69 @@ class TestBuildSnap(TestCase):
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
+    def test_repo_fetch_service(self):
+        args = [
+            "buildsnap",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-snap",
+            "--use_fetch_service",
+        ]
+        build_snap = parse_args(args=args).operation
+        build_snap.backend.build_path = self.useFixture(TempDir()).path
+        build_snap.backend.run = FakeRevisionID("0" * 40)
+        build_snap.repo()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+            'GIT_PROTOCOL': 'version=2'
+        }
+        self.assertThat(
+            build_snap.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["git", "clone", "-n", "lp:foo", "test-snap"],
+                        cwd="/build",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "checkout", "-q", "HEAD"],
+                        cwd="/build/test-snap",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        [
+                            "git",
+                            "submodule",
+                            "update",
+                            "--init",
+                            "--recursive",
+                        ],
+                        cwd="/build/test-snap",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "rev-parse", "HEAD^{}"],
+                        cwd="/build/test-snap",
+                        get_output=True,
+                        universal_newlines=True,
+                    ),
+                ]
+            ),
+        )
+        status_path = os.path.join(build_snap.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
+
     def test_pull(self):
         args = [
             "buildsnap",
