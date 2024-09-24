@@ -91,6 +91,62 @@ class TestOverrideSourcesList(TestCase):
             ],
         )
 
+    def test_override_sources_list_deb822(self):
+        # For Ubuntu 23.04 and later, use deb822 format
+        args = [
+            "override-sources-list",
+            "--backend=fake",
+            "--series=oracular",
+            "--arch=amd64",
+            "1",
+            "deb http://archive.ubuntu.com/ubuntu oracular main",
+            "deb http://ppa.launchpad.net/launchpad/ppa/ubuntu oracular main"
+        ]
+        override_sources_list = parse_args(args=args).operation
+        self.assertEqual(0, override_sources_list.run())
+        self.assertEqual(
+            (
+                dedent(
+                    """\
+                    Types: deb
+                    URIs: http://archive.ubuntu.com/ubuntu
+                    Enabled: yes
+                    Suites: oracular
+                    Components: main
+
+                    Types: deb
+                    URIs: http://ppa.launchpad.net/launchpad/ppa/ubuntu
+                    Enabled: yes
+                    Suites: oracular
+                    Components: main
+
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            override_sources_list.backend.backend_fs[
+                "/etc/apt/sources.list.d/lp-buildd.sources"
+            ],
+        )
+
+    def test_override_sources_list_deb822_fail(self):
+        args = [
+            "override-sources-list",
+            "--backend=fake",
+            "--series=oracular",
+            "--arch=amd64",
+            "1",
+            "bad-source.com",
+        ]
+        logger = self.useFixture(FakeLogger())
+        override_sources_list = parse_args(args=args).operation
+        self.assertEqual(0, override_sources_list.run())
+        self.assertEqual(
+            "Overriding sources.list in build-1\n"
+            "Error parsing source: bad-source.com\n",
+            logger.output,
+        )
+
     def test_apt_proxy(self):
         args = [
             "override-sources-list",
