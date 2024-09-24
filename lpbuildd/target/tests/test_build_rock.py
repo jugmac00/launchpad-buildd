@@ -782,6 +782,7 @@ class TestBuildRock(TestCase):
             "SNAPPY_STORE_NO_CDN": "1",
             'CARGO_HTTP_CAINFO': '/usr/local/share/ca-certificates/local-ca.crt',
             'GOPROXY': 'direct',
+            'GIT_PROTOCOL': 'version=2',
         }
         self.assertThat(
             build_rock.backend.run.calls,

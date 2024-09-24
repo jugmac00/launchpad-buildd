@@ -106,6 +106,11 @@ class BuilderProxyOperationMixin:
             # Avoid needing to keep track of snap store CDNs in proxy
             # configuration.
             full_env["SNAPPY_STORE_NO_CDN"] = "1"
+        if use_fetch_service:
+            # Remove this when fetch service supports git protocol v1
+            # This enables git protocol v2 for focal, versions of ubuntu
+            # before focal do not support protocol v2
+            full_env["GIT_PROTOCOL"] = "version=2"
         # Avoid circular import using __class__.__name__
         if use_fetch_service and self.__class__.__name__ == "BuildRock":
             full_env["CARGO_HTTP_CAINFO"] = self.mitm_certificate_path
