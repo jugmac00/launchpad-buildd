@@ -108,6 +108,7 @@ class BuildRock(
             self.install_snapd_proxy(proxy_url=self.args.proxy_url)
             self.backend.run(["apt-get", "-y", "update"])
             self.restart_snapd()
+            self.configure_git_protocol_v2()
 
         # With classic confinement, the snap can access the whole system.
         # We could build the rock in /build, but we are using /home/buildd

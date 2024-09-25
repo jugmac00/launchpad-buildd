@@ -171,6 +171,7 @@ class BuildSnap(
             self.install_snapd_proxy(proxy_url=self.args.proxy_url)
             self.backend.run(["apt-get", "-y", "update"])
             self.restart_snapd()
+            self.configure_git_protocol_v2()
 
     def repo(self):
         """Collect git or bzr branch."""

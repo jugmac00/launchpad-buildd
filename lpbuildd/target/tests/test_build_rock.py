@@ -7,7 +7,7 @@ from textwrap import dedent
 import responses
 from fixtures import FakeLogger, TempDir
 from systemfixtures import FakeFilesystem
-from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise
+from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise, Not
 from testtools.testcase import TestCase
 
 from lpbuildd.target.backend import InvalidBuildFilePath
@@ -417,6 +417,74 @@ class TestBuildRock(TestCase):
             build_rock.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"],
         )
 
+    def test_install_fetch_service(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_rock.install()
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesAll(
+                Not(AnyMatch(RanCommand(
+                    ["git", "config", "--global", "protocol.version", "2"]
+                ))),
+            ),
+        )
+
+    def test_install_fetch_service_focal(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=focal",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_rock.install()
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesAll(
+                AnyMatch(RanCommand(
+                    ["git", "config", "--global", "protocol.version", "2"]
+                )),
+            ),
+        )
+
     def test_repo_bzr(self):
         args = [
             "build-rock",
@@ -782,7 +850,6 @@ class TestBuildRock(TestCase):
             "SNAPPY_STORE_NO_CDN": "1",
             'CARGO_HTTP_CAINFO': '/usr/local/share/ca-certificates/local-ca.crt',
             'GOPROXY': 'direct',
-            'GIT_PROTOCOL': 'version=2',
         }
         self.assertThat(
             build_rock.backend.run.calls,
