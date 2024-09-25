@@ -8,17 +8,24 @@ import time
 from textwrap import dedent
 
 from fixtures import FakeLogger
+
 from systemfixtures import FakeTime
 from testtools import TestCase
 from testtools.matchers import (
+    AnyMatch,
     ContainsDict,
     Equals,
+    MatchesAll,
     MatchesDict,
     MatchesListwise,
 )
 
 from lpbuildd.target.cli import parse_args
 from lpbuildd.tests.fakebuilder import FakeMethod
+from lpbuildd.target.tests.matchers import (
+    RanAptGet,
+    RanCommand,
+)
 
 
 class MockCopyIn(FakeMethod):
@@ -127,6 +134,22 @@ class TestOverrideSourcesList(TestCase):
             override_sources_list.backend.backend_fs[
                 "/etc/apt/sources.list.d/lp-buildd.sources"
             ],
+        )
+        self.assertThat(
+            override_sources_list.backend.run.calls,
+            MatchesAll(
+                AnyMatch(RanCommand(
+                    ["rm", "-f", "/etc/apt/sources.list.d/ubuntu.sources"]
+                )),
+            ),
+        )
+        self.assertThat(
+            override_sources_list.backend.run.calls,
+            MatchesAll(
+                AnyMatch(RanCommand(
+                    ["rm", "-f", "/etc/apt/sources.list"]
+                )),
+            ),
         )
 
     def test_override_sources_list_deb822_fail(self):

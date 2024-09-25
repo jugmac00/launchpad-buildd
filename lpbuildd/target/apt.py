@@ -103,8 +103,10 @@ class OverrideSourcesList(Operation):
                 os.fchmod(sources_list.fileno(), 0o644)
         # If the ubuntu version is >= 24.04 then use deb822 format
         else:
-            self.backend.run(["rm", "/etc/apt/sources.list.d/ubuntu.sources"])
-            self.backend.run(["rm", "/etc/apt/sources.list"])
+            self.backend.run(
+                ["rm", "-f", "/etc/apt/sources.list.d/ubuntu.sources"]
+            )
+            self.backend.run(["rm", "-f", "/etc/apt/sources.list"])
             with self.backend.open(
                 "/etc/apt/sources.list.d/lp-buildd.sources", mode="w+"
             ) as sources_list:
