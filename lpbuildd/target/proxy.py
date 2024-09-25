@@ -106,15 +106,11 @@ class BuilderProxyOperationMixin:
             # Avoid needing to keep track of snap store CDNs in proxy
             # configuration.
             full_env["SNAPPY_STORE_NO_CDN"] = "1"
-        if use_fetch_service:
-            # Remove this when fetch service supports git protocol v1
-            # This enables git protocol v2 for focal, versions of ubuntu
-            # before focal do not support protocol v2
-            full_env["GIT_PROTOCOL"] = "version=2"
         # Avoid circular import using __class__.__name__
         if use_fetch_service and self.__class__.__name__ == "BuildRock":
             full_env["CARGO_HTTP_CAINFO"] = self.mitm_certificate_path
             full_env["GOPROXY"] = "direct"
+
         return full_env
 
     def restart_snapd(self):
@@ -122,6 +118,13 @@ class BuilderProxyOperationMixin:
         self.backend.run(["systemctl", "restart", "snapd"])
 
     def delete_apt_cache(self):
+
         self.backend.run(
             ["rm", "-rf", "/var/lib/apt/lists/*"]
         )
+
+    def configure_git_protocol_v2(self):
+        if self.backend.series == "focal":
+            self.backend.run(
+                ["git", "config", "--global", "protocol.version", "2"]
+            )

@@ -12,7 +12,7 @@ import responses
 from fixtures import FakeLogger, TempDir
 from systemfixtures import FakeFilesystem
 from testtools import TestCase
-from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise
+from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise, Not
 
 from lpbuildd.target.build_snap import (
     RETCODE_FAILURE_BUILD,
@@ -390,6 +390,58 @@ class TestBuildSnap(TestCase):
             ),
         )
 
+    def test_install_fetch_service(self):
+        args = [
+            "buildsnap",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "test-snap",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_snap = parse_args(args=args).operation
+        build_snap.install()
+        self.assertThat(
+            build_snap.backend.run.calls,
+            MatchesAll(
+                Not(AnyMatch(RanCommand(
+                    ["git", "config", "--global", "protocol.version", "2"]
+                ))),
+            ),
+        )
+
+    def test_install_fetch_service_focal(self):
+        args = [
+            "buildsnap",
+            "--backend=fake",
+            "--series=focal",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "test-snap",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_snap = parse_args(args=args).operation
+        build_snap.install()
+        self.assertThat(
+            build_snap.backend.run.calls,
+            MatchesAll(
+                AnyMatch(RanCommand(
+                    ["git", "config", "--global", "protocol.version", "2"]
+                )),
+            ),
+        )
+
     def test_repo_bzr(self):
         args = [
             "buildsnap",
@@ -663,7 +715,6 @@ class TestBuildSnap(TestCase):
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
-            'GIT_PROTOCOL': 'version=2'
         }
         self.assertThat(
             build_snap.backend.run.calls,
