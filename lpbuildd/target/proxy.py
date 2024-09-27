@@ -4,9 +4,9 @@
 import base64
 import os
 import sys
+from collections import OrderedDict
 from textwrap import dedent
 from urllib.parse import urlparse
-from collections import OrderedDict
 
 
 class BuilderProxyOperationMixin:
@@ -36,6 +36,23 @@ class BuilderProxyOperationMixin:
             os.path.join(self.bin, "lpbuildd-git-proxy"),
             "/usr/local/bin/lpbuildd-git-proxy",
         )
+
+    def install_apt_proxy(self):
+        """Install the apt proxy
+
+        This is necesessary so the fetch service can be used by the
+        apt service.
+        """
+        if self.args.proxy_url:
+            with self.backend.open(
+                "/etc/apt/apt.conf.d/99proxy", mode="w+"
+            ) as apt_proxy_conf:
+                print(
+                    f'Acquire::http::Proxy "{self.args.proxy_url}";\n'
+                    f'Acquire::https::Proxy "{self.args.proxy_url}";\n',
+                    file=apt_proxy_conf,
+                )
+                os.fchmod(apt_proxy_conf.fileno(), 0o644)
 
     def install_mitm_certificate(self):
         """Install ca certificate for the fetch service
@@ -119,9 +136,7 @@ class BuilderProxyOperationMixin:
 
     def delete_apt_cache(self):
 
-        self.backend.run(
-            ["rm", "-rf", "/var/lib/apt/lists/*"]
-        )
+        self.backend.run(["rm", "-rf", "/var/lib/apt/lists/*"])
 
     def configure_git_protocol_v2(self):
         if self.backend.series == "focal":

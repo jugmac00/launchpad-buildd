@@ -278,6 +278,21 @@ class TestBuildSnap(TestCase):
                 "/usr/local/share/ca-certificates/local-ca.crt"
             ],
         )
+        self.assertEqual(
+            (
+                dedent(
+                    """\
+                Acquire::http::Proxy "http://proxy.example:3128/";
+                Acquire::https::Proxy "http://proxy.example:3128/";
+
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            build_snap.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99proxy"
+            ],
+        )
 
     def test_install_snapd_proxy(self):
         args = [
@@ -353,6 +368,21 @@ class TestBuildSnap(TestCase):
                 stat.S_IFREG | 0o644,
             ),
             build_snap.backend.backend_fs["/root/.subversion/servers"],
+        )
+        self.assertEqual(
+            (
+                dedent(
+                    """\
+                Acquire::http::Proxy "http://proxy.example:3128/";
+                Acquire::https::Proxy "http://proxy.example:3128/";
+
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            build_snap.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99proxy"
+            ],
         )
 
     def test_install_channels(self):

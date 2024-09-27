@@ -166,6 +166,7 @@ class BuildSnap(
         if self.args.use_fetch_service:
             # Deleting apt cache /var/lib/apt/lists before
             # installing the fetch service
+            self.install_apt_proxy()
             self.delete_apt_cache()
             self.install_mitm_certificate()
             self.install_snapd_proxy(proxy_url=self.args.proxy_url)
