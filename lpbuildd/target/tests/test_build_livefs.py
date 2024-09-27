@@ -169,6 +169,67 @@ class TestBuildLiveFS(TestCase):
             ),
         )
 
+    def test_build_snapshot_service(self):
+        args = [
+            "buildlivefs",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--project=ubuntu",
+            "--snapshot-service-timestamp",
+            "20190101T123456Z",
+        ]
+        build_livefs = parse_args(args=args).operation
+        build_livefs.build()
+        self.assertThat(
+            build_livefs.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(["rm", "-rf", "auto", "local"]),
+                    RanBuildCommand(["mkdir", "-p", "auto"]),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/config",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/build",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(
+                        [
+                            "ln",
+                            "-s",
+                            "/usr/share/livecd-rootfs/live-build/auto/clean",
+                            "auto/",
+                        ]
+                    ),
+                    RanBuildCommand(["lb", "clean", "--purge"]),
+                    RanBuildCommand(
+                        ["lb", "config"],
+                        PROJECT="ubuntu",
+                        ARCH="amd64",
+                        SUITE="xenial",
+                        SNAPSHOT_SERVICE_TIMESTAMP="20190101T123456Z",
+                    ),
+                    RanBuildCommand(
+                        ["lb", "build"],
+                        PROJECT="ubuntu",
+                        ARCH="amd64",
+                        SNAPSHOT_SERVICE_TIMESTAMP="20190101T123456Z",
+                    ),
+                ]
+            ),
+        )
+
     def test_build_locale(self):
         args = [
             "buildlivefs",

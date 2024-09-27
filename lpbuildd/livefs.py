@@ -35,6 +35,9 @@ class LiveFilesystemBuildManager(DebianBuildManager):
         self.channel = extra_args.get("channel")
         self.image_targets = extra_args.get("image_targets", [])
         self.repo_snapshot_stamp = extra_args.get("repo_snapshot_stamp")
+        self.snapshot_service_timestamp = extra_args.get(
+            "snapshot_service_timestamp"
+        )
         self.cohort_key = extra_args.get("cohort-key")
         self.debug = extra_args.get("debug", False)
 
@@ -66,6 +69,13 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(["--image-target", image_target])
         if self.repo_snapshot_stamp:
             args.extend(["--repo-snapshot-stamp", self.repo_snapshot_stamp])
+        if self.snapshot_service_timestamp:
+            args.extend(
+                [
+                    "--snapshot-service-timestamp",
+                    self.snapshot_service_timestamp
+                ]
+            )
         if self.cohort_key:
             args.extend(["--cohort-key", self.cohort_key])
         try:
