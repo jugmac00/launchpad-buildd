@@ -22,12 +22,19 @@ You can create a VM with the following command:
 Note that you may want to have a profile to share the source code with the
 container before running the above command.
 
+Next switch into the vm:
+
+.. code:: bash
+
+        lxc shell lp-builddev
+
 Then, inside the container clone the repo and install the necessary dependencies:
 
 .. code:: bash
 
         git clone https://git.launchpad.net/launchpad-buildd
         cd launchpad-buildd
+        sudo apt install make
         make install
 
 This should be enough for you to be able to run the test suite:
