@@ -343,6 +343,21 @@ class TestBuildRock(TestCase):
                 "/usr/local/share/ca-certificates/local-ca.crt"
             ],
         )
+        self.assertEqual(
+            (
+                dedent(
+                    """\
+                Acquire::http::Proxy "http://proxy.example:3128/";
+                Acquire::https::Proxy "http://proxy.example:3128/";
+
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            build_rock.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99proxy"
+            ],
+        )
 
     def test_install_snapd_proxy(self):
         args = [
@@ -415,6 +430,21 @@ class TestBuildRock(TestCase):
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
             build_rock.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"],
+        )
+        self.assertEqual(
+            (
+                dedent(
+                    """\
+                Acquire::http::Proxy "http://proxy.example:3128/";
+                Acquire::https::Proxy "http://proxy.example:3128/";
+
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            build_rock.backend.backend_fs[
+                "/etc/apt/apt.conf.d/99proxy"
+            ],
         )
 
     def test_install_fetch_service(self):
@@ -848,7 +878,9 @@ class TestBuildRock(TestCase):
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
-            'CARGO_HTTP_CAINFO': '/usr/local/share/ca-certificates/local-ca.crt',
+            'CARGO_HTTP_CAINFO': (
+                '/usr/local/share/ca-certificates/local-ca.crt'
+            ),
             'GOPROXY': 'direct',
         }
         self.assertThat(
