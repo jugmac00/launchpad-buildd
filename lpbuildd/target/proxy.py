@@ -135,8 +135,9 @@ class BuilderProxyOperationMixin:
         self.backend.run(["systemctl", "restart", "snapd"])
 
     def delete_apt_cache(self):
-
-        self.backend.run(["rm", "-rf", "/var/lib/apt/lists/*"])
+        self.backend.run(
+            ["rm", "-rf", "/var/lib/apt/lists"]
+        )
 
     def configure_git_protocol_v2(self):
         if self.backend.series == "focal":
