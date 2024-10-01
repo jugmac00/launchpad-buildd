@@ -300,7 +300,7 @@ class TestBuildRock(TestCase):
                         "python3-setuptools",
                     ),
                     RanSnap("install", "--classic", "rockcraft"),
-                    RanCommand(["rm", "-rf", "/var/lib/apt/lists/*"]),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists"]),
                     RanCommand(["update-ca-certificates"]),
                     RanCommand(
                         [
@@ -397,7 +397,7 @@ class TestBuildRock(TestCase):
                         "python3-setuptools",
                     ),
                     RanSnap("install", "--classic", "rockcraft"),
-                    RanCommand(["rm", "-rf", "/var/lib/apt/lists/*"]),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists"]),
                     RanCommand(["update-ca-certificates"]),
                     RanCommand(
                         [
