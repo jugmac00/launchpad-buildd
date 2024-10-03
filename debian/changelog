@@ -1,4 +1,4 @@
-launchpad-buildd (244) UNRELEASED; urgency=medium
+launchpad-buildd (244) focal; urgency=medium
 
   [ Yuliy Schwartzburg ]
   * Enable git protocol v2 in focal.
@@ -7,7 +7,7 @@ launchpad-buildd (244) UNRELEASED; urgency=medium
   * Add deb822 support for series >= 24.04.
   * Enable snapshot service for livefs builds.
 
- -- Simone Pelosi <simone.pelosi@canonical.com>  Tue, 24 Sep 2024 15:50:13 +0200
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Thu, 03 Oct 2024 16:46:59 +0200
 
 launchpad-buildd (243) focal; urgency=medium
 
