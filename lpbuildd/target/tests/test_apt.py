@@ -8,7 +8,6 @@ import time
 from textwrap import dedent
 
 from fixtures import FakeLogger
-
 from systemfixtures import FakeTime
 from testtools import TestCase
 from testtools.matchers import (
@@ -21,11 +20,8 @@ from testtools.matchers import (
 )
 
 from lpbuildd.target.cli import parse_args
+from lpbuildd.target.tests.matchers import RanAptGet, RanCommand
 from lpbuildd.tests.fakebuilder import FakeMethod
-from lpbuildd.target.tests.matchers import (
-    RanAptGet,
-    RanCommand,
-)
 
 
 class MockCopyIn(FakeMethod):
@@ -106,8 +102,8 @@ class TestOverrideSourcesList(TestCase):
             "--series=oracular",
             "--arch=amd64",
             "1",
-            "deb http://archive.ubuntu.com/ubuntu oracular main",
-            "deb http://ppa.launchpad.net/launchpad/ppa/ubuntu oracular main"
+            "deb [trusted=yes] http://archive.ubuntu.com/ubuntu oracular main",
+            "deb [ arch=amd64,armel lang=en_US,en_CA ] http://ppa.launchpad.net/launchpad/ppa/ubuntu oracular main",  # noqa: E501
         ]
         override_sources_list = parse_args(args=args).operation
         self.assertEqual(0, override_sources_list.run())
@@ -120,12 +116,15 @@ class TestOverrideSourcesList(TestCase):
                     Enabled: yes
                     Suites: oracular
                     Components: main
+                    Trusted: yes
 
                     Types: deb
                     URIs: http://ppa.launchpad.net/launchpad/ppa/ubuntu
                     Enabled: yes
                     Suites: oracular
                     Components: main
+                    Architectures: amd64,armel
+                    Languages: en_US,en_CA
 
                 """
                 ).encode("UTF-8"),
@@ -138,17 +137,17 @@ class TestOverrideSourcesList(TestCase):
         self.assertThat(
             override_sources_list.backend.run.calls,
             MatchesAll(
-                AnyMatch(RanCommand(
-                    ["rm", "-f", "/etc/apt/sources.list.d/ubuntu.sources"]
-                )),
+                AnyMatch(
+                    RanCommand(
+                        ["rm", "-f", "/etc/apt/sources.list.d/ubuntu.sources"]
+                    )
+                ),
             ),
         )
         self.assertThat(
             override_sources_list.backend.run.calls,
             MatchesAll(
-                AnyMatch(RanCommand(
-                    ["rm", "-f", "/etc/apt/sources.list"]
-                )),
+                AnyMatch(RanCommand(["rm", "-f", "/etc/apt/sources.list"])),
             ),
         )
 
@@ -160,13 +159,16 @@ class TestOverrideSourcesList(TestCase):
             "--arch=amd64",
             "1",
             "bad-source.com",
+            "deb [reject=yes] http://archive.ubuntu.com/ubuntu oracular main",
         ]
         logger = self.useFixture(FakeLogger())
         override_sources_list = parse_args(args=args).operation
         self.assertEqual(0, override_sources_list.run())
         self.assertEqual(
             "Overriding sources.list in build-1\n"
-            "Error parsing source: bad-source.com\n",
+            "Error parsing source: bad-source.com\n"
+            "Unknown option: reject\n"
+            "Error parsing source: deb [reject=yes] http://archive.ubuntu.com/ubuntu oracular main\n",  # noqa: E501
             logger.output,
         )
 
@@ -308,7 +310,7 @@ class TestAddTrustedKeys(TestCase):
                 )
 
 
-class RanAptGet(MatchesListwise):
+class RanAptGet(MatchesListwise):  # noqa: F811
     def __init__(self, args_list):
         super().__init__(
             [
