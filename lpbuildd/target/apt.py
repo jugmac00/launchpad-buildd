@@ -3,76 +3,15 @@
 
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
-import re
 from textwrap import dedent
 
 from lpbuildd.target.operation import Operation
 
 logger = logging.getLogger(__name__)
-
-
-def split_options(raw):
-    table = str.maketrans({
-        "[": None,
-        "]": None
-    })
-    options = raw.translate(table).split(' ')
-
-    return options
-
-
-def prepare_source(line):
-    pattern = re.compile(
-        r'^(?: *(?P<type>deb|deb-src)) +'
-        r'(?P<options>\[.+\] ?)*'
-        r'(?P<uri>\w+:\/\/\S+) +'
-        r'(?P<suite>\S+)'
-        r'(?: +(?P<components>.*))?$'
-    )
-    matches = re.match(pattern, line)
-    source = {}
-    if matches is not None:
-        options = {}
-        if matches.group('options'):
-            for option in split_options(matches['options']):
-                if "=" in option:
-                    key, value = option.split("=")
-                    options[key] = value
-        source = {
-            "Types": {matches['type']},
-            "URIs": matches['uri'],
-            "Enabled": "yes",
-        }
-        if matches.group('suite'):
-            source["Suites"] = set(matches['suite'].split(' '))
-        if matches.group('components'):
-            source["Components"] = set(
-                matches['components'].split(' ')
-            )
-        if "arch" in options:
-            if "Architectures" in source:
-                source["Architectures"].append(options["arch"])
-            else:
-                source["Architectures"] = {options["arch"]}
-        if "signed-by" in options:
-            if "Signed-by" in source:
-                source["Signed-by"].append(options["signed-by"])
-            else:
-                source["Signed-by"] = {options["signed-by"]}
-        if "lang" in options:
-            if "Languages" in source:
-                source["Languages"].append(options["lang"])
-            else:
-                source["Languages"] = {options["lang"]}
-        if "target" in options:
-            if "Targets" in source:
-                source["Targets"].append(options["target"])
-            else:
-                source["Targets"] = {options["target"]}
-    return source
 
 
 class OverrideSourcesList(Operation):
@@ -93,7 +32,11 @@ class OverrideSourcesList(Operation):
         # If the ubuntu version is < 24.04 then use the old one line format
         # for backward compatibility.
         if self.backend.series in [
-            "trusty", "xenial", "bionic", "focal", "jammy"
+            "trusty",
+            "xenial",
+            "bionic",
+            "focal",
+            "jammy",
         ]:
             with self.backend.open(
                 "/etc/apt/sources.list", mode="w+"
@@ -111,16 +54,16 @@ class OverrideSourcesList(Operation):
                 "/etc/apt/sources.list.d/lp-buildd.sources", mode="w+"
             ) as sources_list:
                 for archive in self.args.archives:
-                    source = prepare_source(archive)
+                    source = self._prepare_source(archive)
                     if len(source) == 0:
                         logger.error("Error parsing source: %s", archive)
                         continue
                     for key, value in source.items():
                         if isinstance(value, str):
-                            sources_list.write("{}: {}\n".format(key, value))
+                            sources_list.write(f"{key}: {value}\n")
                         else:
                             sources_list.write(
-                                "{}: {}\n".format(key, ' '.join(value))
+                                "{}: {}\n".format(key, " ".join(value))
                             )
                     sources_list.write("\n")
                 os.fchmod(sources_list.fileno(), 0o644)
@@ -166,6 +109,71 @@ class OverrideSourcesList(Operation):
                 )
                 os.fchmod(preferences.fileno(), 0o644)
         return 0
+
+    def _split_options(self, raw):
+        table = str.maketrans({"[": None, "]": None})
+        options = raw.translate(table).split(" ")
+
+        return options
+
+    def _prepare_source(self, line):
+        pattern = re.compile(
+            r"^(?: *(?P<type>deb|deb-src)) +"
+            r"(?P<options>\[.+\] ?)*"
+            r"(?P<uri>\w+:\/\/\S+) +"
+            r"(?P<suite>\S+)"
+            r"(?: +(?P<components>.*))?$"
+        )
+
+        old_to_deb822 = {
+            "arch": "Architectures",
+            "signed-by": "Signed-By",
+            "lang": "Languages",
+            "target": "Targets",
+            "trusted": "Trusted",
+            "by-hash": "By-Hash",
+            "pdiffs": "PDiffs",
+            "allow-insecure": "Allow-Insecure",
+            "allow-weak": "Allow-Weak",
+            "allow-downgrade-to-insecure": "Allow-Downgrade-To-Insecure",
+            "snapshot": "Snapshot",
+            "inrelease-path": "InRelease-Path",
+            "check-valid-until": "Check-Valid-Until",
+            "valid-until-min": "Valid-Until-Min",
+            "valid-until-max": "Valid-Until-Max",
+            "check-date": "Check-Date",
+            "date-max-future": "Date-Max-Future",
+        }
+
+        matches = re.match(pattern, line)
+        source = {}
+        if matches is not None:
+            options = {}
+            if matches.group("options"):
+                for option in self._split_options(matches["options"]):
+                    if "=" in option:
+                        key, value = option.split("=")
+                        options[key] = value
+            source = {
+                "Types": {matches["type"]},
+                "URIs": matches["uri"],
+                "Enabled": "yes",
+            }
+            if matches.group("suite"):
+                source["Suites"] = set(matches["suite"].split(" "))
+            if matches.group("components"):
+                source["Components"] = set(matches["components"].split(" "))
+            for key in options.keys():
+                if key in old_to_deb822:
+                    if old_to_deb822[key] in source:
+                        source[old_to_deb822[key]].append(options[key])
+                    else:
+                        source[old_to_deb822[key]] = {options[key]}
+                else:
+                    # reject the source
+                    logger.error("Unknown option: %s", key)
+                    return {}
+        return source
 
 
 class AddTrustedKeys(Operation):
