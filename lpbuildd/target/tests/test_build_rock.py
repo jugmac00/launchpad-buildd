@@ -772,6 +772,83 @@ class TestBuildRock(TestCase):
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
+    def test_repo_fetch_service(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.backend.build_path = self.useFixture(TempDir()).path
+        build_rock.backend.run = FakeRevisionID("0" * 40)
+        build_rock.repo()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+            "CARGO_HTTP_CAINFO": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ),
+            "GOPROXY": "direct",
+        }
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        [
+                            "git",
+                            "clone",
+                            "-n",
+                            "--depth",
+                            "1",
+                            "-b",
+                            "HEAD",
+                            "--single-branch",
+                            "lp:foo",
+                            "test-image",
+                        ],
+                        cwd="/home/buildd",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "checkout", "-q", "HEAD"],
+                        cwd="/home/buildd/test-image",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        [
+                            "git",
+                            "submodule",
+                            "update",
+                            "--init",
+                            "--recursive",
+                        ],
+                        cwd="/home/buildd/test-image",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "rev-parse", "HEAD^{}"],
+                        cwd="/home/buildd/test-image",
+                        get_output=True,
+                        universal_newlines=True,
+                    ),
+                ]
+            ),
+        )
+        status_path = os.path.join(build_rock.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
+
     def test_build(self):
         args = [
             "build-rock",

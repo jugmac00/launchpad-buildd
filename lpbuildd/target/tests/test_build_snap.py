@@ -759,7 +759,18 @@ class TestBuildSnap(TestCase):
             MatchesListwise(
                 [
                     RanBuildCommand(
-                        ["git", "clone", "-n", "lp:foo", "test-snap"],
+                        [
+                            "git",
+                            "clone",
+                            "-n",
+                            "--depth",
+                            "1",
+                            "-b",
+                            "HEAD",
+                            "--single-branch",
+                            "lp:foo",
+                            "test-snap",
+                        ],
                         cwd="/build",
                         **env,
                     ),

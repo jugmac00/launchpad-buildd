@@ -181,7 +181,14 @@ class BuildSnap(
             proxy_url=self.args.proxy_url,
             use_fetch_service=self.args.use_fetch_service,
         )
-        self.vcs_fetch(self.args.name, cwd="/build", env=env)
+        # using the fetch service requires shallow clones
+        git_shallow_clone = bool(self.args.use_fetch_service)
+        self.vcs_fetch(
+            self.args.name,
+            cwd="/build",
+            env=env,
+            git_shallow_clone_with_single_branch=git_shallow_clone,
+        )
         self.vcs_update_status(os.path.join("/build", self.args.name))
 
     @property
