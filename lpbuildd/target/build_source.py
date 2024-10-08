@@ -11,6 +11,7 @@ from lpbuildd.target.vcs import VCSOperationMixin
 RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
 
+MITM_CERTIFICATE_PATH = "/usr/local/share/ca-certificates/local-ca.crt"
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,17 @@ class BuildSource(
             "--build-path", default=".", help="location of source to build."
         )
         parser.add_argument("name", help="name of source to build")
+        parser.add_argument(
+            "--use_fetch_service",
+            default=False,
+            action="store_true",
+            help="use the fetch service instead of the builder proxy",
+        )
+        parser.add_argument(
+            "--fetch-service-mitm-certificate",
+            type=str,
+            help="content of the ca certificate",
+        )
 
     def __init__(self, args, parser):
         super().__init__(args, parser)
@@ -91,6 +103,16 @@ class BuildSource(
                     "sourcecraft",
                 ]
             )
+        if self.args.use_fetch_service:
+            # Deleting apt cache /var/lib/apt/lists before
+            # installing the fetch service
+            self.install_apt_proxy()
+            self.delete_apt_cache()
+            self.install_mitm_certificate()
+            self.install_snapd_proxy(proxy_url=self.args.proxy_url)
+            self.backend.run(["apt-get", "-y", "update"])
+            self.restart_snapd()
+            self.configure_git_protocol_v2()
         # With classic confinement, the snap can access the whole system.
         # We could build the source in /build, but we are using /home/buildd
         # for consistency with other build types.
@@ -99,8 +121,18 @@ class BuildSource(
     def repo(self):
         """Collect git or bzr branch."""
         logger.info("Running repo phase...")
-        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
-        self.vcs_fetch(self.args.name, cwd="/home/buildd", env=env)
+        env = self.build_proxy_environment(
+            proxy_url=self.args.proxy_url,
+            use_fetch_service=self.args.use_fetch_service,
+        )
+        # using the fetch service requires shallow clones
+        git_shallow_clone = bool(self.args.use_fetch_service)
+        self.vcs_fetch(
+            self.args.name,
+            cwd="/home/buildd",
+            env=env,
+            git_shallow_clone_with_single_branch=git_shallow_clone,
+        )
         self.vcs_update_status(self.buildd_path)
 
     def build(self):
@@ -109,7 +141,10 @@ class BuildSource(
             "/home/buildd", self.args.name, self.args.build_path
         )
         check_path_escape(self.buildd_path, build_context_path)
-        env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+        env = self.build_proxy_environment(
+            proxy_url=self.args.proxy_url,
+            use_fetch_service=self.args.use_fetch_service,
+        )
         args = ["sourcecraft", "pack", "-v", "--destructive-mode"]
         self.run_build_command(args, env=env, cwd=build_context_path)
 

@@ -239,3 +239,18 @@ class TestSourceBuildManagerIteration(TestCase):
             self.buildmanager.iterate, self.buildmanager.iterators[-1]
         )
         self.assertFalse(self.builder.wasCalled("buildFail"))
+
+    @defer.inlineCallbacks
+    def test_iterate_use_fetch_service(self):
+        # The build manager can be told to use the fetch service as its proxy.
+        # This requires also a ca certificate passed in via secrets.
+        args = {
+            "use_fetch_service": True,
+            "secrets": {"fetch_service_mitm_certificate": "content_of_cert"},
+        }
+        expected_options = [
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            "content_of_cert",
+        ]
+        yield self.startBuild(args, expected_options)
