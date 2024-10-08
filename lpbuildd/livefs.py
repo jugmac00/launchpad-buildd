@@ -73,7 +73,7 @@ class LiveFilesystemBuildManager(DebianBuildManager):
             args.extend(
                 [
                     "--snapshot-service-timestamp",
-                    self.snapshot_service_timestamp
+                    self.snapshot_service_timestamp,
                 ]
             )
         if self.cohort_key:

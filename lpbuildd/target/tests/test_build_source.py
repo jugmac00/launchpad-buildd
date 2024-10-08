@@ -98,9 +98,7 @@ class TestBuildSource(TestCase):
             build_source.backend.run.calls,
             MatchesListwise(
                 [
-                    RanAptGet(
-                        "install", "bzr"
-                    ),
+                    RanAptGet("install", "bzr"),
                     RanSnap("install", "--channel=candidate", "core"),
                     RanSnap("install", "--channel=beta", "core18"),
                     RanSnap(
@@ -128,10 +126,13 @@ class TestBuildSource(TestCase):
             build_source.backend.run.calls,
             MatchesListwise(
                 [
-                    RanAptGet(
-                        "install", "bzr"
+                    RanAptGet("install", "bzr"),
+                    RanSnap(
+                        "install",
+                        "--classic",
+                        "--channel=latest/edge/craftctl",
+                        "sourcecraft",
                     ),
-                    RanSnap("install", "--classic", "--channel=latest/edge/craftctl", "sourcecraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
@@ -154,10 +155,13 @@ class TestBuildSource(TestCase):
             build_source.backend.run.calls,
             MatchesListwise(
                 [
-                    RanAptGet(
-                        "install", "git"
+                    RanAptGet("install", "git"),
+                    RanSnap(
+                        "install",
+                        "--classic",
+                        "--channel=latest/edge/craftctl",
+                        "sourcecraft",
                     ),
-                    RanSnap("install", "--classic", "--channel=latest/edge/craftctl", "sourcecraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
@@ -201,9 +205,7 @@ class TestBuildSource(TestCase):
             build_source.backend.run.calls,
             MatchesListwise(
                 [
-                    RanAptGet(
-                        "install", "git"
-                    ),
+                    RanAptGet("install", "git"),
                     RanCommand(
                         ["snap", "ack", "/dev/stdin"],
                         input_text=store_assertion,
@@ -211,7 +213,12 @@ class TestBuildSource(TestCase):
                     RanCommand(
                         ["snap", "set", "core", "proxy.store=store-id"]
                     ),
-                    RanSnap("install", "--classic", "--channel=latest/edge/craftctl", "sourcecraft"),
+                    RanSnap(
+                        "install",
+                        "--classic",
+                        "--channel=latest/edge/craftctl",
+                        "sourcecraft",
+                    ),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
@@ -248,7 +255,12 @@ class TestBuildSource(TestCase):
                         "socat",
                         "git",
                     ),
-                    RanSnap("install", "--classic", "--channel=latest/edge/craftctl", "sourcecraft"),
+                    RanSnap(
+                        "install",
+                        "--classic",
+                        "--channel=latest/edge/craftctl",
+                        "sourcecraft",
+                    ),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
             ),
@@ -618,9 +630,7 @@ class TestBuildSource(TestCase):
             build_source.backend.run.calls,
             MatchesAll(
                 AnyMatch(
-                    RanAptGet(
-                        "install", "bzr"
-                    ),
+                    RanAptGet("install", "bzr"),
                 ),
                 AnyMatch(
                     RanBuildCommand(

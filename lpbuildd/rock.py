@@ -21,7 +21,7 @@ class RockBuildManager(BuildManagerProxyMixin, DebianBuildManager):
     @property
     def needs_sanitized_logs(self):
         return True
-    
+
     def initiate(self, files, chroot, extra_args):
         """Initiate a build with a given set of files and chroot."""
         self.name = extra_args["name"]

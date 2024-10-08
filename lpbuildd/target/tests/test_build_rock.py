@@ -257,9 +257,7 @@ class TestBuildRock(TestCase):
         )
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_rock.backend.backend_fs[
-                "/usr/local/bin/lpbuildd-git-proxy"
-            ],
+            build_rock.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"],
         )
 
     def test_install_certificate(self):
@@ -354,9 +352,7 @@ class TestBuildRock(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_rock.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99proxy"
-            ],
+            build_rock.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_snapd_proxy(self):
@@ -442,9 +438,7 @@ class TestBuildRock(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_rock.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99proxy"
-            ],
+            build_rock.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_fetch_service(self):
@@ -475,9 +469,19 @@ class TestBuildRock(TestCase):
         self.assertThat(
             build_rock.backend.run.calls,
             MatchesAll(
-                Not(AnyMatch(RanCommand(
-                    ["git", "config", "--global", "protocol.version", "2"]
-                ))),
+                Not(
+                    AnyMatch(
+                        RanCommand(
+                            [
+                                "git",
+                                "config",
+                                "--global",
+                                "protocol.version",
+                                "2",
+                            ]
+                        )
+                    )
+                ),
             ),
         )
 
@@ -509,9 +513,11 @@ class TestBuildRock(TestCase):
         self.assertThat(
             build_rock.backend.run.calls,
             MatchesAll(
-                AnyMatch(RanCommand(
-                    ["git", "config", "--global", "protocol.version", "2"]
-                )),
+                AnyMatch(
+                    RanCommand(
+                        ["git", "config", "--global", "protocol.version", "2"]
+                    )
+                ),
             ),
         )
 
@@ -878,10 +884,10 @@ class TestBuildRock(TestCase):
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
-            'CARGO_HTTP_CAINFO': (
-                '/usr/local/share/ca-certificates/local-ca.crt'
+            "CARGO_HTTP_CAINFO": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
             ),
-            'GOPROXY': 'direct',
+            "GOPROXY": "direct",
         }
         self.assertThat(
             build_rock.backend.run.calls,
@@ -1050,7 +1056,5 @@ class TestBuildRock(TestCase):
         ]
         build_rock = parse_args(args=args).operation
         build_rock.buildd_path = self.useFixture(TempDir()).path
-        os.symlink(
-            "/etc/hosts", os.path.join(build_rock.buildd_path, "build")
-        )
+        os.symlink("/etc/hosts", os.path.join(build_rock.buildd_path, "build"))
         self.assertRaises(InvalidBuildFilePath, build_rock.build)
