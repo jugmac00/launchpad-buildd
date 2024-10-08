@@ -23,8 +23,8 @@ from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.log import RotatableFileLogObserver
 from lpbuildd.oci import OCIBuildManager
 from lpbuildd.rock import RockBuildManager
-from lpbuildd.source import SourceBuildManager
 from lpbuildd.snap import SnapBuildManager
+from lpbuildd.source import SourceBuildManager
 from lpbuildd.sourcepackagerecipe import SourcePackageRecipeBuildManager
 from lpbuildd.translationtemplates import TranslationTemplatesBuildManager
 

@@ -179,9 +179,16 @@ class BuildSnap(
         logger.info("Running repo phase...")
         env = self.build_proxy_environment(
             proxy_url=self.args.proxy_url,
-            use_fetch_service=self.args.use_fetch_service
+            use_fetch_service=self.args.use_fetch_service,
         )
-        self.vcs_fetch(self.args.name, cwd="/build", env=env)
+        # using the fetch service requires shallow clones
+        git_shallow_clone = bool(self.args.use_fetch_service)
+        self.vcs_fetch(
+            self.args.name,
+            cwd="/build",
+            env=env,
+            git_shallow_clone_with_single_branch=git_shallow_clone,
+        )
         self.vcs_update_status(os.path.join("/build", self.args.name))
 
     @property
@@ -200,7 +207,7 @@ class BuildSnap(
         logger.info("Running pull phase...")
         env = self.build_proxy_environment(
             proxy_url=self.args.proxy_url,
-            use_fetch_service=self.args.use_fetch_service
+            use_fetch_service=self.args.use_fetch_service,
         )
         env["SNAPCRAFT_LOCAL_SOURCES"] = "1"
         env["SNAPCRAFT_SETUP_CORE"] = "1"
@@ -249,7 +256,7 @@ class BuildSnap(
         logger.info("Running build phase...")
         env = self.build_proxy_environment(
             proxy_url=self.args.proxy_url,
-            use_fetch_service=self.args.use_fetch_service
+            use_fetch_service=self.args.use_fetch_service,
         )
         if not self.args.private:
             env["SNAPCRAFT_BUILD_INFO"] = "1"

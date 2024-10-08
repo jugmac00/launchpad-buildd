@@ -1,3 +1,9 @@
+launchpad-buildd (245) UNRELEASED; urgency=medium
+
+  * Shallow git clone when fetch-service enabled.
+
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Tue, 08 Oct 2024 14:09:25 +0200
+
 launchpad-buildd (244) focal; urgency=medium
 
   [ Yuliy Schwartzburg ]

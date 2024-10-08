@@ -257,9 +257,7 @@ class TestBuildRock(TestCase):
         )
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_rock.backend.backend_fs[
-                "/usr/local/bin/lpbuildd-git-proxy"
-            ],
+            build_rock.backend.backend_fs["/usr/local/bin/lpbuildd-git-proxy"],
         )
 
     def test_install_certificate(self):
@@ -354,9 +352,7 @@ class TestBuildRock(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_rock.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99proxy"
-            ],
+            build_rock.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_snapd_proxy(self):
@@ -442,9 +438,7 @@ class TestBuildRock(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_rock.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99proxy"
-            ],
+            build_rock.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_fetch_service(self):
@@ -475,9 +469,19 @@ class TestBuildRock(TestCase):
         self.assertThat(
             build_rock.backend.run.calls,
             MatchesAll(
-                Not(AnyMatch(RanCommand(
-                    ["git", "config", "--global", "protocol.version", "2"]
-                ))),
+                Not(
+                    AnyMatch(
+                        RanCommand(
+                            [
+                                "git",
+                                "config",
+                                "--global",
+                                "protocol.version",
+                                "2",
+                            ]
+                        )
+                    )
+                ),
             ),
         )
 
@@ -509,9 +513,11 @@ class TestBuildRock(TestCase):
         self.assertThat(
             build_rock.backend.run.calls,
             MatchesAll(
-                AnyMatch(RanCommand(
-                    ["git", "config", "--global", "protocol.version", "2"]
-                )),
+                AnyMatch(
+                    RanCommand(
+                        ["git", "config", "--global", "protocol.version", "2"]
+                    )
+                ),
             ),
         )
 
@@ -766,6 +772,83 @@ class TestBuildRock(TestCase):
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
+    def test_repo_fetch_service(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.backend.build_path = self.useFixture(TempDir()).path
+        build_rock.backend.run = FakeRevisionID("0" * 40)
+        build_rock.repo()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+            "CARGO_HTTP_CAINFO": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ),
+            "GOPROXY": "direct",
+        }
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        [
+                            "git",
+                            "clone",
+                            "-n",
+                            "--depth",
+                            "1",
+                            "-b",
+                            "HEAD",
+                            "--single-branch",
+                            "lp:foo",
+                            "test-image",
+                        ],
+                        cwd="/home/buildd",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "checkout", "-q", "HEAD"],
+                        cwd="/home/buildd/test-image",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        [
+                            "git",
+                            "submodule",
+                            "update",
+                            "--init",
+                            "--recursive",
+                        ],
+                        cwd="/home/buildd/test-image",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "rev-parse", "HEAD^{}"],
+                        cwd="/home/buildd/test-image",
+                        get_output=True,
+                        universal_newlines=True,
+                    ),
+                ]
+            ),
+        )
+        status_path = os.path.join(build_rock.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
+
     def test_build(self):
         args = [
             "build-rock",
@@ -878,10 +961,10 @@ class TestBuildRock(TestCase):
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
-            'CARGO_HTTP_CAINFO': (
-                '/usr/local/share/ca-certificates/local-ca.crt'
+            "CARGO_HTTP_CAINFO": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
             ),
-            'GOPROXY': 'direct',
+            "GOPROXY": "direct",
         }
         self.assertThat(
             build_rock.backend.run.calls,
@@ -1050,7 +1133,5 @@ class TestBuildRock(TestCase):
         ]
         build_rock = parse_args(args=args).operation
         build_rock.buildd_path = self.useFixture(TempDir()).path
-        os.symlink(
-            "/etc/hosts", os.path.join(build_rock.buildd_path, "build")
-        )
+        os.symlink("/etc/hosts", os.path.join(build_rock.buildd_path, "build"))
         self.assertRaises(InvalidBuildFilePath, build_rock.build)

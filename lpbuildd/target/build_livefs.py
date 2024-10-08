@@ -68,7 +68,7 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
             "--snapshot-service-timestamp",
             dest="snapshot_service_timestamp",
             metavar="SNAPSHOT_SERVICE_TIMESTAMP",
-            help="snapshot stamp in the YYYYMMDDTHHMMSSZ format"
+            help="snapshot stamp in the YYYYMMDDTHHMMSSZ format",
         )
         parser.add_argument(
             "--cohort-key",

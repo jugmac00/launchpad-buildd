@@ -289,9 +289,7 @@ class TestBuildSnap(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_snap.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99proxy"
-            ],
+            build_snap.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_snapd_proxy(self):
@@ -380,9 +378,7 @@ class TestBuildSnap(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_snap.backend.backend_fs[
-                "/etc/apt/apt.conf.d/99proxy"
-            ],
+            build_snap.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_channels(self):
@@ -440,9 +436,19 @@ class TestBuildSnap(TestCase):
         self.assertThat(
             build_snap.backend.run.calls,
             MatchesAll(
-                Not(AnyMatch(RanCommand(
-                    ["git", "config", "--global", "protocol.version", "2"]
-                ))),
+                Not(
+                    AnyMatch(
+                        RanCommand(
+                            [
+                                "git",
+                                "config",
+                                "--global",
+                                "protocol.version",
+                                "2",
+                            ]
+                        )
+                    )
+                ),
             ),
         )
 
@@ -466,9 +472,11 @@ class TestBuildSnap(TestCase):
         self.assertThat(
             build_snap.backend.run.calls,
             MatchesAll(
-                AnyMatch(RanCommand(
-                    ["git", "config", "--global", "protocol.version", "2"]
-                )),
+                AnyMatch(
+                    RanCommand(
+                        ["git", "config", "--global", "protocol.version", "2"]
+                    )
+                ),
             ),
         )
 
@@ -751,7 +759,18 @@ class TestBuildSnap(TestCase):
             MatchesListwise(
                 [
                     RanBuildCommand(
-                        ["git", "clone", "-n", "lp:foo", "test-snap"],
+                        [
+                            "git",
+                            "clone",
+                            "-n",
+                            "--depth",
+                            "1",
+                            "-b",
+                            "HEAD",
+                            "--single-branch",
+                            "lp:foo",
+                            "test-snap",
+                        ],
                         cwd="/build",
                         **env,
                     ),
