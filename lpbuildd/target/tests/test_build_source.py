@@ -7,7 +7,7 @@ from textwrap import dedent
 import responses
 from fixtures import FakeLogger, TempDir
 from systemfixtures import FakeFilesystem
-from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise
+from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise, Not
 from testtools.testcase import TestCase
 
 from lpbuildd.target.backend import InvalidBuildFilePath
@@ -272,6 +272,277 @@ class TestBuildSource(TestCase):
             ],
         )
 
+    def test_install_certificate(self):
+        args = [
+            "build-source",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_source = parse_args(args=args).operation
+        build_source.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_source.install()
+        self.assertThat(
+            build_source.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet(
+                        "install",
+                        "python3",
+                        "socat",
+                        "git",
+                    ),
+                    RanSnap(
+                        "install",
+                        "--classic",
+                        "--channel=latest/edge/craftctl",
+                        "sourcecraft",
+                    ),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists"]),
+                    RanCommand(["update-ca-certificates"]),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.http=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.https=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanAptGet("update"),
+                    RanCommand(
+                        [
+                            "systemctl",
+                            "restart",
+                            "snapd",
+                        ]
+                    ),
+                    RanCommand(["mkdir", "-p", "/home/buildd"]),
+                ]
+            ),
+        )
+        self.assertEqual(
+            (b"proxy script\n", stat.S_IFREG | 0o755),
+            build_source.backend.backend_fs[
+                "/usr/local/bin/lpbuildd-git-proxy"
+            ],
+        )
+        self.assertEqual(
+            (
+                b"content_of_cert",
+                stat.S_IFREG | 0o644,
+            ),
+            build_source.backend.backend_fs[
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ],
+        )
+        self.assertEqual(
+            (
+                dedent(
+                    """\
+                Acquire::http::Proxy "http://proxy.example:3128/";
+                Acquire::https::Proxy "http://proxy.example:3128/";
+
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            build_source.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
+        )
+
+    def test_install_snapd_proxy(self):
+        args = [
+            "build-source",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_source = parse_args(args=args).operation
+        build_source.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_source.install()
+        self.assertThat(
+            build_source.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanAptGet(
+                        "install",
+                        "python3",
+                        "socat",
+                        "git",
+                    ),
+                    RanSnap(
+                        "install",
+                        "--classic",
+                        "--channel=latest/edge/craftctl",
+                        "sourcecraft",
+                    ),
+                    RanCommand(["rm", "-rf", "/var/lib/apt/lists"]),
+                    RanCommand(["update-ca-certificates"]),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.http=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanCommand(
+                        [
+                            "snap",
+                            "set",
+                            "system",
+                            "proxy.https=http://proxy.example:3128/",
+                        ]
+                    ),
+                    RanAptGet("update"),
+                    RanCommand(
+                        [
+                            "systemctl",
+                            "restart",
+                            "snapd",
+                        ]
+                    ),
+                    RanCommand(["mkdir", "-p", "/home/buildd"]),
+                ]
+            ),
+        )
+        self.assertEqual(
+            (b"proxy script\n", stat.S_IFREG | 0o755),
+            build_source.backend.backend_fs[
+                "/usr/local/bin/lpbuildd-git-proxy"
+            ],
+        )
+        self.assertEqual(
+            (
+                dedent(
+                    """\
+                Acquire::http::Proxy "http://proxy.example:3128/";
+                Acquire::https::Proxy "http://proxy.example:3128/";
+
+                """
+                ).encode("UTF-8"),
+                stat.S_IFREG | 0o644,
+            ),
+            build_source.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
+        )
+
+    def test_install_fetch_service(self):
+        args = [
+            "build-source",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_source = parse_args(args=args).operation
+        build_source.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_source.install()
+        self.assertThat(
+            build_source.backend.run.calls,
+            MatchesAll(
+                Not(
+                    AnyMatch(
+                        RanCommand(
+                            [
+                                "git",
+                                "config",
+                                "--global",
+                                "protocol.version",
+                                "2",
+                            ]
+                        )
+                    )
+                ),
+            ),
+        )
+
+    def test_install_fetch_service_focal(self):
+        args = [
+            "build-source",
+            "--backend=fake",
+            "--series=focal",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
+        ]
+        build_source = parse_args(args=args).operation
+        build_source.bin = "/builderbin"
+        self.useFixture(FakeFilesystem()).add("/builderbin")
+        os.mkdir("/builderbin")
+        with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
+            proxy_script.write("proxy script\n")
+            os.fchmod(proxy_script.fileno(), 0o755)
+        build_source.install()
+        self.assertThat(
+            build_source.backend.run.calls,
+            MatchesAll(
+                AnyMatch(
+                    RanCommand(
+                        ["git", "config", "--global", "protocol.version", "2"]
+                    )
+                ),
+            ),
+        )
+
     def test_repo_bzr(self):
         args = [
             "build-source",
@@ -523,6 +794,79 @@ class TestBuildSource(TestCase):
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
+    def test_repo_fetch_service(self):
+        args = [
+            "build-source",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--git-repository",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+        ]
+        build_source = parse_args(args=args).operation
+        build_source.backend.build_path = self.useFixture(TempDir()).path
+        build_source.backend.run = FakeRevisionID("0" * 40)
+        build_source.repo()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+        }
+        self.assertThat(
+            build_source.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        [
+                            "git",
+                            "clone",
+                            "-n",
+                            "--depth",
+                            "1",
+                            "-b",
+                            "HEAD",
+                            "--single-branch",
+                            "lp:foo",
+                            "test-image",
+                        ],
+                        cwd="/home/buildd",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "checkout", "-q", "HEAD"],
+                        cwd="/home/buildd/test-image",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        [
+                            "git",
+                            "submodule",
+                            "update",
+                            "--init",
+                            "--recursive",
+                        ],
+                        cwd="/home/buildd/test-image",
+                        **env,
+                    ),
+                    RanBuildCommand(
+                        ["git", "rev-parse", "HEAD^{}"],
+                        cwd="/home/buildd/test-image",
+                        get_output=True,
+                        universal_newlines=True,
+                    ),
+                ]
+            ),
+        )
+        status_path = os.path.join(build_source.backend.build_path, "status")
+        with open(status_path) as status:
+            self.assertEqual({"revision_id": "0" * 40}, json.load(status))
+
     def test_build(self):
         args = [
             "build-source",
@@ -589,6 +933,44 @@ class TestBuildSource(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-image",
+        ]
+        build_source = parse_args(args=args).operation
+        build_source.build()
+        env = {
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+        }
+        self.assertThat(
+            build_source.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                        **env,
+                    ),
+                ]
+            ),
+        )
+
+    def test_build_fetch_service(self):
+        args = [
+            "build-source",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-image",
+            "--use_fetch_service",
+            "--fetch-service-mitm-certificate",
+            # Base64 content_of_cert
+            "Y29udGVudF9vZl9jZXJ0",
         ]
         build_source = parse_args(args=args).operation
         build_source.build()
