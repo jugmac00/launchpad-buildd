@@ -16,13 +16,13 @@ MITM_CERTIFICATE_PATH = "/usr/local/share/ca-certificates/local-ca.crt"
 logger = logging.getLogger(__name__)
 
 
-class BuildSource(
+class BuildCraft(
     BuilderProxyOperationMixin,
     VCSOperationMixin,
     SnapStoreOperationMixin,
     Operation,
 ):
-    description = "Build a source."
+    description = "Build a craft."
 
     @classmethod
     def add_arguments(cls, parser):
@@ -36,9 +36,14 @@ class BuildSource(
             help="install SNAP from CHANNEL",
         )
         parser.add_argument(
-            "--build-path", default=".", help="location of source to build."
+            "--build-path",
+            default=".",
+            help="location of sourcecraft package to build.",
         )
-        parser.add_argument("name", help="name of source to build")
+        parser.add_argument(
+            "name",
+            help="name of sourcecraft package to build",
+        )
         parser.add_argument(
             "--use_fetch_service",
             default=False,
@@ -114,7 +119,7 @@ class BuildSource(
             self.restart_snapd()
             self.configure_git_protocol_v2()
         # With classic confinement, the snap can access the whole system.
-        # We could build the source in /build, but we are using /home/buildd
+        # We could build the craft in /build, but we are using /home/buildd
         # for consistency with other build types.
         self.backend.run(["mkdir", "-p", "/home/buildd"])
 
