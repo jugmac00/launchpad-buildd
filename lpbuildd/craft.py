@@ -8,15 +8,15 @@ RETCODE_FAILURE_INSTALL = 200
 RETCODE_FAILURE_BUILD = 201
 
 
-class SourceBuildState(DebianBuildState):
-    BUILD_SOURCE = "BUILD_SOURCE"
+class CraftBuildState(DebianBuildState):
+    BUILD_CRAFT = "BUILD_CRAFT"
 
 
-class SourceBuildManager(BuildManagerProxyMixin, DebianBuildManager):
-    """Build a source."""
+class CraftBuildManager(BuildManagerProxyMixin, DebianBuildManager):
+    """Build a craft."""
 
     backend_name = "lxd"
-    initial_build_state = SourceBuildState.BUILD_SOURCE
+    initial_build_state = CraftBuildState.BUILD_CRAFT
 
     @property
     def needs_sanitized_logs(self):
@@ -40,7 +40,7 @@ class SourceBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         super().initiate(files, chroot, extra_args)
 
     def doRunBuild(self):
-        """Run the process to build the source."""
+        """Run the process to build the craft."""
         args = []
         args.extend(self.startProxy())
         if self.revocation_endpoint:
@@ -64,14 +64,14 @@ class SourceBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                 ]
             )
         args.append(self.name)
-        self.runTargetSubProcess("build-source", *args)
+        self.runTargetSubProcess("build-craft", *args)
 
-    def iterate_BUILD_SOURCE(self, retcode):
-        """Finished building the source."""
+    def iterate_BUILD_CRAFT(self, retcode):
+        """Finished building the craft."""
         self.stopProxy()
         self.revokeProxyToken()
         if retcode == RETCODE_SUCCESS:
-            print("[source] Returning build status: OK")
+            print("[craft] Returning build status: OK")
             return self.deferGatherResults()
         elif (
             retcode >= RETCODE_FAILURE_INSTALL
@@ -79,17 +79,17 @@ class SourceBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         ):
             if not self.alreadyfailed:
                 self._builder.buildFail()
-                print("[source] Returning build status: Builder failed.")
+                print("[craft] Returning build status: Builder failed.")
             self.alreadyfailed = True
         else:
             if not self.alreadyfailed:
                 self._builder.buildFail()
-                print("[source] Returning build status: Build failed.")
+                print("[craft] Returning build status: Build failed.")
             self.alreadyfailed = True
         self.doReapProcesses(self._state)
 
-    def iterateReap_BUILD_SOURCE(self, retcode):
-        """Finished reaping after building the source."""
+    def iterateReap_BUILD_CRAFT(self, retcode):
+        """Finished reaping after building the craft."""
         self._state = DebianBuildState.UMOUNT
         self.doUnmounting()
 

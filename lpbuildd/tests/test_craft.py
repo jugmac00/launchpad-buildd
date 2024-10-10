@@ -5,12 +5,12 @@ from testtools import TestCase
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
-from lpbuildd.source import SourceBuildManager, SourceBuildState
+from lpbuildd.craft import CraftBuildManager, CraftBuildState
 from lpbuildd.tests.fakebuilder import FakeBuilder
 from lpbuildd.tests.matchers import HasWaitingFiles
 
 
-class MockBuildManager(SourceBuildManager):
+class MockBuildManager(CraftBuildManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.commands = []
@@ -24,8 +24,8 @@ class MockBuildManager(SourceBuildManager):
         return 0
 
 
-class TestSourceBuildManagerIteration(TestCase):
-    """Run SourceBuildManager through its iteration steps."""
+class TestCraftBuildManagerIteration(TestCase):
+    """Run CraftBuildManager through its iteration steps."""
 
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=5)
 
@@ -53,7 +53,7 @@ class TestSourceBuildManagerIteration(TestCase):
         extra_args = {
             "series": "xenial",
             "arch_tag": "i386",
-            "name": "test-source",
+            "name": "test-craft",
         }
         if args is not None:
             extra_args.update(args)
@@ -63,16 +63,16 @@ class TestSourceBuildManagerIteration(TestCase):
         self.buildmanager.backend_name = original_backend_name
 
         # Skip states that are done in DebianBuildManager to the state
-        # directly before BUILD_SOURCE.
-        self.buildmanager._state = SourceBuildState.UPDATE
+        # directly before BUILD_CRAFT.
+        self.buildmanager._state = CraftBuildState.UPDATE
 
-        # BUILD_SOURCE: Run the builder's payload to build the source.
+        # BUILD_CRAFT: Run the builder's payload to build the craft.
         yield self.buildmanager.iterate(0)
-        self.assertEqual(SourceBuildState.BUILD_SOURCE, self.getState())
+        self.assertEqual(CraftBuildState.BUILD_CRAFT, self.getState())
         expected_command = [
             "sharepath/bin/in-target",
             "in-target",
-            "build-source",
+            "build-craft",
             "--backend=lxd",
             "--series=xenial",
             "--arch=i386",
@@ -80,7 +80,7 @@ class TestSourceBuildManagerIteration(TestCase):
         ]
         if options is not None:
             expected_command.extend(options)
-        expected_command.append("test-source")
+        expected_command.append("test-craft")
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1]
@@ -102,12 +102,12 @@ class TestSourceBuildManagerIteration(TestCase):
     def test_iterate(self):
         # The build manager iterates a normal build from start to finish.
         args = {
-            "git_repository": "https://git.launchpad.dev/~example/+git/source",
+            "git_repository": "https://git.launchpad.dev/~example/+git/craft",
             "git_path": "master",
         }
         expected_options = [
             "--git-repository",
-            "https://git.launchpad.dev/~example/+git/source",
+            "https://git.launchpad.dev/~example/+git/craft",
             "--git-path",
             "master",
         ]
@@ -118,8 +118,8 @@ class TestSourceBuildManagerIteration(TestCase):
             log.write("I am a build log.")
 
         self.buildmanager.backend.add_file(
-            "/home/buildd/test-source/test-source_0_all.tar.xz",
-            b"I am sourceing.",
+            "/home/buildd/test-craft/test-craft_0_all.tar.xz",
+            b"I am crafting.",
         )
 
         # After building the package, reap processes.
@@ -134,7 +134,7 @@ class TestSourceBuildManagerIteration(TestCase):
             self.buildid,
         ]
 
-        self.assertEqual(SourceBuildState.BUILD_SOURCE, self.getState())
+        self.assertEqual(CraftBuildState.BUILD_CRAFT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1]
@@ -144,7 +144,7 @@ class TestSourceBuildManagerIteration(TestCase):
             self.builder,
             HasWaitingFiles.byEquality(
                 {
-                    "test-source_0_all.tar.xz": b"I am sourceing.",
+                    "test-craft_0_all.tar.xz": b"I am crafting.",
                 }
             ),
         )
@@ -160,7 +160,7 @@ class TestSourceBuildManagerIteration(TestCase):
             "--arch=i386",
             self.buildid,
         ]
-        self.assertEqual(SourceBuildState.UMOUNT, self.getState())
+        self.assertEqual(CraftBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1]
@@ -172,17 +172,17 @@ class TestSourceBuildManagerIteration(TestCase):
         # The build manager iterates a build using build_path from start to
         # finish.
         args = {
-            "git_repository": "https://git.launchpad.dev/~example/+git/source",
+            "git_repository": "https://git.launchpad.dev/~example/+git/craft",
             "git_path": "master",
-            "build_path": "source",
+            "build_path": "craft",
         }
         expected_options = [
             "--git-repository",
-            "https://git.launchpad.dev/~example/+git/source",
+            "https://git.launchpad.dev/~example/+git/craft",
             "--git-path",
             "master",
             "--build-path",
-            "source",
+            "craft",
         ]
         yield self.startBuild(args, expected_options)
 
@@ -191,8 +191,8 @@ class TestSourceBuildManagerIteration(TestCase):
             log.write("I am a build log.")
 
         self.buildmanager.backend.add_file(
-            "/home/buildd/test-source/source/test-source_0_all.tar.xz",
-            b"I am sourceing.",
+            "/home/buildd/test-craft/craft/test-craft_0_all.tar.xz",
+            b"I am crafting.",
         )
 
         # After building the package, reap processes.
@@ -207,7 +207,7 @@ class TestSourceBuildManagerIteration(TestCase):
             self.buildid,
         ]
 
-        self.assertEqual(SourceBuildState.BUILD_SOURCE, self.getState())
+        self.assertEqual(CraftBuildState.BUILD_CRAFT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertNotEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1]
@@ -217,7 +217,7 @@ class TestSourceBuildManagerIteration(TestCase):
             self.builder,
             HasWaitingFiles.byEquality(
                 {
-                    "test-source_0_all.tar.xz": b"I am sourceing.",
+                    "test-craft_0_all.tar.xz": b"I am crafting.",
                 }
             ),
         )
@@ -233,7 +233,7 @@ class TestSourceBuildManagerIteration(TestCase):
             "--arch=i386",
             self.buildid,
         ]
-        self.assertEqual(SourceBuildState.UMOUNT, self.getState())
+        self.assertEqual(CraftBuildState.UMOUNT, self.getState())
         self.assertEqual(expected_command, self.buildmanager.commands[-1])
         self.assertEqual(
             self.buildmanager.iterate, self.buildmanager.iterators[-1]

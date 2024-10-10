@@ -11,7 +11,7 @@ from testtools.matchers import AnyMatch, MatchesAll, MatchesListwise, Not
 from testtools.testcase import TestCase
 
 from lpbuildd.target.backend import InvalidBuildFilePath
-from lpbuildd.target.build_source import (
+from lpbuildd.target.build_craft import (
     RETCODE_FAILURE_BUILD,
     RETCODE_FAILURE_INSTALL,
 )
@@ -25,10 +25,10 @@ from lpbuildd.target.tests.test_build_snap import FakeRevisionID, RanSnap
 from lpbuildd.tests.fakebuilder import FakeMethod
 
 
-class TestBuildSource(TestCase):
+class TestBuildCraft(TestCase):
     def test_run_build_command_no_env(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -37,10 +37,10 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.run_build_command(["echo", "hello world"])
+        build_craft = parse_args(args=args).operation
+        build_craft.run_build_command(["echo", "hello world"])
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -52,7 +52,7 @@ class TestBuildSource(TestCase):
 
     def test_run_build_command_env(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -61,12 +61,12 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.run_build_command(
+        build_craft = parse_args(args=args).operation
+        build_craft.run_build_command(
             ["echo", "hello world"], env={"FOO": "bar baz"}
         )
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -80,7 +80,7 @@ class TestBuildSource(TestCase):
 
     def test_install_channels(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -92,10 +92,10 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.install()
+        build_craft = parse_args(args=args).operation
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanAptGet("install", "bzr"),
@@ -111,7 +111,7 @@ class TestBuildSource(TestCase):
 
     def test_install_bzr(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -120,10 +120,10 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.install()
+        build_craft = parse_args(args=args).operation
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanAptGet("install", "bzr"),
@@ -140,7 +140,7 @@ class TestBuildSource(TestCase):
 
     def test_install_git(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -149,10 +149,10 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.install()
+        build_craft = parse_args(args=args).operation
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanAptGet("install", "git"),
@@ -188,7 +188,7 @@ class TestBuildSource(TestCase):
             callback=respond,
         )
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -199,10 +199,10 @@ class TestBuildSource(TestCase):
             "http://snap-store-proxy.example/",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.install()
+        build_craft = parse_args(args=args).operation
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanAptGet("install", "git"),
@@ -226,7 +226,7 @@ class TestBuildSource(TestCase):
 
     def test_install_proxy(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -237,16 +237,16 @@ class TestBuildSource(TestCase):
             "http://proxy.example:3128/",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.bin = "/builderbin"
+        build_craft = parse_args(args=args).operation
+        build_craft.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
         with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
-        build_source.install()
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanAptGet(
@@ -267,14 +267,14 @@ class TestBuildSource(TestCase):
         )
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_source.backend.backend_fs[
+            build_craft.backend.backend_fs[
                 "/usr/local/bin/lpbuildd-git-proxy"
             ],
         )
 
     def test_install_certificate(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -289,16 +289,16 @@ class TestBuildSource(TestCase):
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.bin = "/builderbin"
+        build_craft = parse_args(args=args).operation
+        build_craft.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
         with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
-        build_source.install()
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanAptGet(
@@ -345,7 +345,7 @@ class TestBuildSource(TestCase):
         )
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_source.backend.backend_fs[
+            build_craft.backend.backend_fs[
                 "/usr/local/bin/lpbuildd-git-proxy"
             ],
         )
@@ -354,7 +354,7 @@ class TestBuildSource(TestCase):
                 b"content_of_cert",
                 stat.S_IFREG | 0o644,
             ),
-            build_source.backend.backend_fs[
+            build_craft.backend.backend_fs[
                 "/usr/local/share/ca-certificates/local-ca.crt"
             ],
         )
@@ -369,12 +369,12 @@ class TestBuildSource(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_source.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
+            build_craft.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_snapd_proxy(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -389,16 +389,16 @@ class TestBuildSource(TestCase):
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.bin = "/builderbin"
+        build_craft = parse_args(args=args).operation
+        build_craft.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
         with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
-        build_source.install()
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanAptGet(
@@ -445,7 +445,7 @@ class TestBuildSource(TestCase):
         )
         self.assertEqual(
             (b"proxy script\n", stat.S_IFREG | 0o755),
-            build_source.backend.backend_fs[
+            build_craft.backend.backend_fs[
                 "/usr/local/bin/lpbuildd-git-proxy"
             ],
         )
@@ -460,12 +460,12 @@ class TestBuildSource(TestCase):
                 ).encode("UTF-8"),
                 stat.S_IFREG | 0o644,
             ),
-            build_source.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
+            build_craft.backend.backend_fs["/etc/apt/apt.conf.d/99proxy"],
         )
 
     def test_install_fetch_service(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -480,16 +480,16 @@ class TestBuildSource(TestCase):
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.bin = "/builderbin"
+        build_craft = parse_args(args=args).operation
+        build_craft.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
         with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
-        build_source.install()
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesAll(
                 Not(
                     AnyMatch(
@@ -509,7 +509,7 @@ class TestBuildSource(TestCase):
 
     def test_install_fetch_service_focal(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=focal",
             "--arch=amd64",
@@ -524,16 +524,16 @@ class TestBuildSource(TestCase):
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.bin = "/builderbin"
+        build_craft = parse_args(args=args).operation
+        build_craft.bin = "/builderbin"
         self.useFixture(FakeFilesystem()).add("/builderbin")
         os.mkdir("/builderbin")
         with open("/builderbin/lpbuildd-git-proxy", "w") as proxy_script:
             proxy_script.write("proxy script\n")
             os.fchmod(proxy_script.fileno(), 0o755)
-        build_source.install()
+        build_craft.install()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesAll(
                 AnyMatch(
                     RanCommand(
@@ -545,7 +545,7 @@ class TestBuildSource(TestCase):
 
     def test_repo_bzr(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -554,12 +554,12 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FakeRevisionID("42")
-        build_source.repo()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FakeRevisionID("42")
+        build_craft.repo()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -575,13 +575,13 @@ class TestBuildSource(TestCase):
                 ]
             ),
         )
-        status_path = os.path.join(build_source.backend.build_path, "status")
+        status_path = os.path.join(build_craft.backend.build_path, "status")
         with open(status_path) as status:
             self.assertEqual({"revision_id": "42"}, json.load(status))
 
     def test_repo_git(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -590,12 +590,12 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FakeRevisionID("0" * 40)
-        build_source.repo()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FakeRevisionID("0" * 40)
+        build_craft.repo()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -625,13 +625,13 @@ class TestBuildSource(TestCase):
                 ]
             ),
         )
-        status_path = os.path.join(build_source.backend.build_path, "status")
+        status_path = os.path.join(build_craft.backend.build_path, "status")
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_repo_git_with_path(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -642,12 +642,12 @@ class TestBuildSource(TestCase):
             "next",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FakeRevisionID("0" * 40)
-        build_source.repo()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FakeRevisionID("0" * 40)
+        build_craft.repo()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -677,13 +677,13 @@ class TestBuildSource(TestCase):
                 ]
             ),
         )
-        status_path = os.path.join(build_source.backend.build_path, "status")
+        status_path = os.path.join(build_craft.backend.build_path, "status")
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_repo_git_with_tag_path(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -694,12 +694,12 @@ class TestBuildSource(TestCase):
             "refs/tags/1.0",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FakeRevisionID("0" * 40)
-        build_source.repo()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FakeRevisionID("0" * 40)
+        build_craft.repo()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -729,13 +729,13 @@ class TestBuildSource(TestCase):
                 ]
             ),
         )
-        status_path = os.path.join(build_source.backend.build_path, "status")
+        status_path = os.path.join(build_craft.backend.build_path, "status")
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_repo_proxy(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -746,10 +746,10 @@ class TestBuildSource(TestCase):
             "http://proxy.example:3128/",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FakeRevisionID("0" * 40)
-        build_source.repo()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FakeRevisionID("0" * 40)
+        build_craft.repo()
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
@@ -757,7 +757,7 @@ class TestBuildSource(TestCase):
             "SNAPPY_STORE_NO_CDN": "1",
         }
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -790,13 +790,13 @@ class TestBuildSource(TestCase):
                 ]
             ),
         )
-        status_path = os.path.join(build_source.backend.build_path, "status")
+        status_path = os.path.join(build_craft.backend.build_path, "status")
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_repo_fetch_service(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -808,10 +808,10 @@ class TestBuildSource(TestCase):
             "test-image",
             "--use_fetch_service",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FakeRevisionID("0" * 40)
-        build_source.repo()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FakeRevisionID("0" * 40)
+        build_craft.repo()
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
@@ -819,7 +819,7 @@ class TestBuildSource(TestCase):
             "SNAPPY_STORE_NO_CDN": "1",
         }
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -863,13 +863,13 @@ class TestBuildSource(TestCase):
                 ]
             ),
         )
-        status_path = os.path.join(build_source.backend.build_path, "status")
+        status_path = os.path.join(build_craft.backend.build_path, "status")
         with open(status_path) as status:
             self.assertEqual({"revision_id": "0" * 40}, json.load(status))
 
     def test_build(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -878,11 +878,11 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.add_dir("/build/test-directory")
-        build_source.build()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.add_dir("/build/test-directory")
+        build_craft.build()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -895,7 +895,7 @@ class TestBuildSource(TestCase):
 
     def test_build_with_path(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -906,11 +906,11 @@ class TestBuildSource(TestCase):
             "build-aux/",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.add_dir("/build/test-directory")
-        build_source.build()
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.add_dir("/build/test-directory")
+        build_craft.build()
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -923,7 +923,7 @@ class TestBuildSource(TestCase):
 
     def test_build_proxy(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -934,8 +934,8 @@ class TestBuildSource(TestCase):
             "http://proxy.example:3128/",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.build()
+        build_craft = parse_args(args=args).operation
+        build_craft.build()
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
@@ -943,7 +943,7 @@ class TestBuildSource(TestCase):
             "SNAPPY_STORE_NO_CDN": "1",
         }
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -957,7 +957,7 @@ class TestBuildSource(TestCase):
 
     def test_build_fetch_service(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -972,8 +972,8 @@ class TestBuildSource(TestCase):
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.build()
+        build_craft = parse_args(args=args).operation
+        build_craft.build()
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
@@ -981,7 +981,7 @@ class TestBuildSource(TestCase):
             "SNAPPY_STORE_NO_CDN": "1",
         }
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesListwise(
                 [
                     RanBuildCommand(
@@ -995,7 +995,7 @@ class TestBuildSource(TestCase):
 
     def test_run_succeeds(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -1004,12 +1004,12 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FakeRevisionID("42")
-        self.assertEqual(0, build_source.run())
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FakeRevisionID("42")
+        self.assertEqual(0, build_craft.run())
         self.assertThat(
-            build_source.backend.run.calls,
+            build_craft.backend.run.calls,
             MatchesAll(
                 AnyMatch(
                     RanAptGet("install", "bzr"),
@@ -1038,7 +1038,7 @@ class TestBuildSource(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -1047,9 +1047,9 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.run = FailInstall()
-        self.assertEqual(RETCODE_FAILURE_INSTALL, build_source.run())
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.run = FailInstall()
+        self.assertEqual(RETCODE_FAILURE_INSTALL, build_craft.run())
 
     def test_run_repo_fails(self):
         class FailRepo(FakeMethod):
@@ -1060,7 +1060,7 @@ class TestBuildSource(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -1069,9 +1069,9 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.run = FailRepo()
-        self.assertEqual(RETCODE_FAILURE_BUILD, build_source.run())
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.run = FailRepo()
+        self.assertEqual(RETCODE_FAILURE_BUILD, build_craft.run())
 
     def test_run_build_fails(self):
         class FailBuild(FakeMethod):
@@ -1082,7 +1082,7 @@ class TestBuildSource(TestCase):
 
         self.useFixture(FakeLogger())
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -1091,14 +1091,14 @@ class TestBuildSource(TestCase):
             "lp:foo",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.build_path = self.useFixture(TempDir()).path
-        build_source.backend.run = FailBuild()
-        self.assertEqual(RETCODE_FAILURE_BUILD, build_source.run())
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.build_path = self.useFixture(TempDir()).path
+        build_craft.backend.run = FailBuild()
+        self.assertEqual(RETCODE_FAILURE_BUILD, build_craft.run())
 
     def test_build_with_invalid_build_path_parent(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -1109,13 +1109,13 @@ class TestBuildSource(TestCase):
             "../",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.add_dir("/build/test-directory")
-        self.assertRaises(InvalidBuildFilePath, build_source.build)
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.add_dir("/build/test-directory")
+        self.assertRaises(InvalidBuildFilePath, build_craft.build)
 
     def test_build_with_invalid_build_path_absolute(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -1126,13 +1126,13 @@ class TestBuildSource(TestCase):
             "/etc",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.backend.add_dir("/build/test-directory")
-        self.assertRaises(InvalidBuildFilePath, build_source.build)
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.add_dir("/build/test-directory")
+        self.assertRaises(InvalidBuildFilePath, build_craft.build)
 
     def test_build_with_invalid_build_path_symlink(self):
         args = [
-            "build-source",
+            "build-craft",
             "--backend=fake",
             "--series=xenial",
             "--arch=amd64",
@@ -1143,9 +1143,9 @@ class TestBuildSource(TestCase):
             "build/",
             "test-image",
         ]
-        build_source = parse_args(args=args).operation
-        build_source.buildd_path = self.useFixture(TempDir()).path
+        build_craft = parse_args(args=args).operation
+        build_craft.buildd_path = self.useFixture(TempDir()).path
         os.symlink(
-            "/etc/hosts", os.path.join(build_source.buildd_path, "build")
+            "/etc/hosts", os.path.join(build_craft.buildd_path, "build")
         )
-        self.assertRaises(InvalidBuildFilePath, build_source.build)
+        self.assertRaises(InvalidBuildFilePath, build_craft.build)

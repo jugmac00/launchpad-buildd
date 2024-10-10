@@ -19,12 +19,12 @@ from lpbuildd.binarypackage import BinaryPackageBuildManager
 from lpbuildd.builder import XMLRPCBuilder
 from lpbuildd.charm import CharmBuildManager
 from lpbuildd.ci import CIBuildManager
+from lpbuildd.craft import CraftBuildManager
 from lpbuildd.livefs import LiveFilesystemBuildManager
 from lpbuildd.log import RotatableFileLogObserver
 from lpbuildd.oci import OCIBuildManager
 from lpbuildd.rock import RockBuildManager
 from lpbuildd.snap import SnapBuildManager
-from lpbuildd.source import SourceBuildManager
 from lpbuildd.sourcepackagerecipe import SourcePackageRecipeBuildManager
 from lpbuildd.translationtemplates import TranslationTemplatesBuildManager
 
@@ -48,7 +48,7 @@ builder.registerManager(OCIBuildManager, "oci")
 builder.registerManager(CharmBuildManager, "charm")
 builder.registerManager(CIBuildManager, "ci")
 builder.registerManager(RockBuildManager, "rock")
-builder.registerManager(SourceBuildManager, "source")
+builder.registerManager(CraftBuildManager, "craft")
 
 application = service.Application("Builder")
 application.addComponent(
