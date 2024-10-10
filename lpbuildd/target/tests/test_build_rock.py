@@ -99,7 +99,11 @@ class TestBuildRock(TestCase):
             MatchesListwise(
                 [
                     RanAptGet(
-                        "install", "bzr", "python3-pip", "python3-setuptools"
+                        "install",
+                        "bzr",
+                        "python3-pip",
+                        "python3-setuptools",
+                        "dirmngr",
                     ),
                     RanSnap("install", "--channel=candidate", "core"),
                     RanSnap("install", "--channel=beta", "core18"),
@@ -129,7 +133,11 @@ class TestBuildRock(TestCase):
             MatchesListwise(
                 [
                     RanAptGet(
-                        "install", "bzr", "python3-pip", "python3-setuptools"
+                        "install",
+                        "bzr",
+                        "python3-pip",
+                        "python3-setuptools",
+                        "dirmngr",
                     ),
                     RanSnap("install", "--classic", "rockcraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
@@ -155,7 +163,11 @@ class TestBuildRock(TestCase):
             MatchesListwise(
                 [
                     RanAptGet(
-                        "install", "git", "python3-pip", "python3-setuptools"
+                        "install",
+                        "git",
+                        "python3-pip",
+                        "python3-setuptools",
+                        "dirmngr",
                     ),
                     RanSnap("install", "--classic", "rockcraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
@@ -202,7 +214,11 @@ class TestBuildRock(TestCase):
             MatchesListwise(
                 [
                     RanAptGet(
-                        "install", "git", "python3-pip", "python3-setuptools"
+                        "install",
+                        "git",
+                        "python3-pip",
+                        "python3-setuptools",
+                        "dirmngr",
                     ),
                     RanCommand(
                         ["snap", "ack", "/dev/stdin"],
@@ -249,6 +265,7 @@ class TestBuildRock(TestCase):
                         "git",
                         "python3-pip",
                         "python3-setuptools",
+                        "dirmngr",
                     ),
                     RanSnap("install", "--classic", "rockcraft"),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
@@ -296,6 +313,7 @@ class TestBuildRock(TestCase):
                         "git",
                         "python3-pip",
                         "python3-setuptools",
+                        "dirmngr",
                     ),
                     RanSnap("install", "--classic", "rockcraft"),
                     RanCommand(["rm", "-rf", "/var/lib/apt/lists"]),
@@ -391,6 +409,7 @@ class TestBuildRock(TestCase):
                         "git",
                         "python3-pip",
                         "python3-setuptools",
+                        "dirmngr",
                     ),
                     RanSnap("install", "--classic", "rockcraft"),
                     RanCommand(["rm", "-rf", "/var/lib/apt/lists"]),
@@ -999,7 +1018,11 @@ class TestBuildRock(TestCase):
             MatchesAll(
                 AnyMatch(
                     RanAptGet(
-                        "install", "bzr", "python3-pip", "python3-setuptools"
+                        "install",
+                        "bzr",
+                        "python3-pip",
+                        "python3-setuptools",
+                        "dirmngr",
                     ),
                 ),
                 AnyMatch(
