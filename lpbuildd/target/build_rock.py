@@ -76,6 +76,9 @@ class BuildRock(
                 "python3-setuptools",
             ]
         )
+        # repo-overlay features requires dirmngr to access OpenPGP keyservers
+        # otherwise the build errors out with unknown GPG key error
+        deps.extend(["dirmngr"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
