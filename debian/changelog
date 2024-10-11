@@ -1,9 +1,9 @@
-launchpad-buildd (245) UNRELEASED; urgency=medium
+launchpad-buildd (245) focal; urgency=medium
 
   * Shallow git clone when fetch-service enabled.
   * Enable fetch service for sourcecraft builds.
 
- -- Simone Pelosi <simone.pelosi@canonical.com>  Tue, 08 Oct 2024 14:09:25 +0200
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Fri, 11 Oct 2024 14:57:16 +0200
 
 launchpad-buildd (244) focal; urgency=medium
 
