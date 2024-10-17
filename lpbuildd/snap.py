@@ -104,7 +104,7 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             for arch in self.target_architectures:
                 args.extend(["--target-arch", arch])
         if self.use_fetch_service:
-            args.append("--use_fetch_service")
+            args.append("--use-fetch-service")
             # XXX 2024-04-17 jugmac00: I do not think we need to add checks
             # whether this information is present, as otherwise the fetch
             # service won't work anyway

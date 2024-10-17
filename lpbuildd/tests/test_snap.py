@@ -763,7 +763,7 @@ class TestSnapBuildManagerIteration(TestCase):
             "secrets": {"fetch_service_mitm_certificate": "content_of_cert"},
         }
         expected_options = [
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             "content_of_cert",
         ]

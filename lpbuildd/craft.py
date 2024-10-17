@@ -56,7 +56,7 @@ class CraftBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         if self.build_path is not None:
             args.extend(["--build-path", self.build_path])
         if self.use_fetch_service:
-            args.append("--use_fetch_service")
+            args.append("--use-fetch-service")
             args.extend(
                 [
                     "--fetch-service-mitm-certificate",

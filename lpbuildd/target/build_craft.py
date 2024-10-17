@@ -45,7 +45,7 @@ class BuildCraft(
             help="name of sourcecraft package to build",
         )
         parser.add_argument(
-            "--use_fetch_service",
+            "--use-fetch-service",
             default=False,
             action="store_true",
             help="use the fetch service instead of the builder proxy",

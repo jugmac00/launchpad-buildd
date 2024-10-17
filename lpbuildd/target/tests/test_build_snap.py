@@ -206,7 +206,7 @@ class TestBuildSnap(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-snap",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -304,7 +304,7 @@ class TestBuildSnap(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-snap",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -426,7 +426,7 @@ class TestBuildSnap(TestCase):
             "--branch",
             "lp:foo",
             "test-snap",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -462,7 +462,7 @@ class TestBuildSnap(TestCase):
             "--branch",
             "lp:foo",
             "test-snap",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -742,7 +742,7 @@ class TestBuildSnap(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-snap",
-            "--use_fetch_service",
+            "--use-fetch-service",
         ]
         build_snap = parse_args(args=args).operation
         build_snap.backend.build_path = self.useFixture(TempDir()).path
