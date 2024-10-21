@@ -770,6 +770,21 @@ class TestSnapBuildManagerIteration(TestCase):
         yield self.startBuild(args, expected_options)
 
     @defer.inlineCallbacks
+    def test_iterate_launchpad_url_and_instance(self):
+        # The builder should be aware of the launchpad context.
+        args = {
+            "launchpad_instance": "devel",
+            "launchpad_server_url": "launchpad.test",
+        }
+        expected_options = [
+            "--launchpad-instance",
+            "devel",
+            "--launchpad-server-url",
+            "launchpad.test",
+        ]
+        yield self.startBuild(args, expected_options)
+
+    @defer.inlineCallbacks
     def test_iterate_disable_proxy_after_pull(self):
         self.builder._config.set("builder", "proxyport", "8222")
         args = {

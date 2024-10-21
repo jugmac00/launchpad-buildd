@@ -35,6 +35,8 @@ class RockBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         # currently only used to transport the mitm certificate
         self.secrets = extra_args.get("secrets")
         self.use_fetch_service = extra_args.get("use_fetch_service")
+        self.launchpad_instance = extra_args.get("launchpad_instance")
+        self.launchpad_server_url = extra_args.get("launchpad_server_url")
         self.proxy_service = None
 
         super().initiate(files, chroot, extra_args)
@@ -63,6 +65,10 @@ class RockBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     self.secrets["fetch_service_mitm_certificate"],
                 ]
             )
+        if self.launchpad_instance:
+            args.extend(["--launchpad-instance", self.launchpad_instance])
+        if self.launchpad_server_url:
+            args.extend(["--launchpad-server-url", self.launchpad_server_url])
         args.append(self.name)
         self.runTargetSubProcess("build-rock", *args)
 

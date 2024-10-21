@@ -39,6 +39,8 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.git_repository = extra_args.get("git_repository")
         self.git_path = extra_args.get("git_path")
         self.use_fetch_service = extra_args.get("use_fetch_service")
+        self.launchpad_instance = extra_args.get("launchpad_instance")
+        self.launchpad_server_url = extra_args.get("launchpad_server_url")
         self.proxy_url = extra_args.get("proxy_url")
         # currently only used to transport the mitm certificate
         self.secrets = extra_args.get("secrets")
@@ -114,6 +116,10 @@ class SnapBuildManager(BuildManagerProxyMixin, DebianBuildManager):
                     self.secrets["fetch_service_mitm_certificate"],
                 ]
             )
+        if self.launchpad_instance:
+            args.extend(["--launchpad-instance", self.launchpad_instance])
+        if self.launchpad_server_url:
+            args.extend(["--launchpad-server-url", self.launchpad_server_url])
         args.append(self.name)
         self.runTargetSubProcess("buildsnap", *args)
 

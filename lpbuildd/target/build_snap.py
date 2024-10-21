@@ -111,6 +111,16 @@ class BuildSnap(
             type=str,
             help="content of the ca certificate",
         )
+        parser.add_argument(
+            "--launchpad-instance",
+            type=str,
+            help="launchpad instance (production, qastaging, staging, devel).",
+        )
+        parser.add_argument(
+            "--launchpad-server-url",
+            type=str,
+            help="launchpad server url.",
+        )
         parser.add_argument("name", help="name of snap to build")
 
     def install(self):
@@ -209,6 +219,10 @@ class BuildSnap(
             proxy_url=self.args.proxy_url,
             use_fetch_service=self.args.use_fetch_service,
         )
+        if self.args.launchpad_instance:
+            env["LAUNCHPAD_INSTANCE"] = self.args.launchpad_instance
+        if self.args.launchpad_server_url:
+            env["LAUNCHPAD_SERVER_URL"] = self.args.launchpad_server_url
         env["SNAPCRAFT_LOCAL_SOURCES"] = "1"
         env["SNAPCRAFT_SETUP_CORE"] = "1"
         if not self.args.private:
@@ -258,6 +272,10 @@ class BuildSnap(
             proxy_url=self.args.proxy_url,
             use_fetch_service=self.args.use_fetch_service,
         )
+        if self.args.launchpad_instance:
+            env["LAUNCHPAD_INSTANCE"] = self.args.launchpad_instance
+        if self.args.launchpad_server_url:
+            env["LAUNCHPAD_SERVER_URL"] = self.args.launchpad_server_url
         if not self.args.private:
             env["SNAPCRAFT_BUILD_INFO"] = "1"
         env["SNAPCRAFT_IMAGE_INFO"] = self.image_info

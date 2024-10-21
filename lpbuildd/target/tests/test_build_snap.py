@@ -838,6 +838,51 @@ class TestBuildSnap(TestCase):
             ),
         )
 
+    def test_pull_with_launchpad_instance(self):
+        args = [
+            "buildsnap",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--build-url",
+            "https://launchpad.example/build",
+            "--branch",
+            "lp:foo",
+            "--proxy-url",
+            "http://proxy.example:3128/",
+            "test-snap",
+            "--launchpad-server-url=launchpad.test",
+            "--launchpad-instance=devel",
+        ]
+        build_snap = parse_args(args=args).operation
+        build_snap.pull()
+        env = {
+            "SNAPCRAFT_LOCAL_SOURCES": "1",
+            "SNAPCRAFT_SETUP_CORE": "1",
+            "SNAPCRAFT_BUILD_INFO": "1",
+            "SNAPCRAFT_IMAGE_INFO": (
+                '{"build_url": "https://launchpad.example/build"}'
+            ),
+            "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
+            "http_proxy": "http://proxy.example:3128/",
+            "https_proxy": "http://proxy.example:3128/",
+            "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
+            "SNAPPY_STORE_NO_CDN": "1",
+            "LAUNCHPAD_INSTANCE": "devel",
+            "LAUNCHPAD_SERVER_URL": "launchpad.test",
+        }
+        self.assertThat(
+            build_snap.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["snapcraft", "pull"], cwd="/build/test-snap", **env
+                    ),
+                ]
+            ),
+        )
+
     def test_pull_proxy(self):
         args = [
             "buildsnap",
@@ -1040,6 +1085,45 @@ class TestBuildSnap(TestCase):
                         SNAPCRAFT_BUILD_INFO="1",
                         SNAPCRAFT_IMAGE_INFO="{}",
                         SNAPCRAFT_BUILD_ENVIRONMENT="host",
+                    ),
+                    RanBuildCommand(
+                        ["sha512sum", "test-snap_1.snap"],
+                        cwd="/build/test-snap",
+                    ),
+                ]
+            ),
+        )
+
+    def test_build_with_launchpad_instance(self):
+        args = [
+            "buildsnap",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "test-snap",
+            "--launchpad-server-url=launchpad.test",
+            "--launchpad-instance=devel",
+        ]
+        build_snap = parse_args(args=args).operation
+        build_snap.backend.run = FakeSnapcraft(
+            build_snap.backend, "test-snap_1.snap"
+        )
+        build_snap.build()
+        self.assertThat(
+            build_snap.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["snapcraft"],
+                        cwd="/build/test-snap",
+                        SNAPCRAFT_BUILD_INFO="1",
+                        SNAPCRAFT_IMAGE_INFO="{}",
+                        SNAPCRAFT_BUILD_ENVIRONMENT="host",
+                        LAUNCHPAD_INSTANCE="devel",
+                        LAUNCHPAD_SERVER_URL="launchpad.test",
                     ),
                     RanBuildCommand(
                         ["sha512sum", "test-snap_1.snap"],

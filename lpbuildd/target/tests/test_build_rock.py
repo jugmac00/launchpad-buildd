@@ -894,6 +894,36 @@ class TestBuildRock(TestCase):
             ),
         )
 
+    def test_build_with_launchpad_instance(self):
+        args = [
+            "build-rock",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "test-image",
+            "--launchpad-server-url=launchpad.test",
+            "--launchpad-instance=devel",
+        ]
+        build_rock = parse_args(args=args).operation
+        build_rock.backend.run = FakeRevisionID("42")
+        build_rock.build()
+        self.assertThat(
+            build_rock.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["rockcraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                        LAUNCHPAD_INSTANCE="devel",
+                        LAUNCHPAD_SERVER_URL="launchpad.test",
+                    ),
+                ]
+            ),
+        )
+
     def test_build_with_path(self):
         args = [
             "build-rock",

@@ -1,6 +1,9 @@
 launchpad-buildd (246) UNRELEASED; urgency=medium
 
   * CARGO_HTTP_CAINFO and GOPROXY configured for every build type. 
+  * Propagate the launchpad context to the builders,
+    LAUNCHPAD_INSTANCE and LAUNCHPAD_SERVER_URL env variables
+    populated for craft, rock, snap builds.
 
  -- Simone Pelosi <simone.pelosi@canonical.com>  Wed, 23 Oct 2024 10:02:18 +0200
 
