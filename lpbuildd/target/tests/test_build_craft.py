@@ -817,6 +817,10 @@ class TestBuildCraft(TestCase):
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
+            "CARGO_HTTP_CAINFO": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ),
+            "GOPROXY": "direct",
         }
         self.assertThat(
             build_craft.backend.run.calls,
@@ -979,6 +983,10 @@ class TestBuildCraft(TestCase):
             "https_proxy": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
+            "CARGO_HTTP_CAINFO": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ),
+            "GOPROXY": "direct",
         }
         self.assertThat(
             build_craft.backend.run.calls,

@@ -124,7 +124,7 @@ class BuilderProxyOperationMixin:
             # configuration.
             full_env["SNAPPY_STORE_NO_CDN"] = "1"
         # Avoid circular import using __class__.__name__
-        if use_fetch_service and self.__class__.__name__ == "BuildRock":
+        if use_fetch_service:
             full_env["CARGO_HTTP_CAINFO"] = self.mitm_certificate_path
             full_env["GOPROXY"] = "direct"
 

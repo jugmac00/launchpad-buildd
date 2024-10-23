@@ -1,3 +1,9 @@
+launchpad-buildd (246) UNRELEASED; urgency=medium
+
+  * CARGO_HTTP_CAINFO and GOPROXY configured for every build type. 
+
+ -- Simone Pelosi <simone.pelosi@canonical.com>  Wed, 23 Oct 2024 10:02:18 +0200
+
 launchpad-buildd (245) focal; urgency=medium
 
   * Shallow git clone when fetch-service enabled.
