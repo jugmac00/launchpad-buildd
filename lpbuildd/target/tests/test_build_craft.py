@@ -897,6 +897,36 @@ class TestBuildCraft(TestCase):
             ),
         )
 
+    def test_build_with_launchpad_instance(self):
+        args = [
+            "build-craft",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "test-image",
+            "--launchpad-server-url=launchpad.test",
+            "--launchpad-instance=devel",
+        ]
+        build_craft = parse_args(args=args).operation
+        build_craft.backend.add_dir("/build/test-directory")
+        build_craft.build()
+        self.assertThat(
+            build_craft.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                        LAUNCHPAD_INSTANCE="devel",
+                        LAUNCHPAD_SERVER_URL="launchpad.test",
+                    ),
+                ]
+            ),
+        )
+
     def test_build_with_path(self):
         args = [
             "build-craft",

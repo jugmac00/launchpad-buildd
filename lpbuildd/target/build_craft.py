@@ -55,6 +55,16 @@ class BuildCraft(
             type=str,
             help="content of the ca certificate",
         )
+        parser.add_argument(
+            "--launchpad-instance",
+            type=str,
+            help="launchpad instance (production, qastaging, staging, devel).",
+        )
+        parser.add_argument(
+            "--launchpad-server-url",
+            type=str,
+            help="launchpad server url.",
+        )
 
     def __init__(self, args, parser):
         super().__init__(args, parser)
@@ -150,6 +160,10 @@ class BuildCraft(
             proxy_url=self.args.proxy_url,
             use_fetch_service=self.args.use_fetch_service,
         )
+        if self.args.launchpad_instance:
+            env["LAUNCHPAD_INSTANCE"] = self.args.launchpad_instance
+        if self.args.launchpad_server_url:
+            env["LAUNCHPAD_SERVER_URL"] = self.args.launchpad_server_url
         args = ["sourcecraft", "pack", "-v", "--destructive-mode"]
         self.run_build_command(args, env=env, cwd=build_context_path)
 
