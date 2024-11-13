@@ -272,6 +272,7 @@ class TestLXD(TestCase):
         with open("/var/snap/lxd/common/lxd/server.key", "w"):
             pass
         processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
         tmp = self.useFixture(TempDir()).path
         source_image_path = os.path.join(tmp, "source.tar.gz")
         self.make_lxd_image(source_image_path)
@@ -281,8 +282,14 @@ class TestLXD(TestCase):
         image = mock.MagicMock()
         client.images.create.return_value = image
         LXD("1", "xenial", "amd64").create(source_image_path, "lxd")
-
-        self.assertEqual([], processes_fixture.procs)
+        self.assertThat(
+            [proc._args["args"] for proc in processes_fixture.procs],
+            MatchesListwise(
+                [
+                    Equals(["sudo", "snap", "wait", "system", "seed.loaded"]),
+                ]
+            ),
+        )
         client.images.create.assert_called_once_with(mock.ANY, wait=True)
         with io.BytesIO(client.images.create.call_args[0][0]) as f:
             with tarfile.open(fileobj=f) as tar:
