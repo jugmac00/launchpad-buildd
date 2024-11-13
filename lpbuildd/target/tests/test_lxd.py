@@ -215,6 +215,7 @@ class TestLXD(TestCase):
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise(
                 [
+                    Equals(["sudo", "snap", "wait", "system", "seed.loaded"]),
                     Equals(["sudo", "lxd", "init", "--auto"]),
                     Equals(["lxc", "list"]),
                 ]
@@ -249,6 +250,7 @@ class TestLXD(TestCase):
             [proc._args["args"] for proc in processes_fixture.procs],
             MatchesListwise(
                 [
+                    Equals(["sudo", "snap", "wait", "system", "seed.loaded"]),
                     Equals(["sudo", "lxd", "init", "--auto"]),
                     Equals(["lxc", "list"]),
                 ]

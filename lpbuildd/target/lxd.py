@@ -4,6 +4,7 @@
 import io
 import json
 import os
+import platform
 import re
 import stat
 import subprocess
@@ -189,8 +190,22 @@ class LXD(Backend):
                 if fileptr is not None:
                     fileptr.close()
 
+    def _wait_for_snaps_to_seed(self):
+        # It takes around 2 minutes on emulated riscv64 builder machine
+        # for pre-seeded snap to boot up. Non-emulated architectures
+        # (amd64 etc) takes around 10s - 20s.
+        timeout = 180 if platform.machine() == "riscv64" else 40
+        subprocess.check_call(
+            ["sudo", "snap", "wait", "system", "seed.loaded"], timeout=timeout
+        )
+
     def _init(self):
         """Configure LXD if necessary."""
+        # LXD is no longer available by default on Noble. We are pre-seeding
+        # the LXD snap in the builder VM images and it takes some time for
+        # seeded snaps to boot up.
+        self._wait_for_snaps_to_seed()
+
         # "lxd init" creates a key pair (see
         # https://linuxcontainers.org/lxd/docs/master/authentication/), so
         # check for that to see whether LXD has already been initialized.
