@@ -1,3 +1,10 @@
+launchpad-buildd (247) UNRELEASED; urgency=medium
+
+  * Wait for pre-seeded snaps to seed and boot up before running LXD commands
+    to avoid race conditions
+
+ -- Tushar Gupta <tushar.gupta@canonical.com>  Thu, 14 Nov 2024 16:49:51 +0530
+
 launchpad-buildd (246) focal; urgency=medium
 
   * CARGO_HTTP_CAINFO and GOPROXY configured for every build type. 
