@@ -7,6 +7,7 @@ import json
 import os
 import random
 import stat
+import subprocess
 import tarfile
 import time
 from contextlib import closing
@@ -298,6 +299,78 @@ class TestLXD(TestCase):
         image.add_alias.assert_called_once_with(
             "lp-xenial-amd64", "lp-xenial-amd64"
         )
+
+    def test_ensure_timeout_while_waiting_for_snap_seeding(self):
+        """
+        This test ensures that there should always be a timeout
+        while waiting for snaps seeding to complete during LXD builds
+        """
+        fs_fixture = self.useFixture(FakeFilesystem())
+        fs_fixture.add("/var/snap/lxd/common/lxd")
+
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="sudo")
+        processes_fixture.add(lambda _: {}, name="lxc")
+
+        cmd = ["sudo", "snap", "wait", "system", "seed.loaded"]
+
+        tmp = self.useFixture(TempDir()).path
+        source_image_path = os.path.join(tmp, "source.tar.gz")
+        self.make_lxd_image(source_image_path)
+        self.useFixture(MockPatch("pylxd.Client"))
+        client = pylxd.Client()
+        client.images.all.return_value = []
+        image = mock.MagicMock()
+        client.images.create.return_value = image
+
+        with mock.patch("platform.machine", return_value="riscv64"):
+            timeout = 180
+            with mock.patch("subprocess.check_call") as mock_check_call:
+                mock_check_call.side_effect = subprocess.TimeoutExpired(
+                    cmd, timeout
+                )
+                e = self.assertRaises(
+                    subprocess.TimeoutExpired,
+                    LXD("1", "xenial", "amd64").create,
+                    source_image_path,
+                    "lxd",
+                )
+                mock_check_call.assert_called_once_with(cmd, timeout=timeout)
+
+                self.assertEqual(
+                    "Command "
+                    "'['sudo', 'snap', 'wait', 'system', 'seed.loaded']'"
+                    " timed out after %d seconds" % timeout,
+                    str(e),
+                )
+
+            self.assertThat(processes_fixture.procs, Equals([]))
+
+        with mock.patch(
+            "platform.machine", return_value="other-non-riscv64-archs"
+        ):
+            timeout = 40
+            with mock.patch("subprocess.check_call") as mock_check_call:
+                mock_check_call.side_effect = subprocess.TimeoutExpired(
+                    cmd, timeout
+                )
+                e = self.assertRaises(
+                    subprocess.TimeoutExpired,
+                    LXD("1", "xenial", "amd64").create,
+                    source_image_path,
+                    "lxd",
+                )
+                mock_check_call.assert_called_once_with(cmd, timeout=timeout)
+
+                self.assertEqual(
+                    "Command "
+                    "'['sudo', 'snap', 'wait', 'system', "
+                    "'seed.loaded']'"
+                    " timed out after %d seconds" % timeout,
+                    str(e),
+                )
+
+            self.assertThat(processes_fixture.procs, Equals([]))
 
     def assert_correct_profile(
         self,
