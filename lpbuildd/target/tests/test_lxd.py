@@ -302,7 +302,7 @@ class TestLXD(TestCase):
 
     def test_ensure_timeout_while_waiting_for_snap_seeding(self):
         """
-        This test ensures that there should always be a timeout
+        This test ensures that there must always be a timeout check
         while waiting for snaps seeding to complete during LXD builds
         """
         fs_fixture = self.useFixture(FakeFilesystem())
