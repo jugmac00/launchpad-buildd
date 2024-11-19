@@ -86,7 +86,8 @@ Releasing to production
 #. `Wait for PPA publishing to complete
    <https://launchpad.net/~launchpad/+archive/ubuntu/buildd/+packages>`__.
 
-#. Run ``ssh prod-launchpad-vbuilders@is-bastion-ps5.internal
+#. Image rebuild for production can be executed from `staging` environment.
+   Run ``ssh prod-launchpad-vbuilders@is-bastion-ps5.internal
    /home/prod-launchpad-vbuilders/scripts/rebuild-images.sh`` from the
    staging management environment (``stg-vbuilder@launchpad-bastion-ps5``)
    to start rebuilding images.
