@@ -817,6 +817,9 @@ class TestBuildRock(TestCase):
             "CARGO_HTTP_CAINFO": (
                 "/usr/local/share/ca-certificates/local-ca.crt"
             ),
+            "REQUESTS_CA_BUNDLE": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ),
             "GOPROXY": "direct",
         }
         self.assertThat(
@@ -1011,6 +1014,9 @@ class TestBuildRock(TestCase):
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
             "CARGO_HTTP_CAINFO": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ),
+            "REQUESTS_CA_BUNDLE": (
                 "/usr/local/share/ca-certificates/local-ca.crt"
             ),
             "GOPROXY": "direct",
