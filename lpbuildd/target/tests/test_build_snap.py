@@ -756,6 +756,9 @@ class TestBuildSnap(TestCase):
             "CARGO_HTTP_CAINFO": (
                 "/usr/local/share/ca-certificates/local-ca.crt"
             ),
+            "REQUESTS_CA_BUNDLE": (
+                "/usr/local/share/ca-certificates/local-ca.crt"
+            ),
             "GOPROXY": "direct",
         }
         self.assertThat(

@@ -126,6 +126,7 @@ class BuilderProxyOperationMixin:
         # Avoid circular import using __class__.__name__
         if use_fetch_service:
             full_env["CARGO_HTTP_CAINFO"] = self.mitm_certificate_path
+            full_env["REQUESTS_CA_BUNDLE"] = self.mitm_certificate_path
             full_env["GOPROXY"] = "direct"
 
         return full_env
