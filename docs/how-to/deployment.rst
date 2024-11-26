@@ -38,8 +38,8 @@ Testing on qastaging
    to the deployment PPA (``jammy`` here refers to the series being used on
    the builder instances).
 
-   For example, in qastaging, we have builders in ``focal`` and in ``jammy``,
-   so you should run the command for both series.
+   Until we discontinue builders on older series, you should run the above
+   command with  ``focal``, ``jammy`` and ``noble``.
 
 #. `Wait for PPA publishing to complete
    <https://launchpad.net/~launchpad/+archive/ubuntu/buildd-staging/+packages>`__.
