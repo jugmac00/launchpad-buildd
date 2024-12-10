@@ -1,9 +1,13 @@
-launchpad-buildd (248) UNRELEASED; urgency=medium
+launchpad-buildd (248) focal; urgency=medium
 
+  [ Jürgen Gmach ]
   * Set REQUESTS_CA_BUNDLE so craft tools can fetch files via requests.
 
- -- Jürgen Gmach <juergen.gmach@canonical.com>  Fri, 22 Nov 2024 13:53:23 +0100
+  [ İlker Emre Koç ]
+  * Add a timestamp into buildlogs. 
 
+ -- İlker Emre Koç <ilkeremre.koc@canonical.com>  Tue, 10 Dec 2024 16:40:55 +0300 
+ 
 launchpad-buildd (247) focal; urgency=medium
 
   * Wait for pre-seeded snaps to seed and boot up before running LXD commands
