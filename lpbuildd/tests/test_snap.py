@@ -859,7 +859,7 @@ class TestSnapBuildManagerIteration(TestCase):
                 "stderr", text_content(err.decode("UTF-8", "replace"))
             )
             self.assertEqual(0, code)
-        defer.returnValue(out)
+        return out
 
     @defer.inlineCallbacks
     def test_fetch_via_proxy(self):

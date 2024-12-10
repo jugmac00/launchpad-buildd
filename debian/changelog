@@ -1,3 +1,9 @@
+launchpad-buildd (250) UNRELEASED; urgency=medium
+
+  * Stop using twisted.internet.defer.returnValue.
+
+ -- Colin Watson <cjwatson@ubuntu.com>  Thu, 23 Jan 2025 17:44:18 +0000
+
 launchpad-buildd (249) noble; urgency=medium
 
   * fix: Retry while trying to install snaps due to a bug in snapd, in
