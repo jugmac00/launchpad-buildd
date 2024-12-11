@@ -6,14 +6,16 @@
 Most tests are done on subclasses instead.
 """
 
+from datetime import datetime, timezone
 import io
 import re
 
-from fixtures import TempDir
+from fixtures import MockPatch, TempDir
 from testtools import TestCase
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from twisted.logger import FileLogObserver, formatEvent, globalLogPublisher
+from unittest import mock
 
 from lpbuildd.builder import Builder, BuildManager, _sanitizeURLs
 from lpbuildd.tests.fakebuilder import FakeConfig
@@ -83,17 +85,32 @@ class TestBuildManager(TestCase):
         builder = Builder(config)
         builder._log = io.BytesIO()
         manager = BuildManager(builder, "123")
+
+        # Mock datetime.datetime.now() method
+        now = datetime.now()
+        mock_datetime = self.useFixture(
+            MockPatch(
+                "lpbuildd.builder.datetime"
+            )
+        ).mock
+        mock_datetime.now = lambda: now
+
         d = defer.Deferred()
         manager.iterate = d.callback
         manager.runSubProcess("echo", ["echo", "hello world"])
         code = yield d
         self.assertEqual(0, code)
+        
+        # Prepare the same timestamp format as the buildlogs
+        timestamp = f"[{now.replace(tzinfo=timezone.utc).ctime()}]\n"
+
         self.assertEqual(
-            b"RUN: echo 'hello world'\n" b"hello world\n",
+            timestamp.encode() + "RUN: echo 'hello world'\n" "hello world\n".encode(),
             builder._log.getvalue(),
         )
+        
         self.assertEqual(
-            "Build log: RUN: echo 'hello world'\n" "Build log: hello world\n",
+            f"Build log: {timestamp}" + "Build log: RUN: echo 'hello world'\n" + "Build log: hello world\n",
             self.log_file.getvalue(),
         )
 
@@ -104,19 +121,41 @@ class TestBuildManager(TestCase):
         builder = Builder(config)
         builder._log = io.BytesIO()
         manager = BuildManager(builder, "123")
+
+        # Mock datetime.datetime.now() method
+        now = datetime.now()
+        mock_datetime = self.useFixture(
+            MockPatch(
+                "lpbuildd.builder.datetime"
+            )
+        ).mock
+        mock_datetime.now = lambda: now
+
         d = defer.Deferred()
         manager.iterate = d.callback
         manager.runSubProcess("echo", ["echo", "\N{SNOWMAN}".encode()])
         code = yield d
         self.assertEqual(0, code)
+
+        # Prepare the same timestamp format as the buildlogs
+        timestamp = f"[{now.replace(tzinfo=timezone.utc).ctime()}]\n"
+
         self.assertEqual(
-            "RUN: echo '\N{SNOWMAN}'\n" "\N{SNOWMAN}\n".encode(),
+            timestamp.encode() + "RUN: echo '\N{SNOWMAN}'\n" "\N{SNOWMAN}\n".encode(),
             builder._log.getvalue(),
         )
+
+        # Separated the tests with self.log_file to ensure the regex tests of 
+        # the second part don't mix with timestamp equality test.
+        self.assertEqual(
+            f"Build log: {timestamp}"[:-1], # Excluding the newline character
+            self.log_file.getvalue().splitlines()[0]
+        )
+
         self.assertEqual(
             ["Build log: RUN: echo '\N{SNOWMAN}'", "Build log: \N{SNOWMAN}"],
             [
                 re.sub(r".*? \[-\] (.*)", r"\1", line)
-                for line in self.log_file.getvalue().splitlines()
+                for line in self.log_file.getvalue().splitlines()[1:]
             ],
         )

@@ -6,6 +6,7 @@
 
 # The basic builder implementation.
 
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -161,6 +162,12 @@ class BuildManager:
             for arg in args[1:]
         ]
         escaped_args = " ".join(shell_escape(arg) for arg in text_args)
+
+        # Log timestamps in the following form: '[Sun Jun 20 23:21:05 1993]'.
+        # The day field is two characters long and is space padded if the day is 
+        # a single digit, e.g.: 'Wed Jun  9 04:26:40 1993'.
+        self._builder.log(f"[{datetime.now().replace(tzinfo=timezone.utc).ctime()}]\n")
+
         self._builder.log(f"RUN: {command} {escaped_args}\n")
         childfds = {
             0: devnull.fileno() if stdin is None else "w",
