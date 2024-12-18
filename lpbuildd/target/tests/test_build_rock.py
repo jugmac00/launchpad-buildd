@@ -289,7 +289,7 @@ class TestBuildRock(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-image",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -385,7 +385,7 @@ class TestBuildRock(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-image",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -472,7 +472,7 @@ class TestBuildRock(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-image",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -516,7 +516,7 @@ class TestBuildRock(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-image",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
@@ -803,7 +803,7 @@ class TestBuildRock(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-image",
-            "--use_fetch_service",
+            "--use-fetch-service",
         ]
         build_rock = parse_args(args=args).operation
         build_rock.backend.build_path = self.useFixture(TempDir()).path
@@ -1001,7 +1001,7 @@ class TestBuildRock(TestCase):
             "--proxy-url",
             "http://proxy.example:3128/",
             "test-image",
-            "--use_fetch_service",
+            "--use-fetch-service",
             "--fetch-service-mitm-certificate",
             # Base64 content_of_cert
             "Y29udGVudF9vZl9jZXJ0",
