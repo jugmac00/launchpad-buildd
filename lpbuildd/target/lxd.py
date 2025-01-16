@@ -692,6 +692,29 @@ class LXD(Backend):
             except subprocess.CalledProcessError:
                 pass
 
+    def _run_command(
+        self, cmd, input_text, get_output, echo, return_process, **kwargs
+    ):
+        if input_text is None and not get_output:
+            subprocess.check_call(cmd, **kwargs)
+        else:
+            if get_output:
+                kwargs["stdout"] = subprocess.PIPE
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, **kwargs)
+            if return_process:
+                return proc
+            output, _ = proc.communicate(input_text)
+            if proc.returncode:
+                raise subprocess.CalledProcessError(proc.returncode, cmd)
+            if get_output:
+                if echo:
+                    print("Output:")
+                    output_text = output
+                    if isinstance(output_text, bytes):
+                        output_text = output_text.decode("UTF-8", "replace")
+                    print(output_text)
+                return output
+
     def run(
         self,
         args,
@@ -729,25 +752,28 @@ class LXD(Backend):
         # pylxd's Container.execute doesn't support sending stdin, and it's
         # tedious to implement ourselves.
         cmd = ["lxc", "exec", self.name] + env_params + ["--"] + args
-        if input_text is None and not get_output:
-            subprocess.check_call(cmd, **kwargs)
-        else:
-            if get_output:
-                kwargs["stdout"] = subprocess.PIPE
-            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, **kwargs)
-            if return_process:
-                return proc
-            output, _ = proc.communicate(input_text)
-            if proc.returncode:
-                raise subprocess.CalledProcessError(proc.returncode, cmd)
-            if get_output:
-                if echo:
-                    print("Output:")
-                    output_text = output
-                    if isinstance(output_text, bytes):
-                        output_text = output_text.decode("UTF-8", "replace")
-                    print(output_text)
-                return output
+
+        # XXX tushar5526 2025-01-16: Installing a snap fails on first
+        # attempt due to https://bugs.launchpad.net/snapd/+bug/1731519 and
+        # runs into udev issues.
+        # This retry mechanism needs to be removed once the snapd team
+        # has fixed the udev issue which is curently in progress.
+        if "snap" not in args or "install" not in args:
+            return self._run_command(
+                cmd, input_text, get_output, echo, return_process, **kwargs
+            )
+        max_retries = 3
+        e = None
+        for retry in range(max_retries):
+            print("Running '%s'. Attempt %d" % (args, retry + 1))
+            try:
+                return self._run_command(
+                    cmd, input_text, get_output, echo, return_process, **kwargs
+                )
+            except subprocess.CalledProcessError as exc:
+                e = exc
+                pass
+        raise e
 
     def copy_in(self, source_path, target_path):
         """See `Backend`."""
