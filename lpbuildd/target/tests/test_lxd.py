@@ -1400,3 +1400,43 @@ class TestLXD(TestCase):
                 ]
             ),
         )
+
+    def test_fail_after_3_retries_on_snap_install(self):
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="lxc")
+
+        with mock.patch(
+            "lpbuildd.target.lxd.LXD._run_command"
+        ) as mock_run_command:
+            mock_run_command.side_effect = subprocess.CalledProcessError(1, "")
+
+            self.assertRaises(
+                subprocess.CalledProcessError,
+                LXD("1", "noble", "amd64").run,
+                ["snap", "install", "lxd"],
+                env={"LANG": "C"},
+            )
+
+        # max retries is hardcode to 3
+        assert mock_run_command.call_count == 3
+
+    def test_retry_on_snap_install(self):
+        processes_fixture = self.useFixture(FakeProcesses())
+        processes_fixture.add(lambda _: {}, name="lxc")
+
+        with mock.patch(
+            "lpbuildd.target.lxd.LXD._run_command"
+        ) as mock_run_command:
+            # Make the first call to _run_command fail and let
+            # the second one pass
+            mock_run_command.side_effect = [
+                subprocess.CalledProcessError(1, ""),
+                None,
+            ]
+
+            LXD("1", "noble", "amd64").run(
+                ["snap", "install", "lxd"],
+                env={"LANG": "C"},
+            )
+
+        assert mock_run_command.call_count == 2
