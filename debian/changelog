@@ -1,3 +1,12 @@
+launchpad-buildd (249) noble; urgency=medium
+
+  * fix: Retry while trying to install snaps due to a bug in snapd, in
+    which buildd runs into udev issues on the first attempt to install
+    a snap in a chroot. This commit is meant to be revereted once the
+    bug is fixed in snapd.
+
+ -- Tushar Gupta <tushar.gupta@canonical.com>  Fri, 17 Jan 2025 17:24:40 +0530
+
 launchpad-buildd (248) focal; urgency=medium
 
   [ Jürgen Gmach ]
