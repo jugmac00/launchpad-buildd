@@ -38,6 +38,7 @@ class CraftBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.launchpad_instance = extra_args.get("launchpad_instance")
         self.launchpad_server_url = extra_args.get("launchpad_server_url")
         self.proxy_service = None
+        self.environment_variables = extra_args.get("environment_variables")
 
         super().initiate(files, chroot, extra_args)
 
@@ -69,6 +70,9 @@ class CraftBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--launchpad-instance", self.launchpad_instance])
         if self.launchpad_server_url:
             args.extend(["--launchpad-server-url", self.launchpad_server_url])
+        if self.environment_variables:
+            for key, value in self.environment_variables.items():
+                args.extend(["--environment-variable", f"{key}={value}"])
         args.append(self.name)
         self.runTargetSubProcess("build-craft", *args)
 

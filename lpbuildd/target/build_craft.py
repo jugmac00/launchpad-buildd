@@ -150,7 +150,111 @@ class BuildCraft(
         )
         self.vcs_update_status(self.buildd_path)
 
+    def setup_cargo_credentials(self):
+        """Set up Cargo credential files if needed."""
+        env_vars = dict(
+            pair.split("=", maxsplit=1) 
+            for pair in self.args.environment_variables
+        )
+        
+        # Check if we have any cargo-related variables
+        cargo_vars = {k: v for k, v in env_vars.items() if k.startswith("CARGO_")}
+        if not cargo_vars:
+            return
+
+        # Create .cargo directory
+        cargo_dir = os.path.join(self.buildd_path, ".cargo")
+        self.backend.run(["mkdir", "-p", cargo_dir])
+
+        # Parse registry URLs and tokens
+        registries = {}
+        for key, value in cargo_vars.items():
+            if key.endswith("_URL"):
+                registry_name = key[6:-4].lower()  # Remove CARGO_ and _URL
+                registries.setdefault(registry_name, {})["url"] = value
+            elif key.endswith("_TOKEN"):
+                registry_name = key[6:-6].lower()  # Remove CARGO_ and _TOKEN
+                registries.setdefault(registry_name, {})["token"] = value
+
+        # Create config.toml manually
+        config_toml = '[registry]\nglobal-credential-providers = ["cargo:token"]\n\n'
+        
+        # Add registry sections
+        for name, reg in registries.items():
+            config_toml += f'[registries.{name}-stable-local]\nindex = "{reg["url"]}"\n\n'
+        
+        # Add source.crates-io section
+        first_registry = next(iter(registries.keys()), "crates-io")
+        config_toml += f'[source.crates-io]\nreplace-with = "{first_registry}"\n'
+
+        with self.backend.open(os.path.join(cargo_dir, "config.toml"), "w") as f:
+            f.write(config_toml)
+
+        # Create credentials.toml manually
+        creds_toml = ""
+        for name, reg in registries.items():
+            if "token" in reg:
+                creds_toml += f'[registries.{name}-stable-local]\ntoken = "Bearer {reg["token"]}"\n\n'
+
+        with self.backend.open(os.path.join(cargo_dir, "credentials.toml"), "w") as f:
+            f.write(creds_toml)
+
+    def setup_maven_credentials(self):
+        """Set up Maven credential files if needed."""
+        env_vars = dict(
+            pair.split("=", maxsplit=1) 
+            for pair in self.args.environment_variables
+        )
+        
+        # Check if we have any maven-related variables
+        maven_vars = {k: v for k, v in env_vars.items() if k.startswith("MAVEN_")}
+        if not maven_vars:
+            return
+
+        # Create .m2 directory
+        m2_dir = os.path.join(self.buildd_path, ".m2")
+        self.backend.run(["mkdir", "-p", m2_dir])
+
+        # Parse repository URLs and credentials
+        repositories = {}
+        for key, value in maven_vars.items():
+            if key.endswith("_URL"):
+                repo_name = key[6:-4].lower()  # Remove MAVEN_ and _URL
+                repositories.setdefault(repo_name, {})["url"] = value
+            elif key.endswith("_USERNAME"):
+                repo_name = key[6:-9].lower()  # Remove MAVEN_ and _USERNAME
+                repositories.setdefault(repo_name, {})["username"] = value
+            elif key.endswith("_PASSWORD"):
+                repo_name = key[6:-9].lower()  # Remove MAVEN_ and _PASSWORD
+                repositories.setdefault(repo_name, {})["password"] = value
+
+        # Create settings.xml
+        settings_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <servers>
+"""
+        for name, repo in repositories.items():
+            if "username" in repo and "password" in repo:
+                settings_xml += f"""        <server>
+            <id>{name}</id>
+            <username>{repo['username']}</username>
+            <password>{repo['password']}</password>
+        </server>
+"""
+        settings_xml += """    </servers>
+</settings>
+"""
+        with self.backend.open(os.path.join(m2_dir, "settings.xml"), "w") as f:
+            f.write(settings_xml)
+
     def build(self):
+        """Running build phase..."""
+        # Set up credential files before building
+        self.setup_cargo_credentials()
+        self.setup_maven_credentials()
+
         logger.info("Running build phase...")
         build_context_path = os.path.join(
             "/home/buildd", self.args.name, self.args.build_path
