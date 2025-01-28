@@ -138,6 +138,21 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
                 ]
             )
 
+        # XXX 2025-01-27 tushar5526: This is a temporary fix to work around
+        # https://bugs.launchpad.net/snapd/+bug/1731519.
+        # Explicitly install a "hello" snap in livefs builds
+        # to workaround the snapd bug where installing a snap
+        # on the first attempt fails due to udev issues. This
+        # fix should be REMOVED after the new release of snapd
+        # in early march.
+        self.backend.run(
+            [
+                "snap",
+                "install",
+                "hello",
+            ]
+        )
+
     def build(self):
         if self.args.locale is not None:
             self.run_build_command(
