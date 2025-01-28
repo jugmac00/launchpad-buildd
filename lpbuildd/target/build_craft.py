@@ -28,6 +28,14 @@ class BuildCraft(
     def add_arguments(cls, parser):
         super().add_arguments(parser)
         parser.add_argument(
+            "--environment-variable",
+            dest="environment_variables",
+            type=str,
+            action="append",
+            default=[],
+            help="environment variable where key and value are separated by =",
+        )
+        parser.add_argument(
             "--channel",
             action=SnapChannelsAction,
             metavar="SNAP=CHANNEL",
@@ -172,9 +180,11 @@ class BuildCraft(
             if key.endswith("_URL"):
                 registry_name = key[6:-4].lower()  # Remove CARGO_ and _URL
                 registries.setdefault(registry_name, {})["url"] = value
-            elif key.endswith("_TOKEN"):
-                registry_name = key[6:-6].lower()  # Remove CARGO_ and _TOKEN
-                registries.setdefault(registry_name, {})["token"] = value
+            elif key.endswith("_READ_AUTH"):
+                registry_name = key[6:-10].lower()  # Remove CARGO_ and _READ_AUTH
+                # Extract token from "user:token"
+                token = value.split(":")[1]
+                registries.setdefault(registry_name, {})["token"] = token
 
         # Create config.toml manually
         config_toml = '[registry]\nglobal-credential-providers = ["cargo:token"]\n\n'
@@ -221,12 +231,12 @@ class BuildCraft(
             if key.endswith("_URL"):
                 repo_name = key[6:-4].lower()  # Remove MAVEN_ and _URL
                 repositories.setdefault(repo_name, {})["url"] = value
-            elif key.endswith("_USERNAME"):
-                repo_name = key[6:-9].lower()  # Remove MAVEN_ and _USERNAME
-                repositories.setdefault(repo_name, {})["username"] = value
-            elif key.endswith("_PASSWORD"):
-                repo_name = key[6:-9].lower()  # Remove MAVEN_ and _PASSWORD
-                repositories.setdefault(repo_name, {})["password"] = value
+            elif key.endswith("_READ_AUTH"):
+                repo_name = key[6:-10].lower()  # Remove MAVEN_ and _READ_AUTH
+                # Use the full "user:token" as username and password
+                user, token = value.split(":")
+                repositories.setdefault(repo_name, {})["username"] = user
+                repositories.setdefault(repo_name, {})["password"] = token
 
         # Create settings.xml
         settings_xml = """<?xml version="1.0" encoding="UTF-8"?>
