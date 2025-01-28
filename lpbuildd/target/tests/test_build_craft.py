@@ -1204,39 +1204,30 @@ class TestBuildCraft(TestCase):
             "--branch",
             "lp:foo",
             "--environment-variable",
-            "CARGO_ARTIFACTORY1_URL=https://canonical.example.com/artifactory/api/cargo/cargo-upstream/index/",
+            "CARGO_REGISTRIES_ARTIFACTORY1_INDEX=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/",
             "--environment-variable",
-            "CARGO_ARTIFACTORY1_READ_AUTH=user:token123",
+            "CARGO_REGISTRIES_ARTIFACTORY1_TOKEN=Bearer token1",
+            "--environment-variable",
+            "CARGO_REGISTRIES_ARTIFACTORY2_INDEX=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
+            "--environment-variable",
+            "CARGO_REGISTRIES_ARTIFACTORY2_TOKEN=Bearer token2",
             "test-image",
         ]
         build_craft = parse_args(args=args).operation
         build_craft.build()
 
-        # Check that .cargo/config.toml was created correctly
-        cargo_config_path = "/home/buildd/test-image/.cargo/config.toml"
-        self.assertTrue(build_craft.backend.path_exists(cargo_config_path))
-        with build_craft.backend.open(cargo_config_path) as f:
-            config_content = f.read()
-            self.assertIn('[registry]\nglobal-credential-providers = ["cargo:token"]', config_content)
-            self.assertIn('[registries.artifactory1-stable-local]\nindex = "https://canonical.example.com/artifactory/api/cargo/cargo-upstream/index/"', config_content)
-            self.assertIn('[source.crates-io]\nreplace-with = "artifactory1"', config_content)
-
-        # Check that .cargo/credentials.toml was created correctly
-        cargo_creds_path = "/home/buildd/test-image/.cargo/credentials.toml"
-        self.assertTrue(build_craft.backend.path_exists(cargo_creds_path))
-        with build_craft.backend.open(cargo_creds_path) as f:
-            creds_content = f.read()
-            self.assertIn('[registries.artifactory1-stable-local]\ntoken = "Bearer token123"', creds_content)
-
-        # Verify the build command was run
+        # Verify the build command was run with correct environment
         self.assertThat(
             build_craft.backend.run.calls,
             MatchesListwise(
                 [
-                    RanCommand(["mkdir", "-p", "/home/buildd/test-image/.cargo"]),
                     RanBuildCommand(
                         ["sourcecraft", "pack", "-v", "--destructive-mode"],
                         cwd="/home/buildd/test-image/.",
+                        CARGO_REGISTRIES_ARTIFACTORY1_INDEX="sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/",
+                        CARGO_REGISTRIES_ARTIFACTORY1_TOKEN="Bearer token1",
+                        CARGO_REGISTRIES_ARTIFACTORY2_INDEX="sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
+                        CARGO_REGISTRIES_ARTIFACTORY2_TOKEN="Bearer token2",
                     ),
                 ]
             ),
@@ -1252,9 +1243,13 @@ class TestBuildCraft(TestCase):
             "--branch",
             "lp:foo",
             "--environment-variable",
-            "MAVEN_ARTIFACTORY1_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream/",
+            "MAVEN_ARTIFACTORY3_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream3/",
             "--environment-variable",
-            "MAVEN_ARTIFACTORY1_READ_AUTH=user:token123",
+            "MAVEN_ARTIFACTORY3_READ_AUTH=user3:token3",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY4_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream4/",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY4_READ_AUTH=user4:token4",
             "test-image",
         ]
         build_craft = parse_args(args=args).operation
@@ -1265,86 +1260,18 @@ class TestBuildCraft(TestCase):
         self.assertTrue(build_craft.backend.path_exists(maven_settings_path))
         with build_craft.backend.open(maven_settings_path) as f:
             settings_content = f.read()
-            self.assertIn('<id>artifactory1</id>', settings_content)
-            self.assertIn('<username>user</username>', settings_content)
-            self.assertIn('<password>token123</password>', settings_content)
+            self.assertIn('<id>artifactory3</id>', settings_content)
+            self.assertIn('<username>user3</username>', settings_content)
+            self.assertIn('<password>token3</password>', settings_content)
+            self.assertIn('<id>artifactory4</id>', settings_content)
+            self.assertIn('<username>user4</username>', settings_content)
+            self.assertIn('<password>token4</password>', settings_content)
 
         # Verify the build command was run
         self.assertThat(
             build_craft.backend.run.calls,
             MatchesListwise(
                 [
-                    RanCommand(["mkdir", "-p", "/home/buildd/test-image/.m2"]),
-                    RanBuildCommand(
-                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
-                        cwd="/home/buildd/test-image/.",
-                    ),
-                ]
-            ),
-        )
-
-    def test_build_with_multiple_credentials(self):
-        args = [
-            "build-craft",
-            "--backend=fake",
-            "--series=xenial",
-            "--arch=amd64",
-            "1",
-            "--branch",
-            "lp:foo",
-            "--environment-variable",
-            "CARGO_ARTIFACTORY1_URL=https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/",
-            "--environment-variable",
-            "CARGO_ARTIFACTORY1_READ_AUTH=user1:token1",
-            "--environment-variable",
-            "CARGO_ARTIFACTORY2_URL=https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
-            "--environment-variable",
-            "CARGO_ARTIFACTORY2_READ_AUTH=user2:token2",
-            "--environment-variable",
-            "MAVEN_ARTIFACTORY1_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream1/",
-            "--environment-variable",
-            "MAVEN_ARTIFACTORY1_READ_AUTH=user3:token3",
-            "--environment-variable",
-            "MAVEN_ARTIFACTORY2_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream2/",
-            "--environment-variable",
-            "MAVEN_ARTIFACTORY2_READ_AUTH=user4:token4",
-            "test-image",
-        ]
-        build_craft = parse_args(args=args).operation
-        build_craft.build()
-
-        # Check Cargo config
-        cargo_config_path = "/home/buildd/test-image/.cargo/config.toml"
-        self.assertTrue(build_craft.backend.path_exists(cargo_config_path))
-        with build_craft.backend.open(cargo_config_path) as f:
-            config_content = f.read()
-            self.assertIn('index = "https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/"', config_content)
-            self.assertIn('index = "https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/"', config_content)
-
-        # Check Cargo credentials
-        cargo_creds_path = "/home/buildd/test-image/.cargo/credentials.toml"
-        self.assertTrue(build_craft.backend.path_exists(cargo_creds_path))
-        with build_craft.backend.open(cargo_creds_path) as f:
-            creds_content = f.read()
-            self.assertIn('token = "Bearer token1"', creds_content)
-            self.assertIn('token = "Bearer token2"', creds_content)
-
-        # Check Maven settings
-        maven_settings_path = "/home/buildd/test-image/.m2/settings.xml"
-        self.assertTrue(build_craft.backend.path_exists(maven_settings_path))
-        with build_craft.backend.open(maven_settings_path) as f:
-            settings_content = f.read()
-            self.assertIn('<username>user3</username>', settings_content)
-            self.assertIn('<password>token3</password>', settings_content)
-            self.assertIn('<username>user4</username>', settings_content)
-            self.assertIn('<password>token4</password>', settings_content)
-
-        # Verify the build commands were run
-        self.assertThat(
-            build_craft.backend.run.calls,
-            MatchesListwise(
-                [
-                    RanCommand(["mkdir", "-p", "/home/buildd/test-image/.cargo"]),
                     RanCommand(["mkdir", "-p", "/home/buildd/test-image/.m2"]),
                     RanBuildCommand(
                         ["sourcecraft", "pack", "-v", "--destructive-mode"],

@@ -159,55 +159,17 @@ class BuildCraft(
         self.vcs_update_status(self.buildd_path)
 
     def setup_cargo_credentials(self):
-        """Set up Cargo credential files if needed."""
+        """Set up Cargo credentials through environment variables."""
         env_vars = dict(
             pair.split("=", maxsplit=1) 
             for pair in self.args.environment_variables
         )
         
-        # Check if we have any cargo-related variables
-        cargo_vars = {k: v for k, v in env_vars.items() if k.startswith("CARGO_")}
-        if not cargo_vars:
-            return
-
-        # Create .cargo directory
-        cargo_dir = os.path.join(self.buildd_path, ".cargo")
-        self.backend.run(["mkdir", "-p", cargo_dir])
-
-        # Parse registry URLs and tokens
-        registries = {}
-        for key, value in cargo_vars.items():
-            if key.endswith("_URL"):
-                registry_name = key[6:-4].lower()  # Remove CARGO_ and _URL
-                registries.setdefault(registry_name, {})["url"] = value
-            elif key.endswith("_READ_AUTH"):
-                registry_name = key[6:-10].lower()  # Remove CARGO_ and _READ_AUTH
-                # Extract token from "user:token"
-                token = value.split(":")[1]
-                registries.setdefault(registry_name, {})["token"] = token
-
-        # Create config.toml manually
-        config_toml = '[registry]\nglobal-credential-providers = ["cargo:token"]\n\n'
-        
-        # Add registry sections
-        for name, reg in registries.items():
-            config_toml += f'[registries.{name}-stable-local]\nindex = "{reg["url"]}"\n\n'
-        
-        # Add source.crates-io section
-        first_registry = next(iter(registries.keys()), "crates-io")
-        config_toml += f'[source.crates-io]\nreplace-with = "{first_registry}"\n'
-
-        with self.backend.open(os.path.join(cargo_dir, "config.toml"), "w") as f:
-            f.write(config_toml)
-
-        # Create credentials.toml manually
-        creds_toml = ""
-        for name, reg in registries.items():
-            if "token" in reg:
-                creds_toml += f'[registries.{name}-stable-local]\ntoken = "Bearer {reg["token"]}"\n\n'
-
-        with self.backend.open(os.path.join(cargo_dir, "credentials.toml"), "w") as f:
-            f.write(creds_toml)
+        # Return only CARGO_REGISTRIES_* variables
+        return {
+            k: v for k, v in env_vars.items() 
+            if k.startswith("CARGO_REGISTRIES_")
+        }
 
     def setup_maven_credentials(self):
         """Set up Maven credential files if needed."""
@@ -262,7 +224,7 @@ class BuildCraft(
     def build(self):
         """Running build phase..."""
         # Set up credential files before building
-        self.setup_cargo_credentials()
+        cargo_env = self.setup_cargo_credentials()
         self.setup_maven_credentials()
 
         logger.info("Running build phase...")
@@ -274,6 +236,8 @@ class BuildCraft(
             proxy_url=self.args.proxy_url,
             use_fetch_service=self.args.use_fetch_service,
         )
+        if cargo_env:
+            env.update(cargo_env)
         if self.args.launchpad_instance:
             env["LAUNCHPAD_INSTANCE"] = self.args.launchpad_instance
         if self.args.launchpad_server_url:
