@@ -18,6 +18,7 @@ from lpbuildd.target.tests.matchers import (
     RanAptGet,
     RanBuildCommand,
     RanCommand,
+    RanSnap,
 )
 from lpbuildd.tests.fakebuilder import FakeMethod
 
@@ -38,7 +39,8 @@ class TestBuildLiveFS(TestCase):
             MatchesListwise(
                 [
                     RanAptGet("install", "livecd-rootfs"),
-                ]
+                    RanSnap("install", "hello"),
+                ],
             ),
         )
 
@@ -63,6 +65,7 @@ class TestBuildLiveFS(TestCase):
                         "install",
                         "ubuntu-defaults-builder",
                     ),
+                    RanSnap("install", "hello"),
                 ]
             ),
         )
@@ -110,6 +113,7 @@ class TestBuildLiveFS(TestCase):
                     RanCommand(
                         ["snap", "set", "core", "proxy.store=store-id"]
                     ),
+                    RanSnap("install", "hello"),
                 ]
             ),
         )
