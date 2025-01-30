@@ -1204,13 +1204,15 @@ class TestBuildCraft(TestCase):
             "--branch",
             "lp:foo",
             "--environment-variable",
-            "CARGO_REGISTRIES_ARTIFACTORY1_INDEX=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/",
+            "CARGO_ARTIFACTORY1_URL=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/",
             "--environment-variable",
-            "CARGO_REGISTRIES_ARTIFACTORY1_TOKEN=Bearer token1",
+            "CARGO_ARTIFACTORY1_READ_AUTH=user:token1",
             "--environment-variable",
-            "CARGO_REGISTRIES_ARTIFACTORY2_INDEX=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
+            "CARGO_ARTIFACTORY2_URL=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
             "--environment-variable",
-            "CARGO_REGISTRIES_ARTIFACTORY2_TOKEN=Bearer token2",
+            "CARGO_ARTIFACTORY2_READ_AUTH=user:token2",
+            "--environment-variable",
+            "CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS=cargo:token",
             "test-image",
         ]
         build_craft = parse_args(args=args).operation
@@ -1228,6 +1230,7 @@ class TestBuildCraft(TestCase):
                         CARGO_REGISTRIES_ARTIFACTORY1_TOKEN="Bearer token1",
                         CARGO_REGISTRIES_ARTIFACTORY2_INDEX="sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
                         CARGO_REGISTRIES_ARTIFACTORY2_TOKEN="Bearer token2",
+                        CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS="cargo:token",
                     ),
                 ]
             ),

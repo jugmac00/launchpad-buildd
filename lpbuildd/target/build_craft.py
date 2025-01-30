@@ -165,11 +165,29 @@ class BuildCraft(
             for pair in self.args.environment_variables
         )
         
-        # Return only CARGO_REGISTRIES_* variables
-        return {
-            k: v for k, v in env_vars.items() 
-            if k.startswith("CARGO_REGISTRIES_")
-        }
+        # Check if we have any cargo-related variables
+        cargo_vars = {}
+        
+        # Process CARGO_* variables into CARGO_REGISTRIES_* format
+        for key, value in env_vars.items():
+            if not key.startswith("CARGO_"):
+                continue
+            
+            # Extract name (e.g., CARGO_ARTIFACTORY1_URL -> ARTIFACTORY1)
+            name = key[len("CARGO_"):].split("_")[0]
+            
+            if key.endswith("_URL"):
+                cargo_vars[f"CARGO_REGISTRIES_{name}_INDEX"] = value
+            elif key.endswith("_READ_AUTH"):
+                # Extract token from user:token format
+                token = value.split(":", 1)[1]
+                cargo_vars[f"CARGO_REGISTRIES_{name}_TOKEN"] = f"Bearer {token}"
+
+        if cargo_vars:
+            # If we have any registry variables, add the credential provider
+            cargo_vars["CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS"] = "cargo:token"
+        
+        return cargo_vars
 
     def setup_maven_credentials(self):
         """Set up Maven credential files if needed."""
