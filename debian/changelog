@@ -1,6 +1,12 @@
 launchpad-buildd (250) UNRELEASED; urgency=medium
 
+  [ Colin Watson ]
   * Stop using twisted.internet.defer.returnValue.
+
+  [ Tushar Gupta ]
+  * temporarily install a "hello" snap while bootstrapping setup for
+    livefs builds. This fix is a workaround of a snapd udev bug and will be
+    removed after the new release of snapd
 
  -- Colin Watson <cjwatson@ubuntu.com>  Thu, 23 Jan 2025 17:44:18 +0000
 
