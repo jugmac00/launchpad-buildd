@@ -213,7 +213,6 @@ class BuildCraft(
                 repositories.setdefault(repo_name, {})["url"] = value
             elif key.endswith("_READ_AUTH"):
                 repo_name = key[6:-10].lower()  # Remove MAVEN_ and _READ_AUTH
-                # Use the full "user:token" as username and password
                 user, token = value.split(":")
                 repositories.setdefault(repo_name, {})["username"] = user
                 repositories.setdefault(repo_name, {})["password"] = token
@@ -225,6 +224,7 @@ class BuildCraft(
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <servers>
 """
+        # Add server configurations
         for name, repo in repositories.items():
             if "username" in repo and "password" in repo:
                 settings_xml += f"""        <server>
@@ -232,8 +232,75 @@ class BuildCraft(
             <username>{repo['username']}</username>
             <password>{repo['password']}</password>
         </server>
+        <server>
+            <id>{name}-snapshots</id>
+            <username>{repo['username']}</username>
+            <password>{repo['password']}</password>
+        </server>
 """
+
         settings_xml += """    </servers>
+    <profiles>
+"""
+        # Add profile configurations
+        for name, repo in repositories.items():
+            if "url" in repo:
+                settings_xml += f"""        <profile>
+            <id>{name}</id>
+            <repositories>
+                <repository>
+                    <id>{name}</id>
+                    <name>{name}</name>
+                    <url>{repo['url']}</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>{name}-snapshots</id>
+                    <name>{name}</name>
+                    <url>{repo['url']}</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>{name}</id>
+                    <name>{name}</name>
+                    <url>{repo['url']}</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </pluginRepository>
+                <pluginRepository>
+                    <id>{name}-snapshots</id>
+                    <name>{name}</name>
+                    <url>{repo['url']}</url>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+"""
+
+        settings_xml += """    </profiles>
+    <mirrors>
+"""
+        # Add mirror configurations
+        for name, repo in repositories.items():
+            if "url" in repo:
+                settings_xml += f"""        <mirror>
+            <id>{name}</id>
+            <name>Maven Repository Manager running on {name}</name>
+            <url>{repo['url']}</url>
+            <mirrorOf>*</mirrorOf>
+        </mirror>
+"""
+
+        settings_xml += """    </mirrors>
 </settings>
 """
         with self.backend.open(os.path.join(m2_dir, "settings.xml"), "w") as f:
