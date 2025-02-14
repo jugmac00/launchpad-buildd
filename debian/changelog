@@ -1,3 +1,11 @@
+launchpad-buildd (252) UNRELEASED; urgency=medium
+
+  * Pin docker.io version to 20.x for OCI builds after recent SRU update
+    bumped the version to 26.x. This is placed temporarily until we add
+    support for OCI compliant layout added in 26.x
+
+ -- Tushar Gupta <tushar.gupta@canonical.com>  Thu, 27 Feb 2025 10:20:14 +0530
+
 launchpad-buildd (251) noble; urgency=medium
 
   * Ignore failures while trying to install the hello snap for the snapd
