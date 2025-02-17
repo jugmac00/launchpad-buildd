@@ -159,13 +159,24 @@ class BuildCraft(
         self.vcs_update_status(self.buildd_path)
 
     def setup_cargo_credentials(self):
-        """Set up Cargo credentials through environment variables."""
+        """Set up Cargo credentials through environment variables.
+        
+        Transforms input environment variables from:
+            CARGO_ARTIFACTORY1_URL=https://...
+            CARGO_ARTIFACTORY1_READ_AUTH=user:token123
+        
+        Into Cargo registry environment variables:
+            CARGO_REGISTRIES_ARTIFACTORY1_INDEX=https://...
+            CARGO_REGISTRIES_ARTIFACTORY1_TOKEN=Bearer token123
+            CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS=cargo:token
+        
+        This allows Cargo to authenticate with private registries while building.
+        """
         env_vars = dict(
             pair.split("=", maxsplit=1) 
             for pair in self.args.environment_variables
         )
         
-        # Check if we have any cargo-related variables
         cargo_vars = {}
         
         # Process CARGO_* variables into CARGO_REGISTRIES_* format
@@ -177,6 +188,7 @@ class BuildCraft(
             name = key[len("CARGO_"):].split("_")[0]
             
             if key.endswith("_URL"):
+                # Convert URL to registry index
                 cargo_vars[f"CARGO_REGISTRIES_{name}_INDEX"] = value
             elif key.endswith("_READ_AUTH"):
                 # Extract token from user:token format
@@ -184,28 +196,53 @@ class BuildCraft(
                 cargo_vars[f"CARGO_REGISTRIES_{name}_TOKEN"] = f"Bearer {token}"
 
         if cargo_vars:
-            # If we have any registry variables, add the credential provider
+            # Tell Cargo to use token-based authentication from environment
             cargo_vars["CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS"] = "cargo:token"
         
         return cargo_vars
 
     def setup_maven_credentials(self):
-        """Set up Maven credential files if needed."""
+        """Set up Maven credential files if needed.
+        
+        Creates a Maven settings.xml file with:
+        1. Server configurations for authentication
+           - One for release repository
+           - One for snapshot repository
+           - Uses credentials from MAVEN_*_READ_AUTH variables
+        
+        2. Profile configurations for each repository
+           - Defines both release and snapshot repositories
+           - Configures plugin repositories
+           - Controls snapshot behavior
+        
+        3. Mirror configurations
+           - Redirects all repository requests through Artifactory
+           - Ensures dependencies are fetched through our proxy
+        
+        The resulting settings.xml allows Maven to:
+        - Authenticate with private repositories
+        - Use the correct URLs for artifacts
+        - Handle both release and snapshot dependencies
+        - Use plugin repositories with authentication
+
+        It is up to the user to activate the profile they want to use
+        in the command line (this is done inside sourcecraft.yaml).
+        """
         env_vars = dict(
             pair.split("=", maxsplit=1) 
             for pair in self.args.environment_variables
         )
         
-        # Check if we have any maven-related variables
+        # Extract Maven-specific variables
         maven_vars = {k: v for k, v in env_vars.items() if k.startswith("MAVEN_")}
         if not maven_vars:
             return
 
-        # Create .m2 directory
+        # Create .m2 directory for Maven configuration
         m2_dir = os.path.join(self.buildd_path, ".m2")
         self.backend.run(["mkdir", "-p", m2_dir])
 
-        # Parse repository URLs and credentials
+        # Parse repository URLs and credentials from environment variables
         repositories = {}
         for key, value in maven_vars.items():
             if key.endswith("_URL"):
@@ -217,14 +254,14 @@ class BuildCraft(
                 repositories.setdefault(repo_name, {})["username"] = user
                 repositories.setdefault(repo_name, {})["password"] = token
 
-        # Create settings.xml
+        # Create settings.xml with server configurations
         settings_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
     <servers>
 """
-        # Add server configurations
+        # Add authentication for both release and snapshot repositories
         for name, repo in repositories.items():
             if "username" in repo and "password" in repo:
                 settings_xml += f"""        <server>
@@ -239,12 +276,13 @@ class BuildCraft(
         </server>
 """
 
+        # Add profile configurations for repository definitions
         settings_xml += """    </servers>
     <profiles>
 """
-        # Add profile configurations
         for name, repo in repositories.items():
             if "url" in repo:
+                # Each profile contains both release and snapshot repositories
                 settings_xml += f"""        <profile>
             <id>{name}</id>
             <repositories>
@@ -286,10 +324,10 @@ class BuildCraft(
         </profile>
 """
 
+        # Add mirror configurations to ensure all requests go through Artifactory
         settings_xml += """    </profiles>
     <mirrors>
 """
-        # Add mirror configurations
         for name, repo in repositories.items():
             if "url" in repo:
                 settings_xml += f"""        <mirror>
