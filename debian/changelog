@@ -1,3 +1,11 @@
+launchpad-buildd (251) UNRELEASED; urgency=medium
+
+  * Ignore failures while trying to install the hello snap for the snapd
+    udev issue workaround for Noble.
+    
+
+ -- Tushar Gupta <tushar.gupta@canonical.com>  Thu, 20 Feb 2025 11:03:22 +0530
+
 launchpad-buildd (250) noble; urgency=medium
 
   [ Colin Watson ]

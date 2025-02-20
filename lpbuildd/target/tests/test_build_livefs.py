@@ -486,6 +486,29 @@ class TestBuildLiveFS(TestCase):
         build_livefs.backend.run = FailInstall()
         self.assertEqual(RETCODE_FAILURE_INSTALL, build_livefs.run())
 
+    def test_hello_snap_install_failures_are_ignored(self):
+        class FailInstall(FakeMethod):
+            def __call__(self, run_args, *args, **kwargs):
+                super().__call__(run_args, *args, **kwargs)
+                if run_args == ["snap", "install", "hello"]:
+                    raise subprocess.CalledProcessError(1, run_args)
+
+        logger = self.useFixture(FakeLogger())
+        args = [
+            "buildlivefs",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--project=ubuntu",
+        ]
+        build_livefs = parse_args(args=args).operation
+        build_livefs.backend.run = FailInstall()
+        self.assertEqual(0, build_livefs.run())
+        self.assertTrue(
+            'Unable to install the "hello" snap with error:' in logger.output
+        )
+
     def test_run_build_fails(self):
         class FailBuild(FakeMethod):
             def __call__(self, run_args, *args, **kwargs):

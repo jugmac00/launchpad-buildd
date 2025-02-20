@@ -3,6 +3,7 @@
 
 import logging
 import os
+import subprocess
 from collections import OrderedDict
 
 from lpbuildd.target.operation import Operation
@@ -145,13 +146,20 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
         # on the first attempt fails due to udev issues. This
         # fix should be REMOVED after the new release of snapd
         # in early march.
-        self.backend.run(
-            [
-                "snap",
-                "install",
-                "hello",
-            ]
-        )
+        try:
+            self.backend.run(
+                [
+                    "snap",
+                    "install",
+                    "hello",
+                ]
+            )
+        except subprocess.CalledProcessError as e:
+            logger.info(
+                'Unable to install the "hello" snap with error: %s'
+                " Ignoring the failure and proceeding with the next"
+                " steps!" % e
+            )
 
     def build(self):
         if self.args.locale is not None:
