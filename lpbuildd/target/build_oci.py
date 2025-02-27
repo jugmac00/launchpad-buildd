@@ -78,8 +78,16 @@ class BuildOCI(
             # Add any proxy settings that are needed
             self._add_docker_engine_proxy_settings()
         deps.extend(self.vcs_deps)
-        deps.extend(["docker.io"])
         self.backend.run(["apt-get", "-y", "install"] + deps)
+        # XXX tushar5526 2025-02-14: Pin docker.io version to 20.x for OCI
+        # builds after recent SRU update that bumped the version to 26.x.
+        # This is placed temporarily until we add support for OCI compliant
+        # layout added in 26.x
+        # For more info: https://bugs.launchpad.net/launchpad/+bug/2098106
+        self.backend.run(
+            ["apt-get", "-y", "install", "docker.io=20.10.21-0ubuntu1~20.04.2"]
+        )
+        self.backend.run(["apt-mark", "hold", "docker.io"])
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         self.backend.run(["systemctl", "restart", "docker"])
