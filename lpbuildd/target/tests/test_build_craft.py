@@ -1193,3 +1193,177 @@ class TestBuildCraft(TestCase):
             "/etc/hosts", os.path.join(build_craft.buildd_path, "build")
         )
         self.assertRaises(InvalidBuildFilePath, build_craft.build)
+
+    def test_build_with_cargo_credentials(self):
+        args = [
+            "build-craft",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "--environment-variable",
+            "CARGO_ARTIFACTORY1_URL=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/",
+            "--environment-variable",
+            "CARGO_ARTIFACTORY1_READ_AUTH=user:token1",
+            "--environment-variable",
+            "CARGO_ARTIFACTORY2_URL=sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
+            "--environment-variable",
+            "CARGO_ARTIFACTORY2_READ_AUTH=user:token2",
+            "--environment-variable",
+            "CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS=cargo:token",
+            "test-image",
+        ]
+        build_craft = parse_args(args=args).operation
+        build_craft.build()
+
+        # Verify the build command was run with correct environment
+        self.assertThat(
+            build_craft.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                        CARGO_REGISTRIES_ARTIFACTORY1_INDEX="sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream1/index/",
+                        CARGO_REGISTRIES_ARTIFACTORY1_TOKEN="Bearer token1",
+                        CARGO_REGISTRIES_ARTIFACTORY2_INDEX="sparse+https://canonical.example.com/artifactory/api/cargo/cargo-upstream2/index/",
+                        CARGO_REGISTRIES_ARTIFACTORY2_TOKEN="Bearer token2",
+                        CARGO_REGISTRY_GLOBAL_CREDENTIAL_PROVIDERS="cargo:token",
+                    ),
+                ]
+            ),
+        )
+
+    def test_build_with_maven_credentials(self):
+        args = [
+            "build-craft",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream/",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY_READ_AUTH=user:token123",
+            "test-image",
+        ]
+        build_craft = parse_args(args=args).operation
+        build_craft.build()
+
+        # Check that .m2/settings.xml was created correctly
+        maven_settings_path = "/home/buildd/test-image/.m2/settings.xml"
+        self.assertTrue(build_craft.backend.path_exists(maven_settings_path))
+        with build_craft.backend.open(maven_settings_path) as f:
+            settings_content = f.read()
+            
+            # Check server configurations
+            self.assertIn('        <server>', settings_content)
+            self.assertIn('            <id>artifactory</id>', settings_content)
+            self.assertIn('            <username>user</username>', settings_content)
+            self.assertIn('            <password>token123</password>', settings_content)
+            self.assertIn('            <id>artifactory-snapshots</id>', settings_content)
+            
+            # Check profile configuration
+            self.assertIn('        <profile>', settings_content)
+            self.assertIn('            <id>artifactory</id>', settings_content)
+            
+            # Check repositories
+            self.assertIn('                <repository>', settings_content)
+            self.assertIn('                    <url>https://canonical.example.com/artifactory/api/maven/maven-upstream/</url>', settings_content)
+            self.assertIn('                        <enabled>false</enabled>', settings_content)
+            self.assertIn('                        <enabled>true</enabled>', settings_content)
+            
+            # Check plugin repositories
+            self.assertIn('                <pluginRepository>', settings_content)
+            
+            # Check mirrors
+            self.assertIn('        <mirror>', settings_content)
+            self.assertIn('            <mirrorOf>*</mirrorOf>', settings_content)
+            
+            # Verify activeProfiles section is not present
+            self.assertNotIn('<activeProfiles>', settings_content)
+
+        # Verify the build command was run
+        self.assertThat(
+            build_craft.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanCommand(["mkdir", "-p", "/home/buildd/test-image/.m2"]),
+                    RanBuildCommand(
+                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                    ),
+                ]
+            ),
+        )
+
+    def test_build_with_multiple_maven_credentials(self):
+        args = [
+            "build-craft",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY1_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream1/",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY1_READ_AUTH=user1:token1",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY2_URL=https://canonical.example.com/artifactory/api/maven/maven-upstream2/",
+            "--environment-variable",
+            "MAVEN_ARTIFACTORY2_READ_AUTH=user2:token2",
+            "test-image",
+        ]
+        build_craft = parse_args(args=args).operation
+        build_craft.build()
+
+        # Check that .m2/settings.xml was created correctly
+        maven_settings_path = "/home/buildd/test-image/.m2/settings.xml"
+        self.assertTrue(build_craft.backend.path_exists(maven_settings_path))
+        with build_craft.backend.open(maven_settings_path) as f:
+            settings_content = f.read()
+            
+            # Check server configurations for both repositories
+            for i, creds in enumerate([("user1", "token1"), ("user2", "token2")], 1):
+                user, token = creds
+                repo_name = f"artifactory{i}"
+                
+                # Check servers with exact indentation
+                self.assertIn(f'            <id>{repo_name}</id>', settings_content)
+                self.assertIn(f'            <username>{user}</username>', settings_content)
+                self.assertIn(f'            <password>{token}</password>', settings_content)
+                self.assertIn(f'            <id>{repo_name}-snapshots</id>', settings_content)
+                
+                # Check profiles with exact indentation
+                self.assertIn(f'            <id>{repo_name}</id>', settings_content)
+                
+                # Check repositories with exact indentation
+                url = f'https://canonical.example.com/artifactory/api/maven/maven-upstream{i}/'
+                self.assertIn(f'                    <url>{url}</url>', settings_content)
+                
+                # Check mirrors with exact indentation
+                self.assertIn(f'            <id>{repo_name}</id>', settings_content)
+                self.assertIn('            <mirrorOf>*</mirrorOf>', settings_content)
+            
+            # Verify activeProfiles section is not present
+            self.assertNotIn('<activeProfiles>', settings_content)
+
+        # Verify the build command was run
+        self.assertThat(
+            build_craft.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanCommand(["mkdir", "-p", "/home/buildd/test-image/.m2"]),
+                    RanBuildCommand(
+                        ["sourcecraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                    ),
+                ]
+            ),
+        )
