@@ -63,7 +63,7 @@ Releasing to production
 
 #. Create a new release branch, e.g. ``release-213``, based on master.
 
-#. Run ``DEBEMAIL="<email address>" DEBFULLNAME="<name>" dch -rD focal``.
+#. Run ``DEBEMAIL="<email address>" DEBFULLNAME="<name>" dch -rD noble``.
    The later recipe build will prepend the correct preamble for each Ubuntu release.
 
 #. Create a commit with a title like ``releasing package launchpad-buildd version 213``,
