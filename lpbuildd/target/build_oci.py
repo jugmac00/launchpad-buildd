@@ -110,7 +110,7 @@ class BuildOCI(
         logger.info("Running build phase...")
         args = ["docker", "build", "--no-cache"]
         if self.args.proxy_url:
-            for var in ("http_proxy", "https_proxy"):
+            for var in ("http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"):
                 args.extend(["--build-arg", f"{var}={self.args.proxy_url}"])
         args.extend(["--tag", self.args.name])
         if self.args.build_file is not None:

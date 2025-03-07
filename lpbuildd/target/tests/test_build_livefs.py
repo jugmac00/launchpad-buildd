@@ -391,6 +391,7 @@ class TestBuildLiveFS(TestCase):
             "PROJECT": "ubuntu-cpc",
             "ARCH": "amd64",
             "http_proxy": proxy,
+            "HTTP_PROXY": proxy,
             "LB_APT_HTTP_PROXY": proxy,
         }
         args = [

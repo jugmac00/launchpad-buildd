@@ -750,6 +750,8 @@ class TestBuildRock(TestCase):
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
         }
@@ -811,7 +813,9 @@ class TestBuildRock(TestCase):
         build_rock.repo()
         env = {
             "http_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
             "CARGO_HTTP_CAINFO": (
@@ -973,6 +977,8 @@ class TestBuildRock(TestCase):
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
         }
@@ -1010,7 +1016,9 @@ class TestBuildRock(TestCase):
         build_rock.build()
         env = {
             "http_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
             "CARGO_HTTP_CAINFO": (

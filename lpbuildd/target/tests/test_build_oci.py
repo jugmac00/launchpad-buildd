@@ -435,6 +435,8 @@ class TestBuildOCI(TestCase):
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
         }
@@ -693,7 +695,11 @@ class TestBuildOCI(TestCase):
                             "--build-arg",
                             "http_proxy=http://proxy.example:3128/",
                             "--build-arg",
+                            "HTTP_PROXY=http://proxy.example:3128/",
+                            "--build-arg",
                             "https_proxy=http://proxy.example:3128/",
+                            "--build-arg",
+                            "HTTPS_PROXY=http://proxy.example:3128/",
                             "--tag",
                             "test-image",
                             "/home/buildd/test-image/.",

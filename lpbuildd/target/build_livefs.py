@@ -227,6 +227,7 @@ class BuildLiveFS(SnapStoreOperationMixin, Operation):
             if self.args.http_proxy:
                 proxy_dict = {
                     "http_proxy": self.args.http_proxy,
+                    "HTTP_PROXY": self.args.http_proxy,
                     "LB_APT_HTTP_PROXY": self.args.http_proxy,
                 }
                 lb_env.update(proxy_dict)

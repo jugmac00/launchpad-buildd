@@ -119,6 +119,8 @@ class BuilderProxyOperationMixin:
         if proxy_url:
             full_env["http_proxy"] = self.args.proxy_url
             full_env["https_proxy"] = self.args.proxy_url
+            full_env["HTTP_PROXY"] = self.args.proxy_url
+            full_env["HTTPS_PROXY"] = self.args.proxy_url
             full_env["GIT_PROXY_COMMAND"] = "/usr/local/bin/lpbuildd-git-proxy"
             # Avoid needing to keep track of snap store CDNs in proxy
             # configuration.
