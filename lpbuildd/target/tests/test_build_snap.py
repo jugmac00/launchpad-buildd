@@ -689,6 +689,8 @@ class TestBuildSnap(TestCase):
         env = {
             "http_proxy": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
         }
@@ -750,7 +752,9 @@ class TestBuildSnap(TestCase):
         build_snap.repo()
         env = {
             "http_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
             "CARGO_HTTP_CAINFO": (
@@ -869,7 +873,9 @@ class TestBuildSnap(TestCase):
             ),
             "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
             "http_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
             "LAUNCHPAD_INSTANCE": "devel",
@@ -912,7 +918,9 @@ class TestBuildSnap(TestCase):
             ),
             "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
             "http_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
         }
@@ -961,7 +969,9 @@ class TestBuildSnap(TestCase):
             ),
             "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
             "http_proxy": "http://localhost:8222/",
+            "HTTP_PROXY": "http://localhost:8222/",
             "https_proxy": "http://localhost:8222/",
+            "HTTPS_PROXY": "http://localhost:8222/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
         }
@@ -1163,7 +1173,9 @@ class TestBuildSnap(TestCase):
             ),
             "SNAPCRAFT_BUILD_ENVIRONMENT": "host",
             "http_proxy": "http://proxy.example:3128/",
+            "HTTP_PROXY": "http://proxy.example:3128/",
             "https_proxy": "http://proxy.example:3128/",
+            "HTTPS_PROXY": "http://proxy.example:3128/",
             "GIT_PROXY_COMMAND": "/usr/local/bin/lpbuildd-git-proxy",
             "SNAPPY_STORE_NO_CDN": "1",
         }
