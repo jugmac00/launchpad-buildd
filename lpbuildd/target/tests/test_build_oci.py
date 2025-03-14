@@ -97,10 +97,7 @@ class TestBuildOCI(TestCase):
             MatchesListwise(
                 [
                     RanAptGet("install", "bzr"),
-                    RanAptGet(
-                        "install", "docker.io=20.10.21-0ubuntu1~20.04.2"
-                    ),
-                    RanCommand(["apt-mark", "hold", "docker.io"]),
+                    RanAptGet("install", "docker.io"),
                     RanCommand(["systemctl", "restart", "docker"]),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
@@ -125,10 +122,7 @@ class TestBuildOCI(TestCase):
             MatchesListwise(
                 [
                     RanAptGet("install", "git"),
-                    RanAptGet(
-                        "install", "docker.io=20.10.21-0ubuntu1~20.04.2"
-                    ),
-                    RanCommand(["apt-mark", "hold", "docker.io"]),
+                    RanAptGet("install", "docker.io"),
                     RanCommand(["systemctl", "restart", "docker"]),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
@@ -214,10 +208,7 @@ class TestBuildOCI(TestCase):
                         ["mkdir", "-p", "/etc/systemd/system/docker.service.d"]
                     ),
                     RanAptGet("install", "python3", "socat", "git"),
-                    RanAptGet(
-                        "install", "docker.io=20.10.21-0ubuntu1~20.04.2"
-                    ),
-                    RanCommand(["apt-mark", "hold", "docker.io"]),
+                    RanAptGet("install", "docker.io"),
                     RanCommand(["systemctl", "restart", "docker"]),
                     RanCommand(["mkdir", "-p", "/home/buildd"]),
                 ]
@@ -723,14 +714,7 @@ class TestBuildOCI(TestCase):
             build_oci.backend.run.calls,
             MatchesAll(
                 AnyMatch(RanAptGet("install", "bzr")),
-                AnyMatch(
-                    RanAptGet("install", "docker.io=20.10.21-0ubuntu1~20.04.2")
-                ),
-                AnyMatch(
-                    RanCommand(
-                        ["apt-mark", "hold", "docker.io"],
-                    )
-                ),
+                AnyMatch(RanAptGet("install", "docker.io")),
                 AnyMatch(
                     RanBuildCommand(
                         ["bzr", "branch", "lp:foo", "test-image"],
