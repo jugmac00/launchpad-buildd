@@ -79,15 +79,25 @@ class BuildOCI(
             self._add_docker_engine_proxy_settings()
         deps.extend(self.vcs_deps)
         self.backend.run(["apt-get", "-y", "install"] + deps)
-        # XXX tushar5526 2025-02-14: Pin docker.io version to 20.x for OCI
-        # builds after recent SRU update that bumped the version to 26.x.
-        # This is placed temporarily until we add support for OCI compliant
-        # layout added in 26.x
+        # XXX jchittum: pin docker.io to last known working version
+        # provided by the Ubuntu Server team via a PPA
+        # the PPA version contains an epoch, and will sort higher in version
+        # to the archive. To revert, simply delete the addition of the PPA
+        # The PPA only contains docker.io.
         # For more info: https://bugs.launchpad.net/launchpad/+bug/2098106
+        # software-properties-common required for add-apt-repository
+        # we do not want to handle the entire process ourselves
+        # and assuming a buildd base for the lxd container, it will not 
+        # have software-properties-common installed by default
         self.backend.run(
-            ["apt-get", "-y", "install", "docker.io=20.10.21-0ubuntu1~20.04.2"]
+            ["apt-get", "-y", "install", "software-properties-common"]
         )
-        self.backend.run(["apt-mark", "hold", "docker.io"])
+        self.backend.run(
+            ["add-apt-repository", "-y", "ppa:canonical-server/lp2098106-docker-rollback"]
+        )
+        self.backend.run(
+            ["apt-get", "-y", "install", "docker.io"]
+        )
         if self.backend.supports_snapd:
             self.snap_store_set_proxy()
         self.backend.run(["systemctl", "restart", "docker"])
