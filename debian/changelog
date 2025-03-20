@@ -1,3 +1,16 @@
+launchpad-buildd (254) UNRELEASED; urgency=medium
+  
+  [ John Chittum ]
+  * fix: pin docker.io to server team PPA
+    
+    Previous chosen version for pinning docker lacked a riscv build due to
+    riscv being released after focal release. The Ubuntu Server team has
+    provided a PPA using the source from the archive for v24. The version
+    contains an epoch, and will always sort higher than the archive.
+    Reverting this commit is sufficient to remove the PPA. LP: #2098106
+
+ -- Tushar Gupta <tushar.gupta@canonical.com>  Thu, 20 Mar 2025 17:26:30 +0530
+
 launchpad-buildd (253) noble; urgency=medium
 
   [ Jon Seager ]
