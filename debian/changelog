@@ -1,4 +1,4 @@
-launchpad-buildd (254) UNRELEASED; urgency=medium
+launchpad-buildd (254) noble; urgency=medium
   
   [ John Chittum ]
   * fix: pin docker.io to server team PPA
@@ -9,7 +9,7 @@ launchpad-buildd (254) UNRELEASED; urgency=medium
     contains an epoch, and will always sort higher than the archive.
     Reverting this commit is sufficient to remove the PPA. LP: #2098106
 
- -- Tushar Gupta <tushar.gupta@canonical.com>  Thu, 20 Mar 2025 17:26:30 +0530
+ -- Tushar Gupta <tushar.gupta@canonical.com>  Thu, 20 Mar 2025 17:30:19 +0530
 
 launchpad-buildd (253) noble; urgency=medium
 
