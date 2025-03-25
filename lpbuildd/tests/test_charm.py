@@ -244,6 +244,74 @@ class TestCharmBuildManagerIteration(TestCase):
         )
         self.assertFalse(self.builder.wasCalled("buildFail"))
 
+    @defer.inlineCallbacks
+    def test_iterate_craft_platform(self):
+        # Test that craft_platform is correctly passed through.
+        args = {
+            "git_repository": "https://git.launchpad.dev/~example/+git/charm",
+            "craft_platform": "ubuntu-22.04-amd64",
+        }
+        expected_options = [
+            "--git-repository",
+            "https://git.launchpad.dev/~example/+git/charm",
+            "--craft-platform",
+            "ubuntu-22.04-amd64",
+        ]
+        yield self.startBuild(args, expected_options)
+
+        log_path = os.path.join(self.buildmanager._cachepath, "buildlog")
+        with open(log_path, "w") as log:
+            log.write("Build log for craft platform name test.")
+
+        self.buildmanager.backend.add_file(
+            "/home/buildd/test-charm/test-charm_1_all.charm", b"I am charming."
+        )
+
+        # After building the package, reap processes.
+        yield self.buildmanager.iterate(0)
+        expected_command = [
+            "sharepath/bin/in-target",
+            "in-target",
+            "scan-for-processes",
+            "--backend=lxd",
+            "--series=xenial",
+            "--arch=i386",
+            self.buildid,
+        ]
+
+        self.assertEqual(CharmBuildState.BUILD_CHARM, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertNotEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+        self.assertThat(
+            self.builder,
+            HasWaitingFiles.byEquality(
+                {
+                    "test-charm_1_all.charm": b"I am charming.",
+                }
+            ),
+        )
+
+        # Control returns to the DebianBuildManager in the UMOUNT state.
+        self.buildmanager.iterateReap(self.getState(), 0)
+        expected_command = [
+            "sharepath/bin/in-target",
+            "in-target",
+            "umount-chroot",
+            "--backend=lxd",
+            "--series=xenial",
+            "--arch=i386",
+            self.buildid,
+        ]
+        self.assertEqual(CharmBuildState.UMOUNT, self.getState())
+        self.assertEqual(expected_command, self.buildmanager.commands[-1])
+        self.assertEqual(
+            self.buildmanager.iterate, self.buildmanager.iterators[-1]
+        )
+        self.assertFalse(self.builder.wasCalled("buildFail"))
+
     @responses.activate
     def test_revokeProxyToken(self):
         responses.add(

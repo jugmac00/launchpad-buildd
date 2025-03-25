@@ -41,6 +41,11 @@ class BuildCharm(
             "--build-path", default=".", help="location of charm to build."
         )
         parser.add_argument("name", help="name of charm to build")
+        parser.add_argument(
+            "--craft-platform",
+            type=str,
+            help="craft platform name used by the craft tool"
+        )
 
     def __init__(self, args, parser):
         super().__init__(args, parser)
@@ -105,6 +110,8 @@ class BuildCharm(
         )
         check_path_escape(self.buildd_path, build_context_path)
         env = self.build_proxy_environment(proxy_url=self.args.proxy_url)
+        if self.args.craft_platform:
+            env["CRAFT_PLATFORM"] = self.args.craft_platform
         args = ["charmcraft", "pack", "-v", "--destructive-mode"]
         self.run_build_command(args, env=env, cwd=build_context_path)
 

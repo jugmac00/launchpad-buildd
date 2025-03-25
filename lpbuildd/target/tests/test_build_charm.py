@@ -608,6 +608,35 @@ class TestBuildCharm(TestCase):
             ),
         )
 
+    def test_build_with_craft_platform(self):
+        args = [
+            "build-charm",
+            "--backend=fake",
+            "--series=xenial",
+            "--arch=amd64",
+            "1",
+            "--branch",
+            "lp:foo",
+            "--craft-platform",
+            "ubuntu-22.04-amd64",
+            "test-image",
+        ]
+        build_charm = parse_args(args=args).operation
+        build_charm.backend.add_dir("/build/test-directory")
+        build_charm.build()
+        self.assertThat(
+            build_charm.backend.run.calls,
+            MatchesListwise(
+                [
+                    RanBuildCommand(
+                        ["charmcraft", "pack", "-v", "--destructive-mode"],
+                        cwd="/home/buildd/test-image/.",
+                        CRAFT_PLATFORM="ubuntu-22.04-amd64",
+                    ),
+                ]
+            ),
+        )
+        
     def test_run_succeeds(self):
         args = [
             "build-charm",
