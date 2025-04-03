@@ -36,6 +36,7 @@ class CharmBuildManager(BuildManagerProxyMixin, DebianBuildManager):
         self.proxy_url = extra_args.get("proxy_url")
         self.revocation_endpoint = extra_args.get("revocation_endpoint")
         self.proxy_service = None
+        self.craft_platform = extra_args.get("craft_platform")
 
         super().initiate(files, chroot, extra_args)
 
@@ -55,6 +56,8 @@ class CharmBuildManager(BuildManagerProxyMixin, DebianBuildManager):
             args.extend(["--git-path", self.git_path])
         if self.build_path is not None:
             args.extend(["--build-path", self.build_path])
+        if self.craft_platform:
+            args.extend(["--craft-platform", self.craft_platform])
         args.append(self.name)
         self.runTargetSubProcess("build-charm", *args)
 
